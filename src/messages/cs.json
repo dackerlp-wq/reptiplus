@@ -38,6 +38,8 @@
     "filter": "Filtrovat",
     "filter_label": "Filtr",
     "filter_new": "✨ Novinky",
+    "badge_new": "Novinka",
+    "badge_sale": "Sleva",
     "filter_sale": "🏷️ Ve slevě",
     "filter_featured": "⭐ Doporučené",
     "sort": "Seřadit",
@@ -135,7 +137,14 @@
     "order_date": "Datum",
     "order_status": "Stav",
     "order_total": "Celkem",
-    "order_detail": "Detail"
+    "order_detail": "Detail",
+    "status_pending": "Čeká na zpracování",
+    "status_paid": "Zaplaceno",
+    "status_processing": "Zpracovává se",
+    "status_shipped": "Odesláno",
+    "status_delivered": "Doručeno",
+    "status_cancelled": "Zrušeno",
+    "go_to_shop": "Jít do obchodu"
   },
   "auth": {
     "login": "Přihlášení",
@@ -157,7 +166,10 @@
     "author": "Autor",
     "date": "Datum",
     "category": "Kategorie",
-    "no_posts": "Žádné články"
+    "no_posts": "Žádné články",
+    "home_title": "Více než jen obchod",
+    "home_subtitle": "Na našem blogu najdete odborné články o péči o plazy, tipy na vybavení terária a zkušenosti zkušených chovatelů.",
+    "go_to_blog": "Přejít na blog"
   },
   "footer": {
     "about": "O Reptiplus",
@@ -208,6 +220,7 @@
     "confirm_delete": "Opravdu smazat?"
   },
   "common": {
+    "home": "Domů",
     "loading": "Načítám...",
     "error": "Chyba",
     "success": "Úspěch",

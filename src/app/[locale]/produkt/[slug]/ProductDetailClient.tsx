@@ -46,6 +46,7 @@ export default function ProductDetailClient({
 }) {
   const t = useTranslations('product')
   const tShop = useTranslations('shop')
+  const tCommon = useTranslations('common')
   const addItem = useCartStore(s => s.addItem)
   const [qty, setQty] = useState(1)
   const [activeTab, setActiveTab] = useState<'description' | 'parameters' | 'reviews'>('description')
@@ -65,14 +66,14 @@ export default function ProductDetailClient({
   const handleAddToCart = () => {
     if (isOutOfStock) return
     addItem({ productId: product.id, name, sku: product.sku, price: product.price, image: images[0], quantity: qty, stock: product.stock })
-    toast(`${name} přidán do košíku`, 'success')
+    toast(`${name} ${tShop('added_to_cart')}`, 'success')
   }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-soft mb-6">
-        <Link href={`/${locale}`} className="hover:text-forest">Domů</Link>
+        <Link href={`/${locale}`} className="hover:text-forest">{tCommon('home')}</Link>
         <ChevronRight className="w-4 h-4" />
         <Link href={`/${locale}/obchod`} className="hover:text-forest">{tShop('title')}</Link>
         {catName && (
@@ -90,7 +91,7 @@ export default function ProductDetailClient({
         <div>
           <div className="relative aspect-square rounded-2xl overflow-hidden bg-cream border border-cream-dark mb-3">
             <Image src={images[activeImage]} alt={name} fill className="object-contain p-6" priority />
-            {product.isNew === 1 && <Badge variant="new" className="absolute top-3 left-3">Novinka</Badge>}
+            {product.isNew === 1 && <Badge variant="new" className="absolute top-3 left-3">{tShop('badge_new')}</Badge>}
           </div>
           {images.length > 1 && (
             <div className="flex gap-2">

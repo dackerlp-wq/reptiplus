@@ -56,6 +56,8 @@
     "excl_vat": "exkl. MwSt.",
     "filter_label": "Filter",
     "filter_new": "✨ Neuheiten",
+    "badge_new": "Neu",
+    "badge_sale": "Angebot",
     "filter_sale": "🏷️ Im Angebot",
     "filter_featured": "⭐ Empfohlen",
     "added_to_cart": "zum Warenkorb hinzugefügt"
@@ -135,7 +137,14 @@
     "order_date": "Datum",
     "order_status": "Status",
     "order_total": "Gesamt",
-    "order_detail": "Details"
+    "order_detail": "Details",
+    "status_pending": "Ausstehend",
+    "status_paid": "Bezahlt",
+    "status_processing": "In Bearbeitung",
+    "status_shipped": "Versendet",
+    "status_delivered": "Zugestellt",
+    "status_cancelled": "Storniert",
+    "go_to_shop": "Zum Shop"
   },
   "auth": {
     "login": "Anmelden",
@@ -157,7 +166,10 @@
     "author": "Autor",
     "date": "Datum",
     "category": "Kategorie",
-    "no_posts": "Keine Beiträge"
+    "no_posts": "Keine Beiträge",
+    "home_title": "Mehr als nur ein Shop",
+    "home_subtitle": "In unserem Blog finden Sie Fachartikel zur Reptilienpflege, Tipps zur Terrarieneinrichtung und Erfahrungen erfahrener Halter.",
+    "go_to_blog": "Zum Blog"
   },
   "footer": {
     "about": "Über Reptiplus",
@@ -208,6 +220,7 @@
     "confirm_delete": "Wirklich löschen?"
   },
   "common": {
+    "home": "Startseite",
     "loading": "Laden...",
     "error": "Fehler",
     "success": "Erfolg",

@@ -18,13 +18,13 @@ interface SessionUser {
   id: string; email: string; firstName: string; lastName: string; role: string
 }
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pending: { label: 'Čeká na zpracování', color: 'bg-amber-100 text-amber-700' },
-  paid: { label: 'Zaplaceno', color: 'bg-blue-100 text-blue-700' },
-  processing: { label: 'Zpracovává se', color: 'bg-purple-100 text-purple-700' },
-  shipped: { label: 'Odesláno', color: 'bg-indigo-100 text-indigo-700' },
-  delivered: { label: 'Doručeno', color: 'bg-green-100 text-green-700' },
-  cancelled: { label: 'Zrušeno', color: 'bg-red-100 text-red-700' },
+const STATUS_COLORS: Record<string, string> = {
+  pending: 'bg-amber-100 text-amber-700',
+  paid: 'bg-blue-100 text-blue-700',
+  processing: 'bg-purple-100 text-purple-700',
+  shipped: 'bg-indigo-100 text-indigo-700',
+  delivered: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-700',
 }
 
 export default function AccountPage() {
@@ -107,19 +107,20 @@ export default function AccountPage() {
               <Package className="w-12 h-12 mx-auto text-cream-dark mb-3" />
               <p className="text-gray-soft">{t('no_orders')}</p>
               <Link href={`/${locale}/obchod`}>
-                <Button className="mt-4" variant="outline">Jít do obchodu</Button>
+                <Button className="mt-4" variant="outline">{t('go_to_shop')}</Button>
               </Link>
             </div>
           ) : (
             <div className="space-y-3">
               {orders.map(order => {
-                const status = STATUS_LABELS[order.status] || { label: order.status, color: 'bg-gray-100 text-gray-700' }
+                const statusColor = STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-700'
+                const statusLabel = t(`status_${order.status}` as Parameters<typeof t>[0]) || order.status
                 return (
                   <div key={order.id} className="bg-white rounded-xl border border-cream-dark p-4 flex items-center justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-bold text-sm">#{order.orderNumber}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${status.color}`}>{status.label}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>{statusLabel}</span>
                       </div>
                       <p className="text-xs text-gray-soft">{formatDate(order.createdAt || '', locale as Locale)}</p>
                     </div>

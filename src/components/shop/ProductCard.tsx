@@ -68,8 +68,8 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
           <div className="absolute top-2 left-2 flex flex-col gap-1">
-            {product.isNew === 1 && <Badge variant="new">Novinka</Badge>}
-            {product.isSale === 1 && product.comparePrice && <Badge variant="sale">Sleva</Badge>}
+            {product.isNew === 1 && <Badge variant="new">{t('badge_new')}</Badge>}
+            {product.isSale === 1 && product.comparePrice && <Badge variant="sale">{t('badge_sale')}</Badge>}
             {isOutOfStock && <Badge variant="outofstock">{t('out_of_stock')}</Badge>}
             {isLowStock && !isOutOfStock && <Badge variant="lowstock">{t('low_stock')}</Badge>}
           </div>

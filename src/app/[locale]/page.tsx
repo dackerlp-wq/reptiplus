@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
 import { mapProduct, mapCategory } from '@/lib/mappers'
 import ProductCard, { type Product } from '@/components/shop/ProductCard'
-import { Package, Truck, Shield, Headphones, ArrowRight, Zap } from 'lucide-react'
+import { Package, Truck, Shield, Headphones, ArrowRight, Zap, BookOpen } from 'lucide-react'
 
 async function getHomeData() {
   const [
@@ -38,6 +38,7 @@ const categoryIcons: Record<string, string> = {
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   const t = await getTranslations('home')
+  const tBlog = await getTranslations('blog')
   const { newProds, featuredProds, saleProds, cats } = await getHomeData()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -191,29 +192,20 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* Blog / info strip */}
       <section className="bg-forest text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
-          <div>
-            <h2 className="text-2xl font-bold mb-3">Více než jen obchod</h2>
-            <p className="text-sage leading-relaxed">
-              Na našem blogu najdete odborné články o péči o plazy, tipy na vybavení terária a zkušenosti zkušených chovatelů.
-            </p>
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-center">
+          <div className="flex-1">
+            <div className="inline-flex items-center gap-2 bg-gold/20 border border-gold/30 text-gold px-3 py-1 rounded-full text-xs font-medium mb-4">
+              <BookOpen className="w-3.5 h-3.5" />
+              Blog
+            </div>
+            <h2 className="text-2xl font-bold mb-3">{tBlog('home_title')}</h2>
+            <p className="text-sage leading-relaxed">{tBlog('home_subtitle')}</p>
             <Link
               href={`/${locale}/blog`}
               className="inline-flex items-center gap-2 mt-6 bg-gold text-charcoal font-semibold px-5 py-2.5 rounded-xl hover:bg-gold-light transition-colors"
             >
-              Přejít na blog <ArrowRight className="w-4 h-4" />
+              {tBlog('go_to_blog')} <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { title: 'Jak vybrat UVB osvětlení', cat: 'Osvětlení' },
-              { title: 'Péče o agamu vousatou', cat: 'Péče o zvířata' },
-            ].map(post => (
-              <div key={post.title} className="bg-forest-light/30 rounded-xl p-4 border border-forest-light/20">
-                <span className="text-xs text-gold font-medium">{post.cat}</span>
-                <h3 className="font-medium mt-1 text-sm">{post.title}</h3>
-              </div>
-            ))}
           </div>
         </div>
       </section>

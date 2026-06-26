@@ -56,6 +56,8 @@
     "excl_vat": "excl. VAT",
     "filter_label": "Filter",
     "filter_new": "✨ New",
+    "badge_new": "New",
+    "badge_sale": "Sale",
     "filter_sale": "🏷️ On Sale",
     "filter_featured": "⭐ Featured",
     "added_to_cart": "added to cart"
@@ -135,7 +137,14 @@
     "order_date": "Date",
     "order_status": "Status",
     "order_total": "Total",
-    "order_detail": "Detail"
+    "order_detail": "Detail",
+    "status_pending": "Pending",
+    "status_paid": "Paid",
+    "status_processing": "Processing",
+    "status_shipped": "Shipped",
+    "status_delivered": "Delivered",
+    "status_cancelled": "Cancelled",
+    "go_to_shop": "Go to Shop"
   },
   "auth": {
     "login": "Log In",
@@ -157,7 +166,10 @@
     "author": "Author",
     "date": "Date",
     "category": "Category",
-    "no_posts": "No posts"
+    "no_posts": "No posts",
+    "home_title": "More Than Just a Shop",
+    "home_subtitle": "On our blog you'll find expert articles on reptile care, terrarium setup tips, and advice from experienced keepers.",
+    "go_to_blog": "Visit the Blog"
   },
   "footer": {
     "about": "About Reptiplus",
@@ -208,6 +220,7 @@
     "confirm_delete": "Are you sure?"
   },
   "common": {
+    "home": "Home",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
