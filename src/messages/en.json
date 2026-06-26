@@ -30,7 +30,8 @@
     "bestsellers": "Bestsellers",
     "sale": "Sale",
     "view_all": "View All",
-    "categories_title": "Product Categories"
+    "categories_title": "Product Categories",
+    "specialist": "Specialist Terrarium Shop"
   },
   "shop": {
     "title": "Shop",
@@ -52,7 +53,12 @@
     "all_categories": "All Categories",
     "pieces": "pcs",
     "incl_vat": "incl. VAT",
-    "excl_vat": "excl. VAT"
+    "excl_vat": "excl. VAT",
+    "filter_label": "Filter",
+    "filter_new": "✨ New",
+    "filter_sale": "🏷️ On Sale",
+    "filter_featured": "⭐ Featured",
+    "added_to_cart": "added to cart"
   },
   "product": {
     "description": "Description",
@@ -165,7 +171,11 @@
     "cookies": "Cookies",
     "newsletter_title": "Newsletter",
     "newsletter_placeholder": "Your email",
-    "newsletter_submit": "Subscribe"
+    "newsletter_submit": "Subscribe",
+    "newsletter_desc": "News, tips and special offers directly to your inbox.",
+    "payment_methods": "Payment Methods",
+    "payment_methods_desc": "Comgate — card, bank transfer, cash on delivery",
+    "specialist": "Specialist terrarium shop"
   },
   "categories": {
     "lighting": "Lighting",

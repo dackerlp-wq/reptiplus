@@ -22,7 +22,7 @@ export default function Footer({ locale }: { locale: string }) {
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-4">
           <div>
             <h3 className="font-bold text-lg">{t('newsletter_title')}</h3>
-            <p className="text-sage text-sm mt-1">Novinky, tipy a speciální nabídky přímo do vaší schránky.</p>
+            <p className="text-sage text-sm mt-1">{t('newsletter_desc')}</p>
           </div>
           <form className="flex gap-2 ml-auto" onSubmit={async (e) => {
             e.preventDefault()
@@ -108,8 +108,8 @@ export default function Footer({ locale }: { locale: string }) {
             </li>
           </ul>
           <div className="mt-4 p-3 bg-forest-light/30 rounded-lg text-xs text-sage">
-            <p className="font-medium text-white mb-1">Platební metody</p>
-            <p>Comgate — karta, bankovní převod, dobírka</p>
+            <p className="font-medium text-white mb-1">{t('payment_methods')}</p>
+            <p>{t('payment_methods_desc')}</p>
           </div>
         </div>
       </div>

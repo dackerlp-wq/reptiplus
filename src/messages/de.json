@@ -30,7 +30,8 @@
     "bestsellers": "Bestseller",
     "sale": "Ausverkauf",
     "view_all": "Alle anzeigen",
-    "categories_title": "Produktkategorien"
+    "categories_title": "Produktkategorien",
+    "specialist": "Spezialisierter Terraristik-Shop"
   },
   "shop": {
     "title": "Shop",
@@ -52,7 +53,12 @@
     "all_categories": "Alle Kategorien",
     "pieces": "Stk.",
     "incl_vat": "inkl. MwSt.",
-    "excl_vat": "exkl. MwSt."
+    "excl_vat": "exkl. MwSt.",
+    "filter_label": "Filter",
+    "filter_new": "✨ Neuheiten",
+    "filter_sale": "🏷️ Im Angebot",
+    "filter_featured": "⭐ Empfohlen",
+    "added_to_cart": "zum Warenkorb hinzugefügt"
   },
   "product": {
     "description": "Beschreibung",
@@ -165,7 +171,11 @@
     "cookies": "Cookies",
     "newsletter_title": "Newsletter",
     "newsletter_placeholder": "Ihre E-Mail",
-    "newsletter_submit": "Abonnieren"
+    "newsletter_submit": "Abonnieren",
+    "newsletter_desc": "Neuigkeiten, Tipps und Sonderangebote direkt in Ihr Postfach.",
+    "payment_methods": "Zahlungsmethoden",
+    "payment_methods_desc": "Comgate — Karte, Banküberweisung, Nachnahme",
+    "specialist": "Spezialisierter Terraristik-Shop"
   },
   "categories": {
     "lighting": "Beleuchtung",

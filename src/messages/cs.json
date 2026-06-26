@@ -30,17 +30,23 @@
     "bestsellers": "Nejprodávanější",
     "sale": "Výprodej",
     "view_all": "Zobrazit vše",
-    "categories_title": "Kategorie produktů"
+    "categories_title": "Kategorie produktů",
+    "specialist": "Specializovaný teraristický obchod"
   },
   "shop": {
     "title": "Obchod",
     "filter": "Filtrovat",
+    "filter_label": "Filtr",
+    "filter_new": "✨ Novinky",
+    "filter_sale": "🏷️ Ve slevě",
+    "filter_featured": "⭐ Doporučené",
     "sort": "Seřadit",
     "sort_newest": "Nejnovější",
     "sort_price_asc": "Cena — nejnižší",
     "sort_price_desc": "Cena — nejvyšší",
     "sort_popular": "Nejpopulárnější",
     "add_to_cart": "Do košíku",
+    "added_to_cart": "přidán do košíku",
     "out_of_stock": "Vyprodáno",
     "in_stock": "Skladem",
     "low_stock": "Poslední kusy",
@@ -164,8 +170,12 @@
     "privacy": "Ochrana osobních údajů",
     "cookies": "Cookies",
     "newsletter_title": "Odběr novinek",
+    "newsletter_desc": "Novinky, tipy a speciální nabídky přímo do vaší schránky.",
     "newsletter_placeholder": "Váš e-mail",
-    "newsletter_submit": "Přihlásit"
+    "newsletter_submit": "Přihlásit",
+    "payment_methods": "Platební metody",
+    "payment_methods_desc": "Comgate — karta, bankovní převod, dobírka",
+    "specialist": "Specializovaný teraristický obchod"
   },
   "categories": {
     "lighting": "Osvětlení",

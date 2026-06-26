@@ -133,12 +133,12 @@ export default function ShopPage() {
             </ul>
 
             <div className="mt-4 pt-4 border-t border-cream-dark">
-              <h3 className="font-semibold text-sm mb-3">Filtr</h3>
+              <h3 className="font-semibold text-sm mb-3">{t('filter_label')}</h3>
               <div className="space-y-1.5">
                 {[
-                  { key: 'novinka', label: '✨ Novinky' },
-                  { key: 'sleva', label: '🏷️ Ve slevě' },
-                  { key: 'doporucene', label: '⭐ Doporučené' },
+                  { key: 'novinka', label: t('filter_new') },
+                  { key: 'sleva', label: t('filter_sale') },
+                  { key: 'doporucene', label: t('filter_featured') },
                 ].map(f => (
                   <button
                     key={f.key}

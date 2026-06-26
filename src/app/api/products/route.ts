@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { mapProduct } from '@/lib/mappers'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
@@ -43,5 +44,5 @@ export async function GET(req: NextRequest) {
   const total = allProducts?.length || 0
   const paginated = (allProducts || []).slice((page - 1) * limit, page * limit)
 
-  return NextResponse.json({ products: paginated, total, page, pages: Math.ceil(total / limit) })
+  return NextResponse.json({ products: paginated.map(mapProduct), total, page, pages: Math.ceil(total / limit) })
 }

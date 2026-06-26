@@ -65,7 +65,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 bg-gold/20 border border-gold/30 text-gold px-4 py-1.5 rounded-full text-sm font-medium mb-6">
               <Zap className="w-4 h-4" />
-              Specializovaný teraristický obchod
+              {t('specialist')}
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
               {t('hero_title')}
