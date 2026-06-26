@@ -261,282 +261,333 @@ export default function BlogPostClient({
         <div className="h-full transition-all duration-100" style={{ width: `${readPct}%`, background: 'var(--color-amber)' }} />
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-12" ref={articleRef}>
+      <div className="max-w-6xl mx-auto px-6 py-12" ref={articleRef}>
         {/* Back */}
         <Link href={`/${locale}/blog`} className="inline-flex items-center gap-1.5 text-sm mb-8 hover:opacity-70 transition-opacity"
           style={{ color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>
           ← {locale === 'cs' ? 'Blog' : 'Blog'}
         </Link>
 
-        <article>
-          {/* Cover */}
-          {post.image && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={post.image} alt="" className="w-full h-72 object-cover mb-8" style={{ border: '1.5px solid var(--color-ink)' }} />
-          )}
-
-          <h1 className="text-4xl font-bold leading-tight mb-4" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
-            {title}
-          </h1>
-
-          <div className="flex items-center gap-4 text-xs mb-4" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
-            <span>{formatDate(post.published_at || post.created_at, locale)}</span>
-            <span style={{ color: 'var(--color-terracotta)' }}>/</span>
-            <span>{author?.name || 'Reptiplus'}</span>
-          </div>
-
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-8 pb-6" style={{ borderBottom: '1px solid rgba(27,31,23,0.12)' }}>
-              {tags.map(tag => (
-                <span key={tag.id} className="px-3 py-1 text-xs rounded-full"
-                  style={{ background: 'rgba(232,163,61,0.15)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.35)', fontWeight: 600 }}>
-                  {(tag[`name_${locale}` as keyof BlogTag] as string) || tag.name_cs}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {tags.length === 0 && <div className="mb-10 pb-6" style={{ borderBottom: '1px solid rgba(27,31,23,0.12)' }} />}
-
-          {/* Content */}
-          {content ? (
-            <div ref={contentRef} className="prose prose-sm max-w-none mb-10"
-              style={{ color: '#3C4138', lineHeight: 1.75 }}
-              dangerouslySetInnerHTML={{ __html: content }} />
-          ) : (
-            <p className="mb-10" style={{ color: 'var(--color-moss)' }}>Obsah tohoto článku není dostupný.</p>
-          )}
-        </article>
-
-        {/* Product link box */}
-        {productLinks.length > 0 && (
-          <div className="my-8 p-5" style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-moss)', color: 'var(--color-paper)' }}>
-            <h4 className="text-xs font-bold uppercase tracking-widest mb-4"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-amber)' }}>
-              Zmíněné produkty v článku
-            </h4>
-            <div className="flex flex-col gap-3">
-              {productLinks.map(p => {
-                const addToCart = () => {
-                  const img = getFirstImage(p.images) || ''
-                  addItem({ productId: p.id, name: getProductName(p), sku: (p as unknown as { sku: string }).sku || '', price: p.price, image: img, quantity: 1, stock: p.stock })
-                  toast('Přidáno do košíku ✓', 'success')
-                }
-                return (
-                  <div key={p.id} className="flex items-center gap-3 rounded px-3 py-2.5"
-                    style={{ background: 'var(--color-paper)', color: 'var(--color-ink)', border: '1.5px solid var(--color-ink)' }}>
-                    {getFirstImage(p.images) ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={getFirstImage(p.images)} alt="" className="w-10 h-10 object-cover rounded-sm shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-sm shrink-0" style={{ background: 'var(--color-amber)', opacity: 0.6 }} />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold leading-tight">{getProductName(p)}</div>
-                      {p.categories && <div className="text-xs" style={{ color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>{p.categories.name_cs}</div>}
-                      {p.price > 0 && <div className="text-sm font-bold mt-0.5" style={{ color: 'var(--color-terracotta)' }}>{p.price.toLocaleString('cs-CZ')} Kč</div>}
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Link href={`/${locale}/produkt/${p.slug}`}
-                        className="px-3 py-1.5 text-xs font-bold rounded-sm hover:opacity-80 transition-opacity"
-                        style={{ border: '1.5px solid var(--color-ink)', fontFamily: 'var(--font-mono)' }}>
-                        Detail
-                      </Link>
-                      <button onClick={addToCart} disabled={p.stock === 0}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-sm transition-opacity hover:opacity-90 disabled:opacity-40"
-                        style={{ background: 'var(--color-terracotta)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)' }}>
-                        <ShoppingCart className="w-3.5 h-3.5" />
-                        {p.stock === 0 ? 'Vyprodáno' : 'Do košíku'}
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Category links (info only) */}
-        {categoryLinks.length > 0 && (
-          <div className="mb-6 flex flex-wrap gap-2">
-            {categoryLinks.map(c => (
-              <Link key={c.id} href={`/${locale}/obchod?kategorie=${c.id}`}
-                className="text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
-                style={{ background: 'rgba(51,83,60,0.12)', color: 'var(--color-moss)', fontFamily: 'var(--font-mono)', border: '1px solid var(--color-moss)' }}>
-                kategorie: {c.name_cs}
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* Share */}
-        <div className="flex items-center gap-3 mb-8 mt-2">
-          <span className="text-xs font-bold uppercase tracking-wide" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>Sdílet:</span>
-          <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
-            target="_blank" rel="noopener noreferrer"
-            className="w-9 h-9 flex items-center justify-center text-sm font-bold transition-colors hover:text-amber-400"
-            style={{ border: '1.5px solid var(--color-ink)', color: 'var(--color-ink)' }}>f</a>
-          <button onClick={() => { navigator.clipboard?.writeText(window.location.href); toast('Odkaz zkopírován', 'success') }}
-            className="w-9 h-9 flex items-center justify-center text-sm transition-colors hover:text-amber-400"
-            style={{ border: '1.5px solid var(--color-ink)', color: 'var(--color-ink)' }}>🔗</button>
-        </div>
-
-        {/* Engage bar */}
-        <div className="flex items-center gap-5 py-4 mb-8"
-          style={{ borderTop: '1px solid rgba(27,31,23,0.12)', borderBottom: '1px solid rgba(27,31,23,0.12)' }}>
-          <button
-            onClick={handleLike}
-            disabled={likeLoading}
-            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-all disabled:opacity-50"
-            style={{
-              border: '1.5px solid var(--color-ink)',
-              background: liked ? 'var(--color-terracotta)' : 'var(--color-paper)',
-              color: liked ? 'var(--color-paper)' : 'var(--color-ink)',
-            }}>
-            ♥ Líbí se mi · <strong>{likes}</strong>
-          </button>
-          <div className="flex items-center gap-2 text-sm" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
-            💬 {comments.length || commentsCount} komentářů
-          </div>
-        </div>
-
-        {/* Author box */}
-        {author && (
-          <div className="flex items-center gap-5 p-6 mb-8" style={{ border: '1.5px solid var(--color-ink)' }}>
-            <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0 text-xl font-bold"
-              style={{ background: 'var(--color-moss)', color: 'var(--color-paper)', fontFamily: 'var(--font-display)' }}>
-              {author.avatar_url
-                // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={author.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                : (author.avatar_initial || author.name[0])}
-            </div>
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-widest mb-1.5"
-                style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
-                {author.name}
-              </h4>
-              {author.bio && <p className="text-sm" style={{ color: '#3C4138', lineHeight: 1.55 }}>{author.bio}</p>}
-            </div>
-          </div>
-        )}
-
-        {/* Related articles */}
-        {related.length > 0 && (
-          <div className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-xs font-bold uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
-                Související články
-              </span>
-              <div className="flex-1 h-px" style={{ background: 'rgba(27,31,23,0.12)' }} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {related.map(r => (
-                <Link key={r.id} href={`/${locale}/blog/${r.slug}`}
-                  className="p-5 block hover:-translate-y-0.5 transition-transform"
-                  style={{ border: '1.5px solid var(--color-ink)' }}
-                  onMouseEnter={e => (e.currentTarget.style.boxShadow = '4px 4px 0 var(--color-ink)')}
-                  onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
-                  <h5 className="font-bold text-base leading-snug" style={{ fontFamily: 'var(--font-display)' }}>
-                    {getRelatedTitle(r)}
-                  </h5>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Comments */}
-        <div>
-          <div className="flex items-center gap-3 mb-6">
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
-              Komentáře ({comments.length || commentsCount})
-            </span>
-            <div className="flex-1 h-px" style={{ background: 'rgba(27,31,23,0.12)' }} />
-          </div>
-
-          {/* Comment form */}
-          <form onSubmit={submitComment} className="mb-8 p-5" style={{ border: '1.5px solid var(--color-ink)' }}>
-            <textarea
-              value={commentForm.content}
-              onChange={e => setCommentForm(f => ({ ...f, content: e.target.value }))}
-              placeholder="Napište komentář…"
-              rows={3}
-              required
-              className="w-full resize-none text-sm p-3 mb-3 focus:outline-none"
-              style={{ border: '1.5px solid rgba(27,31,23,0.2)', background: 'var(--color-paper)', fontFamily: 'var(--font-sans)' }}
-            />
-            {/* Guest fields */}
-            <div className="flex gap-3 mb-3">
-              <input
-                type="text"
-                value={commentForm.guestName}
-                onChange={e => setCommentForm(f => ({ ...f, guestName: e.target.value }))}
-                placeholder="Jméno (pro nepřihlášené)"
-                className="flex-1 px-3 py-2 text-sm focus:outline-none"
-                style={{ border: '1.5px solid rgba(27,31,23,0.2)', background: 'var(--color-paper)' }}
-              />
-              <input
-                type="email"
-                value={commentForm.guestEmail}
-                onChange={e => setCommentForm(f => ({ ...f, guestEmail: e.target.value }))}
-                placeholder="E-mail (nezveřejní se)"
-                className="flex-1 px-3 py-2 text-sm focus:outline-none"
-                style={{ border: '1.5px solid rgba(27,31,23,0.2)', background: 'var(--color-paper)' }}
-              />
-            </div>
-            {/* Honeypot */}
-            <input type="text" name="website" value={commentForm.website} onChange={e => setCommentForm(f => ({ ...f, website: e.target.value }))} className="sr-only" tabIndex={-1} autoComplete="off" />
-            <div className="flex items-center justify-between">
-              <span className="text-xs" style={{ color: '#8A9085', fontFamily: 'var(--font-mono)' }}>
-                Přihlášení uživatelé komentují pod svým jménem automaticky
-              </span>
-              <button type="submit" disabled={submitting}
-                className="px-5 py-2 text-sm font-bold disabled:opacity-50 transition-opacity"
-                style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)' }}>
-                {submitting ? 'Odesílám…' : 'Odeslat'}
-              </button>
-            </div>
-          </form>
-
-          {/* Comment list */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 items-start">
+          {/* ── MAIN COLUMN ── */}
           <div>
-            {comments.length === 0 && (
-              <p className="text-sm" style={{ color: 'var(--color-moss)' }}>Zatím žádné komentáře. Buďte první!</p>
-            )}
-            {comments.map(c => {
-              const name = c.users ? `${c.users.first_name} ${c.users.last_name}` : (c.guest_name || 'Host')
-              const isUser = !!c.users
-              const initial = name[0]?.toUpperCase()
-              return (
-                <div key={c.id} className="flex gap-4 py-5" style={{ borderBottom: '1px solid rgba(27,31,23,0.08)' }}>
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-base font-bold"
-                    style={{
-                      background: isUser ? 'var(--color-moss)' : '#8A9085',
-                      color: 'var(--color-paper)',
-                      fontFamily: 'var(--font-display)',
-                    }}>
-                    {initial}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="font-bold text-sm" style={{ color: 'var(--color-ink)' }}>{name}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full"
-                        style={{
-                          background: isUser ? 'rgba(51,83,60,0.12)' : 'rgba(194,86,46,0.12)',
-                          color: isUser ? 'var(--color-moss)' : 'var(--color-terracotta)',
-                          fontFamily: 'var(--font-mono)',
-                        }}>
-                        {isUser ? 'Přihlášen' : 'Host'}
-                      </span>
-                      <span className="text-xs" style={{ color: '#8A9085' }}>{formatDate(c.created_at, locale)}</span>
-                    </div>
-                    <p className="text-sm" style={{ color: '#3C4138', lineHeight: 1.6 }}>{c.content}</p>
-                  </div>
+            <article>
+              {/* Cover */}
+              {post.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={post.image} alt="" className="w-full h-72 object-cover mb-8" style={{ border: '1.5px solid var(--color-ink)' }} />
+              )}
+
+              <h1 className="text-4xl font-bold leading-tight mb-4" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
+                {title}
+              </h1>
+
+              <div className="flex flex-wrap items-center gap-3 text-xs mb-4" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
+                <span>{formatDate(post.published_at || post.created_at, locale)}</span>
+                <span style={{ color: 'var(--color-terracotta)' }}>/</span>
+                <span>{author?.name || 'Reptiplus'}</span>
+                <span style={{ color: 'var(--color-terracotta)' }}>/</span>
+                <span>💬 {commentsCount}</span>
+                <span style={{ color: 'var(--color-terracotta)' }}>/</span>
+                <span>♥ {likes}</span>
+              </div>
+
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-8 pb-6" style={{ borderBottom: '1px solid rgba(27,31,23,0.12)' }}>
+                  {tags.map(tag => (
+                    <span key={tag.id} className="px-3 py-1 text-xs rounded-full"
+                      style={{ background: 'rgba(232,163,61,0.15)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.35)', fontWeight: 600 }}>
+                      {(tag[`name_${locale}` as keyof BlogTag] as string) || tag.name_cs}
+                    </span>
+                  ))}
                 </div>
-              )
-            })}
-          </div>
-        </div>
+              )}
+
+              {tags.length === 0 && <div className="mb-10 pb-6" style={{ borderBottom: '1px solid rgba(27,31,23,0.12)' }} />}
+
+              {/* Content */}
+              {content ? (
+                <div ref={contentRef} className="prose prose-sm max-w-none mb-10"
+                  style={{ color: '#3C4138', lineHeight: 1.75 }}
+                  dangerouslySetInnerHTML={{ __html: content }} />
+              ) : (
+                <p className="mb-10" style={{ color: 'var(--color-moss)' }}>Obsah tohoto článku není dostupný.</p>
+              )}
+            </article>
+
+            {/* Product link box */}
+            {productLinks.length > 0 && (
+              <div className="my-8 p-5" style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-moss)', color: 'var(--color-paper)' }}>
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-4"
+                  style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-amber)' }}>
+                  Zmíněné produkty v článku
+                </h4>
+                <div className="flex flex-col gap-3">
+                  {productLinks.map(p => {
+                    const addToCart = () => {
+                      const img = getFirstImage(p.images) || ''
+                      addItem({ productId: p.id, name: getProductName(p), sku: (p as unknown as { sku: string }).sku || '', price: p.price, image: img, quantity: 1, stock: p.stock })
+                      toast('Přidáno do košíku ✓', 'success')
+                    }
+                    return (
+                      <div key={p.id} className="flex items-center gap-3 rounded px-3 py-2.5"
+                        style={{ background: 'var(--color-paper)', color: 'var(--color-ink)', border: '1.5px solid var(--color-ink)' }}>
+                        {getFirstImage(p.images) ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={getFirstImage(p.images)} alt="" className="w-10 h-10 object-cover rounded-sm shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-sm shrink-0" style={{ background: 'var(--color-amber)', opacity: 0.6 }} />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold leading-tight">{getProductName(p)}</div>
+                          {p.categories && <div className="text-xs" style={{ color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>{p.categories.name_cs}</div>}
+                          {p.price > 0 && <div className="text-sm font-bold mt-0.5" style={{ color: 'var(--color-terracotta)' }}>{fmtPrice(p.price)}</div>}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Link href={`/${locale}/produkt/${p.slug}`}
+                            className="px-3 py-1.5 text-xs font-bold rounded-sm hover:opacity-80 transition-opacity"
+                            style={{ border: '1.5px solid var(--color-ink)', fontFamily: 'var(--font-mono)' }}>
+                            Detail
+                          </Link>
+                          <button onClick={addToCart} disabled={p.stock === 0}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-sm transition-opacity hover:opacity-90 disabled:opacity-40"
+                            style={{ background: 'var(--color-terracotta)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)' }}>
+                            <ShoppingCart className="w-3.5 h-3.5" />
+                            {p.stock === 0 ? 'Vyprodáno' : 'Do košíku'}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Category links */}
+            {categoryLinks.length > 0 && (
+              <div className="mb-6 flex flex-wrap gap-2">
+                {categoryLinks.map(c => (
+                  <Link key={c.id} href={`/${locale}/obchod?kategorie=${c.id}`}
+                    className="text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
+                    style={{ background: 'rgba(51,83,60,0.12)', color: 'var(--color-moss)', fontFamily: 'var(--font-mono)', border: '1px solid var(--color-moss)' }}>
+                    kategorie: {c.name_cs}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Engage bar */}
+            <div className="flex items-center gap-5 py-4 mb-8"
+              style={{ borderTop: '1px solid rgba(27,31,23,0.12)', borderBottom: '1px solid rgba(27,31,23,0.12)' }}>
+              <button
+                onClick={handleLike}
+                disabled={likeLoading}
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-all disabled:opacity-50"
+                style={{
+                  border: '1.5px solid var(--color-ink)',
+                  background: liked ? 'var(--color-terracotta)' : 'var(--color-paper)',
+                  color: liked ? 'var(--color-paper)' : 'var(--color-ink)',
+                }}>
+                ♥ Líbí se mi · <strong>{likes}</strong>
+              </button>
+              <div className="flex items-center gap-2 text-sm" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
+                💬 {comments.length || commentsCount} komentářů
+              </div>
+              {/* Share inline */}
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="text-xs font-bold uppercase tracking-wide hidden sm:block" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>Sdílet:</span>
+                <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="w-8 h-8 flex items-center justify-center text-sm font-bold transition-colors hover:opacity-70"
+                  style={{ border: '1.5px solid var(--color-ink)', color: 'var(--color-ink)' }}>f</a>
+                <button onClick={() => { navigator.clipboard?.writeText(window.location.href); toast('Odkaz zkopírován', 'success') }}
+                  className="w-8 h-8 flex items-center justify-center text-sm transition-colors hover:opacity-70"
+                  style={{ border: '1.5px solid var(--color-ink)', color: 'var(--color-ink)' }}>🔗</button>
+              </div>
+            </div>
+
+            {/* Author box */}
+            {author && (
+              <div className="flex items-center gap-4 p-5 mb-8" style={{ border: '1.5px solid var(--color-ink)' }}>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-lg font-bold overflow-hidden"
+                  style={{ background: 'var(--color-moss)', color: 'var(--color-paper)', fontFamily: 'var(--font-display)' }}>
+                  {author.avatar_url
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={author.avatar_url} alt="" className="w-full h-full object-cover" />
+                    : (author.avatar_initial || author.name[0])}
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-widest mb-1" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>{author.name}</h4>
+                  {author.bio && <p className="text-sm" style={{ color: '#3C4138', lineHeight: 1.55 }}>{author.bio}</p>}
+                </div>
+              </div>
+            )}
+
+            {/* Comments */}
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
+                  Komentáře ({comments.length || commentsCount})
+                </span>
+                <div className="flex-1 h-px" style={{ background: 'rgba(27,31,23,0.12)' }} />
+              </div>
+
+              <form onSubmit={submitComment} className="mb-8 p-5" style={{ border: '1.5px solid var(--color-ink)' }}>
+                <textarea
+                  value={commentForm.content}
+                  onChange={e => setCommentForm(f => ({ ...f, content: e.target.value }))}
+                  placeholder="Napište komentář…"
+                  rows={3}
+                  required
+                  className="w-full resize-none text-sm p-3 mb-3 focus:outline-none"
+                  style={{ border: '1.5px solid rgba(27,31,23,0.2)', background: 'var(--color-paper)', fontFamily: 'var(--font-sans)' }}
+                />
+                <div className="flex gap-3 mb-3">
+                  <input type="text" value={commentForm.guestName} onChange={e => setCommentForm(f => ({ ...f, guestName: e.target.value }))}
+                    placeholder="Jméno (pro nepřihlášené)" className="flex-1 px-3 py-2 text-sm focus:outline-none"
+                    style={{ border: '1.5px solid rgba(27,31,23,0.2)', background: 'var(--color-paper)' }} />
+                  <input type="email" value={commentForm.guestEmail} onChange={e => setCommentForm(f => ({ ...f, guestEmail: e.target.value }))}
+                    placeholder="E-mail (nezveřejní se)" className="flex-1 px-3 py-2 text-sm focus:outline-none"
+                    style={{ border: '1.5px solid rgba(27,31,23,0.2)', background: 'var(--color-paper)' }} />
+                </div>
+                <input type="text" name="website" value={commentForm.website} onChange={e => setCommentForm(f => ({ ...f, website: e.target.value }))} className="sr-only" tabIndex={-1} autoComplete="off" />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs" style={{ color: '#8A9085', fontFamily: 'var(--font-mono)' }}>Přihlášení komentují pod svým jménem</span>
+                  <button type="submit" disabled={submitting} className="px-5 py-2 text-sm font-bold disabled:opacity-50"
+                    style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)' }}>
+                    {submitting ? 'Odesílám…' : 'Odeslat'}
+                  </button>
+                </div>
+              </form>
+
+              <div>
+                {comments.length === 0 && (
+                  <p className="text-sm" style={{ color: 'var(--color-moss)' }}>Zatím žádné komentáře. Buďte první!</p>
+                )}
+                {comments.map(c => {
+                  const name = c.users ? `${c.users.first_name} ${c.users.last_name}` : (c.guest_name || 'Host')
+                  const isUser = !!c.users
+                  return (
+                    <div key={c.id} className="flex gap-4 py-5" style={{ borderBottom: '1px solid rgba(27,31,23,0.08)' }}>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-base font-bold"
+                        style={{ background: isUser ? 'var(--color-moss)' : '#8A9085', color: 'var(--color-paper)', fontFamily: 'var(--font-display)' }}>
+                        {name[0]?.toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="font-bold text-sm" style={{ color: 'var(--color-ink)' }}>{name}</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full"
+                            style={{ background: isUser ? 'rgba(51,83,60,0.12)' : 'rgba(194,86,46,0.12)', color: isUser ? 'var(--color-moss)' : 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>
+                            {isUser ? 'Přihlášen' : 'Host'}
+                          </span>
+                          <span className="text-xs" style={{ color: '#8A9085' }}>{formatDate(c.created_at, locale)}</span>
+                        </div>
+                        <p className="text-sm" style={{ color: '#3C4138', lineHeight: 1.6 }}>{c.content}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>{/* end main column */}
+
+          {/* ── RIGHT SIDEBAR ── */}
+          <aside className="sticky top-6 space-y-6">
+            {/* Author card */}
+            {author && (
+              <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
+                <div className="px-5 py-3 text-xs font-bold uppercase tracking-widest"
+                  style={{ background: 'var(--color-moss)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
+                  Autor
+                </div>
+                <div className="p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-lg font-bold overflow-hidden"
+                      style={{ background: 'var(--color-moss)', color: 'var(--color-paper)', fontFamily: 'var(--font-display)' }}>
+                      {author.avatar_url
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={author.avatar_url} alt="" className="w-full h-full object-cover" />
+                        : (author.avatar_initial || author.name[0])}
+                    </div>
+                    <span className="font-bold text-base" style={{ fontFamily: 'var(--font-display)' }}>{author.name}</span>
+                  </div>
+                  {author.bio && <p className="text-sm" style={{ color: '#3C4138', lineHeight: 1.6 }}>{author.bio}</p>}
+                </div>
+              </div>
+            )}
+
+            {/* Tags */}
+            {tags.length > 0 && (
+              <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
+                <div className="px-5 py-3 text-xs font-bold uppercase tracking-widest"
+                  style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
+                  Štítky
+                </div>
+                <div className="p-4 flex flex-wrap gap-2">
+                  {tags.map(tag => (
+                    <span key={tag.id} className="px-2.5 py-1 text-xs rounded-full"
+                      style={{ background: 'rgba(232,163,61,0.15)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.4)', fontWeight: 600 }}>
+                      {(tag[`name_${locale}` as keyof BlogTag] as string) || tag.name_cs}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Related articles */}
+            {related.length > 0 && (
+              <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
+                <div className="px-5 py-3 text-xs font-bold uppercase tracking-widest"
+                  style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
+                  Související články
+                </div>
+                <div className="divide-y" style={{ borderColor: 'rgba(27,31,23,0.1)' }}>
+                  {related.map(r => (
+                    <Link key={r.id} href={`/${locale}/blog/${r.slug}`}
+                      className="block p-4 hover:opacity-80 transition-opacity"
+                      style={{ color: 'var(--color-ink)' }}>
+                      <span className="font-bold text-sm leading-snug" style={{ fontFamily: 'var(--font-display)' }}>
+                        {getRelatedTitle(r)}
+                      </span>
+                      {r.excerpt && <p className="text-xs mt-1 line-clamp-2" style={{ color: '#8A9085' }}>{r.excerpt}</p>}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Category links */}
+            {categoryLinks.length > 0 && (
+              <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)', padding: '16px' }}>
+                <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>Kategorie</div>
+                <div className="flex flex-wrap gap-2">
+                  {categoryLinks.map(c => (
+                    <Link key={c.id} href={`/${locale}/obchod?kategorie=${c.id}`}
+                      className="text-xs font-bold px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
+                      style={{ background: 'rgba(51,83,60,0.1)', color: 'var(--color-moss)', fontFamily: 'var(--font-mono)', border: '1px solid var(--color-moss)' }}>
+                      {c.name_cs}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Newsletter */}
+            <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-moss)', color: 'var(--color-paper)', padding: '20px' }}>
+              <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-amber)' }}>Odběr novinek</div>
+              <p className="text-sm mb-4" style={{ color: 'rgba(243,238,224,0.8)', lineHeight: 1.6 }}>Novinky a tipy přímo do vaší schránky.</p>
+              <form className="flex flex-col gap-2">
+                <input type="email" placeholder="vas@email.cz"
+                  className="px-3 py-2.5 text-sm focus:outline-none"
+                  style={{ border: '1.5px solid rgba(243,238,224,0.3)', background: 'rgba(0,0,0,0.15)', color: 'var(--color-paper)' }} />
+                <button type="submit" className="py-2.5 text-sm font-bold"
+                  style={{ background: 'var(--color-amber)', color: 'var(--color-forest-deep)' }}>
+                  Přihlásit se
+                </button>
+              </form>
+            </div>
+          </aside>
+        </div>{/* end grid */}
       </div>
     </>
   )
