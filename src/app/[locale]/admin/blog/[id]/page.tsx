@@ -43,6 +43,7 @@ export default async function EditBlogPostPage({ params }: { params: Promise<{ i
         image: post.image,
         isPublished: !!post.is_published,
         blogAuthorId: post.blog_author_id || '',
+        blogCategoryId: post.blog_category_id || '',
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         productLinks: (productLinksRaw || []) as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

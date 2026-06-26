@@ -61,6 +61,9 @@ export default function AdminBlogPage() {
           )}
         </div>
         <div className="flex gap-2">
+          <Link href={`/${locale}/admin/blog/kategorie`}>
+            <Button size="sm" variant="outline">Kategorie</Button>
+          </Link>
           <Link href={`/${locale}/admin/blog/podpisy`}>
             <Button size="sm" variant="outline">Autoři</Button>
           </Link>

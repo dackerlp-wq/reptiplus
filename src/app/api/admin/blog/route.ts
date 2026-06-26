@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     titleCs, titleEn, titleDe,
     contentCs, contentEn, contentDe,
     excerpt, image, isPublished,
-    blogAuthorId, productIds, categoryIds, tagIds,
+    blogAuthorId, blogCategoryId, productIds, categoryIds, tagIds,
   } = body
 
   if (!titleCs) return NextResponse.json({ error: 'Název je povinný' }, { status: 400 })
@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
     excerpt: excerpt || null, image: image || null,
     author_id: session.id,
     blog_author_id: blogAuthorIdResolved,
+    blog_category_id: blogCategoryId || null,
     is_published: isPublished ? 1 : 0,
     published_at: isPublished ? now : null,
   }).select().single()

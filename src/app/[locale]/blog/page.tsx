@@ -4,15 +4,47 @@ import { getTranslations } from 'next-intl/server'
 import { formatDate } from '@/lib/utils'
 import type { Locale } from '@/lib/i18n'
 
-export default async function BlogPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function BlogPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>
+  searchParams: Promise<{ tag?: string; kategorie?: string }>
+}) {
   const { locale } = await params
+  const { tag: tagSlug, kategorie: catSlug } = await searchParams
   const t = await getTranslations('blog')
 
-  const { data: posts } = await supabaseAdmin
+  // Sidebar data
+  const [{ data: allTags }, { data: allBlogCats }] = await Promise.all([
+    supabaseAdmin.from('blog_tags').select('id, name_cs, name_en, name_de, slug').order('name_cs'),
+    supabaseAdmin.from('blog_categories').select('id, name_cs, name_en, name_de, slug').order('name_cs'),
+  ])
+
+  // Active filter tag/category object
+  const activeTag = tagSlug ? (allTags || []).find(t => t.slug === tagSlug) : null
+  const activeCat = catSlug ? (allBlogCats || []).find(c => c.slug === catSlug) : null
+
+  let query = supabaseAdmin
     .from('blog_posts')
-    .select('*, blog_authors(name, avatar_initial), blog_post_tags(blog_tags(name_cs, name_en, name_de))')
+    .select('*, blog_authors(name, avatar_initial), blog_post_tags(blog_tags(name_cs, name_en, name_de, slug)), blog_categories(id, name_cs, name_en, name_de, slug)')
     .eq('is_published', 1)
     .order('published_at', { ascending: false })
+
+  // Filter by blog category
+  if (activeCat) {
+    query = query.eq('blog_category_id', activeCat.id)
+  }
+
+  const { data: postsRaw } = await query
+
+  // Filter by tag (post-fetch, because Supabase can't easily filter by M:N)
+  const posts = tagSlug
+    ? (postsRaw || []).filter(p =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (p.blog_post_tags || []).some((pt: any) => pt.blog_tags?.slug === tagSlug)
+      )
+    : postsRaw || []
 
   const getTitle = (post: Record<string, unknown>) => {
     const map: Record<string, unknown> = { cs: post.title_cs, en: post.title_en, de: post.title_de }
@@ -21,13 +53,21 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getTagName = (tag: any) => (tag[`name_${locale}`] || tag.name_cs) as string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getCatName = (cat: any) => (cat?.[`name_${locale}`] || cat?.name_cs) as string | undefined
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getPostTags = (post: any): { name_cs: string; name_en: string | null; name_de: string | null }[] =>
+  const getPostTags = (post: any): { name_cs: string; name_en: string | null; name_de: string | null; slug: string }[] =>
     (post.blog_post_tags || []).map((pt: any) => pt.blog_tags).filter(Boolean)
 
   const featured = posts?.[0]
   const rest = posts?.slice(1) || []
+
+  const filterLabel = activeTag
+    ? `Štítek: ${getTagName(activeTag)}`
+    : activeCat
+    ? `Kategorie: ${getCatName(activeCat)}`
+    : null
 
   return (
     <>
@@ -61,12 +101,26 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
 
       <div className="max-w-5xl mx-auto px-8 py-14 grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
         <div>
+          {/* Active filter indicator */}
+          {filterLabel && (
+            <div className="flex items-center gap-3 mb-8 px-4 py-3"
+              style={{ background: 'rgba(232,163,61,0.1)', border: '1.5px solid rgba(232,163,61,0.4)' }}>
+              <span className="text-sm font-bold" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-forest-deep)' }}>
+                {filterLabel}
+              </span>
+              <Link href={`/${locale}/blog`}
+                className="ml-auto text-xs font-bold px-2.5 py-1 hover:opacity-80 transition-opacity"
+                style={{ background: 'var(--color-amber)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)' }}>
+                × Zrušit filtr
+              </Link>
+            </div>
+          )}
+
           {/* Featured */}
           {featured && (
             <Link href={`/${locale}/blog/${featured.slug}`} className="block mb-10 group">
               <article className="specimen-card specimen-featured flex flex-col md:flex-row"
                 style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)', position: 'relative' }}>
-                {/* Featured tag */}
                 <div className="absolute -top-px right-6 px-3 py-1.5 text-xs font-bold uppercase tracking-widest"
                   style={{ background: 'var(--color-amber)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1.5px solid var(--color-ink)', borderTop: 'none' }}>
                   Doporučujeme
@@ -82,6 +136,16 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
                 )}
 
                 <div className="flex-1 p-8 flex flex-col justify-center">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {(featured as any).blog_categories && (
+                    <div className="mb-2">
+                      <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5"
+                        style={{ background: 'var(--color-moss)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)' }}>
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        {getCatName((featured as any).blog_categories)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 text-xs mb-3" style={{ color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>
                     <span>{formatDate(featured.published_at || featured.created_at, locale as Locale)}</span>
                     <span style={{ color: 'var(--color-terracotta)' }}>/</span>
@@ -95,9 +159,10 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
                   {getPostTags(featured).length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {getPostTags(featured).map((tag, i) => (
-                        <span key={i} className="px-2 py-0.5 text-xs rounded-full"
+                        <span key={i} onClick={e => e.preventDefault()}
+                          className="px-2 py-0.5 text-xs rounded-full cursor-pointer hover:opacity-80"
                           style={{ background: 'rgba(232,163,61,0.18)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.35)' }}>
-                          {getTagName(tag)}
+                          <a href={`/${locale}/blog?tag=${tag.slug}`}>{getTagName(tag)}</a>
                         </span>
                       ))}
                     </div>
@@ -112,7 +177,7 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
           )}
 
           {/* Article feed */}
-          {rest.length === 0 && !featured && (
+          {posts.length === 0 && (
             <p className="text-center py-16" style={{ color: 'var(--color-moss)' }}>{t('no_posts')}</p>
           )}
           <div className="flex flex-col gap-8">
@@ -120,10 +185,10 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
               <Link key={post.id} href={`/${locale}/blog/${post.slug}`} className="block group">
                 <article className="specimen-card p-7"
                   style={{ background: 'var(--color-paper)', border: '1.5px solid var(--color-ink)', borderRadius: 2, position: 'relative' }}>
-                  {/* Corner tag */}
                   <div className="absolute -top-px right-6 px-3 py-1 text-xs font-bold uppercase tracking-wider"
                     style={{ background: 'var(--color-moss)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)', border: '1.5px solid var(--color-ink)', borderTop: 'none' }}>
-                    {locale === 'cs' ? 'Článek' : locale === 'en' ? 'Article' : 'Artikel'}
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {(post as any).blog_categories ? getCatName((post as any).blog_categories) : (locale === 'cs' ? 'Článek' : locale === 'en' ? 'Article' : 'Artikel')}
                   </div>
 
                   <div className="flex gap-6">
@@ -145,10 +210,12 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
                       {getPostTags(post).length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-3">
                           {getPostTags(post).map((tag, i) => (
-                            <span key={i} className="px-2 py-0.5 text-xs rounded-full"
+                            <a key={i} href={`/${locale}/blog?tag=${tag.slug}`}
+                              onClick={e => e.stopPropagation()}
+                              className="px-2 py-0.5 text-xs rounded-full hover:opacity-80 transition-opacity"
                               style={{ background: 'rgba(232,163,61,0.18)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.35)' }}>
                               {getTagName(tag)}
-                            </span>
+                            </a>
                           ))}
                         </div>
                       )}
@@ -175,6 +242,55 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
               Praktické rady a tipy o chovu plazů přímo od nás.
             </p>
           </div>
+
+          {/* Blog categories */}
+          {(allBlogCats || []).length > 0 && (
+            <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
+              <div className="px-4 py-3 text-xs font-bold uppercase tracking-widest"
+                style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
+                {locale === 'cs' ? 'Kategorie' : locale === 'en' ? 'Categories' : 'Kategorien'}
+              </div>
+              <div className="p-4 flex flex-col gap-1">
+                <Link href={`/${locale}/blog`}
+                  className="text-sm px-2 py-1 rounded hover:opacity-80 transition-opacity font-medium"
+                  style={{ color: !catSlug ? 'var(--color-terracotta)' : 'var(--color-ink)', fontFamily: 'var(--font-mono)' }}>
+                  {locale === 'cs' ? '— Všechny kategorie' : locale === 'en' ? '— All categories' : '— Alle Kategorien'}
+                </Link>
+                {(allBlogCats || []).map(c => (
+                  <Link key={c.id} href={`/${locale}/blog?kategorie=${c.slug}`}
+                    className="text-sm px-2 py-1 rounded hover:opacity-80 transition-opacity"
+                    style={{ color: catSlug === c.slug ? 'var(--color-terracotta)' : 'var(--color-ink)', fontFamily: 'var(--font-mono)', fontWeight: catSlug === c.slug ? 700 : 400 }}>
+                    {getCatName(c)}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tags cloud */}
+          {(allTags || []).length > 0 && (
+            <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
+              <div className="px-4 py-3 text-xs font-bold uppercase tracking-widest"
+                style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
+                {locale === 'cs' ? 'Štítky' : locale === 'en' ? 'Tags' : 'Tags'}
+              </div>
+              <div className="p-4 flex flex-wrap gap-2">
+                {(allTags || []).map(tag => (
+                  <Link key={tag.id} href={`/${locale}/blog?tag=${tag.slug}`}
+                    className="px-2.5 py-1 text-xs rounded-full hover:opacity-80 transition-opacity"
+                    style={{
+                      background: tagSlug === tag.slug ? 'var(--color-amber)' : 'rgba(232,163,61,0.15)',
+                      color: tagSlug === tag.slug ? 'var(--color-forest-deep)' : 'var(--color-forest-deep)',
+                      fontFamily: 'var(--font-mono)',
+                      border: `1px solid ${tagSlug === tag.slug ? 'var(--color-amber)' : 'rgba(232,163,61,0.4)'}`,
+                      fontWeight: tagSlug === tag.slug ? 700 : 600,
+                    }}>
+                    {getTagName(tag)}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Newsletter */}
           <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-moss)', padding: '24px', color: 'var(--color-paper)' }}>

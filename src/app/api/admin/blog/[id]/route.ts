@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     titleCs, titleEn, titleDe,
     contentCs, contentEn, contentDe,
     excerpt, image, isPublished,
-    blogAuthorId, productIds, categoryIds, tagIds,
+    blogAuthorId, blogCategoryId, productIds, categoryIds, tagIds,
   } = body
 
   const { data: existing } = await supabaseAdmin
@@ -63,6 +63,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     excerpt: excerpt || null,
     image: image || null,
     blog_author_id: blogAuthorId || null,
+    blog_category_id: blogCategoryId || null,
     is_published: isPublished ? 1 : 0,
     published_at: publishedAt,
   }).eq('id', id).select().single()

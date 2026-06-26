@@ -15,11 +15,13 @@ type PostData = {
   titleCs?: string; titleEn?: string; titleDe?: string
   contentCs?: string; contentEn?: string; contentDe?: string
   excerpt?: string; image?: string; isPublished?: boolean
-  blogAuthorId?: string
+  blogAuthorId?: string; blogCategoryId?: string
   productLinks?: { product_id: string; products: { id: string; name_cs: string; sku: string; images: string } }[]
   categoryLinks?: { category_id: string; categories: { id: string; name_cs: string } }[]
   tagLinks?: { tag_id: string; blog_tags: { id: string; name_cs: string; name_en: string | null; name_de: string | null } }[]
 }
+
+type BlogCategory = { id: string; name_cs: string; name_en: string | null; name_de: string | null; slug: string }
 
 type Author = { id: string; name: string; is_default: number }
 type Product = { id: string; slug: string; name_cs: string; sku: string; images: string }
@@ -36,6 +38,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
   const [allProducts, setAllProducts] = useState<Product[]>([])
   const [allCategories, setAllCategories] = useState<Category[]>([])
   const [allTags, setAllTags] = useState<BlogTag[]>([])
+  const [allBlogCategories, setAllBlogCategories] = useState<BlogCategory[]>([])
   const [tagSearch, setTagSearch] = useState('')
   const [productSearch, setProductSearch] = useState('')
   const [categorySearch, setCategorySearch] = useState('')
@@ -54,6 +57,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
     image: initialData?.image || '',
     isPublished: initialData?.isPublished ?? false,
     blogAuthorId: initialData?.blogAuthorId || '',
+    blogCategoryId: initialData?.blogCategoryId || '',
   })
 
   const [selectedProducts, setSelectedProducts] = useState<Product[]>(
@@ -85,6 +89,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
     fetch('/api/admin/products').then(r => r.json()).then(d => setAllProducts(d.products || []))
     fetch('/api/categories').then(r => r.json()).then(d => setAllCategories(d.categories || []))
     fetch('/api/admin/blog/tags').then(r => r.json()).then(d => setAllTags(d.tags || []))
+    fetch('/api/admin/blog/categories').then(r => r.json()).then(d => setAllBlogCategories(d.categories || []))
   }, [])
 
   useEffect(() => {
@@ -210,6 +215,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
       body: JSON.stringify({
         ...form,
         blogAuthorId: form.blogAuthorId || null,
+        blogCategoryId: form.blogCategoryId || null,
         productIds: selectedProducts.map(p => p.id),
         categoryIds: selectedCategories.map(c => c.id),
         tagIds: selectedTags.map(t => t.id),
@@ -452,6 +458,22 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
               </Button>
             </div>
           </div>
+
+          {allBlogCategories.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Kategorie článku</label>
+              <select
+                value={form.blogCategoryId}
+                onChange={set('blogCategoryId')}
+                className="w-full border border-cream-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-forest"
+              >
+                <option value="">— bez kategorie —</option>
+                {allBlogCategories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name_cs}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {authors.length > 0 && (
             <div>

@@ -17,7 +17,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   // Related blog posts (latest 2, excluding current)
   const { data: related } = await supabaseAdmin
     .from('blog_posts')
-    .select('id, slug, title_cs, title_en, title_de, excerpt')
+    .select('id, slug, title_cs, title_en, title_de, excerpt, image')
     .eq('is_published', 1)
     .neq('id', post.id)
     .order('published_at', { ascending: false })
@@ -35,7 +35,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   const { data: tagLinksRaw } = await supabaseAdmin
     .from('blog_post_tags')
-    .select('blog_tags(id, name_cs, name_en, name_de)')
+    .select('blog_tags(id, name_cs, name_en, name_de, slug)')
     .eq('blog_post_id', post.id)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
