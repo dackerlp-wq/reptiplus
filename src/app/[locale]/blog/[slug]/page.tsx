@@ -1,6 +1,4 @@
-import { getDb } from '@/lib/db'
-import { blogPosts, users } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
@@ -9,20 +7,22 @@ import { ArrowLeft, Calendar, User } from 'lucide-react'
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string; locale: string }> }) {
   const { slug, locale } = await params
-  const db = getDb()
 
-  const results = await db.select({ post: blogPosts, author: { firstName: users.firstName, lastName: users.lastName } })
-    .from(blogPosts)
-    .leftJoin(users, eq(blogPosts.authorId, users.id))
-    .where(eq(blogPosts.slug, slug))
+  const { data: post } = await supabaseAdmin
+    .from('blog_posts')
+    .select('*, users(first_name, last_name)')
+    .eq('slug', slug)
+    .single()
 
-  if (!results.length || !results[0].post.isPublished) notFound()
+  if (!post || !post.is_published) notFound()
 
-  const { post, author } = results[0]
-  const titleMap: Record<string, string | null | undefined> = { cs: post.titleCs, en: post.titleEn, de: post.titleDe }
-  const contentMap: Record<string, string | null | undefined> = { cs: post.contentCs, en: post.contentEn, de: post.contentDe }
-  const title = titleMap[locale] || post.titleCs
-  const content = contentMap[locale] || post.contentCs
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const author = (post as any).users
+
+  const titleMap: Record<string, string | null | undefined> = { cs: post.title_cs, en: post.title_en, de: post.title_de }
+  const contentMap: Record<string, string | null | undefined> = { cs: post.content_cs, en: post.content_en, de: post.content_de }
+  const title = titleMap[locale] || post.title_cs
+  const content = contentMap[locale] || post.content_cs
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
@@ -35,12 +35,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <div className="flex items-center gap-4 text-sm text-gray-soft mb-8">
           <span className="flex items-center gap-1.5">
             <Calendar className="w-4 h-4" />
-            {formatDate(post.publishedAt || post.createdAt || '', locale as Locale)}
+            {formatDate(post.published_at || post.created_at || '', locale as Locale)}
           </span>
           {author && (
             <span className="flex items-center gap-1.5">
               <User className="w-4 h-4" />
-              {author.firstName} {author.lastName}
+              {author.first_name} {author.last_name}
             </span>
           )}
         </div>

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
-import { products } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase'
 import { getSession, generateId } from '@/lib/auth'
 import { slugify } from '@/lib/utils'
 
@@ -15,9 +13,11 @@ export async function GET() {
   const admin = await requireAdmin()
   if (!admin) return NextResponse.json({ error: 'Forbidden.' }, { status: 403 })
 
-  const db = getDb()
-  const allProducts = await db.select().from(products).orderBy(products.createdAt)
-  return NextResponse.json({ products: allProducts })
+  const { data: products } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .order('created_at')
+  return NextResponse.json({ products: products || [] })
 }
 
 export async function POST(req: NextRequest) {
@@ -33,33 +33,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Název a cena jsou povinné.' }, { status: 400 })
   }
 
-  const db = getDb()
   const id = generateId()
   const slug = slugify(nameCs) + '-' + id.slice(-4)
   const priceNum = parseFloat(price)
   const vatNum = parseFloat(vatRate || '21')
   const priceExcl = priceNum / (1 + vatNum / 100)
 
-  await db.insert(products).values({
+  await supabaseAdmin.from('products').insert({
     id, slug,
     sku: sku || slug,
-    nameCs, nameEn: nameEn || nameCs, nameDe: nameDe || nameCs,
-    descriptionCs: descriptionCs || null,
-    descriptionEn: descriptionEn || null,
-    descriptionDe: descriptionDe || null,
-    categoryId: categoryId || null,
+    name_cs: nameCs,
+    name_en: nameEn || nameCs,
+    name_de: nameDe || nameCs,
+    description_cs: descriptionCs || null,
+    description_en: descriptionEn || null,
+    description_de: descriptionDe || null,
+    category_id: categoryId || null,
     price: priceNum,
-    priceExcl: Math.round(priceExcl * 100) / 100,
-    vatRate: vatNum,
-    comparePrice: comparePrice ? parseFloat(comparePrice) : null,
+    price_excl: Math.round(priceExcl * 100) / 100,
+    vat_rate: vatNum,
+    compare_price: comparePrice ? parseFloat(comparePrice) : null,
     stock: parseInt(stock || '0'),
-    lowStockThreshold: parseInt(lowStockThreshold || '5'),
+    low_stock_threshold: parseInt(lowStockThreshold || '5'),
     images: JSON.stringify(images || []),
     parameters: JSON.stringify(parameters || {}),
-    isActive: isActive ? 1 : 0,
-    isFeatured: isFeatured ? 1 : 0,
-    isNew: isNew ? 1 : 0,
-    isSale: isSale ? 1 : 0,
+    is_active: isActive ? 1 : 0,
+    is_featured: isFeatured ? 1 : 0,
+    is_new: isNew ? 1 : 0,
+    is_sale: isSale ? 1 : 0,
     weight: weight ? parseFloat(weight) : null,
   })
 

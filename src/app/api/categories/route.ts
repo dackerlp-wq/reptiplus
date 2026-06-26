@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
-import { categories } from '@/lib/db/schema'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET() {
-  const db = getDb()
-  const cats = await db.select().from(categories).orderBy(categories.sortOrder)
-  return NextResponse.json({ categories: cats })
+  const { data: cats } = await supabaseAdmin
+    .from('categories')
+    .select('*')
+    .order('sort_order')
+  return NextResponse.json({ categories: cats || [] })
 }

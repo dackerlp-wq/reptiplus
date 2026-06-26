@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
-import { products, categories } from '@/lib/db/schema'
-import { eq, like, and, gte, lte, desc, asc, or } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
@@ -14,40 +12,36 @@ export async function GET(req: NextRequest) {
   const page = parseInt(searchParams.get('strana') || '1')
   const limit = 20
 
-  const db = getDb()
-
-  const conditions = [eq(products.isActive, 1)]
+  let query = supabaseAdmin.from('products').select('*').eq('is_active', 1)
 
   if (category) {
-    const [cat] = await db.select({ id: categories.id }).from(categories).where(eq(categories.slug, category))
-    if (cat) conditions.push(eq(products.categoryId, cat.id))
+    const { data: cat } = await supabaseAdmin
+      .from('categories')
+      .select('id')
+      .eq('slug', category)
+      .single()
+    if (cat) query = query.eq('category_id', cat.id)
   }
 
   if (search) {
-    conditions.push(or(
-      like(products.nameCs, `%${search}%`),
-      like(products.nameEn, `%${search}%`),
-      like(products.sku, `%${search}%`)
-    )!)
+    query = query.or(`name_cs.ilike.%${search}%,name_en.ilike.%${search}%,sku.ilike.%${search}%`)
   }
 
-  if (filter === 'novinka') conditions.push(eq(products.isNew, 1))
-  if (filter === 'sleva') conditions.push(eq(products.isSale, 1))
-  if (filter === 'doporucene') conditions.push(eq(products.isFeatured, 1))
+  if (filter === 'novinka') query = query.eq('is_new', 1)
+  if (filter === 'sleva') query = query.eq('is_sale', 1)
+  if (filter === 'doporucene') query = query.eq('is_featured', 1)
 
-  if (minPrice) conditions.push(gte(products.price, parseFloat(minPrice)))
-  if (maxPrice) conditions.push(lte(products.price, parseFloat(maxPrice)))
+  if (minPrice) query = query.gte('price', parseFloat(minPrice))
+  if (maxPrice) query = query.lte('price', parseFloat(maxPrice))
 
-  const orderBy = sort === 'price_asc' ? asc(products.price)
-    : sort === 'price_desc' ? desc(products.price)
-    : desc(products.createdAt)
+  if (sort === 'price_asc') query = query.order('price', { ascending: true })
+  else if (sort === 'price_desc') query = query.order('price', { ascending: false })
+  else query = query.order('created_at', { ascending: false })
 
-  const allProducts = await db.select().from(products)
-    .where(and(...conditions))
-    .orderBy(orderBy)
+  const { data: allProducts } = await query
 
-  const total = allProducts.length
-  const paginated = allProducts.slice((page - 1) * limit, page * limit)
+  const total = allProducts?.length || 0
+  const paginated = (allProducts || []).slice((page - 1) * limit, page * limit)
 
   return NextResponse.json({ products: paginated, total, page, pages: Math.ceil(total / limit) })
 }

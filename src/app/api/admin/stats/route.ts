@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
-import { orders, users, products } from '@/lib/db/schema'
-import { eq, sum, count, desc } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase'
 import { getSession } from '@/lib/auth'
 
 export async function GET() {
@@ -10,20 +8,27 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden.' }, { status: 403 })
   }
 
-  const db = getDb()
+  const [
+    { data: paidOrders },
+    { count: orderCount },
+    { count: customerCount },
+    { count: productCount },
+    { data: recentOrders },
+  ] = await Promise.all([
+    supabaseAdmin.from('orders').select('total').eq('payment_status', 'paid'),
+    supabaseAdmin.from('orders').select('*', { count: 'exact', head: true }),
+    supabaseAdmin.from('users').select('*', { count: 'exact', head: true }).eq('role', 'customer'),
+    supabaseAdmin.from('products').select('*', { count: 'exact', head: true }).eq('is_active', 1),
+    supabaseAdmin.from('orders').select('*').order('created_at', { ascending: false }).limit(10),
+  ])
 
-  const [revenueResult] = await db.select({ total: sum(orders.total) }).from(orders).where(eq(orders.paymentStatus, 'paid'))
-  const [orderCount] = await db.select({ count: count() }).from(orders)
-  const [customerCount] = await db.select({ count: count() }).from(users).where(eq(users.role, 'customer'))
-  const [productCount] = await db.select({ count: count() }).from(products).where(eq(products.isActive, 1))
-
-  const recentOrders = await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(10)
+  const revenue = (paidOrders || []).reduce((sum, o) => sum + (o.total || 0), 0)
 
   return NextResponse.json({
-    revenue: revenueResult?.total || 0,
-    orders: orderCount?.count || 0,
-    customers: customerCount?.count || 0,
-    products: productCount?.count || 0,
-    recentOrders,
+    revenue,
+    orders: orderCount || 0,
+    customers: customerCount || 0,
+    products: productCount || 0,
+    recentOrders: recentOrders || [],
   })
 }

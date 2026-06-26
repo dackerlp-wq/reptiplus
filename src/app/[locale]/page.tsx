@@ -1,21 +1,28 @@
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
-import { getDb } from '@/lib/db'
-import { products, categories } from '@/lib/db/schema'
-import { eq, desc, and } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase'
+import { mapProduct, mapCategory } from '@/lib/mappers'
 import ProductCard, { type Product } from '@/components/shop/ProductCard'
 import { Package, Truck, Shield, Headphones, ArrowRight, Zap } from 'lucide-react'
-import type { Locale } from '@/lib/i18n'
 
 async function getHomeData() {
-  const db = getDb()
-  const [newProds, featuredProds, saleProds, cats] = await Promise.all([
-    db.select().from(products).where(and(eq(products.isActive, 1), eq(products.isNew, 1))).orderBy(desc(products.createdAt)).limit(4),
-    db.select().from(products).where(and(eq(products.isActive, 1), eq(products.isFeatured, 1))).limit(8),
-    db.select().from(products).where(and(eq(products.isActive, 1), eq(products.isSale, 1))).limit(4),
-    db.select().from(categories).orderBy(categories.sortOrder),
+  const [
+    { data: newProdsRaw },
+    { data: featuredProdsRaw },
+    { data: saleProdsRaw },
+    { data: catsRaw },
+  ] = await Promise.all([
+    supabaseAdmin.from('products').select('*').eq('is_active', 1).eq('is_new', 1).order('created_at', { ascending: false }).limit(4),
+    supabaseAdmin.from('products').select('*').eq('is_active', 1).eq('is_featured', 1).limit(8),
+    supabaseAdmin.from('products').select('*').eq('is_active', 1).eq('is_sale', 1).limit(4),
+    supabaseAdmin.from('categories').select('*').order('sort_order'),
   ])
-  return { newProds, featuredProds, saleProds, cats }
+  return {
+    newProds: (newProdsRaw || []).map(mapProduct),
+    featuredProds: (featuredProdsRaw || []).map(mapProduct),
+    saleProds: (saleProdsRaw || []).map(mapProduct),
+    cats: (catsRaw || []).map(mapCategory),
+  }
 }
 
 const categoryIcons: Record<string, string> = {
@@ -33,7 +40,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const t = await getTranslations('home')
   const { newProds, featuredProds, saleProds, cats } = await getHomeData()
 
-  const getCatName = (cat: typeof cats[0]) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getCatName = (cat: any) => {
     const map: Record<string, string> = { cs: cat.nameCs, en: cat.nameEn, de: cat.nameDe }
     return map[locale] || cat.nameCs
   }
@@ -105,7 +113,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <section className="max-w-7xl mx-auto px-4 py-12">
         <h2 className="text-2xl font-bold text-charcoal mb-6">{t('categories_title')}</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          {cats.map(cat => (
+          {cats.map(cat => cat && (
             <Link
               key={cat.id}
               href={`/${locale}/obchod?kategorie=${cat.slug}`}
@@ -120,7 +128,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* Featured / New / Sale tabs */}
+      {/* Featured */}
       <section className="max-w-7xl mx-auto px-4 pb-12">
         <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
           <div className="flex gap-1 bg-cream-dark rounded-xl p-1">

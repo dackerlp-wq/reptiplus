@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
-import { orders, orderItems, products, coupons } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase'
 import { getSession, generateId, generateOrderNumber } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
@@ -19,27 +17,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Chybí povinné údaje.' }, { status: 400 })
     }
 
-    const db = getDb()
-
     // Validate and calculate
     let subtotal = 0
     const orderItemsData = []
 
     for (const item of items) {
-      const [prod] = await db.select().from(products).where(eq(products.id, item.productId))
-      if (!prod || !prod.isActive) {
+      const { data: prod } = await supabaseAdmin
+        .from('products')
+        .select('*')
+        .eq('id', item.productId)
+        .single()
+
+      if (!prod || !prod.is_active) {
         return NextResponse.json({ error: `Produkt ${item.productId} není dostupný.` }, { status: 400 })
       }
       if (prod.stock < item.quantity) {
-        return NextResponse.json({ error: `Produkt ${prod.nameCs} není dostupný v požadovaném množství.` }, { status: 400 })
+        return NextResponse.json({ error: `Produkt ${prod.name_cs} není dostupný v požadovaném množství.` }, { status: 400 })
       }
       const itemTotal = prod.price * item.quantity
       subtotal += itemTotal
       orderItemsData.push({
         id: generateId(),
-        productId: prod.id,
-        productName: prod.nameCs,
-        productSku: prod.sku,
+        product_id: prod.id,
+        product_name: prod.name_cs,
+        product_sku: prod.sku,
         quantity: item.quantity,
         price: prod.price,
         total: itemTotal,
@@ -58,17 +59,23 @@ export async function POST(req: NextRequest) {
     let discount = 0
     let validCouponCode: string | null = null
     if (couponCode) {
-      const [coupon] = await db.select().from(coupons).where(eq(coupons.code, couponCode.toUpperCase()))
-      if (coupon && coupon.isActive && (!coupon.expiresAt || new Date(coupon.expiresAt) > new Date())) {
-        if (!coupon.maxUses || coupon.usedCount! < coupon.maxUses) {
-          if (subtotal >= (coupon.minOrderAmount || 0)) {
+      const { data: coupon } = await supabaseAdmin
+        .from('coupons')
+        .select('*')
+        .eq('code', couponCode.toUpperCase())
+        .single()
+
+      if (coupon && coupon.is_active && (!coupon.expires_at || new Date(coupon.expires_at) > new Date())) {
+        if (!coupon.max_uses || coupon.used_count < coupon.max_uses) {
+          if (subtotal >= (coupon.min_order_amount || 0)) {
             discount = coupon.type === 'percent'
               ? subtotal * (coupon.value / 100)
               : coupon.value
             validCouponCode = coupon.code
-            await db.update(coupons)
-              .set({ usedCount: (coupon.usedCount || 0) + 1 })
-              .where(eq(coupons.id, coupon.id))
+            await supabaseAdmin
+              .from('coupons')
+              .update({ used_count: (coupon.used_count || 0) + 1 })
+              .eq('id', coupon.id)
           }
         }
       }
@@ -80,22 +87,22 @@ export async function POST(req: NextRequest) {
     const orderId = generateId()
     const orderNumber = generateOrderNumber()
 
-    await db.insert(orders).values({
+    await supabaseAdmin.from('orders').insert({
       id: orderId,
-      orderNumber,
-      userId: session?.id || null,
+      order_number: orderNumber,
+      user_id: session?.id || null,
       status: 'pending',
-      paymentStatus: 'unpaid',
-      paymentMethod: paymentMethod || 'card',
-      shippingMethod: shippingMethod || 'zasilkovna',
-      shippingPrice,
+      payment_status: 'unpaid',
+      payment_method: paymentMethod || 'card',
+      shipping_method: shippingMethod || 'zasilkovna',
+      shipping_price: shippingPrice,
       subtotal,
       discount,
       total,
-      couponCode: validCouponCode,
+      coupon_code: validCouponCode,
       email: email.toLowerCase(),
-      firstName,
-      lastName,
+      first_name: firstName,
+      last_name: lastName,
       phone: phone || null,
       street,
       city,
@@ -107,26 +114,23 @@ export async function POST(req: NextRequest) {
       note: note || null,
     })
 
-    // Order items
+    // Order items & update stock
     for (const item of orderItemsData) {
-      await db.insert(orderItems).values({ ...item, orderId })
-      // Decrease stock
-      const [prod] = await db.select().from(products).where(eq(products.id, item.productId!))
+      await supabaseAdmin.from('order_items').insert({ ...item, order_id: orderId })
+      const { data: prod } = await supabaseAdmin
+        .from('products')
+        .select('stock')
+        .eq('id', item.product_id)
+        .single()
       if (prod) {
-        await db.update(products)
-          .set({ stock: prod.stock - item.quantity })
-          .where(eq(products.id, item.productId!))
+        await supabaseAdmin
+          .from('products')
+          .update({ stock: prod.stock - item.quantity })
+          .eq('id', item.product_id)
       }
     }
 
-    // TODO: trigger Comgate payment for card/bank_transfer
-    // For now return order info
-    return NextResponse.json({
-      orderId,
-      orderNumber,
-      total,
-      paymentMethod,
-    })
+    return NextResponse.json({ orderId, orderNumber, total, paymentMethod })
   } catch (err) {
     console.error('Order error:', err)
     return NextResponse.json({ error: 'Chyba při vytváření objednávky.' }, { status: 500 })
@@ -137,12 +141,17 @@ export async function GET() {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Nepřihlášen.' }, { status: 401 })
 
-  const db = getDb()
   if (session.role === 'admin') {
-    const allOrders = await db.select().from(orders).orderBy(orders.createdAt)
-    return NextResponse.json({ orders: allOrders })
+    const { data: allOrders } = await supabaseAdmin
+      .from('orders')
+      .select('*')
+      .order('created_at')
+    return NextResponse.json({ orders: allOrders || [] })
   }
 
-  const userOrders = await db.select().from(orders).where(eq(orders.userId, session.id))
-  return NextResponse.json({ orders: userOrders })
+  const { data: userOrders } = await supabaseAdmin
+    .from('orders')
+    .select('*')
+    .eq('user_id', session.id)
+  return NextResponse.json({ orders: userOrders || [] })
 }

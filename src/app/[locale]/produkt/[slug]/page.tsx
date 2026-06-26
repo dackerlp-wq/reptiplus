@@ -1,41 +1,68 @@
 import { notFound } from 'next/navigation'
-import { getDb } from '@/lib/db'
-import { products, categories, reviews } from '@/lib/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase'
+import { mapProduct, mapCategory, mapReview } from '@/lib/mappers'
 import type { Metadata } from 'next'
 import ProductDetailClient from './ProductDetailClient'
+import type { Product as ProductCardType } from '@/components/shop/ProductCard'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string; locale: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const db = getDb()
-  const [result] = await db.select({ product: products }).from(products).where(eq(products.slug, slug))
-  if (!result) return { title: 'Produkt nenalezen' }
-  return { title: result.product.nameCs, description: result.product.descriptionCs?.slice(0, 160) }
+  const { data: product } = await supabaseAdmin
+    .from('products')
+    .select('name_cs, description_cs')
+    .eq('slug', slug)
+    .single()
+  if (!product) return { title: 'Produkt nenalezen' }
+  return { title: product.name_cs, description: product.description_cs?.slice(0, 160) }
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string; locale: string }> }) {
   const { slug, locale } = await params
-  const db = getDb()
 
-  const results = await db.select({ product: products, category: categories })
-    .from(products)
-    .leftJoin(categories, eq(products.categoryId, categories.id))
-    .where(eq(products.slug, slug))
+  const { data: productRaw } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('slug', slug)
+    .single()
 
-  if (!results.length || !results[0].product.isActive) notFound()
+  if (!productRaw || !productRaw.is_active) notFound()
 
-  const productReviews = await db.select().from(reviews)
-    .where(and(eq(reviews.productId, results[0].product.id), eq(reviews.isApproved, 1)))
+  const product = mapProduct(productRaw)
 
-  const related = await db.select().from(products)
-    .where(and(eq(products.categoryId, results[0].product.categoryId!), eq(products.isActive, 1)))
+  let category = null
+  if (productRaw.category_id) {
+    const { data: catRaw } = await supabaseAdmin
+      .from('categories')
+      .select('*')
+      .eq('id', productRaw.category_id)
+      .single()
+    category = mapCategory(catRaw)
+  }
+
+  const { data: reviewsRaw } = await supabaseAdmin
+    .from('reviews')
+    .select('*')
+    .eq('product_id', productRaw.id)
+    .eq('is_approved', 1)
+
+  const { data: relatedRaw } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('category_id', productRaw.category_id || '')
+    .eq('is_active', 1)
     .limit(5)
+
+  const reviews = (reviewsRaw || []).map(mapReview)
+  const related = (relatedRaw || []).map(mapProduct) as ProductCardType[]
 
   return (
     <ProductDetailClient
-      product={results[0].product}
-      category={results[0].category}
-      reviews={productReviews}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      product={product as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      category={category as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      reviews={reviews as any}
       related={related}
       locale={locale}
     />

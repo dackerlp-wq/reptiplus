@@ -1,23 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
-import { products, categories } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const db = getDb()
 
-  const result = await db.select({
-    product: products,
-    category: categories,
-  })
-    .from(products)
-    .leftJoin(categories, eq(products.categoryId, categories.id))
-    .where(eq(products.slug, slug))
+  const { data: product } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('slug', slug)
+    .single()
 
-  if (!result.length) {
+  if (!product) {
     return NextResponse.json({ error: 'Produkt nenalezen.' }, { status: 404 })
   }
 
-  return NextResponse.json(result[0])
+  let category = null
+  if (product.category_id) {
+    const { data: cat } = await supabaseAdmin
+      .from('categories')
+      .select('*')
+      .eq('id', product.category_id)
+      .single()
+    category = cat
+  }
+
+  return NextResponse.json({ product, category })
 }

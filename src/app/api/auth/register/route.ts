@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
-import { users } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase'
 import { hashPassword, setSession, generateId } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
@@ -16,8 +14,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Heslo musí mít alespoň 6 znaků.' }, { status: 400 })
     }
 
-    const db = getDb()
-    const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email.toLowerCase()))
+    const { data: existing } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single()
 
     if (existing) {
       return NextResponse.json({ error: 'Tento e-mail je již zaregistrován.' }, { status: 409 })
@@ -26,12 +27,12 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await hashPassword(password)
     const id = generateId()
 
-    await db.insert(users).values({
+    await supabaseAdmin.from('users').insert({
       id,
       email: email.toLowerCase(),
       password: hashedPassword,
-      firstName,
-      lastName,
+      first_name: firstName,
+      last_name: lastName,
       phone: phone || null,
       role: 'customer',
     })

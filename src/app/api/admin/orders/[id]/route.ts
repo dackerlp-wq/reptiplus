@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
-import { orders, orderItems } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase'
 import { getSession } from '@/lib/auth'
 
 async function requireAdmin() {
@@ -15,12 +13,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!admin) return NextResponse.json({ error: 'Forbidden.' }, { status: 403 })
 
   const { id } = await params
-  const db = getDb()
-  const [order] = await db.select().from(orders).where(eq(orders.id, id))
+
+  const { data: order } = await supabaseAdmin
+    .from('orders')
+    .select('*')
+    .eq('id', id)
+    .single()
+
   if (!order) return NextResponse.json({ error: 'Not found.' }, { status: 404 })
 
-  const items = await db.select().from(orderItems).where(eq(orderItems.orderId, id))
-  return NextResponse.json({ order, items })
+  const { data: items } = await supabaseAdmin
+    .from('order_items')
+    .select('*')
+    .eq('order_id', id)
+
+  return NextResponse.json({ order, items: items || [] })
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -29,14 +36,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params
   const body = await req.json()
-  const db = getDb()
 
-  await db.update(orders).set({
+  await supabaseAdmin.from('orders').update({
     status: body.status,
-    paymentStatus: body.paymentStatus,
-    trackingNumber: body.trackingNumber || null,
-    updatedAt: new Date().toISOString(),
-  }).where(eq(orders.id, id))
+    payment_status: body.paymentStatus,
+    tracking_number: body.trackingNumber || null,
+    updated_at: new Date().toISOString(),
+  }).eq('id', id)
 
   return NextResponse.json({ success: true })
 }

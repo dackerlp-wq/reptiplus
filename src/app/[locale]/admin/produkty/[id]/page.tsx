@@ -1,14 +1,20 @@
-import { getDb } from '@/lib/db'
-import { products } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { supabaseAdmin } from '@/lib/supabase'
+import { mapProduct } from '@/lib/mappers'
 import { notFound } from 'next/navigation'
 import ProductForm from '@/components/admin/ProductForm'
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const db = getDb()
-  const [product] = await db.select().from(products).where(eq(products.id, id))
-  if (!product) notFound()
+
+  const { data: productRaw } = await supabaseAdmin
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (!productRaw) notFound()
+
+  const product = mapProduct(productRaw)
 
   const initialData = {
     id: product.id,
