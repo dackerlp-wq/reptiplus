@@ -187,6 +187,49 @@ export default function BlogPostClient({
 
   const fmtPrice = (n: number) => n.toLocaleString('cs-CZ') + ' Kč'
 
+  const t = {
+    cs: {
+      mentionedProduct: 'Zmíněný produkt', loading: 'Načítám…', soldOut: 'Vyprodáno',
+      productDetail: 'Detail produktu', addToCart: 'Do košíku',
+      mentionedProducts: 'Zmíněné produkty v článku', detail: 'Detail',
+      share: 'Sdílet:', comments: 'Komentáře', commentPlaceholder: 'Napište komentář…',
+      namePlaceholder: 'Jméno (pro nepřihlášené)', emailPlaceholder: 'E-mail (nezveřejní se)',
+      loggedInNote: 'Přihlášení komentují pod svým jménem', send: 'Odeslat', sending: 'Odesílám…',
+      guest: 'Host', loggedIn: 'Přihlášen', author: 'Autor', tags: 'Štítky',
+      relatedArticles: 'Související články', categories: 'Kategorie',
+      newsletter: 'Odběr novinek', newsletterDesc: 'Novinky a tipy přímo do vaší schránky.',
+      subscribe: 'Přihlásit se', emailField: 'vas@email.cz', notFound: 'Produkt nenalezen',
+      noComments: 'Zatím žádné komentáře. Buďte první!', back: '← Blog',
+    },
+    en: {
+      mentionedProduct: 'Mentioned product', loading: 'Loading…', soldOut: 'Sold out',
+      productDetail: 'View product', addToCart: 'Add to cart',
+      mentionedProducts: 'Products mentioned in this article', detail: 'View',
+      share: 'Share:', comments: 'Comments', commentPlaceholder: 'Write a comment…',
+      namePlaceholder: 'Name (for guests)', emailPlaceholder: 'Email (not published)',
+      loggedInNote: 'Logged-in users comment under their name', send: 'Submit', sending: 'Sending…',
+      guest: 'Guest', loggedIn: 'Logged in', author: 'Author', tags: 'Tags',
+      relatedArticles: 'Related articles', categories: 'Categories',
+      newsletter: 'Newsletter', newsletterDesc: 'Tips and news straight to your inbox.',
+      subscribe: 'Subscribe', emailField: 'your@email.com', notFound: 'Product not found',
+      noComments: 'No comments yet. Be the first!', back: '← Blog',
+    },
+    de: {
+      mentionedProduct: 'Erwähntes Produkt', loading: 'Lädt…', soldOut: 'Ausverkauft',
+      productDetail: 'Produkt ansehen', addToCart: 'In den Warenkorb',
+      mentionedProducts: 'Im Artikel erwähnte Produkte', detail: 'Ansehen',
+      share: 'Teilen:', comments: 'Kommentare', commentPlaceholder: 'Kommentar schreiben…',
+      namePlaceholder: 'Name (für Gäste)', emailPlaceholder: 'E-Mail (wird nicht veröffentlicht)',
+      loggedInNote: 'Angemeldete Nutzer kommentieren unter ihrem Namen', send: 'Absenden', sending: 'Sende…',
+      guest: 'Gast', loggedIn: 'Angemeldet', author: 'Autor', tags: 'Tags',
+      relatedArticles: 'Ähnliche Artikel', categories: 'Kategorien',
+      newsletter: 'Newsletter', newsletterDesc: 'Tipps und Neuigkeiten direkt in Ihr Postfach.',
+      subscribe: 'Anmelden', emailField: 'ihre@email.de', notFound: 'Produkt nicht gefunden',
+      noComments: 'Noch keine Kommentare. Seien Sie der Erste!', back: '← Blog',
+    },
+  }
+  const tx = t[locale] || t.cs
+
   return (
     <>
       {/* Inline product mention popup */}
@@ -196,14 +239,14 @@ export default function BlogPostClient({
           style={{ left: mentionPopup.x, top: mentionPopup.y, border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2.5" style={{ background: 'var(--color-moss)', color: 'var(--color-amber)' }}>
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)' }}>Zmíněný produkt</span>
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)' }}>{tx.mentionedProduct}</span>
             <button onClick={() => setMentionPopup(null)} className="opacity-70 hover:opacity-100">
               <X className="w-4 h-4 text-white" />
             </button>
           </div>
 
           {mentionPopup.loading ? (
-            <div className="px-4 py-6 text-sm text-center" style={{ color: 'var(--color-moss)' }}>Načítám…</div>
+            <div className="px-4 py-6 text-sm text-center" style={{ color: 'var(--color-moss)' }}>{tx.loading}</div>
           ) : mentionPopup.product ? (
             <div>
               <div className="flex gap-3 p-4">
@@ -228,7 +271,7 @@ export default function BlogPostClient({
                     </div>
                   )}
                   {mentionPopup.product.stock === 0 && (
-                    <div className="text-xs font-bold" style={{ color: 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>Vyprodáno</div>
+                    <div className="text-xs font-bold" style={{ color: 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>{tx.soldOut}</div>
                   )}
                 </div>
               </div>
@@ -236,21 +279,21 @@ export default function BlogPostClient({
                 <Link href={`/${locale}/produkt/${mentionPopup.product.slug}`}
                   className="flex-1 py-2 text-sm font-bold text-center rounded-sm hover:opacity-80 transition-opacity"
                   style={{ border: '1.5px solid var(--color-ink)', color: 'var(--color-ink)', fontFamily: 'var(--font-mono)' }}>
-                  Detail produktu
+                  {tx.productDetail}
                 </Link>
                 <button onClick={addMentionToCart}
                   disabled={mentionPopup.product.stock === 0}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-bold rounded-sm transition-opacity hover:opacity-90 disabled:opacity-40"
                   style={{ background: 'var(--color-terracotta)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)' }}>
                   <ShoppingCart className="w-4 h-4" />
-                  Do košíku
+                  {tx.addToCart}
                 </button>
               </div>
             </div>
           ) : (
             <div className="px-4 py-4 text-sm font-bold" style={{ color: 'var(--color-terracotta)' }}>
               {mentionPopup.productName}
-              <p className="text-xs font-normal mt-1" style={{ color: 'var(--color-moss)' }}>Produkt nenalezen</p>
+              <p className="text-xs font-normal mt-1" style={{ color: 'var(--color-moss)' }}>{tx.notFound}</p>
             </div>
           )}
         </div>
@@ -265,7 +308,7 @@ export default function BlogPostClient({
         {/* Back */}
         <Link href={`/${locale}/blog`} className="inline-flex items-center gap-1.5 text-sm mb-8 hover:opacity-70 transition-opacity"
           style={{ color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>
-          ← {locale === 'cs' ? 'Blog' : 'Blog'}
+          {tx.back}
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 items-start">
@@ -320,7 +363,7 @@ export default function BlogPostClient({
               <div className="my-8 p-5" style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-moss)', color: 'var(--color-paper)' }}>
                 <h4 className="text-xs font-bold uppercase tracking-widest mb-4"
                   style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-amber)' }}>
-                  Zmíněné produkty v článku
+                  {tx.mentionedProducts}
                 </h4>
                 <div className="flex flex-col gap-3">
                   {productLinks.map(p => {
@@ -347,13 +390,13 @@ export default function BlogPostClient({
                           <Link href={`/${locale}/produkt/${p.slug}`}
                             className="px-3 py-1.5 text-xs font-bold rounded-sm hover:opacity-80 transition-opacity"
                             style={{ border: '1.5px solid var(--color-ink)', fontFamily: 'var(--font-mono)' }}>
-                            Detail
+                            {tx.detail}
                           </Link>
                           <button onClick={addToCart} disabled={p.stock === 0}
                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-sm transition-opacity hover:opacity-90 disabled:opacity-40"
                             style={{ background: 'var(--color-terracotta)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)' }}>
                             <ShoppingCart className="w-3.5 h-3.5" />
-                            {p.stock === 0 ? 'Vyprodáno' : 'Do košíku'}
+                            {p.stock === 0 ? tx.soldOut : tx.addToCart}
                           </button>
                         </div>
                       </div>
@@ -395,7 +438,7 @@ export default function BlogPostClient({
               </div>
               {/* Share inline */}
               <div className="flex items-center gap-2 ml-auto">
-                <span className="text-xs font-bold uppercase tracking-wide hidden sm:block" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>Sdílet:</span>
+                <span className="text-xs font-bold uppercase tracking-wide hidden sm:block" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>{tx.share}</span>
                 <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
                   target="_blank" rel="noopener noreferrer"
                   className="w-8 h-8 flex items-center justify-center text-sm font-bold transition-colors hover:opacity-70"
@@ -427,7 +470,7 @@ export default function BlogPostClient({
             <div>
               <div className="flex items-center gap-3 mb-6">
                 <span className="text-xs font-bold uppercase tracking-widest" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
-                  Komentáře ({comments.length || commentsCount})
+                  {tx.comments} ({comments.length || commentsCount})
                 </span>
                 <div className="flex-1 h-px" style={{ background: 'rgba(27,31,23,0.12)' }} />
               </div>
@@ -436,7 +479,7 @@ export default function BlogPostClient({
                 <textarea
                   value={commentForm.content}
                   onChange={e => setCommentForm(f => ({ ...f, content: e.target.value }))}
-                  placeholder="Napište komentář…"
+                  placeholder={tx.commentPlaceholder}
                   rows={3}
                   required
                   className="w-full resize-none text-sm p-3 mb-3 focus:outline-none"
@@ -444,28 +487,28 @@ export default function BlogPostClient({
                 />
                 <div className="flex gap-3 mb-3">
                   <input type="text" value={commentForm.guestName} onChange={e => setCommentForm(f => ({ ...f, guestName: e.target.value }))}
-                    placeholder="Jméno (pro nepřihlášené)" className="flex-1 px-3 py-2 text-sm focus:outline-none"
+                    placeholder={tx.namePlaceholder} className="flex-1 px-3 py-2 text-sm focus:outline-none"
                     style={{ border: '1.5px solid rgba(27,31,23,0.2)', background: 'var(--color-paper)' }} />
                   <input type="email" value={commentForm.guestEmail} onChange={e => setCommentForm(f => ({ ...f, guestEmail: e.target.value }))}
-                    placeholder="E-mail (nezveřejní se)" className="flex-1 px-3 py-2 text-sm focus:outline-none"
+                    placeholder={tx.emailPlaceholder} className="flex-1 px-3 py-2 text-sm focus:outline-none"
                     style={{ border: '1.5px solid rgba(27,31,23,0.2)', background: 'var(--color-paper)' }} />
                 </div>
                 <input type="text" name="website" value={commentForm.website} onChange={e => setCommentForm(f => ({ ...f, website: e.target.value }))} className="sr-only" tabIndex={-1} autoComplete="off" />
                 <div className="flex items-center justify-between">
-                  <span className="text-xs" style={{ color: '#8A9085', fontFamily: 'var(--font-mono)' }}>Přihlášení komentují pod svým jménem</span>
+                  <span className="text-xs" style={{ color: '#8A9085', fontFamily: 'var(--font-mono)' }}>{tx.loggedInNote}</span>
                   <button type="submit" disabled={submitting} className="px-5 py-2 text-sm font-bold disabled:opacity-50"
                     style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)' }}>
-                    {submitting ? 'Odesílám…' : 'Odeslat'}
+                    {submitting ? tx.sending : tx.send}
                   </button>
                 </div>
               </form>
 
               <div>
                 {comments.length === 0 && (
-                  <p className="text-sm" style={{ color: 'var(--color-moss)' }}>Zatím žádné komentáře. Buďte první!</p>
+                  <p className="text-sm" style={{ color: 'var(--color-moss)' }}>{tx.noComments}</p>
                 )}
                 {comments.map(c => {
-                  const name = c.users ? `${c.users.first_name} ${c.users.last_name}` : (c.guest_name || 'Host')
+                  const name = c.users ? `${c.users.first_name} ${c.users.last_name}` : (c.guest_name || tx.guest)
                   const isUser = !!c.users
                   return (
                     <div key={c.id} className="flex gap-4 py-5" style={{ borderBottom: '1px solid rgba(27,31,23,0.08)' }}>
@@ -478,7 +521,7 @@ export default function BlogPostClient({
                           <span className="font-bold text-sm" style={{ color: 'var(--color-ink)' }}>{name}</span>
                           <span className="text-xs px-2 py-0.5 rounded-full"
                             style={{ background: isUser ? 'rgba(51,83,60,0.12)' : 'rgba(194,86,46,0.12)', color: isUser ? 'var(--color-moss)' : 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>
-                            {isUser ? 'Přihlášen' : 'Host'}
+                            {isUser ? tx.loggedIn : tx.guest}
                           </span>
                           <span className="text-xs" style={{ color: '#8A9085' }}>{formatDate(c.created_at, locale)}</span>
                         </div>
@@ -498,7 +541,7 @@ export default function BlogPostClient({
               <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
                 <div className="px-5 py-3 text-xs font-bold uppercase tracking-widest"
                   style={{ background: 'var(--color-moss)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
-                  Autor
+                  {tx.author}
                 </div>
                 <div className="p-5">
                   <div className="flex items-center gap-3 mb-3">
@@ -521,7 +564,7 @@ export default function BlogPostClient({
               <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
                 <div className="px-5 py-3 text-xs font-bold uppercase tracking-widest"
                   style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
-                  Štítky
+                  {tx.tags}
                 </div>
                 <div className="p-4 flex flex-wrap gap-2">
                   {tags.map(tag => (
@@ -539,7 +582,7 @@ export default function BlogPostClient({
               <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
                 <div className="px-5 py-3 text-xs font-bold uppercase tracking-widest"
                   style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
-                  Související články
+                  {tx.relatedArticles}
                 </div>
                 <div className="divide-y" style={{ borderColor: 'rgba(27,31,23,0.1)' }}>
                   {related.map(r => (
@@ -559,7 +602,7 @@ export default function BlogPostClient({
             {/* Category links */}
             {categoryLinks.length > 0 && (
               <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)', padding: '16px' }}>
-                <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>Kategorie</div>
+                <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>{tx.categories}</div>
                 <div className="flex flex-wrap gap-2">
                   {categoryLinks.map(c => (
                     <Link key={c.id} href={`/${locale}/obchod?kategorie=${c.id}`}
@@ -574,15 +617,15 @@ export default function BlogPostClient({
 
             {/* Newsletter */}
             <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-moss)', color: 'var(--color-paper)', padding: '20px' }}>
-              <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-amber)' }}>Odběr novinek</div>
-              <p className="text-sm mb-4" style={{ color: 'rgba(243,238,224,0.8)', lineHeight: 1.6 }}>Novinky a tipy přímo do vaší schránky.</p>
+              <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-amber)' }}>{tx.newsletter}</div>
+              <p className="text-sm mb-4" style={{ color: 'rgba(243,238,224,0.8)', lineHeight: 1.6 }}>{tx.newsletterDesc}</p>
               <form className="flex flex-col gap-2">
-                <input type="email" placeholder="vas@email.cz"
+                <input type="email" placeholder={tx.emailField}
                   className="px-3 py-2.5 text-sm focus:outline-none"
                   style={{ border: '1.5px solid rgba(243,238,224,0.3)', background: 'rgba(0,0,0,0.15)', color: 'var(--color-paper)' }} />
                 <button type="submit" className="py-2.5 text-sm font-bold"
                   style={{ background: 'var(--color-amber)', color: 'var(--color-forest-deep)' }}>
-                  Přihlásit se
+                  {tx.subscribe}
                 </button>
               </form>
             </div>
