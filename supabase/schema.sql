@@ -157,6 +157,49 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   created_at timestamptz DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS blog_authors (
+  id text PRIMARY KEY,
+  name text NOT NULL,
+  avatar_initial text,
+  avatar_url text,
+  bio text,
+  is_default integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS blog_comments (
+  id text PRIMARY KEY,
+  blog_post_id text NOT NULL REFERENCES blog_posts(id) ON DELETE CASCADE,
+  user_id text REFERENCES users(id),
+  guest_name text,
+  guest_email text,
+  content text NOT NULL,
+  status text NOT NULL DEFAULT 'pending',
+  parent_id text REFERENCES blog_comments(id),
+  likes_count integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS blog_post_products (
+  blog_post_id text NOT NULL REFERENCES blog_posts(id) ON DELETE CASCADE,
+  product_id text NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  PRIMARY KEY (blog_post_id, product_id)
+);
+
+CREATE TABLE IF NOT EXISTS blog_post_product_categories (
+  blog_post_id text NOT NULL REFERENCES blog_posts(id) ON DELETE CASCADE,
+  category_id text NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+  PRIMARY KEY (blog_post_id, category_id)
+);
+
+CREATE TABLE IF NOT EXISTS blog_post_likes (
+  id text PRIMARY KEY,
+  blog_post_id text NOT NULL REFERENCES blog_posts(id) ON DELETE CASCADE,
+  user_id text REFERENCES users(id),
+  ip_hash text,
+  created_at timestamptz DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS newsletter_subscribers (
   id text PRIMARY KEY,
   email text NOT NULL UNIQUE,

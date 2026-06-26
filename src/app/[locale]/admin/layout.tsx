@@ -5,16 +5,32 @@ import Link from 'next/link'
 import { useLocale } from 'next-intl'
 import {
   LayoutDashboard, Package, ShoppingBag, Users, Tag, BookOpen,
-  Settings, Menu, X, LogOut, ChevronRight
+  Settings, Menu, X, LogOut, ChevronRight, MessageSquare, PenSquare
 } from 'lucide-react'
 
-const NAV_ITEMS = [
+type NavItem = {
+  href: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  children?: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }[]
+}
+
+const NAV_ITEMS: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/produkty', label: 'Produkty', icon: Package },
   { href: '/admin/objednavky', label: 'Objednávky', icon: ShoppingBag },
   { href: '/admin/zakaznici', label: 'Zákazníci', icon: Users },
   { href: '/admin/kupony', label: 'Kupóny', icon: Tag },
-  { href: '/admin/blog', label: 'Blog', icon: BookOpen },
+  {
+    href: '/admin/blog',
+    label: 'Blog',
+    icon: BookOpen,
+    children: [
+      { href: '/admin/blog', label: 'Články', icon: PenSquare },
+      { href: '/admin/blog/komentare', label: 'Komentáře', icon: MessageSquare },
+      { href: '/admin/blog/podpisy', label: 'Autoři', icon: Users },
+    ],
+  },
   { href: '/admin/nastaveni', label: 'Nastavení', icon: Settings },
 ]
 
@@ -24,6 +40,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [user, setUser] = useState<{ firstName: string; role: string } | null>(null)
+  const [pendingComments, setPendingComments] = useState(0)
+  const [blogExpanded, setBlogExpanded] = useState(false)
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.json()).then(data => {
@@ -34,6 +52,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
     })
   }, [locale, router])
+
+  useEffect(() => {
+    fetch('/api/admin/blog/comments?status=pending').then(r => r.json()).then(d => {
+      setPendingComments(d.pendingCount || 0)
+    }).catch(() => {})
+  }, [])
+
+  // Auto-expand blog section if on a blog sub-route
+  useEffect(() => {
+    if (pathname.startsWith(`/${locale}/admin/blog`)) setBlogExpanded(true)
+  }, [pathname, locale])
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -61,6 +90,57 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {NAV_ITEMS.map(item => {
             const href = `/${locale}${item.href}`
             const isActive = pathname === href || (item.href !== '/admin' && pathname.startsWith(href))
+
+            if (item.children) {
+              const isOpen = blogExpanded || isActive
+              return (
+                <div key={item.href}>
+                  <button
+                    onClick={() => setBlogExpanded(o => !o)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${isActive ? 'bg-forest-light/30 text-gold' : 'text-sage hover:text-white hover:bg-forest-light/20'}`}
+                  >
+                    <item.icon className="w-5 h-5 shrink-0" />
+                    {sidebarOpen && (
+                      <>
+                        <span className="flex-1 text-left">{item.label}</span>
+                        {pendingComments > 0 && (
+                          <span className="bg-amber-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                            {pendingComments}
+                          </span>
+                        )}
+                        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                      </>
+                    )}
+                  </button>
+                  {isOpen && sidebarOpen && (
+                    <div className="ml-4 border-l border-forest-light/30 pl-2">
+                      {item.children.map(child => {
+                        const childHref = `/${locale}${child.href}`
+                        const childActive = pathname === childHref ||
+                          (child.href !== '/admin/blog' && pathname.startsWith(childHref))
+                        const isComments = child.href === '/admin/blog/komentare'
+                        return (
+                          <Link
+                            key={child.href}
+                            href={childHref}
+                            className={`flex items-center gap-2 px-3 py-2 text-sm transition-colors rounded ${childActive ? 'text-gold' : 'text-sage hover:text-white'}`}
+                          >
+                            <child.icon className="w-4 h-4 shrink-0" />
+                            <span>{child.label}</span>
+                            {isComments && pendingComments > 0 && (
+                              <span className="ml-auto bg-amber-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                                {pendingComments}
+                              </span>
+                            )}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
             return (
               <Link
                 key={item.href}

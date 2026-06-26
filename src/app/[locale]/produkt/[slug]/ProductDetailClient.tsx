@@ -38,11 +38,13 @@ function getCatName(cat: Category, locale: string) {
   return map[locale] || cat.nameCs
 }
 
+type BlogPost = { id: string; slug: string; title_cs: string; title_en: string; title_de: string; image: string | null; published_at: string | null }
+
 export default function ProductDetailClient({
-  product, category, reviews, related, locale
+  product, category, reviews, related, locale, blogPosts = []
 }: {
   product: Product; category: Category; reviews: Review[]
-  related: ProductCardType[]; locale: string
+  related: ProductCardType[]; locale: string; blogPosts?: BlogPost[]
 }) {
   const t = useTranslations('product')
   const tShop = useTranslations('shop')
@@ -217,6 +219,37 @@ export default function ProductDetailClient({
           )}
         </div>
       </div>
+
+      {/* From blog */}
+      {blogPosts.length > 0 && (
+        <div>
+          <div className="p-5" style={{ border: '1.5px solid var(--color-ink)' }}>
+            <h4 className="text-xs font-bold uppercase tracking-widest mb-4"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
+              Z blogu
+            </h4>
+            <div className="space-y-0 divide-y" style={{ borderColor: 'rgba(27,31,23,0.08)' }}>
+              {blogPosts.slice(0, 3).map(bp => {
+                const bpTitle = ({ cs: bp.title_cs, en: bp.title_en, de: bp.title_de } as Record<string, string>)[locale] || bp.title_cs
+                return (
+                  <Link key={bp.id} href={`/${locale}/blog/${bp.slug}`}
+                    className="flex items-center gap-3 py-3 hover:opacity-70 transition-opacity first:pt-0 last:pb-0">
+                    <div className="w-11 h-11 shrink-0" style={{ background: 'var(--color-moss)', border: '1px solid var(--color-ink)' }}>
+                      {bp.image && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={bp.image} alt="" className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold leading-snug truncate" style={{ color: 'var(--color-ink)' }}>{bpTitle}</div>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Related */}
       {related.filter(p => p.id !== product.id).length > 0 && (

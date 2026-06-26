@@ -1,10 +1,14 @@
-import { supabaseAdmin } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import BlogForm from '../BlogForm'
 
 export default async function EditBlogPostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { data: post } = await supabaseAdmin.from('blog_posts').select('*').eq('id', id).single()
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const res = await fetch(`${baseUrl}/api/admin/blog/${id}`, { cache: 'no-store' })
+  if (!res.ok) notFound()
+
+  const { post, productLinks, categoryLinks } = await res.json()
   if (!post) notFound()
 
   return (
@@ -21,6 +25,9 @@ export default async function EditBlogPostPage({ params }: { params: Promise<{ i
         excerpt: post.excerpt,
         image: post.image,
         isPublished: !!post.is_published,
+        blogAuthorId: post.blog_author_id || '',
+        productLinks,
+        categoryLinks,
       }} />
     </div>
   )

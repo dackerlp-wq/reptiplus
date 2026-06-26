@@ -1,11 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/Toaster'
-import { Wand2 } from 'lucide-react'
+import { Wand2, X, Search } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
 const RichEditor = dynamic(() => import('@/components/admin/RichEditor'), { ssr: false })
@@ -15,13 +15,27 @@ type PostData = {
   titleCs?: string; titleEn?: string; titleDe?: string
   contentCs?: string; contentEn?: string; contentDe?: string
   excerpt?: string; image?: string; isPublished?: boolean
+  blogAuthorId?: string
+  productLinks?: { product_id: string; products: { id: string; name_cs: string; sku: string; images: string } }[]
+  categoryLinks?: { category_id: string; categories: { id: string; name_cs: string } }[]
 }
+
+type Author = { id: string; name: string; is_default: number }
+type Product = { id: string; name_cs: string; sku: string; images: string }
+type Category = { id: string; name_cs: string }
 
 export default function BlogForm({ initialData }: { initialData?: PostData }) {
   const locale = useLocale()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [translating, setTranslating] = useState(false)
+  const [authors, setAuthors] = useState<Author[]>([])
+  const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [allCategories, setAllCategories] = useState<Category[]>([])
+  const [productSearch, setProductSearch] = useState('')
+  const [categorySearch, setCategorySearch] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
+
   const [form, setForm] = useState({
     titleCs: initialData?.titleCs || '',
     titleEn: initialData?.titleEn || '',
@@ -32,9 +46,38 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
     excerpt: initialData?.excerpt || '',
     image: initialData?.image || '',
     isPublished: initialData?.isPublished ?? false,
+    blogAuthorId: initialData?.blogAuthorId || '',
   })
 
-  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>(
+    (initialData?.productLinks || []).map(l => ({
+      id: l.product_id,
+      name_cs: l.products?.name_cs || '',
+      sku: l.products?.sku || '',
+      images: l.products?.images || '[]',
+    }))
+  )
+  const [selectedCategories, setSelectedCategories] = useState<Category[]>(
+    (initialData?.categoryLinks || []).map(l => ({
+      id: l.category_id,
+      name_cs: l.categories?.name_cs || '',
+    }))
+  )
+
+  useEffect(() => {
+    fetch('/api/admin/blog/authors').then(r => r.json()).then(d => setAuthors(d.authors || []))
+    fetch('/api/admin/products').then(r => r.json()).then(d => setAllProducts(d.products || []))
+    fetch('/api/categories').then(r => r.json()).then(d => setAllCategories(d.categories || []))
+  }, [])
+
+  useEffect(() => {
+    if (authors.length && !form.blogAuthorId) {
+      const def = authors.find(a => a.is_default) || authors[0]
+      if (def) setForm(f => ({ ...f, blogAuthorId: def.id }))
+    }
+  }, [authors, form.blogAuthorId])
+
+  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [key]: e.target.value }))
 
   const autoTranslate = async () => {
@@ -44,11 +87,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
       const res = await fetch('/api/admin/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          titleCs: form.titleCs,
-          contentCs: form.contentCs,
-          excerpt: form.excerpt,
-        }),
+        body: JSON.stringify({ titleCs: form.titleCs, contentCs: form.contentCs, excerpt: form.excerpt }),
       })
       const data = await res.json()
       if (!res.ok) { toast(data.error || 'Překlad selhal', 'error'); return }
@@ -66,6 +105,29 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
     setTranslating(false)
   }
 
+  const addProduct = (p: Product) => {
+    if (!selectedProducts.find(s => s.id === p.id)) setSelectedProducts(prev => [...prev, p])
+    setProductSearch('')
+  }
+  const removeProduct = (id: string) => setSelectedProducts(prev => prev.filter(p => p.id !== id))
+
+  const addCategory = (c: Category) => {
+    if (!selectedCategories.find(s => s.id === c.id)) setSelectedCategories(prev => [...prev, c])
+    setCategorySearch('')
+  }
+  const removeCategory = (id: string) => setSelectedCategories(prev => prev.filter(c => c.id !== id))
+
+  const filteredProducts = productSearch.length > 1
+    ? allProducts.filter(p =>
+        p.name_cs.toLowerCase().includes(productSearch.toLowerCase()) ||
+        p.sku.toLowerCase().includes(productSearch.toLowerCase())
+      ).slice(0, 8)
+    : []
+
+  const filteredCategories = categorySearch.length > 0
+    ? allCategories.filter(c => c.name_cs.toLowerCase().includes(categorySearch.toLowerCase())).slice(0, 6)
+    : []
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.titleCs) { toast('Název (CZ) je povinný', 'error'); return }
@@ -77,7 +139,12 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        blogAuthorId: form.blogAuthorId || null,
+        productIds: selectedProducts.map(p => p.id),
+        categoryIds: selectedCategories.map(c => c.id),
+      }),
     })
 
     if (res.ok) {
@@ -88,6 +155,10 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
       toast(data.error || 'Chyba', 'error')
     }
     setLoading(false)
+  }
+
+  const getFirstImage = (images: string) => {
+    try { return JSON.parse(images)?.[0] || null } catch { return null }
   }
 
   return (
@@ -109,11 +180,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">Obsah (CZ)</label>
-            <RichEditor
-              value={form.contentCs}
-              onChange={val => setForm(f => ({ ...f, contentCs: val }))}
-              placeholder="Začněte psát článek v češtině..."
-            />
+            <RichEditor value={form.contentCs} onChange={val => setForm(f => ({ ...f, contentCs: val }))} placeholder="Začněte psát článek v češtině..." />
           </div>
         </div>
       </div>
@@ -125,11 +192,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
           <Input id="titleEn" label="Title (EN)" value={form.titleEn} onChange={set('titleEn')} />
           <div>
             <label className="block text-sm font-medium mb-2">Content (EN)</label>
-            <RichEditor
-              value={form.contentEn}
-              onChange={val => setForm(f => ({ ...f, contentEn: val }))}
-              placeholder="Write or paste the English translation..."
-            />
+            <RichEditor value={form.contentEn} onChange={val => setForm(f => ({ ...f, contentEn: val }))} placeholder="Write or paste the English translation..." />
           </div>
         </div>
       </div>
@@ -141,11 +204,101 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
           <Input id="titleDe" label="Titel (DE)" value={form.titleDe} onChange={set('titleDe')} />
           <div>
             <label className="block text-sm font-medium mb-2">Inhalt (DE)</label>
-            <RichEditor
-              value={form.contentDe}
-              onChange={val => setForm(f => ({ ...f, contentDe: val }))}
-              placeholder="Deutschen Text eintragen oder einfügen..."
-            />
+            <RichEditor value={form.contentDe} onChange={val => setForm(f => ({ ...f, contentDe: val }))} placeholder="Deutschen Text eintragen oder einfügen..." />
+          </div>
+        </div>
+      </div>
+
+      {/* Product linking */}
+      <div className="bg-white rounded-xl border border-cream-dark p-6">
+        <h2 className="font-bold mb-1">Propojené produkty</h2>
+        <p className="text-sm text-gray-soft mb-4">Produkty a kategorie zobrazené v boxu „Zmíněné produkty" v článku; obráceně se článek zobrazí na stránce produktu.</p>
+
+        <div className="space-y-4">
+          {/* Product autocomplete */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Přidat produkt</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-soft pointer-events-none" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={productSearch}
+                onChange={e => setProductSearch(e.target.value)}
+                placeholder="Hledat název nebo SKU..."
+                className="w-full pl-9 pr-3 py-2 border border-cream-dark rounded-lg text-sm focus:outline-none focus:border-forest"
+              />
+              {filteredProducts.length > 0 && (
+                <div className="absolute z-20 top-full left-0 right-0 bg-white border border-cream-dark rounded-lg shadow-lg mt-1 max-h-52 overflow-y-auto">
+                  {filteredProducts.map(p => (
+                    <button key={p.id} type="button" onClick={() => addProduct(p)}
+                      className="w-full flex items-center gap-3 px-3 py-2 hover:bg-cream text-left text-sm border-b border-cream-dark last:border-0">
+                      {getFirstImage(p.images) && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={getFirstImage(p.images)} alt="" className="w-8 h-8 object-cover rounded shrink-0" />
+                      )}
+                      <div>
+                        <div className="font-medium">{p.name_cs}</div>
+                        <div className="text-xs text-gray-soft">{p.sku}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {selectedProducts.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {selectedProducts.map(p => (
+                  <div key={p.id} className="flex items-center gap-2 bg-cream border border-cream-dark rounded-lg px-3 py-1.5 text-sm">
+                    {getFirstImage(p.images) && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={getFirstImage(p.images)} alt="" className="w-6 h-6 object-cover rounded" />
+                    )}
+                    <span className="font-medium">{p.name_cs}</span>
+                    <button type="button" onClick={() => removeProduct(p.id)} className="text-gray-soft hover:text-red-500">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Category search */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Přidat celou kategorii</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={categorySearch}
+                onChange={e => setCategorySearch(e.target.value)}
+                placeholder="Hledat kategorii..."
+                className="w-full px-3 py-2 border border-cream-dark rounded-lg text-sm focus:outline-none focus:border-forest"
+              />
+              {filteredCategories.length > 0 && (
+                <div className="absolute z-20 top-full left-0 right-0 bg-white border border-cream-dark rounded-lg shadow-lg mt-1">
+                  {filteredCategories.map(c => (
+                    <button key={c.id} type="button" onClick={() => addCategory(c)}
+                      className="w-full px-3 py-2 hover:bg-cream text-left text-sm border-b border-cream-dark last:border-0">
+                      {c.name_cs}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {selectedCategories.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {selectedCategories.map(c => (
+                  <div key={c.id} className="flex items-center gap-2 bg-sage/30 border border-sage-dark rounded-lg px-3 py-1.5 text-sm">
+                    <span className="font-medium">{c.name_cs}</span>
+                    <span className="text-xs text-gray-soft">kategorie</span>
+                    <button type="button" onClick={() => removeCategory(c.id)} className="text-gray-soft hover:text-red-500">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -155,6 +308,22 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
         <h2 className="font-bold mb-4">Nastavení</h2>
         <div className="space-y-4">
           <Input id="image" label="URL obrázku (cover)" value={form.image} onChange={set('image')} placeholder="https://..." />
+
+          {authors.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Podpis autora</label>
+              <select
+                value={form.blogAuthorId}
+                onChange={set('blogAuthorId')}
+                className="w-full border border-cream-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-forest"
+              >
+                {authors.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}{a.is_default ? ' (výchozí)' : ''}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={form.isPublished} onChange={e => setForm(f => ({ ...f, isPublished: e.target.checked }))}
               className="w-4 h-4 accent-forest" />

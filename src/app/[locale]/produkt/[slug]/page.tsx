@@ -52,6 +52,32 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     .eq('is_active', 1)
     .limit(5)
 
+  // Blog posts linked directly to this product OR to its category
+  const { data: directLinks } = await supabaseAdmin
+    .from('blog_post_products')
+    .select('blog_posts(id, slug, title_cs, title_en, title_de, image, published_at)')
+    .eq('product_id', productRaw.id)
+
+  const { data: categoryLinkedPosts } = productRaw.category_id
+    ? await supabaseAdmin
+        .from('blog_post_product_categories')
+        .select('blog_posts(id, slug, title_cs, title_en, title_de, image, published_at)')
+        .eq('category_id', productRaw.category_id)
+    : { data: [] }
+
+  // Deduplicate blog posts
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const allBlogPosts: any[] = []
+  const seenBlogIds = new Set<string>()
+  for (const link of [...(directLinks || []), ...(categoryLinkedPosts || [])]) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bp = (link as any).blog_posts
+    if (bp && !seenBlogIds.has(bp.id)) {
+      seenBlogIds.add(bp.id)
+      allBlogPosts.push(bp)
+    }
+  }
+
   const reviews = (reviewsRaw || []).map(mapReview)
   const related = (relatedRaw || []).map(mapProduct) as ProductCardType[]
 
@@ -65,6 +91,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       reviews={reviews as any}
       related={related}
       locale={locale}
+      blogPosts={allBlogPosts}
     />
   )
 }

@@ -10,9 +10,28 @@ function generateId() {
 export async function GET() {
   const { data: posts } = await supabaseAdmin
     .from('blog_posts')
-    .select('id, slug, title_cs, title_en, is_published, published_at, created_at')
+    .select('id, slug, title_cs, title_en, is_published, published_at, created_at, blog_author_id, blog_authors(name)')
     .order('created_at', { ascending: false })
-  return NextResponse.json({ posts: posts || [] })
+
+  // Pending comment counts
+  const { data: pendingRaw } = await supabaseAdmin
+    .from('blog_comments')
+    .select('blog_post_id')
+    .eq('status', 'pending')
+
+  const pendingByPost: Record<string, number> = {}
+  for (const row of pendingRaw || []) {
+    pendingByPost[row.blog_post_id] = (pendingByPost[row.blog_post_id] || 0) + 1
+  }
+
+  const enriched = (posts || []).map(p => ({
+    ...p,
+    pending_comments: pendingByPost[p.id] || 0,
+  }))
+
+  const totalPending = Object.values(pendingByPost).reduce((a, b) => a + b, 0)
+
+  return NextResponse.json({ posts: enriched, totalPending })
 }
 
 export async function POST(req: NextRequest) {
@@ -20,15 +39,32 @@ export async function POST(req: NextRequest) {
   if (!session || session.role !== 'admin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { titleCs, titleEn, titleDe, contentCs, contentEn, contentDe, excerpt, image, isPublished } = body
+  const {
+    titleCs, titleEn, titleDe,
+    contentCs, contentEn, contentDe,
+    excerpt, image, isPublished,
+    blogAuthorId, productIds, categoryIds,
+  } = body
 
   if (!titleCs) return NextResponse.json({ error: 'Název je povinný' }, { status: 400 })
 
   const slug = slugify(titleCs) + '-' + Date.now().toString(36)
   const now = new Date().toISOString()
+  const id = generateId()
+
+  // Resolve default author if not specified
+  let authorId = blogAuthorId || null
+  if (!authorId) {
+    const { data: defaultAuthor } = await supabaseAdmin
+      .from('blog_authors')
+      .select('id')
+      .eq('is_default', 1)
+      .single()
+    authorId = defaultAuthor?.id || null
+  }
 
   const { data, error } = await supabaseAdmin.from('blog_posts').insert({
-    id: generateId(),
+    id,
     slug,
     title_cs: titleCs,
     title_en: titleEn || null,
@@ -39,10 +75,24 @@ export async function POST(req: NextRequest) {
     excerpt: excerpt || null,
     image: image || null,
     author_id: session.id,
+    blog_author_id: authorId,
     is_published: isPublished ? 1 : 0,
     published_at: isPublished ? now : null,
   }).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Product links
+  if (productIds?.length) {
+    await supabaseAdmin.from('blog_post_products').insert(
+      productIds.map((pid: string) => ({ blog_post_id: id, product_id: pid }))
+    )
+  }
+  if (categoryIds?.length) {
+    await supabaseAdmin.from('blog_post_product_categories').insert(
+      categoryIds.map((cid: string) => ({ blog_post_id: id, category_id: cid }))
+    )
+  }
+
   return NextResponse.json({ post: data })
 }

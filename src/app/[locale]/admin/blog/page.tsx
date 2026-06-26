@@ -2,24 +2,31 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useLocale } from 'next-intl'
-import { Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Plus, Pencil, Trash2, Eye, EyeOff, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/Toaster'
 import { formatDate } from '@/lib/utils'
 import type { Locale } from '@/lib/i18n'
 
-type Post = { id: string; slug: string; title_cs: string; title_en?: string; is_published: number; published_at?: string; created_at: string }
+type Post = {
+  id: string; slug: string; title_cs: string; title_en?: string
+  is_published: number; published_at?: string; created_at: string
+  pending_comments: number
+  blog_authors?: { name: string } | null
+}
 
 export default function AdminBlogPage() {
   const locale = useLocale()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
+  const [totalPending, setTotalPending] = useState(0)
 
   const load = async () => {
     setLoading(true)
     const res = await fetch('/api/admin/blog')
     const data = await res.json()
     setPosts(data.posts || [])
+    setTotalPending(data.totalPending || 0)
     setLoading(false)
   }
 
@@ -36,10 +43,7 @@ export default function AdminBlogPage() {
     await fetch(`/api/admin/blog/${post.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        titleCs: post.title_cs, titleEn: post.title_en,
-        isPublished: !post.is_published,
-      }),
+      body: JSON.stringify({ titleCs: post.title_cs, titleEn: post.title_en, isPublished: !post.is_published }),
     })
     toast(post.is_published ? 'Skryt' : 'Publikován', 'success')
     load()
@@ -48,10 +52,31 @@ export default function AdminBlogPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Blog</h1>
-        <Link href={`/${locale}/admin/blog/novy`}>
-          <Button size="sm"><Plus className="w-4 h-4" /> Nový článek</Button>
-        </Link>
+        <div>
+          <h1 className="text-2xl font-bold">Blog</h1>
+          {totalPending > 0 && (
+            <Link href={`/${locale}/admin/blog/komentare`} className="text-sm text-amber-600 hover:underline mt-0.5 inline-block">
+              {totalPending} komentářů čeká na schválení →
+            </Link>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Link href={`/${locale}/admin/blog/podpisy`}>
+            <Button size="sm" variant="outline">Autoři</Button>
+          </Link>
+          <Link href={`/${locale}/admin/blog/komentare`}>
+            <Button size="sm" variant="outline">
+              <MessageSquare className="w-4 h-4" />
+              Komentáře
+              {totalPending > 0 && (
+                <span className="ml-1 bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">{totalPending}</span>
+              )}
+            </Button>
+          </Link>
+          <Link href={`/${locale}/admin/blog/novy`}>
+            <Button size="sm"><Plus className="w-4 h-4" /> Nový článek</Button>
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-cream-dark overflow-hidden">
@@ -64,8 +89,10 @@ export default function AdminBlogPage() {
             <thead className="bg-cream border-b border-cream-dark text-xs text-gray-soft">
               <tr>
                 <th className="text-left px-4 py-3">Název</th>
+                <th className="text-left px-4 py-3">Autor</th>
                 <th className="text-left px-4 py-3">Datum</th>
                 <th className="text-left px-4 py-3">Stav</th>
+                <th className="text-left px-4 py-3">Komentáře</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -77,12 +104,26 @@ export default function AdminBlogPage() {
                     {post.title_en && <p className="text-xs text-gray-soft">{post.title_en}</p>}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-soft">
+                    {post.blog_authors?.name || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-soft">
                     {formatDate(post.published_at || post.created_at, locale as Locale)}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${post.is_published ? 'bg-sage text-forest' : 'bg-cream-dark text-gray-soft'}`}>
                       {post.is_published ? 'Publikován' : 'Koncept'}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {post.pending_comments > 0 ? (
+                      <Link href={`/${locale}/admin/blog/komentare`}
+                        className="flex items-center gap-1 text-xs text-amber-600 font-medium hover:underline">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        {post.pending_comments} ke schválení
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-gray-soft">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 justify-end">

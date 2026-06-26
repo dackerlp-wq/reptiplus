@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Fraunces, JetBrains_Mono } from 'next/font/google'
 import { notFound } from 'next/navigation'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
@@ -9,7 +9,9 @@ import Footer from '@/components/layout/Footer'
 import { Toaster } from '@/components/ui/Toaster'
 import '../globals.css'
 
-const inter = Inter({ subsets: ['latin', 'latin-ext'] })
+const inter = Inter({ subsets: ['latin', 'latin-ext'], variable: '--font-inter' })
+const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', axes: ['opsz'] })
+const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains' })
 
 export const metadata: Metadata = {
   title: {
@@ -37,7 +39,7 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} className="h-full scroll-smooth">
-      <body className={`${inter.className} min-h-full flex flex-col bg-cream text-charcoal antialiased`}>
+      <body className={`${inter.variable} ${fraunces.variable} ${jetbrainsMono.variable} ${inter.className} min-h-full flex flex-col bg-cream text-charcoal antialiased`}>
         <NextIntlClientProvider messages={messages}>
           <Navbar locale={locale} />
           <main className="flex-1">{children}</main>

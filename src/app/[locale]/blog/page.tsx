@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { formatDate } from '@/lib/utils'
 import type { Locale } from '@/lib/i18n'
-import { Calendar } from 'lucide-react'
 
 export default async function BlogPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -11,46 +10,165 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
 
   const { data: posts } = await supabaseAdmin
     .from('blog_posts')
-    .select('*, users(first_name, last_name)')
+    .select('*, blog_authors(name, avatar_initial)')
     .eq('is_published', 1)
-    .order('published_at')
+    .order('published_at', { ascending: false })
 
-  const getTitle = (post: Record<string, string | null>) => {
-    const map: Record<string, string | null | undefined> = { cs: post.title_cs, en: post.title_en, de: post.title_de }
-    return map[locale] || post.title_cs
+  const getTitle = (post: Record<string, unknown>) => {
+    const map: Record<string, unknown> = { cs: post.title_cs, en: post.title_en, de: post.title_de }
+    return (map[locale] || post.title_cs) as string
   }
 
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-charcoal mb-8">{t('title')}</h1>
+  const featured = posts?.[0]
+  const rest = posts?.slice(1) || []
 
-      {!posts?.length ? (
-        <p className="text-gray-soft text-center py-16">{t('no_posts')}</p>
-      ) : (
-        <div className="space-y-6">
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {posts.map((post: any) => (
-            <article key={post.id} className="bg-white rounded-2xl border border-cream-dark overflow-hidden hover:shadow-md transition-shadow">
-              <div className="p-6">
-                <div className="flex items-center gap-3 text-xs text-gray-soft mb-3">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {formatDate(post.published_at || post.created_at || '', locale as Locale)}
-                  </span>
-                  {post.users && <span>{post.users.first_name} {post.users.last_name}</span>}
-                </div>
-                <h2 className="text-xl font-bold mb-2 hover:text-forest transition-colors">
-                  <Link href={`/${locale}/blog/${post.slug}`}>{getTitle(post)}</Link>
-                </h2>
-                {post.excerpt && <p className="text-gray-soft text-sm line-clamp-3 mb-4">{post.excerpt}</p>}
-                <Link href={`/${locale}/blog/${post.slug}`} className="text-sm text-forest font-medium hover:underline">
-                  {t('read_more')} →
-                </Link>
-              </div>
-            </article>
-          ))}
+  return (
+    <>
+      {/* Hero */}
+      <header style={{ background: 'var(--color-forest-deep)', color: 'var(--color-paper)' }}
+        className="px-8 py-16 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-72 h-72 rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, var(--color-amber), transparent 70%)', transform: 'translate(30%, -30%)' }} />
+        <div className="max-w-5xl mx-auto relative">
+          <div className="flex items-center gap-3 mb-5 text-xs uppercase tracking-widest"
+            style={{ color: 'var(--color-amber)', fontFamily: 'var(--font-mono)' }}>
+            <span className="w-7 h-px" style={{ background: 'var(--color-amber)' }} />
+            Terénní deník chovatele
+          </div>
+          <h1 className="text-5xl font-bold leading-tight mb-4 max-w-2xl"
+            style={{ fontFamily: 'var(--font-display)' }}>
+            Vše, co potřebuje vědět{' '}
+            <em className="not-italic" style={{ color: 'var(--color-amber)' }}>každý terarista</em>.
+          </h1>
+          <p className="text-base max-w-lg" style={{ color: 'rgba(243,238,224,0.7)', lineHeight: 1.7 }}>
+            Praktické návody, srovnání vybavení a postřehy ze světa teraristiky — psané lidmi, kteří plazy skutečně chovají.
+          </p>
         </div>
-      )}
-    </div>
+      </header>
+
+      <div className="max-w-5xl mx-auto px-8 py-14 grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
+        <div>
+          {/* Featured */}
+          {featured && (
+            <Link href={`/${locale}/blog/${featured.slug}`} className="block mb-10 group">
+              <article style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)', position: 'relative' }}
+                className="flex flex-col md:flex-row transition-transform duration-200 hover:-translate-y-0.5"
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = '7px 7px 0 var(--color-ink)')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
+                {/* Featured tag */}
+                <div className="absolute -top-px right-6 px-3 py-1.5 text-xs font-bold uppercase tracking-widest"
+                  style={{ background: 'var(--color-amber)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1.5px solid var(--color-ink)', borderTop: 'none' }}>
+                  Doporučujeme
+                </div>
+
+                {/* Image placeholder */}
+                {featured.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={featured.image} alt="" className="md:w-2/5 h-48 md:h-auto object-cover" style={{ borderRight: '1.5px solid var(--color-ink)' }} />
+                ) : (
+                  <div className="md:w-2/5 h-48 md:h-64 flex items-center justify-center" style={{ background: 'var(--color-moss)', borderRight: '1.5px solid var(--color-ink)' }}>
+                    <span className="text-6xl opacity-30">🦎</span>
+                  </div>
+                )}
+
+                <div className="flex-1 p-8 flex flex-col justify-center">
+                  <div className="flex items-center gap-3 text-xs mb-3" style={{ color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>
+                    <span>{formatDate(featured.published_at || featured.created_at, locale as Locale)}</span>
+                    <span style={{ color: 'var(--color-terracotta)' }}>/</span>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    <span>{(featured as any).blog_authors?.name || 'Reptiplus'}</span>
+                  </div>
+                  <h2 className="text-2xl font-bold mb-3 leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                    {getTitle(featured as Record<string, unknown>)}
+                  </h2>
+                  {featured.excerpt && <p className="text-sm mb-4" style={{ color: '#3C4138', lineHeight: 1.65 }}>{featured.excerpt}</p>}
+                  <span className="text-sm font-bold uppercase tracking-wide inline-flex items-center gap-1.5 group-hover:gap-2.5 transition-all"
+                    style={{ color: 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>
+                    {t('read_more')} →
+                  </span>
+                </div>
+              </article>
+            </Link>
+          )}
+
+          {/* Article feed */}
+          {rest.length === 0 && !featured && (
+            <p className="text-center py-16" style={{ color: 'var(--color-moss)' }}>{t('no_posts')}</p>
+          )}
+          <div className="flex flex-col gap-8">
+            {rest.map((post) => (
+              <Link key={post.id} href={`/${locale}/blog/${post.slug}`} className="block group">
+                <article style={{ background: 'var(--color-paper)', border: '1.5px solid var(--color-ink)', borderRadius: 2, position: 'relative' }}
+                  className="p-7 transition-transform duration-200 hover:-translate-y-0.5"
+                  onMouseEnter={e => (e.currentTarget.style.boxShadow = '6px 6px 0 var(--color-ink)')}
+                  onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
+                  {/* Corner tag */}
+                  <div className="absolute -top-px right-6 px-3 py-1 text-xs font-bold uppercase tracking-wider"
+                    style={{ background: 'var(--color-moss)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)', border: '1.5px solid var(--color-ink)', borderTop: 'none' }}>
+                    {locale === 'cs' ? 'Článek' : locale === 'en' ? 'Article' : 'Artikel'}
+                  </div>
+
+                  <div className="flex gap-6">
+                    {post.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={post.image} alt="" className="w-36 h-36 object-cover shrink-0" style={{ border: '1.5px solid var(--color-ink)' }} />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 text-xs mb-3" style={{ color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>
+                        <span>{formatDate(post.published_at || post.created_at, locale as Locale)}</span>
+                        <span style={{ color: 'var(--color-terracotta)' }}>/</span>
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        <span>{(post as any).blog_authors?.name || 'Reptiplus'}</span>
+                      </div>
+                      <h2 className="text-xl font-bold mb-2 leading-snug" style={{ fontFamily: 'var(--font-display)' }}>
+                        {getTitle(post as Record<string, unknown>)}
+                      </h2>
+                      {post.excerpt && <p className="text-sm mb-3 line-clamp-2" style={{ color: '#3C4138', lineHeight: 1.65 }}>{post.excerpt}</p>}
+                      <span className="text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1 group-hover:gap-2 transition-all"
+                        style={{ color: 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>
+                        {t('read_more')} →
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Sidebar */}
+        <aside className="self-start sticky top-6 space-y-6">
+          <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)', padding: '24px' }}>
+            <h3 className="text-xs font-bold uppercase tracking-widest mb-4 pb-3"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)', borderBottom: '1px solid rgba(27,31,23,0.12)' }}>
+              {t('title')}
+            </h3>
+            <p className="text-sm" style={{ color: '#3C4138', lineHeight: 1.65 }}>
+              Praktické rady a tipy o chovu plazů přímo od nás.
+            </p>
+          </div>
+
+          {/* Newsletter */}
+          <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-moss)', padding: '24px', color: 'var(--color-paper)' }}>
+            <h3 className="text-xs font-bold uppercase tracking-widest mb-3 pb-3"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-amber)', borderBottom: '1px solid rgba(243,238,224,0.2)' }}>
+              Odběr novinek
+            </h3>
+            <p className="text-sm mb-4" style={{ color: 'rgba(243,238,224,0.85)', lineHeight: 1.6 }}>
+              Novinky, tipy a speciální nabídky přímo do vaší schránky.
+            </p>
+            <form className="flex flex-col gap-2">
+              <input type="email" placeholder="vas@email.cz"
+                className="px-3 py-2.5 text-sm border rounded-sm"
+                style={{ border: '1.5px solid rgba(243,238,224,0.4)', background: 'rgba(0,0,0,0.15)', color: 'var(--color-paper)' }} />
+              <button type="submit" className="py-2.5 text-sm font-bold rounded-sm"
+                style={{ background: 'var(--color-amber)', color: 'var(--color-forest-deep)' }}>
+                Přihlásit se
+              </button>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </>
   )
 }

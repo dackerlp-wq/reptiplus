@@ -16,7 +16,17 @@
   --color-gray-soft: #6B7280;
   --color-white: #ffffff;
 
-  --font-sans: 'Inter', system-ui, sans-serif;
+  /* Blog mock palette */
+  --color-ink: #1B1F17;
+  --color-moss: #33533C;
+  --color-amber: #E8A33D;
+  --color-paper: #F3EEE0;
+  --color-terracotta: #C2562E;
+  --color-forest-deep: #16241A;
+
+  --font-sans: var(--font-inter, 'Inter'), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains, 'JetBrains Mono'), monospace;
+  --font-display: var(--font-fraunces, 'Fraunces'), serif;
 
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
