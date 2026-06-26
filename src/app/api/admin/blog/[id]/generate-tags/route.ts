@@ -19,65 +19,77 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params
   const { titleCs, contentCs, excerpt } = await req.json()
 
-  // Load all existing tags
   const { data: existingTags } = await supabaseAdmin
     .from('blog_tags')
     .select('id, name_cs, name_en, name_de, slug')
     .order('name_cs')
 
   const tags = existingTags || []
-  const tagNames = tags.map(t => t.name_cs).join(', ')
-
+  const tagList = tags.map(t => `${t.name_cs}${t.name_en ? ` (EN: ${t.name_en})` : ''}`).join(', ')
   const textSnippet = [titleCs, excerpt, contentCs?.replace(/<[^>]+>/g, '').slice(0, 800)].filter(Boolean).join('\n')
 
-  const prompt = `Jsi asistent pro kategorizaci článků o teraristice (chov plazů, obojživelníků, pavouků).
+  const prompt = `You are an assistant for categorizing articles about terrarium keeping (reptiles, amphibians, spiders).
 
-Existující štítky v databázi: ${tagNames || '(žádné zatím)'}
+Existing tags in the database: ${tagList || '(none yet)'}
 
-Článek:
+Article (Czech):
 ${textSnippet}
 
-Tvůj úkol:
-1. Navrhni 3–7 vhodných štítků pro tento článek v češtině
-2. PREFERUJ existující štítky (pokud pasují)
-3. Pokud vhodných existujících štítků je méně než 5, vymysli nové (krátké, 1–3 slova)
-4. Vrať POUZE JSON pole stringů, nic jiného. Příklad: ["UVB záření","Terárium","Drak vousatý"]`
+Your task:
+1. Suggest 3–7 suitable tags for this article
+2. PREFER existing tags (use exact Czech name if it fits)
+3. If fewer than 5 existing tags fit, create new short tags (1–3 words)
+4. For each tag provide Czech (cs), English (en), and German (de) names
+5. Return ONLY a JSON array of objects, nothing else.
 
-  let suggestedNames: string[] = []
+Example:
+[{"cs":"UVB záření","en":"UVB lighting","de":"UVB-Beleuchtung"},{"cs":"Terárium","en":"Terrarium","de":"Terrarium"}]`
+
+  let suggested: { cs: string; en: string; de: string }[] = []
   try {
     const { text } = await generateText({
       model: gateway('anthropic/claude-haiku-4.5'),
       prompt,
-      maxOutputTokens: 200,
+      maxOutputTokens: 400,
     })
     const match = text.match(/\[[\s\S]*?\]/)
-    if (match) suggestedNames = JSON.parse(match[0])
+    if (match) suggested = JSON.parse(match[0])
   } catch {
     return NextResponse.json({ error: 'AI generování selhalo' }, { status: 500 })
   }
 
-  // Match suggested names against existing tags (case-insensitive)
   const result: { id: string; name_cs: string; name_en: string | null; name_de: string | null; isNew: boolean }[] = []
 
-  for (const name of suggestedNames) {
-    const existing = tags.find(t => t.name_cs.toLowerCase() === name.toLowerCase())
+  for (const item of suggested) {
+    const nameCs = item.cs || ''
+    const nameEn = item.en || null
+    const nameDe = item.de || null
+    if (!nameCs) continue
+
+    const existing = tags.find(t => t.name_cs.toLowerCase() === nameCs.toLowerCase())
     if (existing) {
+      // Fill in missing translations if AI provided them
+      const updates: Record<string, string> = {}
+      if (nameEn && !existing.name_en) updates.name_en = nameEn
+      if (nameDe && !existing.name_de) updates.name_de = nameDe
+      if (Object.keys(updates).length > 0) {
+        await supabaseAdmin.from('blog_tags').update(updates).eq('id', existing.id)
+        existing.name_en = existing.name_en || nameEn
+        existing.name_de = existing.name_de || nameDe
+      }
       result.push({ id: existing.id, name_cs: existing.name_cs, name_en: existing.name_en, name_de: existing.name_de, isNew: false })
     } else {
-      // Create new tag
       const newId = generateId()
-      const slug = slugify(name)
-      // Auto-translate via simple mapping for common terms, or leave blank for admin to fill
+      const slug = slugify(nameCs)
       const { data: newTag, error } = await supabaseAdmin.from('blog_tags').insert({
-        id: newId, name_cs: name, name_en: null, name_de: null, slug,
+        id: newId, name_cs: nameCs, name_en: nameEn, name_de: nameDe, slug,
       }).select().single()
       if (!error && newTag) {
-        result.push({ id: newTag.id, name_cs: newTag.name_cs, name_en: null, name_de: null, isNew: true })
+        result.push({ id: newTag.id, name_cs: newTag.name_cs, name_en: newTag.name_en, name_de: newTag.name_de, isNew: true })
       }
     }
   }
 
-  // Apply tags to post: replace all existing tags
   await supabaseAdmin.from('blog_post_tags').delete().eq('blog_post_id', id)
   if (result.length > 0) {
     await supabaseAdmin.from('blog_post_tags').insert(
