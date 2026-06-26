@@ -44,6 +44,7 @@ interface RichEditorProps {
   onChange: (val: string) => void
   placeholder?: string
   products?: ProductOption[]
+  onProductMention?: (product: ProductOption) => void
 }
 
 function ToolbarButton({ active, onClick, children, title }: { active?: boolean; onClick: () => void; children: React.ReactNode; title?: string }) {
@@ -59,7 +60,7 @@ function ToolbarButton({ active, onClick, children, title }: { active?: boolean;
   )
 }
 
-export default function RichEditor({ value, onChange, placeholder = 'Začněte psát...', products = [] }: RichEditorProps) {
+export default function RichEditor({ value, onChange, placeholder = 'Začněte psát...', products = [], onProductMention }: RichEditorProps) {
   const dropZoneRef = useRef<HTMLDivElement>(null)
   const [showProductPicker, setShowProductPicker] = useState(false)
   const [productSearch, setProductSearch] = useState('')
@@ -164,8 +165,9 @@ export default function RichEditor({ value, onChange, placeholder = 'Začněte p
       'data-product-slug': product.slug,
       'data-product-name': product.name_cs,
     }).run()
-    setShowProductPicker(false)
+    onProductMention?.(product)
     setProductSearch('')
+    // keep picker open so user can select more text and mention another product
   }
 
   const removeMention = () => {
@@ -287,9 +289,11 @@ export default function RichEditor({ value, onChange, placeholder = 'Začněte p
                       </button>
                     ))}
                   </div>
-                  <p className="px-3 py-1.5 text-xs text-gray-soft border-t border-cream-dark">
-                    Vyberte produkt pro označený text
-                  </p>
+                  <div className="px-3 py-1.5 text-xs text-gray-soft border-t border-cream-dark flex items-center justify-between">
+                    <span>Označte text → vyberte produkt</span>
+                    <button type="button" onClick={() => { setShowProductPicker(false); setProductSearch('') }}
+                      className="text-xs font-bold text-charcoal hover:text-forest ml-2">Hotovo ✓</button>
+                  </div>
                 </div>
               )}
             </div>

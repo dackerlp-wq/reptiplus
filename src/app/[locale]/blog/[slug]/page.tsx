@@ -14,14 +14,66 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   if (!post || !post.is_published) notFound()
 
-  // Related blog posts (latest 2, excluding current)
-  const { data: related } = await supabaseAdmin
-    .from('blog_posts')
-    .select('id, slug, title_cs, title_en, title_de, excerpt, image')
-    .eq('is_published', 1)
-    .neq('id', post.id)
-    .order('published_at', { ascending: false })
-    .limit(2)
+  // Related posts: prefer posts sharing tags, then same category, then latest
+  const postTagsRes = await supabaseAdmin
+    .from('blog_post_tags')
+    .select('tag_id')
+    .eq('blog_post_id', post.id)
+  const tagIds = postTagsRes.error ? [] : (postTagsRes.data || []).map(r => r.tag_id)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let related: any[] = []
+
+  if (tagIds.length > 0) {
+    const { data: byTagLinks } = await supabaseAdmin
+      .from('blog_post_tags')
+      .select('blog_post_id')
+      .in('tag_id', tagIds)
+      .neq('blog_post_id', post.id)
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const relatedIds = [...new Set((byTagLinks || []).map((r: any) => r.blog_post_id))]
+
+    if (relatedIds.length > 0) {
+      const { data } = await supabaseAdmin
+        .from('blog_posts')
+        .select('id, slug, title_cs, title_en, title_de, excerpt, image')
+        .eq('is_published', 1)
+        .in('id', relatedIds)
+        .limit(2)
+      related = data || []
+    }
+  }
+
+  // Fill with same blog category if not enough
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const blogCategoryId = (post as any).blog_category_id
+  if (related.length < 2 && blogCategoryId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const excludeIds = [post.id, ...related.map((r: any) => r.id)]
+    const { data: catData } = await supabaseAdmin
+      .from('blog_posts')
+      .select('id, slug, title_cs, title_en, title_de, excerpt, image')
+      .eq('is_published', 1)
+      .eq('blog_category_id', blogCategoryId)
+      .not('id', 'in', `(${excludeIds.join(',')})`)
+      .limit(2 - related.length)
+    related = [...related, ...(catData || [])]
+  }
+
+  // Fallback: latest posts
+  if (related.length < 2) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const excludeIds = [post.id, ...related.map((r: any) => r.id)]
+    const { data: latestData } = await supabaseAdmin
+      .from('blog_posts')
+      .select('id, slug, title_cs, title_en, title_de, excerpt, image')
+      .eq('is_published', 1)
+      .not('id', 'in', `(${excludeIds.join(',')})`)
+      .order('published_at', { ascending: false })
+      .limit(2 - related.length)
+    related = [...related, ...(latestData || [])]
+  }
 
   const productLinksRes = await supabaseAdmin
     .from('blog_post_products')
@@ -73,7 +125,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       content={content}
       locale={locale as Locale}
       author={post.blog_authors}
-      related={related || []}
+      related={related}
       productLinks={productLinks}
       categoryLinks={categoryLinks}
       tags={tags}

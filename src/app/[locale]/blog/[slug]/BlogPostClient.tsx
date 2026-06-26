@@ -580,23 +580,6 @@ export default function BlogPostClient({
               </div>
             )}
 
-            {/* Newsletter */}
-            <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-moss)', color: 'var(--color-paper)', padding: '20px' }}>
-              <div className="text-xs font-bold uppercase tracking-widest mb-2"
-                style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-amber)' }}>
-                {tx.newsletter}
-              </div>
-              <p className="text-sm mb-4" style={{ color: 'rgba(243,238,224,0.8)', lineHeight: 1.6 }}>{tx.newsletterDesc}</p>
-              <form className="flex flex-col gap-2">
-                <input type="email" placeholder={tx.emailField}
-                  className="px-3 py-2.5 text-sm focus:outline-none"
-                  style={{ border: '1.5px solid rgba(243,238,224,0.3)', background: 'rgba(0,0,0,0.15)', color: 'var(--color-paper)' }} />
-                <button type="submit" className="py-2.5 text-sm font-bold"
-                  style={{ background: 'var(--color-amber)', color: 'var(--color-forest-deep)' }}>
-                  {tx.subscribe}
-                </button>
-              </form>
-            </div>
           </aside>
         </div>
       </div>

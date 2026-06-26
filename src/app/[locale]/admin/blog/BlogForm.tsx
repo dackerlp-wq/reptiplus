@@ -255,7 +255,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">Obsah (CZ)</label>
-            <RichEditor value={form.contentCs} onChange={val => setForm(f => ({ ...f, contentCs: val }))} placeholder="Začněte psát článek v češtině..." products={allProducts} />
+            <RichEditor value={form.contentCs} onChange={val => setForm(f => ({ ...f, contentCs: val }))} placeholder="Začněte psát článek v češtině..." products={allProducts} onProductMention={p => addProduct({ id: p.id, slug: p.slug, name_cs: p.name_cs, sku: p.sku, images: p.images })} />
           </div>
         </div>
       </div>
