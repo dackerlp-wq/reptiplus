@@ -23,34 +23,38 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     .order('published_at', { ascending: false })
     .limit(2)
 
-  const { data: productLinksRaw } = await supabaseAdmin
+  const productLinksRes = await supabaseAdmin
     .from('blog_post_products')
     .select('products(id, slug, name_cs, name_en, name_de, price, stock, images, categories(name_cs, name_en, name_de))')
     .eq('blog_post_id', post.id)
+  const productLinksRaw = productLinksRes.error ? [] : productLinksRes.data
 
-  const { data: categoryLinksRaw } = await supabaseAdmin
+  const categoryLinksRes = await supabaseAdmin
     .from('blog_post_product_categories')
     .select('categories(id, name_cs)')
     .eq('blog_post_id', post.id)
+  const categoryLinksRaw = categoryLinksRes.error ? [] : categoryLinksRes.data
 
-  const { data: tagLinksRaw } = await supabaseAdmin
+  const tagLinksRes = await supabaseAdmin
     .from('blog_post_tags')
     .select('blog_tags(id, name_cs, name_en, name_de, slug)')
     .eq('blog_post_id', post.id)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tags = (tagLinksRaw || []).map((l: any) => l.blog_tags).filter(Boolean)
+  const tags = tagLinksRes.error ? [] : (tagLinksRes.data || []).map((l: any) => l.blog_tags).filter(Boolean)
 
-  const { count: likesCount } = await supabaseAdmin
+  const likesRes = await supabaseAdmin
     .from('blog_post_likes')
     .select('*', { count: 'exact', head: true })
     .eq('blog_post_id', post.id)
+  const likesCount = likesRes.error ? 0 : likesRes.count
 
-  const { count: commentsCount } = await supabaseAdmin
+  const commentsRes = await supabaseAdmin
     .from('blog_comments')
     .select('*', { count: 'exact', head: true })
     .eq('blog_post_id', post.id)
     .eq('status', 'approved')
+  const commentsCount = commentsRes.error ? 0 : commentsRes.count
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const productLinks = (productLinksRaw || []).map((l: any) => l.products).filter(Boolean)

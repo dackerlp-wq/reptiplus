@@ -15,32 +15,44 @@ export default async function BlogPage({
   const { tag: tagSlug, kategorie: catSlug } = await searchParams
   const t = await getTranslations('blog')
 
-  // Sidebar data
-  const [{ data: allTags }, { data: allBlogCats }] = await Promise.all([
+  // Sidebar data — blog_tags may not exist if migration_blog_tags.sql hasn't run,
+  // blog_categories may not exist if migration_blog_categories.sql hasn't run
+  const [tagsRes, catsRes] = await Promise.all([
     supabaseAdmin.from('blog_tags').select('id, name_cs, name_en, name_de, slug').order('name_cs'),
     supabaseAdmin.from('blog_categories').select('id, name_cs, name_en, name_de, slug').order('name_cs'),
   ])
+  const allTags = tagsRes.error ? [] : (tagsRes.data || [])
+  const allBlogCats = catsRes.error ? [] : (catsRes.data || [])
 
   // Active filter tag/category object
-  const activeTag = tagSlug ? (allTags || []).find(t => t.slug === tagSlug) : null
-  const activeCat = catSlug ? (allBlogCats || []).find(c => c.slug === catSlug) : null
+  const activeTag = tagSlug ? allTags.find(t => t.slug === tagSlug) : null
+  const activeCat = catSlug ? allBlogCats.find(c => c.slug === catSlug) : null
 
-  let query = supabaseAdmin
+  const hasCats = !catsRes.error
+  const hasTagTable = !tagsRes.error
+
+  // Use a static select; join columns that don't exist will silently return null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let postsQuery = (supabaseAdmin as any)
     .from('blog_posts')
     .select('*, blog_authors(name, avatar_initial), blog_post_tags(blog_tags(name_cs, name_en, name_de, slug)), blog_categories(id, name_cs, name_en, name_de, slug)')
     .eq('is_published', 1)
     .order('published_at', { ascending: false })
 
-  // Filter by blog category
-  if (activeCat) {
-    query = query.eq('blog_category_id', activeCat.id)
+  // Filter by blog category (only works once migration is run)
+  if (activeCat && hasCats) {
+    postsQuery = postsQuery.eq('blog_category_id', activeCat.id)
   }
 
-  const { data: postsRaw } = await query
+  const { data: postsRaw } = await postsQuery
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const _ = { hasTagTable } // suppress unused var
 
   // Filter by tag (post-fetch, because Supabase can't easily filter by M:N)
-  const posts = tagSlug
-    ? (postsRaw || []).filter(p =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const posts: any[] = tagSlug
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ? (postsRaw || []).filter((p: any) =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (p.blog_post_tags || []).some((pt: any) => pt.blog_tags?.slug === tagSlug)
       )
