@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/Toaster'
 import { Wand2 } from 'lucide-react'
+import dynamic from 'next/dynamic'
+
+const RichEditor = dynamic(() => import('@/components/admin/RichEditor'), { ssr: false })
 
 type PostData = {
   id?: string
@@ -48,6 +51,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
         }),
       })
       const data = await res.json()
+      if (!res.ok) { toast(data.error || 'Překlad selhal', 'error'); return }
       setForm(f => ({
         ...f,
         titleEn: data.titleEn || f.titleEn,
@@ -55,7 +59,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
         contentEn: data.contentEn || f.contentEn,
         contentDe: data.contentDe || f.contentDe,
       }))
-      toast('Přeloženo', 'success')
+      toast('Přeloženo ✓', 'success')
     } catch {
       toast('Překlad selhal', 'error')
     }
@@ -104,9 +108,12 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
               className="w-full border border-cream-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-forest resize-none" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Obsah (CZ)</label>
-            <textarea value={form.contentCs} onChange={set('contentCs')} rows={12}
-              className="w-full border border-cream-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-forest resize-none font-mono" />
+            <label className="block text-sm font-medium mb-2">Obsah (CZ)</label>
+            <RichEditor
+              value={form.contentCs}
+              onChange={val => setForm(f => ({ ...f, contentCs: val }))}
+              placeholder="Začněte psát článek v češtině..."
+            />
           </div>
         </div>
       </div>
@@ -117,9 +124,12 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
         <div className="space-y-4">
           <Input id="titleEn" label="Title (EN)" value={form.titleEn} onChange={set('titleEn')} />
           <div>
-            <label className="block text-sm font-medium mb-1">Content (EN)</label>
-            <textarea value={form.contentEn} onChange={set('contentEn')} rows={8}
-              className="w-full border border-cream-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-forest resize-none font-mono" />
+            <label className="block text-sm font-medium mb-2">Content (EN)</label>
+            <RichEditor
+              value={form.contentEn}
+              onChange={val => setForm(f => ({ ...f, contentEn: val }))}
+              placeholder="Write or paste the English translation..."
+            />
           </div>
         </div>
       </div>
@@ -130,9 +140,12 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
         <div className="space-y-4">
           <Input id="titleDe" label="Titel (DE)" value={form.titleDe} onChange={set('titleDe')} />
           <div>
-            <label className="block text-sm font-medium mb-1">Inhalt (DE)</label>
-            <textarea value={form.contentDe} onChange={set('contentDe')} rows={8}
-              className="w-full border border-cream-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-forest resize-none font-mono" />
+            <label className="block text-sm font-medium mb-2">Inhalt (DE)</label>
+            <RichEditor
+              value={form.contentDe}
+              onChange={val => setForm(f => ({ ...f, contentDe: val }))}
+              placeholder="Deutschen Text eintragen oder einfügen..."
+            />
           </div>
         </div>
       </div>

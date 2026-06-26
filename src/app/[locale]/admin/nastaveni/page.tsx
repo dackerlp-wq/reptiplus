@@ -3,11 +3,14 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { toast } from '@/components/ui/Toaster'
+import { useEurRateInfo } from '@/hooks/useEurRate'
+import { RefreshCw, TrendingUp, Clock, AlertCircle, CheckCircle } from 'lucide-react'
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const eurInfo = useEurRateInfo()
 
   useEffect(() => {
     fetch('/api/admin/settings').then(r => r.json()).then(data => {
@@ -41,7 +44,7 @@ export default function AdminSettingsPage() {
       title: 'Doprava',
       items: [
         { key: 'free_shipping_threshold', label: 'Doprava zdarma od (Kč)' },
-        { key: 'shipping_zasilkovna_price', label: 'Zásilkovna — cena (Kč)' },
+        { key: 'shipping_packeta_price', label: 'Packeta — cena (Kč)' },
         { key: 'shipping_ppl_price', label: 'PPL — cena (Kč)' },
         { key: 'shipping_personal_price', label: 'Osobní odběr — cena (Kč)' },
       ]
@@ -64,6 +67,68 @@ export default function AdminSettingsPage() {
       </div>
 
       <div className="space-y-6">
+        {/* Exchange rate info block */}
+        <div className="bg-white rounded-xl border border-cream-dark p-6">
+          <h2 className="font-bold mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-forest" />
+            Směnný kurz EUR/CZK
+          </h2>
+          {eurInfo ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="bg-sage/30 rounded-xl px-5 py-3 text-center">
+                  <p className="text-xs text-gray-soft mb-1">Aktuální kurz</p>
+                  <p className="text-2xl font-bold text-forest">1 EUR = {eurInfo.rate.toFixed(3)} CZK</p>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    {eurInfo.isFallback ? (
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4 text-forest shrink-0" />
+                    )}
+                    <span className="text-gray-soft">Zdroj:</span>
+                    <span className="font-medium">
+                      {eurInfo.isFallback
+                        ? 'Záložní pevný kurz (API nedostupné)'
+                        : <a href="https://frankfurter.app" target="_blank" rel="noopener" className="text-forest hover:underline">frankfurter.app</a>
+                      }
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="w-4 h-4 text-gray-soft shrink-0" />
+                    <span className="text-gray-soft">Stáří cache:</span>
+                    <span className="font-medium">
+                      {eurInfo.cacheAgeMinutes === 0
+                        ? 'Právě aktualizováno'
+                        : `${eurInfo.cacheAgeMinutes} min`
+                      }
+                    </span>
+                    <span className="text-gray-soft text-xs">(obnovuje se každé 4 hodiny)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <RefreshCw className="w-4 h-4 text-gray-soft shrink-0" />
+                    <span className="text-gray-soft">Načteno:</span>
+                    <span className="font-medium">
+                      {new Date(eurInfo.fetchedAt).toLocaleString('cs-CZ')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-soft bg-cream rounded-lg p-3">
+                Kurz se automaticky aktualizuje z <strong>frankfurter.app</strong> (Evropská centrální banka) každé 4 hodiny.
+                Zobrazuje se jako primární cena pro anglické a německé jazykové verze eshopu.
+                Při fakturaci se vždy používá cena v CZK.
+              </p>
+            </div>
+          ) : (
+            <div className="text-gray-soft text-sm flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 animate-spin" />
+              Načítám kurz...
+            </div>
+          )}
+        </div>
+
         {SETTINGS_GROUPS.map(group => (
           <div key={group.title} className="bg-white rounded-xl border border-cream-dark p-6">
             <h2 className="font-bold mb-4">{group.title}</h2>

@@ -3,11 +3,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ShoppingCart, Heart } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { formatPrice, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { useCartStore } from '@/store/cart'
 import { toast } from '@/components/ui/Toaster'
 import { Badge } from '@/components/ui/Badge'
-import { useEurRate } from '@/hooks/useEurRate'
+import { usePriceFmt } from '@/hooks/usePriceFmt'
 
 export interface Product {
   id: string
@@ -39,7 +39,7 @@ function getName(p: Product, locale: string) {
 export default function ProductCard({ product, locale }: ProductCardProps) {
   const t = useTranslations('shop')
   const addItem = useCartStore(s => s.addItem)
-  const eurRate = useEurRate()
+  const { fmt, fmtSecondary, isEur } = usePriceFmt()
 
   const images = JSON.parse(product.images || '[]') as string[]
   const image = images[0] || 'https://sntwqjbvqxogtqrvoyme.supabase.co/storage/v1/object/public/images/placeholder.png'
@@ -54,7 +54,8 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
     toast(`${name} ${t('added_to_cart')}`, 'success')
   }
 
-  const eurPrice = eurRate ? (product.price / eurRate).toFixed(2) : null
+  const secondary = fmtSecondary(product.price)
+  const secondaryExcl = fmtSecondary(product.priceExcl)
 
   return (
     <Link href={`/${locale}/produkt/${product.slug}`} className="group block">
@@ -94,13 +95,15 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
             {name}
           </h3>
           <div className="mt-2 flex items-end gap-2">
-            <span className="text-lg font-bold text-forest">{formatPrice(product.price)}</span>
+            <span className="text-lg font-bold text-forest">{fmt(product.price)}</span>
             {product.comparePrice && product.comparePrice > product.price && (
-              <span className="text-sm text-gray-soft line-through">{formatPrice(product.comparePrice)}</span>
+              <span className="text-sm text-gray-soft line-through">{fmt(product.comparePrice)}</span>
             )}
           </div>
-          {eurPrice && <p className="text-xs text-gray-soft">≈ {eurPrice} €</p>}
-          <p className="text-xs text-gray-soft mt-0.5">{formatPrice(product.priceExcl)} {t('excl_vat')}</p>
+          {secondary && <p className="text-xs text-gray-soft">{secondary}</p>}
+          <p className="text-xs text-gray-soft mt-0.5">
+            {isEur ? secondaryExcl : fmt(product.priceExcl)} {t('excl_vat')}
+          </p>
           <div className={cn('text-xs mt-1', isOutOfStock ? 'text-gray-400' : isLowStock ? 'text-amber-600' : 'text-sage-dark font-medium')}>
             {isOutOfStock ? t('out_of_stock') : isLowStock ? `${t('low_stock')} (${product.stock} ks)` : t('in_stock')}
           </div>

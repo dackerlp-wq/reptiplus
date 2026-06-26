@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { Trash2, Minus, Plus, ShoppingBag, Tag, ChevronRight } from 'lucide-react'
 import { useCartStore } from '@/store/cart'
-import { formatPrice } from '@/lib/utils'
+import { usePriceFmt } from '@/hooks/usePriceFmt'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { toast } from '@/components/ui/Toaster'
@@ -17,6 +17,7 @@ export default function CartPage() {
   const t = useTranslations('cart')
   const locale = useLocale()
   const { items, removeItem, updateQuantity, total } = useCartStore()
+  const { fmt } = usePriceFmt()
   const [coupon, setCoupon] = useState('')
   const [discount, setDiscount] = useState(0)
   const [couponApplied, setCouponApplied] = useState(false)
@@ -40,7 +41,7 @@ export default function CartPage() {
     if (res.ok) {
       setDiscount(data.discount)
       setCouponApplied(true)
-      toast(`Slevový kód uplatněn! Sleva ${formatPrice(data.discount)}`, 'success')
+      toast(`Slevový kód uplatněn! Sleva ${fmt(data.discount)}`, 'success')
     } else {
       toast(data.error, 'error')
     }
@@ -107,8 +108,8 @@ export default function CartPage() {
                 </button>
               </div>
               <div className="text-right shrink-0">
-                <p className="font-bold text-forest">{formatPrice(item.price * item.quantity)}</p>
-                <p className="text-xs text-gray-soft">{formatPrice(item.price)} / ks</p>
+                <p className="font-bold text-forest">{fmt(item.price * item.quantity)}</p>
+                <p className="text-xs text-gray-soft">{fmt(item.price)} / ks</p>
               </div>
               <button onClick={() => removeItem(item.productId)} className="p-1.5 text-gray-soft hover:text-red-500 transition-colors">
                 <Trash2 className="w-4 h-4" />
@@ -132,7 +133,7 @@ export default function CartPage() {
             </h3>
             {couponApplied ? (
               <div className="flex items-center gap-2 text-sm text-forest">
-                <span>✓ Kód uplatněn • Sleva {formatPrice(discount)}</span>
+                <span>✓ Kód uplatněn • Sleva {fmt(discount)}</span>
                 <button className="text-gray-soft hover:text-charcoal text-xs" onClick={() => { setDiscount(0); setCouponApplied(false); setCoupon('') }}>Odstranit</button>
               </div>
             ) : (
@@ -157,21 +158,21 @@ export default function CartPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-soft">{t('subtotal')}</span>
-                <span className="font-medium">{formatPrice(subtotal)}</span>
+                <span className="font-medium">{fmt(subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-soft">{t('shipping')} (Zásilkovna)</span>
-                <span className="font-medium">{shippingPrice === 0 ? 'Zdarma' : formatPrice(shippingPrice)}</span>
+                <span className="text-gray-soft">{t('shipping')} (Packeta)</span>
+                <span className="font-medium">{shippingPrice === 0 ? 'Zdarma' : fmt(shippingPrice)}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-forest">
                   <span>{t('discount')}</span>
-                  <span>-{formatPrice(discount)}</span>
+                  <span>-{fmt(discount)}</span>
                 </div>
               )}
               <div className="border-t border-cream-dark pt-2 mt-2 flex justify-between font-bold text-base">
                 <span>{t('total')}</span>
-                <span className="text-forest">{formatPrice(orderTotal)}</span>
+                <span className="text-forest">{fmt(orderTotal)}</span>
               </div>
             </div>
             <Link href={`/${locale}/pokladna`}>

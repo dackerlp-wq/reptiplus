@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { ShoppingCart, Heart, Share2, Star, Minus, Plus, ChevronRight, Package } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
+import { usePriceFmt } from '@/hooks/usePriceFmt'
 import { useCartStore } from '@/store/cart'
 import { toast } from '@/components/ui/Toaster'
 import { Badge } from '@/components/ui/Badge'
@@ -48,6 +48,7 @@ export default function ProductDetailClient({
   const tShop = useTranslations('shop')
   const tCommon = useTranslations('common')
   const addItem = useCartStore(s => s.addItem)
+  const { fmt, fmtSecondary } = usePriceFmt()
   const [qty, setQty] = useState(1)
   const [activeTab, setActiveTab] = useState<'description' | 'parameters' | 'reviews'>('description')
   const [activeImage, setActiveImage] = useState(0)
@@ -123,15 +124,16 @@ export default function ProductDetailClient({
           )}
 
           <div className="flex items-end gap-3 mb-1">
-            <span className="text-3xl font-bold text-forest">{formatPrice(product.price)}</span>
+            <span className="text-3xl font-bold text-forest">{fmt(product.price)}</span>
             {product.comparePrice && product.comparePrice > product.price && (
               <>
-                <span className="text-xl text-gray-soft line-through">{formatPrice(product.comparePrice)}</span>
+                <span className="text-xl text-gray-soft line-through">{fmt(product.comparePrice)}</span>
                 <Badge variant="sale">-{Math.round((1 - product.price / product.comparePrice) * 100)}%</Badge>
               </>
             )}
           </div>
-          <p className="text-sm text-gray-soft mb-4">{formatPrice(product.priceExcl)} {tShop('excl_vat')} • DPH {product.vatRate}%</p>
+          {fmtSecondary(product.price) && <p className="text-sm text-gray-soft">{fmtSecondary(product.price)}</p>}
+          <p className="text-sm text-gray-soft mb-4">{fmt(product.priceExcl)} {tShop('excl_vat')} • DPH {product.vatRate}%</p>
 
           <div className={`flex items-center gap-2 mb-6 text-sm font-medium ${isOutOfStock ? 'text-gray-400' : isLowStock ? 'text-amber-600' : 'text-sage-dark'}`}>
             <Package className="w-4 h-4" />

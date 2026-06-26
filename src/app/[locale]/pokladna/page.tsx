@@ -3,32 +3,21 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useCartStore } from '@/store/cart'
-import { formatPrice } from '@/lib/utils'
+import { usePriceFmt } from '@/hooks/usePriceFmt'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { toast } from '@/components/ui/Toaster'
-import { Package, CreditCard, Truck, CheckCircle } from 'lucide-react'
+import { CreditCard } from 'lucide-react'
 import Image from 'next/image'
-
-const SHIPPING_OPTIONS = [
-  { id: 'zasilkovna', label: 'Zásilkovna', price: 89, desc: 'Výdejní místo nebo Z-BOX', icon: '📦' },
-  { id: 'ppl', label: 'PPL Parcel', price: 129, desc: 'Doručení na adresu', icon: '🚚' },
-  { id: 'personal_pickup', label: 'Osobní odběr', price: 0, desc: 'Praha — po domluvě', icon: '🏪' },
-]
-
-const PAYMENT_OPTIONS = [
-  { id: 'card', label: 'Platební karta', desc: 'Visa, Mastercard — přes Comgate', icon: '💳' },
-  { id: 'bank_transfer', label: 'Bankovní převod', desc: 'Na náš účet — platba předem', icon: '🏦' },
-  { id: 'cash_on_delivery', label: 'Dobírka', desc: 'Platba při převzetí (+30 Kč)', icon: '💵' },
-]
 
 export default function CheckoutPage() {
   const t = useTranslations('checkout')
   const locale = useLocale()
   const router = useRouter()
   const { items, total, clearCart } = useCartStore()
+  const { fmt, isEur } = usePriceFmt()
 
-  const [shippingMethod, setShippingMethod] = useState('zasilkovna')
+  const [shippingMethod, setShippingMethod] = useState('packeta')
   const [paymentMethod, setPaymentMethod] = useState('card')
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({
@@ -38,6 +27,18 @@ export default function CheckoutPage() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  const SHIPPING_OPTIONS = [
+    { id: 'packeta', label: t('packeta'), price: 89, desc: t('packeta_desc'), icon: '📦' },
+    { id: 'ppl', label: t('ppl'), price: 129, desc: t('ppl_desc'), icon: '🚚' },
+    { id: 'personal_pickup', label: t('personal_pickup'), price: 0, desc: t('personal_pickup_desc'), icon: '🏪' },
+  ]
+
+  const PAYMENT_OPTIONS = [
+    { id: 'card', label: t('card'), desc: t('card_desc'), icon: '💳' },
+    { id: 'bank_transfer', label: t('bank_transfer'), desc: t('bank_transfer_desc'), icon: '🏦' },
+    { id: 'cash_on_delivery', label: t('cash_on_delivery'), desc: t('cash_on_delivery_desc'), icon: '💵' },
+  ]
+
   const subtotal = total()
   const shipping = SHIPPING_OPTIONS.find(s => s.id === shippingMethod)
   const shippingPrice = subtotal >= 2000 ? 0 : (shipping?.price || 89)
@@ -46,12 +47,12 @@ export default function CheckoutPage() {
 
   const validate = () => {
     const e: Record<string, string> = {}
-    if (!form.firstName) e.firstName = 'Povinné'
-    if (!form.lastName) e.lastName = 'Povinné'
-    if (!form.email) e.email = 'Povinné'
-    if (!form.street) e.street = 'Povinné'
-    if (!form.city) e.city = 'Povinné'
-    if (!form.zip) e.zip = 'Povinné'
+    if (!form.firstName) e.firstName = t('required')
+    if (!form.lastName) e.lastName = t('required')
+    if (!form.email) e.email = t('required')
+    if (!form.street) e.street = t('required')
+    if (!form.city) e.city = t('required')
+    if (!form.zip) e.zip = t('required')
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -59,7 +60,7 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    if (items.length === 0) { toast('Košík je prázdný', 'error'); return }
+    if (items.length === 0) { toast(t('cart_empty'), 'error'); return }
 
     setLoading(true)
     try {
@@ -76,14 +77,14 @@ export default function CheckoutPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        toast(data.error || 'Chyba při objednávce', 'error')
+        toast(data.error || t('order_error'), 'error')
         return
       }
 
       clearCart()
       router.push(`/${locale}/objednavka/${data.orderNumber}`)
     } catch {
-      toast('Chyba sítě', 'error')
+      toast(t('network_error'), 'error')
     } finally {
       setLoading(false)
     }
@@ -92,8 +93,8 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-        <p className="text-gray-soft">Váš košík je prázdný.</p>
-        <Button className="mt-4" onClick={() => router.push(`/${locale}/obchod`)}>Do obchodu</Button>
+        <p className="text-gray-soft">{t('cart_empty')}</p>
+        <Button className="mt-4" onClick={() => router.push(`/${locale}/obchod`)}>{t('go_to_shop')}</Button>
       </div>
     )
   }
@@ -138,7 +139,7 @@ export default function CheckoutPage() {
                     onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
                     rows={3}
                     className="w-full border border-cream-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-forest resize-none"
-                    placeholder="Poznámka k doručení..."
+                    placeholder={t('note_placeholder')}
                   />
                 </div>
               </div>
@@ -163,10 +164,15 @@ export default function CheckoutPage() {
                       <p className="text-xs text-gray-soft">{opt.desc}</p>
                     </div>
                     <span className="font-bold text-sm">
-                      {subtotal >= 2000 ? <span className="text-forest">Zdarma</span> : opt.price === 0 ? 'Zdarma' : formatPrice(opt.price)}
+                      {subtotal >= 2000
+                        ? <span className="text-forest">{t('free')}</span>
+                        : opt.price === 0
+                          ? <span className="text-forest">{t('free')}</span>
+                          : fmt(opt.price)}
                     </span>
                   </label>
                 ))}
+                {isEur && <p className="text-xs text-gray-soft mt-2">{t('eur_note')}</p>}
               </div>
             </div>
 
@@ -208,7 +214,7 @@ export default function CheckoutPage() {
                       <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-forest text-white text-[10px] rounded-full flex items-center justify-center font-bold">{item.quantity}</span>
                     </div>
                     <p className="text-xs font-medium flex-1 line-clamp-2">{item.name}</p>
-                    <p className="text-sm font-bold shrink-0">{formatPrice(item.price * item.quantity)}</p>
+                    <p className="text-sm font-bold shrink-0">{fmt(item.price * item.quantity)}</p>
                   </div>
                 ))}
               </div>
@@ -216,22 +222,22 @@ export default function CheckoutPage() {
               {/* Totals */}
               <div className="border-t border-cream-dark pt-3 space-y-1.5 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-soft">Zboží</span>
-                  <span>{formatPrice(subtotal)}</span>
+                  <span className="text-gray-soft">{t('goods')}</span>
+                  <span>{fmt(subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-soft">Doprava</span>
-                  <span>{shippingPrice === 0 ? 'Zdarma' : formatPrice(shippingPrice)}</span>
+                  <span className="text-gray-soft">{t('shipping')}</span>
+                  <span>{shippingPrice === 0 ? <span className="text-forest">{t('free')}</span> : fmt(shippingPrice)}</span>
                 </div>
                 {codFee > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-gray-soft">Poplatek za dobírku</span>
-                    <span>{formatPrice(codFee)}</span>
+                    <span className="text-gray-soft">{t('cod_fee')}</span>
+                    <span>{fmt(codFee)}</span>
                   </div>
                 )}
                 <div className="border-t border-cream-dark pt-2 flex justify-between font-bold text-base">
-                  <span>Celkem</span>
-                  <span className="text-forest">{formatPrice(orderTotal)}</span>
+                  <span>{t('total')}</span>
+                  <span className="text-forest">{fmt(orderTotal)}</span>
                 </div>
               </div>
 
@@ -241,7 +247,7 @@ export default function CheckoutPage() {
               </Button>
 
               <p className="text-xs text-gray-soft text-center mt-3">
-                Kliknutím souhlasíte s <a href={`/${locale}/podminky`} className="underline">obchodními podmínkami</a>.
+                {t('terms_agree')} <a href={`/${locale}/podminky`} className="underline">{t('terms')}</a>.
               </p>
             </div>
           </div>

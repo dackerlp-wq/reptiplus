@@ -1,18 +1,40 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-let cachedRate: number | null = null
+export type EurRateInfo = {
+  rate: number
+  fetchedAt: string
+  source: string
+  isFallback: boolean
+  cacheAgeMinutes: number
+}
+
+let cachedInfo: EurRateInfo | null = null
 
 export function useEurRate(): number | null {
-  const [rate, setRate] = useState<number | null>(cachedRate)
+  const info = useEurRateInfo()
+  return info?.rate ?? null
+}
+
+export function useEurRateInfo(): EurRateInfo | null {
+  const [info, setInfo] = useState<EurRateInfo | null>(cachedInfo)
 
   useEffect(() => {
-    if (cachedRate) { setRate(cachedRate); return }
+    if (cachedInfo) { setInfo(cachedInfo); return }
     fetch('/api/exchange-rate')
       .then(r => r.json())
-      .then(d => { cachedRate = d.eur_czk; setRate(d.eur_czk) })
+      .then(d => {
+        cachedInfo = {
+          rate: d.eur_czk,
+          fetchedAt: d.fetched_at,
+          source: d.source,
+          isFallback: d.is_fallback,
+          cacheAgeMinutes: d.cache_age_minutes,
+        }
+        setInfo(cachedInfo)
+      })
       .catch(() => {})
   }, [])
 
-  return rate
+  return info
 }
