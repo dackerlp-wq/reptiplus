@@ -22,7 +22,7 @@ type PostData = {
 }
 
 type Author = { id: string; name: string; is_default: number }
-type Product = { id: string; name_cs: string; sku: string; images: string }
+type Product = { id: string; slug: string; name_cs: string; sku: string; images: string }
 type Category = { id: string; name_cs: string }
 type BlogTag = { id: string; name_cs: string; name_en: string | null; name_de: string | null }
 
@@ -59,6 +59,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
   const [selectedProducts, setSelectedProducts] = useState<Product[]>(
     (initialData?.productLinks || []).map(l => ({
       id: l.product_id,
+      slug: (l.products as unknown as { slug?: string })?.slug || '',
       name_cs: l.products?.name_cs || '',
       sku: l.products?.sku || '',
       images: l.products?.images || '[]',
@@ -248,7 +249,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">Obsah (CZ)</label>
-            <RichEditor value={form.contentCs} onChange={val => setForm(f => ({ ...f, contentCs: val }))} placeholder="Začněte psát článek v češtině..." />
+            <RichEditor value={form.contentCs} onChange={val => setForm(f => ({ ...f, contentCs: val }))} placeholder="Začněte psát článek v češtině..." products={allProducts} />
           </div>
         </div>
       </div>

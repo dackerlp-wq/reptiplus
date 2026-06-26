@@ -25,7 +25,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   const { data: productLinksRaw } = await supabaseAdmin
     .from('blog_post_products')
-    .select('products(id, slug, name_cs, name_en, name_de, images, categories(name_cs, name_en, name_de))')
+    .select('products(id, slug, name_cs, name_en, name_de, price, stock, images, categories(name_cs, name_en, name_de))')
     .eq('blog_post_id', post.id)
 
   const { data: categoryLinksRaw } = await supabaseAdmin

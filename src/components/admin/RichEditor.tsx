@@ -1,6 +1,7 @@
 'use client'
-import { useEffect, useCallback, useRef } from 'react'
+import { useEffect, useCallback, useRef, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
+import { Mark, mergeAttributes } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
@@ -14,13 +15,35 @@ import {
   Heading1, Heading2, Heading3,
   AlignLeft, AlignCenter, AlignRight,
   List, ListOrdered, Quote, Minus, Link2, ImageIcon, Highlighter,
-  Undo, Redo
+  Undo, Redo, ShoppingBag, X,
 } from 'lucide-react'
+
+// TipTap mark for inline product mentions
+const ProductMention = Mark.create({
+  name: 'productMention',
+  addAttributes() {
+    return {
+      'data-product-id': { default: null, parseHTML: el => el.getAttribute('data-product-id') },
+      'data-product-slug': { default: null, parseHTML: el => el.getAttribute('data-product-slug') },
+      'data-product-name': { default: null, parseHTML: el => el.getAttribute('data-product-name') },
+    }
+  },
+  parseHTML() { return [{ tag: 'span[data-product-id]' }] },
+  renderHTML({ HTMLAttributes }) {
+    return ['span', mergeAttributes(HTMLAttributes, {
+      class: 'product-mention',
+      style: 'border-bottom: 2px solid #E8A33D; color: #8B5E00; cursor: pointer; font-weight: 600;',
+    }), 0]
+  },
+})
+
+type ProductOption = { id: string; name_cs: string; slug: string; sku: string; images: string }
 
 interface RichEditorProps {
   value: string
   onChange: (val: string) => void
   placeholder?: string
+  products?: ProductOption[]
 }
 
 function ToolbarButton({ active, onClick, children, title }: { active?: boolean; onClick: () => void; children: React.ReactNode; title?: string }) {
@@ -36,8 +59,11 @@ function ToolbarButton({ active, onClick, children, title }: { active?: boolean;
   )
 }
 
-export default function RichEditor({ value, onChange, placeholder = 'Začněte psát...' }: RichEditorProps) {
+export default function RichEditor({ value, onChange, placeholder = 'Začněte psát...', products = [] }: RichEditorProps) {
   const dropZoneRef = useRef<HTMLDivElement>(null)
+  const [showProductPicker, setShowProductPicker] = useState(false)
+  const [productSearch, setProductSearch] = useState('')
+  const pickerRef = useRef<HTMLDivElement>(null)
 
   const editor = useEditor({
     extensions: [
@@ -49,6 +75,7 @@ export default function RichEditor({ value, onChange, placeholder = 'Začněte p
       Link.configure({ openOnClick: false }),
       Image.configure({ inline: false, allowBase64: true }),
       Placeholder.configure({ placeholder }),
+      ProductMention,
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -63,6 +90,19 @@ export default function RichEditor({ value, onChange, placeholder = 'Začněte p
     }
   }, [value, editor])
 
+  // Close picker on outside click
+  useEffect(() => {
+    if (!showProductPicker) return
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowProductPicker(false)
+        setProductSearch('')
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showProductPicker])
+
   const uploadImage = useCallback(async (file: File) => {
     if (!editor) return
     const formData = new FormData()
@@ -74,7 +114,6 @@ export default function RichEditor({ value, onChange, placeholder = 'Začněte p
         editor.chain().focus().setImage({ src: data.url }).run()
       }
     } catch {
-      // fallback: use base64
       const reader = new FileReader()
       reader.onload = e => {
         if (e.target?.result) {
@@ -118,19 +157,45 @@ export default function RichEditor({ value, onChange, placeholder = 'Začněte p
     e.target.value = ''
   }
 
+  const insertProductMention = (product: ProductOption) => {
+    if (!editor) return
+    editor.chain().focus().setMark('productMention', {
+      'data-product-id': product.id,
+      'data-product-slug': product.slug,
+      'data-product-name': product.name_cs,
+    }).run()
+    setShowProductPicker(false)
+    setProductSearch('')
+  }
+
+  const removeMention = () => {
+    editor?.chain().focus().unsetMark('productMention').run()
+  }
+
+  const filteredProducts = productSearch.length > 0
+    ? products.filter(p =>
+        p.name_cs.toLowerCase().includes(productSearch.toLowerCase()) ||
+        p.sku.toLowerCase().includes(productSearch.toLowerCase())
+      ).slice(0, 8)
+    : products.slice(0, 8)
+
+  const isActiveMention = editor?.isActive('productMention') ?? false
+
+  const getFirstImage = (images: string) => {
+    try { return JSON.parse(images)?.[0] || null } catch { return null }
+  }
+
   if (!editor) return null
 
   return (
     <div className="border border-cream-dark rounded-xl overflow-hidden" ref={dropZoneRef}>
       {/* Toolbar */}
       <div className="bg-cream border-b border-cream-dark px-2 py-1.5 flex flex-wrap gap-0.5 items-center">
-        {/* History */}
         <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title="Zpět"><Undo className="w-4 h-4" /></ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().redo().run()} title="Znovu"><Redo className="w-4 h-4" /></ToolbarButton>
 
         <div className="w-px h-5 bg-cream-dark mx-1" />
 
-        {/* Text style */}
         <ToolbarButton active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Tučně (Ctrl+B)"><Bold className="w-4 h-4" /></ToolbarButton>
         <ToolbarButton active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Kurzíva (Ctrl+I)"><Italic className="w-4 h-4" /></ToolbarButton>
         <ToolbarButton active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Podtržení (Ctrl+U)"><UnderlineIcon className="w-4 h-4" /></ToolbarButton>
@@ -140,21 +205,18 @@ export default function RichEditor({ value, onChange, placeholder = 'Začněte p
 
         <div className="w-px h-5 bg-cream-dark mx-1" />
 
-        {/* Headings */}
         <ToolbarButton active={editor.isActive('heading', { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="Nadpis 1"><Heading1 className="w-4 h-4" /></ToolbarButton>
         <ToolbarButton active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="Nadpis 2"><Heading2 className="w-4 h-4" /></ToolbarButton>
         <ToolbarButton active={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="Nadpis 3"><Heading3 className="w-4 h-4" /></ToolbarButton>
 
         <div className="w-px h-5 bg-cream-dark mx-1" />
 
-        {/* Align */}
         <ToolbarButton active={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()} title="Zarovnat vlevo"><AlignLeft className="w-4 h-4" /></ToolbarButton>
         <ToolbarButton active={editor.isActive({ textAlign: 'center' })} onClick={() => editor.chain().focus().setTextAlign('center').run()} title="Vycentrovat"><AlignCenter className="w-4 h-4" /></ToolbarButton>
         <ToolbarButton active={editor.isActive({ textAlign: 'right' })} onClick={() => editor.chain().focus().setTextAlign('right').run()} title="Zarovnat vpravo"><AlignRight className="w-4 h-4" /></ToolbarButton>
 
         <div className="w-px h-5 bg-cream-dark mx-1" />
 
-        {/* Lists */}
         <ToolbarButton active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Odrážky"><List className="w-4 h-4" /></ToolbarButton>
         <ToolbarButton active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Číslovaný seznam"><ListOrdered className="w-4 h-4" /></ToolbarButton>
         <ToolbarButton active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Citace"><Quote className="w-4 h-4" /></ToolbarButton>
@@ -162,15 +224,77 @@ export default function RichEditor({ value, onChange, placeholder = 'Začněte p
 
         <div className="w-px h-5 bg-cream-dark mx-1" />
 
-        {/* Links & images */}
         <ToolbarButton active={editor.isActive('link')} onClick={setLink} title="Odkaz"><Link2 className="w-4 h-4" /></ToolbarButton>
 
-        {/* Image upload via file picker or URL */}
         <label className="p-1.5 rounded hover:bg-cream-dark transition-colors text-charcoal cursor-pointer" title="Vložit obrázek ze souboru">
           <ImageIcon className="w-4 h-4" />
           <input type="file" accept="image/*" multiple className="sr-only" onChange={handleFileInput} />
         </label>
         <ToolbarButton onClick={insertImageFromUrl} title="Vložit obrázek z URL"><ImageIcon className="w-4 h-4 opacity-50" /></ToolbarButton>
+
+        {products.length > 0 && (
+          <>
+            <div className="w-px h-5 bg-cream-dark mx-1" />
+            {/* Product mention button */}
+            <div className="relative" ref={pickerRef}>
+              {isActiveMention ? (
+                <ToolbarButton active onClick={removeMention} title="Odebrat propojení s produktem">
+                  <X className="w-4 h-4 text-amber-600" />
+                </ToolbarButton>
+              ) : (
+                <ToolbarButton
+                  active={showProductPicker}
+                  onClick={() => setShowProductPicker(v => !v)}
+                  title="Označit text jako zmínku produktu"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                </ToolbarButton>
+              )}
+
+              {showProductPicker && (
+                <div className="absolute top-full left-0 z-50 mt-1 w-72 bg-white border border-cream-dark rounded-xl shadow-xl overflow-hidden">
+                  <div className="p-2 border-b border-cream-dark">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={productSearch}
+                      onChange={e => setProductSearch(e.target.value)}
+                      placeholder="Hledat produkt..."
+                      className="w-full px-2 py-1.5 text-sm border border-cream-dark rounded-lg focus:outline-none focus:border-forest"
+                    />
+                  </div>
+                  <div className="max-h-56 overflow-y-auto">
+                    {filteredProducts.length === 0 && (
+                      <p className="px-3 py-3 text-sm text-gray-soft">Žádné produkty</p>
+                    )}
+                    {filteredProducts.map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onMouseDown={e => { e.preventDefault(); insertProductMention(p) }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-cream text-left border-b border-cream-dark last:border-0"
+                      >
+                        {getFirstImage(p.images) ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={getFirstImage(p.images)} alt="" className="w-8 h-8 object-cover rounded shrink-0" />
+                        ) : (
+                          <div className="w-8 h-8 rounded shrink-0" style={{ background: 'var(--color-amber)', opacity: 0.4 }} />
+                        )}
+                        <div>
+                          <div className="text-sm font-medium leading-tight">{p.name_cs}</div>
+                          <div className="text-xs text-gray-soft">{p.sku}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="px-3 py-1.5 text-xs text-gray-soft border-t border-cream-dark">
+                    Vyberte produkt pro označený text
+                  </p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Drop zone hint when dragging */}
@@ -189,6 +313,7 @@ export default function RichEditor({ value, onChange, placeholder = 'Začněte p
 
       <div className="bg-cream border-t border-cream-dark px-3 py-1 text-xs text-gray-soft">
         Přetáhněte obrázky sem nebo je vložte ze schránky (Ctrl+V)
+        {products.length > 0 && <> · <ShoppingBag className="inline w-3 h-3 mx-0.5" /> = označit text jako zmínku produktu</>}
       </div>
     </div>
   )
