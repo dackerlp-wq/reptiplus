@@ -46,6 +46,7 @@ ${parts.join('\n\n')}`
     const translations = JSON.parse(jsonMatch[0])
     return NextResponse.json(translations)
   } catch (err: unknown) {
+    console.error('[translate]', err)
     const msg = err instanceof Error ? err.message : 'Chyba překladu'
     return NextResponse.json({ error: msg }, { status: 500 })
   }
