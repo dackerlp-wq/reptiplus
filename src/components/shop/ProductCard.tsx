@@ -41,7 +41,7 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
   const addItem = useCartStore(s => s.addItem)
 
   const images = JSON.parse(product.images || '[]') as string[]
-  const image = images[0] || '/images/placeholder.svg'
+  const image = images[0] || 'https://sntwqjbvqxogtqrvoyme.supabase.co/storage/v1/object/public/images/placeholder.jpg'
   const name = getName(product, locale)
   const isOutOfStock = product.stock <= 0
   const isLowStock = product.stock > 0 && product.stock <= (product.lowStockThreshold ?? 5)
