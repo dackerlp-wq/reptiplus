@@ -204,7 +204,7 @@ export default function CheckoutPage() {
                 {items.map(item => (
                   <div key={item.productId} className="flex gap-3 items-center">
                     <div className="relative w-12 h-12 rounded-lg bg-cream shrink-0">
-                      <Image src={item.image} alt={item.name} fill className="object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = 'https://sntwqjbvqxogtqrvoyme.supabase.co/storage/v1/object/public/images/placeholder.jpg' }} />
+                      <Image src={item.image} alt={item.name} fill className="object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).src = 'https://sntwqjbvqxogtqrvoyme.supabase.co/storage/v1/object/public/images/placeholder.png' }} />
                       <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-forest text-white text-[10px] rounded-full flex items-center justify-center font-bold">{item.quantity}</span>
                     </div>
                     <p className="text-xs font-medium flex-1 line-clamp-2">{item.name}</p>

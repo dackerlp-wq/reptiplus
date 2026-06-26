@@ -52,7 +52,7 @@ export default function ProductDetailClient({
   const [activeImage, setActiveImage] = useState(0)
 
   const images = JSON.parse(product.images || '[]') as string[]
-  if (!images.length) images.push('https://sntwqjbvqxogtqrvoyme.supabase.co/storage/v1/object/public/images/placeholder.jpg')
+  if (!images.length) images.push('https://sntwqjbvqxogtqrvoyme.supabase.co/storage/v1/object/public/images/placeholder.png')
 
   const name = getName(product, locale)
   const description = getDescription(product, locale)

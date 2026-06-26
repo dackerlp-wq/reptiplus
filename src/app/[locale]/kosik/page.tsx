@@ -88,7 +88,7 @@ export default function CartPage() {
                   alt={item.name}
                   fill
                   className="object-contain p-1"
-                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://sntwqjbvqxogtqrvoyme.supabase.co/storage/v1/object/public/images/placeholder.jpg' }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://sntwqjbvqxogtqrvoyme.supabase.co/storage/v1/object/public/images/placeholder.png' }}
                 />
               </div>
               <div className="flex-1 min-w-0">
