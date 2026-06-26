@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { generateText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
+import { gateway } from '@ai-sdk/gateway'
 
 export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session || session.role !== 'admin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const apiKey = process.env.AI_GATEWAY_API_KEY || process.env.ANTHROPIC_API_KEY
-  if (!apiKey) {
-    return NextResponse.json({
-      error: 'AI_GATEWAY_API_KEY není nastaven. Přidejte ho do Vercel proměnných prostředí.',
-    }, { status: 503 })
+  if (!process.env.AI_GATEWAY_API_KEY) {
+    return NextResponse.json({ error: 'AI_GATEWAY_API_KEY není nastaven.' }, { status: 503 })
   }
 
   const body = await req.json()
@@ -38,9 +35,8 @@ Keep HTML/markdown formatting intact. Return ONLY valid JSON, no explanation, no
 ${parts.join('\n\n')}`
 
   try {
-    const anthropic = createAnthropic({ apiKey })
     const { text } = await generateText({
-      model: anthropic('claude-haiku-4-5-20251001'),
+      model: gateway('anthropic/claude-haiku-4.5'),
       prompt,
     })
 
