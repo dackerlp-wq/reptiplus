@@ -1,10 +1,17 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/Toaster'
+import { createClient } from '@supabase/supabase-js'
+import { Upload, X, GripVertical } from 'lucide-react'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 interface Category { id: string; name_cs: string }
 interface ProductData {
@@ -23,7 +30,8 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
   const [loading, setLoading] = useState(false)
   const [paramKey, setParamKey] = useState('')
   const [paramValue, setParamValue] = useState('')
-  const [imageUrl, setImageUrl] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
     nameCs: initialData?.nameCs || '',
@@ -69,10 +77,35 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
     })
   }
 
-  const addImage = () => {
-    if (!imageUrl.trim()) return
-    setForm(f => ({ ...f, images: [...f.images, imageUrl.trim()] }))
-    setImageUrl('')
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    setUploading(true)
+    const uploaded: string[] = []
+    for (const file of files) {
+      const ext = file.name.split('.').pop()
+      const path = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const { error } = await supabase.storage.from('images').upload(path, file, { upsert: false })
+      if (error) { toast(`Chyba: ${file.name}`, 'error'); continue }
+      const { data } = supabase.storage.from('images').getPublicUrl(path)
+      uploaded.push(data.publicUrl)
+    }
+    setForm(f => ({ ...f, images: [...f.images, ...uploaded] }))
+    setUploading(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const removeImage = (i: number) => {
+    setForm(f => ({ ...f, images: f.images.filter((_, j) => j !== i) }))
+  }
+
+  const moveImage = (from: number, to: number) => {
+    setForm(f => {
+      const imgs = [...f.images]
+      const [item] = imgs.splice(from, 1)
+      imgs.splice(to, 0, item)
+      return { ...f, images: imgs }
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -177,33 +210,61 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
       {/* Images */}
       <div className="bg-white rounded-xl border border-cream-dark p-6">
         <h2 className="font-bold mb-4">Obrázky</h2>
-        <div className="flex gap-2 mb-3">
-          <input
-            type="url"
-            value={imageUrl}
-            onChange={e => setImageUrl(e.target.value)}
-            placeholder="URL obrázku..."
-            className="flex-1 border border-cream-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-forest"
-          />
-          <Button type="button" variant="outline" size="sm" onClick={addImage}>Přidat</Button>
+
+        {/* Upload zone */}
+        <div
+          className="border-2 border-dashed border-cream-dark rounded-xl p-8 text-center cursor-pointer hover:border-forest/50 hover:bg-sage/10 transition-colors mb-4"
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => {
+            e.preventDefault()
+            const dt = e.dataTransfer
+            if (dt.files.length) handleImageUpload({ target: { files: dt.files } } as React.ChangeEvent<HTMLInputElement>)
+          }}
+        >
+          <Upload className="w-8 h-8 text-gray-soft mx-auto mb-2" />
+          <p className="text-sm text-gray-soft">Přetáhni sem soubory nebo <span className="text-forest font-medium">klikni pro výběr</span></p>
+          <p className="text-xs text-gray-soft mt-1">JPG, PNG, WebP — max 5 MB / soubor</p>
+          {uploading && <p className="text-sm text-forest mt-2 animate-pulse">Nahrávám...</p>}
         </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={handleImageUpload}
+        />
+
+        {/* Gallery */}
         {form.images.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {form.images.map((img, i) => (
-              <div key={i} className="relative w-16 h-16 rounded-lg border border-cream-dark overflow-hidden group">
-                <img src={img} alt="" className="w-full h-full object-contain p-1" />
-                <button
-                  type="button"
-                  onClick={() => setForm(f => ({ ...f, images: f.images.filter((_, j) => j !== i) }))}
-                  className="absolute inset-0 bg-black/50 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+          <div>
+            <p className="text-xs text-gray-soft mb-2">První obrázek = hlavní. Přetažením změníš pořadí.</p>
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+              {form.images.map((img, i) => (
+                <div key={img + i} className="relative group">
+                  {i === 0 && (
+                    <span className="absolute top-1 left-1 z-10 bg-forest text-white text-[10px] px-1 rounded">Hlavní</span>
+                  )}
+                  <div className="aspect-square rounded-lg border-2 border-cream-dark overflow-hidden bg-cream">
+                    <img src={img} alt="" className="w-full h-full object-contain p-1" />
+                  </div>
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-1">
+                    {i > 0 && (
+                      <button type="button" onClick={() => moveImage(i, i - 1)} className="bg-white/90 text-charcoal rounded p-0.5 text-xs">←</button>
+                    )}
+                    <button type="button" onClick={() => removeImage(i)} className="bg-red-500 text-white rounded p-0.5">
+                      <X className="w-3 h-3" />
+                    </button>
+                    {i < form.images.length - 1 && (
+                      <button type="button" onClick={() => moveImage(i, i + 1)} className="bg-white/90 text-charcoal rounded p-0.5 text-xs">→</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
-        <p className="text-xs text-gray-soft mt-2">Vložte URL obrázku (https://...). Nahráváni souborů bude dostupné po konfiguraci úložiště.</p>
       </div>
 
       {/* Parameters */}
