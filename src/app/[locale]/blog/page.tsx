@@ -128,26 +128,29 @@ export default async function BlogPage({
             </div>
           )}
 
-          {/* Featured */}
+          {/* Featured — card overlay pattern: absolute Link covers card, tag links sit above it */}
           {featured && (
-            <Link href={`/${locale}/blog/${featured.slug}`} className="block mb-10 group">
+            <div className="block mb-10 group">
               <article className="specimen-card specimen-featured flex flex-col md:flex-row"
                 style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)', position: 'relative' }}>
+                {/* Invisible overlay link for the whole card */}
+                <Link href={`/${locale}/blog/${featured.slug}`} className="absolute inset-0 z-0" aria-label={getTitle(featured as Record<string, unknown>)} />
+
                 <div className="absolute -top-px right-6 px-3 py-1.5 text-xs font-bold uppercase tracking-widest"
-                  style={{ background: 'var(--color-amber)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1.5px solid var(--color-ink)', borderTop: 'none' }}>
+                  style={{ background: 'var(--color-amber)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1.5px solid var(--color-ink)', borderTop: 'none', zIndex: 1 }}>
                   Doporučujeme
                 </div>
 
                 {featured.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={featured.image} alt="" className="md:w-2/5 h-48 md:h-auto object-cover" style={{ borderRight: '1.5px solid var(--color-ink)' }} />
+                  <img src={featured.image} alt="" className="md:w-2/5 h-48 md:h-auto object-cover relative z-0" style={{ borderRight: '1.5px solid var(--color-ink)' }} />
                 ) : (
-                  <div className="md:w-2/5 h-48 md:h-64 flex items-center justify-center" style={{ background: 'var(--color-moss)', borderRight: '1.5px solid var(--color-ink)' }}>
+                  <div className="md:w-2/5 h-48 md:h-64 flex items-center justify-center relative z-0" style={{ background: 'var(--color-moss)', borderRight: '1.5px solid var(--color-ink)' }}>
                     <span className="text-6xl opacity-30">🦎</span>
                   </div>
                 )}
 
-                <div className="flex-1 p-8 flex flex-col justify-center">
+                <div className="flex-1 p-8 flex flex-col justify-center relative z-[1]">
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {(featured as any).blog_categories && (
                     <div className="mb-2">
@@ -171,11 +174,11 @@ export default async function BlogPage({
                   {getPostTags(featured).length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {getPostTags(featured).map((tag, i) => (
-                        <span key={i} onClick={e => e.preventDefault()}
-                          className="px-2 py-0.5 text-xs rounded-full cursor-pointer hover:opacity-80"
+                        <Link key={i} href={`/${locale}/blog?tag=${tag.slug}`}
+                          className="px-2 py-0.5 text-xs rounded-full hover:opacity-80 relative z-[2]"
                           style={{ background: 'rgba(232,163,61,0.18)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.35)' }}>
-                          <a href={`/${locale}/blog?tag=${tag.slug}`}>{getTagName(tag)}</a>
-                        </span>
+                          {getTagName(tag)}
+                        </Link>
                       ))}
                     </div>
                   )}
@@ -185,7 +188,7 @@ export default async function BlogPage({
                   </span>
                 </div>
               </article>
-            </Link>
+            </div>
           )}
 
           {/* Article feed */}
@@ -194,16 +197,19 @@ export default async function BlogPage({
           )}
           <div className="flex flex-col gap-8">
             {rest.map((post) => (
-              <Link key={post.id} href={`/${locale}/blog/${post.slug}`} className="block group">
+              <div key={post.id} className="group">
                 <article className="specimen-card p-7"
                   style={{ background: 'var(--color-paper)', border: '1.5px solid var(--color-ink)', borderRadius: 2, position: 'relative' }}>
+                  {/* Overlay link covers the whole card */}
+                  <Link href={`/${locale}/blog/${post.slug}`} className="absolute inset-0 z-0" aria-label={getTitle(post as Record<string, unknown>)} />
+
                   <div className="absolute -top-px right-6 px-3 py-1 text-xs font-bold uppercase tracking-wider"
-                    style={{ background: 'var(--color-moss)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)', border: '1.5px solid var(--color-ink)', borderTop: 'none' }}>
+                    style={{ background: 'var(--color-moss)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)', border: '1.5px solid var(--color-ink)', borderTop: 'none', zIndex: 1 }}>
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {(post as any).blog_categories ? getCatName((post as any).blog_categories) : (locale === 'cs' ? 'Článek' : locale === 'en' ? 'Article' : 'Artikel')}
                   </div>
 
-                  <div className="flex gap-6">
+                  <div className="flex gap-6 relative z-[1]">
                     {post.image && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={post.image} alt="" className="w-36 h-36 object-cover shrink-0" style={{ border: '1.5px solid var(--color-ink)' }} />
@@ -222,12 +228,11 @@ export default async function BlogPage({
                       {getPostTags(post).length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-3">
                           {getPostTags(post).map((tag, i) => (
-                            <a key={i} href={`/${locale}/blog?tag=${tag.slug}`}
-                              onClick={e => e.stopPropagation()}
-                              className="px-2 py-0.5 text-xs rounded-full hover:opacity-80 transition-opacity"
+                            <Link key={i} href={`/${locale}/blog?tag=${tag.slug}`}
+                              className="px-2 py-0.5 text-xs rounded-full hover:opacity-80 transition-opacity relative z-[2]"
                               style={{ background: 'rgba(232,163,61,0.18)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.35)' }}>
                               {getTagName(tag)}
-                            </a>
+                            </Link>
                           ))}
                         </div>
                       )}
@@ -238,7 +243,7 @@ export default async function BlogPage({
                     </div>
                   </div>
                 </article>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
