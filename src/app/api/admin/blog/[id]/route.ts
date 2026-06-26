@@ -7,7 +7,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: post } = await supabaseAdmin
     .from('blog_posts')
-    .select('*, blog_authors(*)')
+    .select('*, blog_authors(id, name, avatar_initial, avatar_url, bio, is_default)')
     .eq('id', id)
     .single()
 

@@ -13,7 +13,6 @@ export async function GET() {
     .select('id, slug, title_cs, title_en, is_published, published_at, created_at, blog_author_id, blog_authors(name)')
     .order('created_at', { ascending: false })
 
-  // Pending comment counts
   const { data: pendingRaw } = await supabaseAdmin
     .from('blog_comments')
     .select('blog_post_id')
@@ -52,37 +51,30 @@ export async function POST(req: NextRequest) {
   const now = new Date().toISOString()
   const id = generateId()
 
-  // Resolve default author if not specified
-  let authorId = blogAuthorId || null
-  if (!authorId) {
+  let blogAuthorIdResolved: string | null = blogAuthorId || null
+  if (!blogAuthorIdResolved) {
     const { data: defaultAuthor } = await supabaseAdmin
       .from('blog_authors')
       .select('id')
       .eq('is_default', 1)
       .single()
-    authorId = defaultAuthor?.id || null
+    blogAuthorIdResolved = defaultAuthor?.id || null
   }
 
   const { data, error } = await supabaseAdmin.from('blog_posts').insert({
-    id,
-    slug,
-    title_cs: titleCs,
-    title_en: titleEn || null,
-    title_de: titleDe || null,
-    content_cs: contentCs || null,
-    content_en: contentEn || null,
-    content_de: contentDe || null,
-    excerpt: excerpt || null,
-    image: image || null,
+    id, slug,
+    title_cs: titleCs, title_en: titleEn || null, title_de: titleDe || null,
+    content_cs: contentCs || null, content_en: contentEn || null, content_de: contentDe || null,
+    excerpt: excerpt || null, image: image || null,
     author_id: session.id,
-    blog_author_id: authorId,
+    blog_author_id: blogAuthorIdResolved,
     is_published: isPublished ? 1 : 0,
     published_at: isPublished ? now : null,
   }).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Product links
+  // Product/category links require migration_blog_v2.sql
   if (productIds?.length) {
     await supabaseAdmin.from('blog_post_products').insert(
       productIds.map((pid: string) => ({ blog_post_id: id, product_id: pid }))

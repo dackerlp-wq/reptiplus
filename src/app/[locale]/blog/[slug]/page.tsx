@@ -1,7 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import { formatDate } from '@/lib/utils'
 import type { Locale } from '@/lib/i18n'
 import BlogPostClient from './BlogPostClient'
 
@@ -25,25 +23,21 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     .order('published_at', { ascending: false })
     .limit(2)
 
-  // Product links
   const { data: productLinksRaw } = await supabaseAdmin
     .from('blog_post_products')
     .select('products(id, slug, name_cs, name_en, name_de, images, categories(name_cs, name_en, name_de))')
     .eq('blog_post_id', post.id)
 
-  // Category links — get products from linked categories
   const { data: categoryLinksRaw } = await supabaseAdmin
     .from('blog_post_product_categories')
     .select('categories(id, name_cs)')
     .eq('blog_post_id', post.id)
 
-  // Likes count
   const { count: likesCount } = await supabaseAdmin
     .from('blog_post_likes')
     .select('*', { count: 'exact', head: true })
     .eq('blog_post_id', post.id)
 
-  // Approved comments count
   const { count: commentsCount } = await supabaseAdmin
     .from('blog_comments')
     .select('*', { count: 'exact', head: true })
