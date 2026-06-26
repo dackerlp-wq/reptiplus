@@ -24,6 +24,12 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
 
   return (
     <>
+      <style>{`
+        .specimen-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .specimen-card:hover { transform: translateY(-3px); box-shadow: 6px 6px 0 var(--color-ink); }
+        .specimen-featured:hover { transform: translateY(-2px); box-shadow: 7px 7px 0 var(--color-ink); }
+      `}</style>
+
       {/* Hero */}
       <header style={{ background: 'var(--color-forest-deep)', color: 'var(--color-paper)' }}
         className="px-8 py-16 relative overflow-hidden">
@@ -51,17 +57,14 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
           {/* Featured */}
           {featured && (
             <Link href={`/${locale}/blog/${featured.slug}`} className="block mb-10 group">
-              <article style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)', position: 'relative' }}
-                className="flex flex-col md:flex-row transition-transform duration-200 hover:-translate-y-0.5"
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = '7px 7px 0 var(--color-ink)')}
-                onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
+              <article className="specimen-card specimen-featured flex flex-col md:flex-row"
+                style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)', position: 'relative' }}>
                 {/* Featured tag */}
                 <div className="absolute -top-px right-6 px-3 py-1.5 text-xs font-bold uppercase tracking-widest"
                   style={{ background: 'var(--color-amber)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1.5px solid var(--color-ink)', borderTop: 'none' }}>
                   Doporučujeme
                 </div>
 
-                {/* Image placeholder */}
                 {featured.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={featured.image} alt="" className="md:w-2/5 h-48 md:h-auto object-cover" style={{ borderRight: '1.5px solid var(--color-ink)' }} />
@@ -82,7 +85,7 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
                     {getTitle(featured as Record<string, unknown>)}
                   </h2>
                   {featured.excerpt && <p className="text-sm mb-4" style={{ color: '#3C4138', lineHeight: 1.65 }}>{featured.excerpt}</p>}
-                  <span className="text-sm font-bold uppercase tracking-wide inline-flex items-center gap-1.5 group-hover:gap-2.5 transition-all"
+                  <span className="text-sm font-bold uppercase tracking-wide inline-flex items-center gap-1.5"
                     style={{ color: 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>
                     {t('read_more')} →
                   </span>
@@ -98,10 +101,8 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
           <div className="flex flex-col gap-8">
             {rest.map((post) => (
               <Link key={post.id} href={`/${locale}/blog/${post.slug}`} className="block group">
-                <article style={{ background: 'var(--color-paper)', border: '1.5px solid var(--color-ink)', borderRadius: 2, position: 'relative' }}
-                  className="p-7 transition-transform duration-200 hover:-translate-y-0.5"
-                  onMouseEnter={e => (e.currentTarget.style.boxShadow = '6px 6px 0 var(--color-ink)')}
-                  onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}>
+                <article className="specimen-card p-7"
+                  style={{ background: 'var(--color-paper)', border: '1.5px solid var(--color-ink)', borderRadius: 2, position: 'relative' }}>
                   {/* Corner tag */}
                   <div className="absolute -top-px right-6 px-3 py-1 text-xs font-bold uppercase tracking-wider"
                     style={{ background: 'var(--color-moss)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)', border: '1.5px solid var(--color-ink)', borderTop: 'none' }}>
@@ -124,7 +125,7 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
                         {getTitle(post as Record<string, unknown>)}
                       </h2>
                       {post.excerpt && <p className="text-sm mb-3 line-clamp-2" style={{ color: '#3C4138', lineHeight: 1.65 }}>{post.excerpt}</p>}
-                      <span className="text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1 group-hover:gap-2 transition-all"
+                      <span className="text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1"
                         style={{ color: 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>
                         {t('read_more')} →
                       </span>
