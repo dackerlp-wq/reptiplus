@@ -1,15 +1,32 @@
 import { notFound } from 'next/navigation'
+import { supabaseAdmin } from '@/lib/supabase'
 import BlogForm from '../BlogForm'
 
 export default async function EditBlogPostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const res = await fetch(`${baseUrl}/api/admin/blog/${id}`, { cache: 'no-store' })
-  if (!res.ok) notFound()
+  const { data: post } = await supabaseAdmin
+    .from('blog_posts')
+    .select('*, blog_authors(id, name, avatar_initial, avatar_url, bio, is_default)')
+    .eq('id', id)
+    .single()
 
-  const { post, productLinks, categoryLinks } = await res.json()
   if (!post) notFound()
+
+  const { data: productLinksRaw } = await supabaseAdmin
+    .from('blog_post_products')
+    .select('product_id, products(id, name_cs, name_en, sku, images, categories(name_cs))')
+    .eq('blog_post_id', id)
+
+  const { data: categoryLinksRaw } = await supabaseAdmin
+    .from('blog_post_product_categories')
+    .select('category_id, categories(id, name_cs)')
+    .eq('blog_post_id', id)
+
+  const { data: tagLinksRaw } = await supabaseAdmin
+    .from('blog_post_tags')
+    .select('tag_id, blog_tags(id, name_cs, name_en, name_de)')
+    .eq('blog_post_id', id)
 
   return (
     <div>
@@ -26,8 +43,12 @@ export default async function EditBlogPostPage({ params }: { params: Promise<{ i
         image: post.image,
         isPublished: !!post.is_published,
         blogAuthorId: post.blog_author_id || '',
-        productLinks,
-        categoryLinks,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        productLinks: (productLinksRaw || []) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        categoryLinks: (categoryLinksRaw || []) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tagLinks: (tagLinksRaw || []) as any,
       }} />
     </div>
   )

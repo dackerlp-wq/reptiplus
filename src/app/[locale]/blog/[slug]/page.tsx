@@ -33,6 +33,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     .select('categories(id, name_cs)')
     .eq('blog_post_id', post.id)
 
+  const { data: tagLinksRaw } = await supabaseAdmin
+    .from('blog_post_tags')
+    .select('blog_tags(id, name_cs, name_en, name_de)')
+    .eq('blog_post_id', post.id)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tags = (tagLinksRaw || []).map((l: any) => l.blog_tags).filter(Boolean)
+
   const { count: likesCount } = await supabaseAdmin
     .from('blog_post_likes')
     .select('*', { count: 'exact', head: true })
@@ -64,6 +72,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       related={related || []}
       productLinks={productLinks}
       categoryLinks={categoryLinks}
+      tags={tags}
       initialLikes={likesCount || 0}
       commentsCount={commentsCount || 0}
       slug={slug}

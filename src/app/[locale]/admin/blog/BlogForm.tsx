@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/Toaster'
-import { Wand2, X, Search } from 'lucide-react'
+import { Wand2, X, Search, Tag, Upload } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
 const RichEditor = dynamic(() => import('@/components/admin/RichEditor'), { ssr: false })
@@ -18,23 +18,30 @@ type PostData = {
   blogAuthorId?: string
   productLinks?: { product_id: string; products: { id: string; name_cs: string; sku: string; images: string } }[]
   categoryLinks?: { category_id: string; categories: { id: string; name_cs: string } }[]
+  tagLinks?: { tag_id: string; blog_tags: { id: string; name_cs: string; name_en: string | null; name_de: string | null } }[]
 }
 
 type Author = { id: string; name: string; is_default: number }
 type Product = { id: string; name_cs: string; sku: string; images: string }
 type Category = { id: string; name_cs: string }
+type BlogTag = { id: string; name_cs: string; name_en: string | null; name_de: string | null }
 
 export default function BlogForm({ initialData }: { initialData?: PostData }) {
   const locale = useLocale()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [translating, setTranslating] = useState(false)
+  const [generatingTags, setGeneratingTags] = useState(false)
   const [authors, setAuthors] = useState<Author[]>([])
   const [allProducts, setAllProducts] = useState<Product[]>([])
   const [allCategories, setAllCategories] = useState<Category[]>([])
+  const [allTags, setAllTags] = useState<BlogTag[]>([])
+  const [tagSearch, setTagSearch] = useState('')
   const [productSearch, setProductSearch] = useState('')
   const [categorySearch, setCategorySearch] = useState('')
+  const [imageUploading, setImageUploading] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
     titleCs: initialData?.titleCs || '',
@@ -63,11 +70,20 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
       name_cs: l.categories?.name_cs || '',
     }))
   )
+  const [selectedTags, setSelectedTags] = useState<BlogTag[]>(
+    (initialData?.tagLinks || []).map(l => ({
+      id: l.tag_id,
+      name_cs: l.blog_tags?.name_cs || '',
+      name_en: l.blog_tags?.name_en || null,
+      name_de: l.blog_tags?.name_de || null,
+    }))
+  )
 
   useEffect(() => {
     fetch('/api/admin/blog/authors').then(r => r.json()).then(d => setAuthors(d.authors || []))
     fetch('/api/admin/products').then(r => r.json()).then(d => setAllProducts(d.products || []))
     fetch('/api/categories').then(r => r.json()).then(d => setAllCategories(d.categories || []))
+    fetch('/api/admin/blog/tags').then(r => r.json()).then(d => setAllTags(d.tags || []))
   }, [])
 
   useEffect(() => {
@@ -105,6 +121,44 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
     setTranslating(false)
   }
 
+  const generateTags = async () => {
+    if (!initialData?.id) { toast('Nejdříve článek uložte, pak generujte štítky', 'error'); return }
+    if (!form.titleCs) { toast('Nejdřív vyplňte název', 'error'); return }
+    setGeneratingTags(true)
+    try {
+      const res = await fetch(`/api/admin/blog/${initialData.id}/generate-tags`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titleCs: form.titleCs, contentCs: form.contentCs, excerpt: form.excerpt }),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast(data.error || 'Generování selhalo', 'error'); return }
+      setSelectedTags(data.tags || [])
+      // refresh all tags in case new ones were created
+      fetch('/api/admin/blog/tags').then(r => r.json()).then(d => setAllTags(d.tags || []))
+      toast(`Vygenerováno ${data.tags?.length || 0} štítků ✓`, 'success')
+    } catch {
+      toast('Generování selhalo', 'error')
+    }
+    setGeneratingTags(false)
+  }
+
+  const uploadImage = async (file: File) => {
+    setImageUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) { toast(data.error || 'Nahrávání selhalo', 'error'); return }
+      setForm(f => ({ ...f, image: data.url }))
+      toast('Obrázek nahrán ✓', 'success')
+    } catch {
+      toast('Nahrávání selhalo', 'error')
+    }
+    setImageUploading(false)
+  }
+
   const addProduct = (p: Product) => {
     if (!selectedProducts.find(s => s.id === p.id)) setSelectedProducts(prev => [...prev, p])
     setProductSearch('')
@@ -117,6 +171,12 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
   }
   const removeCategory = (id: string) => setSelectedCategories(prev => prev.filter(c => c.id !== id))
 
+  const addTag = (t: BlogTag) => {
+    if (!selectedTags.find(s => s.id === t.id)) setSelectedTags(prev => [...prev, t])
+    setTagSearch('')
+  }
+  const removeTag = (id: string) => setSelectedTags(prev => prev.filter(t => t.id !== id))
+
   const filteredProducts = productSearch.length > 1
     ? allProducts.filter(p =>
         p.name_cs.toLowerCase().includes(productSearch.toLowerCase()) ||
@@ -126,6 +186,13 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
 
   const filteredCategories = categorySearch.length > 0
     ? allCategories.filter(c => c.name_cs.toLowerCase().includes(categorySearch.toLowerCase())).slice(0, 6)
+    : []
+
+  const filteredTags = tagSearch.length > 0
+    ? allTags.filter(t =>
+        t.name_cs.toLowerCase().includes(tagSearch.toLowerCase()) &&
+        !selectedTags.find(s => s.id === t.id)
+      ).slice(0, 8)
     : []
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,6 +211,7 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
         blogAuthorId: form.blogAuthorId || null,
         productIds: selectedProducts.map(p => p.id),
         categoryIds: selectedCategories.map(c => c.id),
+        tagIds: selectedTags.map(t => t.id),
       }),
     })
 
@@ -206,6 +274,54 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
             <label className="block text-sm font-medium mb-2">Inhalt (DE)</label>
             <RichEditor value={form.contentDe} onChange={val => setForm(f => ({ ...f, contentDe: val }))} placeholder="Deutschen Text eintragen oder einfügen..." />
           </div>
+        </div>
+      </div>
+
+      {/* Tags */}
+      <div className="bg-white rounded-xl border border-cream-dark p-6">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="font-bold flex items-center gap-2"><Tag className="w-4 h-4" /> Štítky</h2>
+          <Button type="button" variant="outline" size="sm" onClick={generateTags} loading={generatingTags}>
+            <Wand2 className="w-4 h-4" /> Generovat pomocí AI
+          </Button>
+        </div>
+        <p className="text-sm text-gray-soft mb-4">Štítky pomáhají čtenářům orientovat se v tématech článků.</p>
+
+        {/* Selected tag chips */}
+        {selectedTags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {selectedTags.map(t => (
+              <div key={t.id} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full"
+                style={{ background: 'rgba(232,163,61,0.15)', border: '1px solid rgba(232,163,61,0.4)', color: 'var(--color-ink)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                {t.name_cs}
+                <button type="button" onClick={() => removeTag(t.id)} className="opacity-60 hover:opacity-100 ml-0.5">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Tag search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-soft pointer-events-none" />
+          <input
+            type="text"
+            value={tagSearch}
+            onChange={e => setTagSearch(e.target.value)}
+            placeholder="Hledat nebo přidat štítek..."
+            className="w-full pl-9 pr-3 py-2 border border-cream-dark rounded-lg text-sm focus:outline-none focus:border-forest"
+          />
+          {filteredTags.length > 0 && (
+            <div className="absolute z-20 top-full left-0 right-0 bg-white border border-cream-dark rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+              {filteredTags.map(t => (
+                <button key={t.id} type="button" onClick={() => addTag(t)}
+                  className="w-full px-3 py-2 hover:bg-cream text-left text-sm border-b border-cream-dark last:border-0">
+                  {t.name_cs}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -307,7 +423,34 @@ export default function BlogForm({ initialData }: { initialData?: PostData }) {
       <div className="bg-white rounded-xl border border-cream-dark p-6">
         <h2 className="font-bold mb-4">Nastavení</h2>
         <div className="space-y-4">
-          <Input id="image" label="URL obrázku (cover)" value={form.image} onChange={set('image')} placeholder="https://..." />
+          {/* Cover image upload */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Obrázek (cover)</label>
+            {form.image && (
+              <div className="relative mb-2 inline-block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={form.image} alt="" className="h-32 w-auto object-cover rounded-lg border border-cream-dark" />
+                <button type="button" onClick={() => setForm(f => ({ ...f, image: '' }))}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+            <div>
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f) }}
+              />
+              <Button type="button" variant="outline" size="sm" loading={imageUploading}
+                onClick={() => imageInputRef.current?.click()}>
+                <Upload className="w-4 h-4" />
+                {form.image ? 'Změnit obrázek' : 'Nahrát obrázek'}
+              </Button>
+            </div>
+          </div>
 
           {authors.length > 0 && (
             <div>

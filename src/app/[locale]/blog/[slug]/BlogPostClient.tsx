@@ -8,6 +8,7 @@ import { toast } from '@/components/ui/Toaster'
 type Author = { id: string; name: string; avatar_initial: string | null; avatar_url: string | null; bio: string | null } | null
 type Product = { id: string; slug: string; name_cs: string; name_en: string; name_de: string; images: string; categories: { name_cs: string } | null }
 type Category = { id: string; name_cs: string }
+type BlogTag = { id: string; name_cs: string; name_en: string | null; name_de: string | null }
 type Comment = { id: string; content: string; guest_name: string | null; created_at: string; users: { first_name: string; last_name: string } | null; likes_count: number }
 type RelatedPost = { id: string; slug: string; title_cs: string; title_en: string; title_de: string; excerpt: string | null }
 
@@ -21,6 +22,7 @@ interface Props {
   related: RelatedPost[]
   productLinks: Product[]
   categoryLinks: Category[]
+  tags: BlogTag[]
   initialLikes: number
   commentsCount: number
   slug: string
@@ -28,7 +30,7 @@ interface Props {
 
 export default function BlogPostClient({
   post, title, content, locale, author, related,
-  productLinks, categoryLinks, initialLikes, commentsCount, slug,
+  productLinks, categoryLinks, tags, initialLikes, commentsCount, slug,
 }: Props) {
   const [likes, setLikes] = useState(initialLikes)
   const [liked, setLiked] = useState(false)
@@ -132,11 +134,24 @@ export default function BlogPostClient({
             {title}
           </h1>
 
-          <div className="flex items-center gap-4 text-xs mb-10 pb-6" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)', borderBottom: '1px solid rgba(27,31,23,0.12)' }}>
+          <div className="flex items-center gap-4 text-xs mb-4" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
             <span>{formatDate(post.published_at || post.created_at, locale)}</span>
             <span style={{ color: 'var(--color-terracotta)' }}>/</span>
             <span>{author?.name || 'Reptiplus'}</span>
           </div>
+
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-8 pb-6" style={{ borderBottom: '1px solid rgba(27,31,23,0.12)' }}>
+              {tags.map(tag => (
+                <span key={tag.id} className="px-3 py-1 text-xs rounded-full"
+                  style={{ background: 'rgba(232,163,61,0.15)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.35)', fontWeight: 600 }}>
+                  {(tag[`name_${locale}` as keyof BlogTag] as string) || tag.name_cs}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {tags.length === 0 && <div className="mb-10 pb-6" style={{ borderBottom: '1px solid rgba(27,31,23,0.12)' }} />}
 
           {/* Content */}
           {content ? (

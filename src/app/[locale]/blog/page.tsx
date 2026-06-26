@@ -10,7 +10,7 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
 
   const { data: posts } = await supabaseAdmin
     .from('blog_posts')
-    .select('*, blog_authors(name, avatar_initial)')
+    .select('*, blog_authors(name, avatar_initial), blog_post_tags(blog_tags(name_cs, name_en, name_de))')
     .eq('is_published', 1)
     .order('published_at', { ascending: false })
 
@@ -18,6 +18,13 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
     const map: Record<string, unknown> = { cs: post.title_cs, en: post.title_en, de: post.title_de }
     return (map[locale] || post.title_cs) as string
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getTagName = (tag: any) => (tag[`name_${locale}`] || tag.name_cs) as string
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getPostTags = (post: any): { name_cs: string; name_en: string | null; name_de: string | null }[] =>
+    (post.blog_post_tags || []).map((pt: any) => pt.blog_tags).filter(Boolean)
 
   const featured = posts?.[0]
   const rest = posts?.slice(1) || []
@@ -84,7 +91,17 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
                   <h2 className="text-2xl font-bold mb-3 leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
                     {getTitle(featured as Record<string, unknown>)}
                   </h2>
-                  {featured.excerpt && <p className="text-sm mb-4" style={{ color: '#3C4138', lineHeight: 1.65 }}>{featured.excerpt}</p>}
+                  {featured.excerpt && <p className="text-sm mb-3" style={{ color: '#3C4138', lineHeight: 1.65 }}>{featured.excerpt}</p>}
+                  {getPostTags(featured).length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {getPostTags(featured).map((tag, i) => (
+                        <span key={i} className="px-2 py-0.5 text-xs rounded-full"
+                          style={{ background: 'rgba(232,163,61,0.18)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.35)' }}>
+                          {getTagName(tag)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <span className="text-sm font-bold uppercase tracking-wide inline-flex items-center gap-1.5"
                     style={{ color: 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>
                     {t('read_more')} →
@@ -125,6 +142,16 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
                         {getTitle(post as Record<string, unknown>)}
                       </h2>
                       {post.excerpt && <p className="text-sm mb-3 line-clamp-2" style={{ color: '#3C4138', lineHeight: 1.65 }}>{post.excerpt}</p>}
+                      {getPostTags(post).length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {getPostTags(post).map((tag, i) => (
+                            <span key={i} className="px-2 py-0.5 text-xs rounded-full"
+                              style={{ background: 'rgba(232,163,61,0.18)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.35)' }}>
+                              {getTagName(tag)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <span className="text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1"
                         style={{ color: 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>
                         {t('read_more')} →

@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     titleCs, titleEn, titleDe,
     contentCs, contentEn, contentDe,
     excerpt, image, isPublished,
-    blogAuthorId, productIds, categoryIds,
+    blogAuthorId, productIds, categoryIds, tagIds,
   } = body
 
   if (!titleCs) return NextResponse.json({ error: 'Název je povinný' }, { status: 400 })

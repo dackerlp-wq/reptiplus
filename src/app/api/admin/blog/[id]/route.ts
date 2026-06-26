@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     titleCs, titleEn, titleDe,
     contentCs, contentEn, contentDe,
     excerpt, image, isPublished,
-    blogAuthorId, productIds, categoryIds,
+    blogAuthorId, productIds, categoryIds, tagIds,
   } = body
 
   const { data: existing } = await supabaseAdmin
@@ -83,6 +83,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (categoryIds.length) {
       await supabaseAdmin.from('blog_post_product_categories').insert(
         categoryIds.map((cid: string) => ({ blog_post_id: id, category_id: cid }))
+      )
+    }
+  }
+  if (tagIds !== undefined) {
+    await supabaseAdmin.from('blog_post_tags').delete().eq('blog_post_id', id)
+    if (tagIds.length) {
+      await supabaseAdmin.from('blog_post_tags').insert(
+        tagIds.map((tid: string) => ({ blog_post_id: id, tag_id: tid }))
       )
     }
   }
