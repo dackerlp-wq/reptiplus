@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useLocale } from 'next-intl'
 import {
   LayoutDashboard, Package, ShoppingBag, Users, Tag, BookOpen,
-  Settings, Menu, X, LogOut, ChevronRight, MessageSquare, PenSquare
+  Settings, Menu, X, LogOut, ChevronRight, MessageSquare, PenSquare, FolderTree
 } from 'lucide-react'
 
 type NavItem = {
@@ -18,6 +18,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/produkty', label: 'Produkty', icon: Package },
+  { href: '/admin/kategorie', label: 'Kategorie', icon: FolderTree },
   { href: '/admin/objednavky', label: 'Objednávky', icon: ShoppingBag },
   { href: '/admin/zakaznici', label: 'Zákazníci', icon: Users },
   { href: '/admin/kupony', label: 'Kupóny', icon: Tag },

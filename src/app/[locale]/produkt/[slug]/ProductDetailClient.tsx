@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { ShoppingCart, Heart, Share2, Star, Minus, Plus, ChevronRight, Package } from 'lucide-react'
+import { ShoppingCart, Heart, Share2, Star, Minus, Plus, ChevronRight, Package, X, ChevronLeft, ZoomIn } from 'lucide-react'
 import { usePriceFmt } from '@/hooks/usePriceFmt'
 import { useCartStore } from '@/store/cart'
 import { toast } from '@/components/ui/Toaster'
@@ -54,6 +54,9 @@ export default function ProductDetailClient({
   const [qty, setQty] = useState(1)
   const [activeTab, setActiveTab] = useState<'description' | 'parameters' | 'reviews'>('description')
   const [activeImage, setActiveImage] = useState(0)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [stickyVisible, setStickyVisible] = useState(false)
+  const cartBtnRef = useRef<HTMLDivElement>(null)
 
   const images = JSON.parse(product.images || '[]') as string[]
   if (!images.length) images.push('https://sntwqjbvqxogtqrvoyme.supabase.co/storage/v1/object/public/images/placeholder.png')
@@ -71,6 +74,33 @@ export default function ProductDetailClient({
     addItem({ productId: product.id, name, sku: product.sku, price: product.price, image: images[0], quantity: qty, stock: product.stock })
     toast(`${name} ${tShop('added_to_cart')}`, 'success')
   }
+
+  // Sticky add-to-cart: show when the cart button row scrolls out of view
+  useEffect(() => {
+    const el = cartBtnRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setStickyVisible(!entry.isIntersecting),
+      { threshold: 0 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // Lightbox keyboard navigation
+  const lightboxPrev = useCallback(() => setActiveImage(i => (i - 1 + images.length) % images.length), [images.length])
+  const lightboxNext = useCallback(() => setActiveImage(i => (i + 1) % images.length), [images.length])
+
+  useEffect(() => {
+    if (!lightboxOpen) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxOpen(false)
+      if (e.key === 'ArrowLeft') lightboxPrev()
+      if (e.key === 'ArrowRight') lightboxNext()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [lightboxOpen, lightboxPrev, lightboxNext])
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -92,9 +122,17 @@ export default function ProductDetailClient({
       <div className="grid md:grid-cols-2 gap-10 mb-12">
         {/* Images */}
         <div>
-          <div className="relative aspect-square rounded-2xl overflow-hidden bg-cream border border-cream-dark mb-3">
+          <div
+            className="relative aspect-square rounded-2xl overflow-hidden bg-cream border border-cream-dark mb-3 cursor-zoom-in group"
+            onClick={() => setLightboxOpen(true)}
+          >
             <Image src={images[activeImage]} alt={name} fill className="object-contain p-6" priority />
             {product.isNew === 1 && <Badge variant="new" className="absolute top-3 left-3">{tShop('badge_new')}</Badge>}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="bg-black/30 rounded-full p-3">
+                <ZoomIn className="w-6 h-6 text-white" />
+              </div>
+            </div>
           </div>
           {images.length > 1 && (
             <div className="flex gap-2">
@@ -144,18 +182,20 @@ export default function ProductDetailClient({
 
           <p className="text-xs text-gray-soft mb-4">{t('sku')}: {product.sku}</p>
 
-          {!isOutOfStock && (
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center border border-cream-dark rounded-lg overflow-hidden">
-                <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-3 py-2 hover:bg-cream-dark transition-colors"><Minus className="w-4 h-4" /></button>
-                <span className="px-4 py-2 font-medium min-w-[3rem] text-center">{qty}</span>
-                <button onClick={() => setQty(q => Math.min(product.stock, q + 1))} className="px-3 py-2 hover:bg-cream-dark transition-colors"><Plus className="w-4 h-4" /></button>
+          <div ref={cartBtnRef}>
+            {!isOutOfStock && (
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center border border-cream-dark rounded-lg overflow-hidden">
+                  <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-3 py-2 hover:bg-cream-dark transition-colors"><Minus className="w-4 h-4" /></button>
+                  <span className="px-4 py-2 font-medium min-w-[3rem] text-center">{qty}</span>
+                  <button onClick={() => setQty(q => Math.min(product.stock, q + 1))} className="px-3 py-2 hover:bg-cream-dark transition-colors"><Plus className="w-4 h-4" /></button>
+                </div>
+                <Button onClick={handleAddToCart} size="lg" className="flex-1">
+                  <ShoppingCart className="w-5 h-5" /> {t('add_to_cart')}
+                </Button>
               </div>
-              <Button onClick={handleAddToCart} size="lg" className="flex-1">
-                <ShoppingCart className="w-5 h-5" /> {t('add_to_cart')}
-              </Button>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={() => toast('Přidáno do oblíbených', 'info')}>
@@ -253,12 +293,83 @@ export default function ProductDetailClient({
 
       {/* Related */}
       {related.filter(p => p.id !== product.id).length > 0 && (
-        <div>
+        <div className="mt-12">
           <h2 className="text-xl font-bold mb-6">{t('related')}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {related.filter(p => p.id !== product.id).slice(0, 4).map(p => (
               <ProductCard key={p.id} product={p} locale={locale} />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <X className="w-6 h-6" />
+          </button>
+          {images.length > 1 && (
+            <>
+              <button
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                onClick={e => { e.stopPropagation(); lightboxPrev() }}
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                onClick={e => { e.stopPropagation(); lightboxNext() }}
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
+          <div
+            className="relative w-full max-w-3xl max-h-[85vh] aspect-square mx-8"
+            onClick={e => e.stopPropagation()}
+          >
+            <Image src={images[activeImage]} alt={name} fill className="object-contain" />
+          </div>
+          {images.length > 1 && (
+            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={e => { e.stopPropagation(); setActiveImage(i) }}
+                  className={`w-2 h-2 rounded-full transition-colors ${i === activeImage ? 'bg-white' : 'bg-white/40'}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Sticky add-to-cart bar */}
+      {!isOutOfStock && stickyVisible && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-cream-dark shadow-2xl px-4 py-3">
+          <div className="max-w-7xl mx-auto flex items-center gap-4">
+            <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-cream border border-cream-dark shrink-0">
+              <Image src={images[0]} alt={name} fill className="object-contain p-1" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{name}</p>
+              <p className="text-forest font-bold">{fmt(product.price)}</p>
+            </div>
+            <div className="flex items-center border border-cream-dark rounded-lg overflow-hidden shrink-0">
+              <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-2 py-1.5 hover:bg-cream-dark transition-colors"><Minus className="w-3.5 h-3.5" /></button>
+              <span className="px-3 py-1.5 font-medium text-sm min-w-[2rem] text-center">{qty}</span>
+              <button onClick={() => setQty(q => Math.min(product.stock, q + 1))} className="px-2 py-1.5 hover:bg-cream-dark transition-colors"><Plus className="w-3.5 h-3.5" /></button>
+            </div>
+            <Button onClick={handleAddToCart} size="sm">
+              <ShoppingCart className="w-4 h-4" /> {t('add_to_cart')}
+            </Button>
           </div>
         </div>
       )}

@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
   if (filter === 'novinka') query = query.eq('is_new', 1)
   if (filter === 'sleva') query = query.eq('is_sale', 1)
   if (filter === 'doporucene') query = query.eq('is_featured', 1)
+  if (filter === 'dostupne') query = query.gt('stock', 0)
 
   if (minPrice) query = query.gte('price', parseFloat(minPrice))
   if (maxPrice) query = query.lte('price', parseFloat(maxPrice))
