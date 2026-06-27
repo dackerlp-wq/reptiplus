@@ -239,22 +239,25 @@ export default function RichEditor({ value, onChange, placeholder = 'Začněte p
             <div className="w-px h-5 bg-cream-dark mx-1" />
             {/* Product mention button */}
             <div className="relative" ref={pickerRef}>
-              {isActiveMention ? (
-                <ToolbarButton active onClick={removeMention} title="Odebrat propojení s produktem">
-                  <X className="w-4 h-4 text-amber-600" />
-                </ToolbarButton>
-              ) : (
-                <ToolbarButton
-                  active={showProductPicker}
-                  onClick={() => setShowProductPicker(v => !v)}
-                  title="Označit text jako zmínku produktu"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                </ToolbarButton>
-              )}
+              <ToolbarButton
+                active={showProductPicker || isActiveMention}
+                onClick={() => setShowProductPicker(v => !v)}
+                title="Označit text jako zmínku produktu"
+              >
+                <ShoppingBag className="w-4 h-4" />
+              </ToolbarButton>
 
               {showProductPicker && (
                 <div className="absolute top-full left-0 z-50 mt-1 w-72 bg-white border border-cream-dark rounded-xl shadow-xl overflow-hidden">
+                  {isActiveMention && (
+                    <button
+                      type="button"
+                      onMouseDown={e => { e.preventDefault(); removeMention(); setShowProductPicker(false) }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 border-b border-cream-dark font-medium"
+                    >
+                      <X className="w-3.5 h-3.5" /> Odebrat zmínku produktu
+                    </button>
+                  )}
                   <div className="p-2 border-b border-cream-dark">
                     <input
                       autoFocus
