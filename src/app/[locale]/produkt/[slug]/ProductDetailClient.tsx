@@ -10,7 +10,6 @@ import { toast } from '@/components/ui/Toaster'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import ProductCard, { type Product as ProductCardType } from '@/components/shop/ProductCard'
-import type { Locale } from '@/lib/i18n'
 
 type Product = {
   id: string; slug: string; sku: string; nameCs: string; nameEn: string; nameDe: string
@@ -19,8 +18,22 @@ type Product = {
   stock: number; lowStockThreshold?: number | null; images: string | null; parameters: string | null
   isNew?: number | null; isSale?: number | null; isFeatured?: number | null
 }
+
+type Variant = {
+  id: string
+  nameCs: string
+  nameEn: string
+  nameDe: string
+  sku: string | null
+  price: number | null  // null = použij cenu produktu
+  stock: number
+  attributes: Record<string, string>
+  sortOrder: number
+}
+
 type Category = { nameCs: string; nameEn: string; nameDe: string; slug: string } | null
 type Review = { id: string; authorName: string; rating: number; title?: string | null; body?: string | null; createdAt?: string | null }
+type BlogPost = { id: string; slug: string; title_cs: string; title_en: string; title_de: string; image: string | null; published_at: string | null }
 
 function getName(p: Product, locale: string) {
   const map: Record<string, string> = { cs: p.nameCs, en: p.nameEn, de: p.nameDe }
@@ -38,24 +51,33 @@ function getCatName(cat: Category, locale: string) {
   return map[locale] || cat.nameCs
 }
 
-type BlogPost = { id: string; slug: string; title_cs: string; title_en: string; title_de: string; image: string | null; published_at: string | null }
+function getVariantName(v: Variant, locale: string) {
+  const map: Record<string, string> = { cs: v.nameCs, en: v.nameEn, de: v.nameDe }
+  return map[locale] || v.nameCs
+}
 
 export default function ProductDetailClient({
-  product, category, reviews, related, locale, blogPosts = []
+  product, category, reviews, related, locale, blogPosts = [], variants = []
 }: {
   product: Product; category: Category; reviews: Review[]
   related: ProductCardType[]; locale: string; blogPosts?: BlogPost[]
+  variants?: Variant[]
 }) {
   const t = useTranslations('product')
   const tShop = useTranslations('shop')
   const tCommon = useTranslations('common')
   const addItem = useCartStore(s => s.addItem)
   const { fmt, fmtSecondary } = usePriceFmt()
+
   const [qty, setQty] = useState(1)
   const [activeTab, setActiveTab] = useState<'description' | 'parameters' | 'reviews'>('description')
   const [activeImage, setActiveImage] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [stickyVisible, setStickyVisible] = useState(false)
+  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
+    variants.length > 0 ? variants[0] : null
+  )
+
   const cartBtnRef = useRef<HTMLDivElement>(null)
 
   const images = JSON.parse(product.images || '[]') as string[]
@@ -65,14 +87,34 @@ export default function ProductDetailClient({
   const description = getDescription(product, locale)
   const catName = getCatName(category, locale)
   const parameters = JSON.parse(product.parameters || '{}') as Record<string, string>
-  const isOutOfStock = product.stock <= 0
-  const isLowStock = product.stock > 0 && product.stock <= (product.lowStockThreshold ?? 5)
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
+
+  // Active price and stock — variant overrides product if set
+  const activePrice = selectedVariant?.price ?? product.price
+  const activeStock = selectedVariant?.stock ?? product.stock
+  const activeSku = selectedVariant?.sku || product.sku
+  const isOutOfStock = activeStock <= 0
+  const isLowStock = activeStock > 0 && activeStock <= (product.lowStockThreshold ?? 5)
+
+  // Reset qty when variant changes
+  useEffect(() => {
+    setQty(1)
+  }, [selectedVariant?.id])
 
   const handleAddToCart = () => {
     if (isOutOfStock) return
-    addItem({ productId: product.id, name, sku: product.sku, price: product.price, image: images[0], quantity: qty, stock: product.stock })
-    toast(`${name} ${tShop('added_to_cart')}`, 'success')
+    addItem({
+      productId: product.id,
+      variantId: selectedVariant?.id,
+      variantName: selectedVariant ? getVariantName(selectedVariant, locale) : undefined,
+      name,
+      sku: activeSku,
+      price: activePrice,
+      image: images[0],
+      quantity: qty,
+      stock: activeStock,
+    })
+    toast(`${name}${selectedVariant ? ` (${getVariantName(selectedVariant, locale)})` : ''} ${tShop('added_to_cart')}`, 'success')
   }
 
   // Sticky add-to-cart: show when the cart button row scrolls out of view
@@ -101,6 +143,12 @@ export default function ProductDetailClient({
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [lightboxOpen, lightboxPrev, lightboxNext])
+
+  // Group variants by attribute key for a nicer display (e.g. "Barva", "Velikost")
+  const attributeKeys = variants.length > 0
+    ? Array.from(new Set(variants.flatMap(v => Object.keys(v.attributes))))
+    : []
+  const hasAttributes = attributeKeys.length > 0
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -135,7 +183,7 @@ export default function ProductDetailClient({
             </div>
           </div>
           {images.length > 1 && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {images.map((img, i) => (
                 <button key={i} onClick={() => setActiveImage(i)} className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${i === activeImage ? 'border-forest' : 'border-cream-dark'}`}>
                   <Image src={img} alt="" fill className="object-contain p-1" />
@@ -163,32 +211,126 @@ export default function ProductDetailClient({
             </div>
           )}
 
+          {/* Price — updates with variant */}
           <div className="flex items-end gap-3 mb-1">
-            <span className="text-3xl font-bold text-forest">{fmt(product.price)}</span>
-            {product.comparePrice && product.comparePrice > product.price && (
+            <span className="text-3xl font-bold text-forest">{fmt(activePrice)}</span>
+            {product.comparePrice && product.comparePrice > activePrice && (
               <>
                 <span className="text-xl text-gray-soft line-through">{fmt(product.comparePrice)}</span>
-                <Badge variant="sale">-{Math.round((1 - product.price / product.comparePrice) * 100)}%</Badge>
+                <Badge variant="sale">-{Math.round((1 - activePrice / product.comparePrice) * 100)}%</Badge>
               </>
             )}
           </div>
-          {fmtSecondary(product.price) && <p className="text-sm text-gray-soft">{fmtSecondary(product.price)}</p>}
+          {fmtSecondary(activePrice) && <p className="text-sm text-gray-soft">{fmtSecondary(activePrice)}</p>}
           <p className="text-sm text-gray-soft mb-4">{fmt(product.priceExcl)} {tShop('excl_vat')} • DPH {product.vatRate}%</p>
 
-          <div className={`flex items-center gap-2 mb-6 text-sm font-medium ${isOutOfStock ? 'text-gray-400' : isLowStock ? 'text-amber-600' : 'text-sage-dark'}`}>
+          {/* Variant selector */}
+          {variants.length > 0 && (
+            <div className="mb-5">
+              {hasAttributes ? (
+                // If variants have attribute keys, group by first attribute key
+                attributeKeys.map(attrKey => {
+                  const valuesForKey = Array.from(new Set(variants.map(v => v.attributes[attrKey]).filter(Boolean)))
+                  return (
+                    <div key={attrKey} className="mb-3">
+                      <p className="text-xs font-semibold text-gray-soft uppercase tracking-wider mb-2">
+                        {attrKey}
+                        {selectedVariant && selectedVariant.attributes[attrKey] && (
+                          <span className="ml-2 text-charcoal normal-case font-normal">
+                            {selectedVariant.attributes[attrKey]}
+                          </span>
+                        )}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {valuesForKey.map(val => {
+                          const matchingVariants = variants.filter(v => v.attributes[attrKey] === val)
+                          const isSelected = selectedVariant?.attributes[attrKey] === val
+                          const allOutOfStock = matchingVariants.every(v => v.stock <= 0)
+                          return (
+                            <button
+                              key={val}
+                              onClick={() => {
+                                const match = matchingVariants[0]
+                                if (match) setSelectedVariant(match)
+                              }}
+                              disabled={allOutOfStock}
+                              className={`px-3 py-1.5 text-sm rounded-lg border-2 transition-all font-medium
+                                ${isSelected
+                                  ? 'border-forest bg-forest text-white'
+                                  : allOutOfStock
+                                    ? 'border-cream-dark text-gray-soft line-through cursor-not-allowed'
+                                    : 'border-cream-dark hover:border-forest hover:text-forest'
+                                }`}
+                            >
+                              {val}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                // Plain variant buttons (just names)
+                <div className="mb-3">
+                  <p className="text-xs font-semibold text-gray-soft uppercase tracking-wider mb-2">
+                    Varianta
+                    {selectedVariant && (
+                      <span className="ml-2 text-charcoal normal-case font-normal">
+                        {getVariantName(selectedVariant, locale)}
+                      </span>
+                    )}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {variants.map(v => {
+                      const isSelected = selectedVariant?.id === v.id
+                      const outOfStock = v.stock <= 0
+                      return (
+                        <button
+                          key={v.id}
+                          onClick={() => setSelectedVariant(v)}
+                          disabled={outOfStock}
+                          className={`px-3 py-1.5 text-sm rounded-lg border-2 transition-all font-medium
+                            ${isSelected
+                              ? 'border-forest bg-forest text-white'
+                              : outOfStock
+                                ? 'border-cream-dark text-gray-soft line-through cursor-not-allowed'
+                                : 'border-cream-dark hover:border-forest hover:text-forest'
+                            }`}
+                        >
+                          {getVariantName(v, locale)}
+                          {v.price !== null && v.price !== product.price && (
+                            <span className="ml-1.5 text-xs opacity-80">{fmt(v.price)}</span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Stock status — reflects selected variant */}
+          <div className={`flex items-center gap-2 mb-5 text-sm font-medium ${isOutOfStock ? 'text-gray-400' : isLowStock ? 'text-amber-600' : 'text-sage-dark'}`}>
             <Package className="w-4 h-4" />
-            {isOutOfStock ? t('out_of_stock') : isLowStock ? `${tShop('low_stock')} — zbývá ${product.stock} ks` : `${t('in_stock')} (${product.stock} ks)`}
+            {isOutOfStock
+              ? t('out_of_stock')
+              : isLowStock
+                ? `${tShop('low_stock')} — zbývá ${activeStock} ks`
+                : `${t('in_stock')} (${activeStock} ks)`}
           </div>
 
-          <p className="text-xs text-gray-soft mb-4">{t('sku')}: {product.sku}</p>
+          <p className="text-xs text-gray-soft mb-4">{t('sku')}: {activeSku}</p>
 
+          {/* Cart button — observed for sticky bar */}
           <div ref={cartBtnRef}>
             {!isOutOfStock && (
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center border border-cream-dark rounded-lg overflow-hidden">
                   <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-3 py-2 hover:bg-cream-dark transition-colors"><Minus className="w-4 h-4" /></button>
                   <span className="px-4 py-2 font-medium min-w-[3rem] text-center">{qty}</span>
-                  <button onClick={() => setQty(q => Math.min(product.stock, q + 1))} className="px-3 py-2 hover:bg-cream-dark transition-colors"><Plus className="w-4 h-4" /></button>
+                  <button onClick={() => setQty(q => Math.min(activeStock, q + 1))} className="px-3 py-2 hover:bg-cream-dark transition-colors"><Plus className="w-4 h-4" /></button>
                 </div>
                 <Button onClick={handleAddToCart} size="lg" className="flex-1">
                   <ShoppingCart className="w-5 h-5" /> {t('add_to_cart')}
@@ -262,7 +404,7 @@ export default function ProductDetailClient({
 
       {/* From blog */}
       {blogPosts.length > 0 && (
-        <div>
+        <div className="mb-12">
           <div className="p-5" style={{ border: '1.5px solid var(--color-ink)' }}>
             <h4 className="text-xs font-bold uppercase tracking-widest mb-4"
               style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
@@ -360,12 +502,36 @@ export default function ProductDetailClient({
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{name}</p>
-              <p className="text-forest font-bold">{fmt(product.price)}</p>
+              {selectedVariant && (
+                <p className="text-xs text-gray-soft truncate">{getVariantName(selectedVariant, locale)}</p>
+              )}
+              <p className="text-forest font-bold">{fmt(activePrice)}</p>
             </div>
+            {/* Show variant selector in sticky bar if variants exist */}
+            {variants.length > 0 && (
+              <div className="hidden sm:flex gap-1.5 flex-wrap max-w-xs">
+                {variants.map(v => (
+                  <button
+                    key={v.id}
+                    onClick={() => setSelectedVariant(v)}
+                    disabled={v.stock <= 0}
+                    className={`px-2 py-1 text-xs rounded border transition-all
+                      ${selectedVariant?.id === v.id
+                        ? 'border-forest bg-forest text-white'
+                        : v.stock <= 0
+                          ? 'border-cream-dark text-gray-soft line-through cursor-not-allowed'
+                          : 'border-cream-dark hover:border-forest'
+                      }`}
+                  >
+                    {getVariantName(v, locale)}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="flex items-center border border-cream-dark rounded-lg overflow-hidden shrink-0">
               <button onClick={() => setQty(q => Math.max(1, q - 1))} className="px-2 py-1.5 hover:bg-cream-dark transition-colors"><Minus className="w-3.5 h-3.5" /></button>
               <span className="px-3 py-1.5 font-medium text-sm min-w-[2rem] text-center">{qty}</span>
-              <button onClick={() => setQty(q => Math.min(product.stock, q + 1))} className="px-2 py-1.5 hover:bg-cream-dark transition-colors"><Plus className="w-3.5 h-3.5" /></button>
+              <button onClick={() => setQty(q => Math.min(activeStock, q + 1))} className="px-2 py-1.5 hover:bg-cream-dark transition-colors"><Plus className="w-3.5 h-3.5" /></button>
             </div>
             <Button onClick={handleAddToCart} size="sm">
               <ShoppingCart className="w-4 h-4" /> {t('add_to_cart')}

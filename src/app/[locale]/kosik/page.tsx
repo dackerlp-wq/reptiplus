@@ -82,7 +82,7 @@ export default function CartPage() {
         {/* Items */}
         <div className="lg:col-span-2 space-y-3">
           {items.map(item => (
-            <div key={item.productId} className="flex items-center gap-4 bg-white rounded-xl border border-cream-dark p-4">
+            <div key={`${item.productId}:${item.variantId ?? ''}`} className="flex items-center gap-4 bg-white rounded-xl border border-cream-dark p-4">
               <div className="relative w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-cream">
                 <Image
                   src={item.image}
@@ -96,14 +96,19 @@ export default function CartPage() {
                 <Link href={`/${locale}/produkt/${item.productId}`} className="font-medium text-sm hover:text-forest transition-colors line-clamp-2">
                   {item.name}
                 </Link>
+                {item.variantName && (
+                  <span className="inline-block text-xs bg-sage/40 text-forest px-2 py-0.5 rounded-full mt-0.5">
+                    {item.variantName}
+                  </span>
+                )}
                 <p className="text-xs text-gray-soft mt-0.5">SKU: {item.sku}</p>
               </div>
               <div className="flex items-center border border-cream-dark rounded-lg overflow-hidden">
-                <button onClick={() => updateQuantity(item.productId, item.quantity - 1)} className="px-2 py-1.5 hover:bg-cream-dark transition-colors">
+                <button onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variantId)} className="px-2 py-1.5 hover:bg-cream-dark transition-colors">
                   <Minus className="w-4 h-4" />
                 </button>
                 <span className="px-3 py-1.5 text-sm font-medium min-w-[2.5rem] text-center">{item.quantity}</span>
-                <button onClick={() => updateQuantity(item.productId, Math.min(item.stock, item.quantity + 1))} className="px-2 py-1.5 hover:bg-cream-dark transition-colors">
+                <button onClick={() => updateQuantity(item.productId, Math.min(item.stock, item.quantity + 1), item.variantId)} className="px-2 py-1.5 hover:bg-cream-dark transition-colors">
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
@@ -111,7 +116,7 @@ export default function CartPage() {
                 <p className="font-bold text-forest">{fmt(item.price * item.quantity)}</p>
                 <p className="text-xs text-gray-soft">{fmt(item.price)} / ks</p>
               </div>
-              <button onClick={() => removeItem(item.productId)} className="p-1.5 text-gray-soft hover:text-red-500 transition-colors">
+              <button onClick={() => removeItem(item.productId, item.variantId)} className="p-1.5 text-gray-soft hover:text-red-500 transition-colors">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>

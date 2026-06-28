@@ -78,6 +78,24 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     }
   }
 
+  const { data: variantsRaw } = await supabaseAdmin
+    .from('product_variants')
+    .select('*')
+    .eq('product_id', productRaw.id)
+    .order('sort_order', { ascending: true })
+
+  const variants = (variantsRaw || []).map(v => ({
+    id: v.id as string,
+    nameCs: v.name_cs as string,
+    nameEn: (v.name_en || v.name_cs) as string,
+    nameDe: (v.name_de || v.name_cs) as string,
+    sku: v.sku as string | null,
+    price: v.price as number | null,
+    stock: v.stock as number,
+    attributes: (v.attributes || {}) as Record<string, string>,
+    sortOrder: v.sort_order as number,
+  }))
+
   const reviews = (reviewsRaw || []).map(mapReview)
   const related = (relatedRaw || []).map(mapProduct) as ProductCardType[]
 
@@ -92,6 +110,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       related={related}
       locale={locale}
       blogPosts={allBlogPosts}
+      variants={variants}
     />
   )
 }

@@ -4,6 +4,8 @@ import { persist } from 'zustand/middleware'
 
 export interface CartItem {
   productId: string
+  variantId?: string
+  variantName?: string
   name: string
   sku: string
   price: number
@@ -12,11 +14,16 @@ export interface CartItem {
   stock: number
 }
 
+// Unique key per product+variant combination
+function itemKey(productId: string, variantId?: string) {
+  return variantId ? `${productId}:${variantId}` : productId
+}
+
 interface CartStore {
   items: CartItem[]
   addItem: (item: CartItem) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
+  removeItem: (productId: string, variantId?: string) => void
+  updateQuantity: (productId: string, quantity: number, variantId?: string) => void
   clearCart: () => void
   total: () => number
   itemCount: () => number
@@ -28,12 +35,13 @@ export const useCartStore = create<CartStore>()(
       items: [],
 
       addItem: (newItem) => {
+        const key = itemKey(newItem.productId, newItem.variantId)
         set((state) => {
-          const existing = state.items.find(i => i.productId === newItem.productId)
+          const existing = state.items.find(i => itemKey(i.productId, i.variantId) === key)
           if (existing) {
             return {
               items: state.items.map(i =>
-                i.productId === newItem.productId
+                itemKey(i.productId, i.variantId) === key
                   ? { ...i, quantity: Math.min(i.quantity + newItem.quantity, i.stock) }
                   : i
               )
@@ -43,20 +51,22 @@ export const useCartStore = create<CartStore>()(
         })
       },
 
-      removeItem: (productId) => {
+      removeItem: (productId, variantId) => {
+        const key = itemKey(productId, variantId)
         set((state) => ({
-          items: state.items.filter(i => i.productId !== productId)
+          items: state.items.filter(i => itemKey(i.productId, i.variantId) !== key)
         }))
       },
 
-      updateQuantity: (productId, quantity) => {
+      updateQuantity: (productId, quantity, variantId) => {
         if (quantity <= 0) {
-          get().removeItem(productId)
+          get().removeItem(productId, variantId)
           return
         }
+        const key = itemKey(productId, variantId)
         set((state) => ({
           items: state.items.map(i =>
-            i.productId === productId ? { ...i, quantity } : i
+            itemKey(i.productId, i.variantId) === key ? { ...i, quantity } : i
           )
         }))
       },
