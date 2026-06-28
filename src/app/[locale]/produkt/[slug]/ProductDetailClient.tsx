@@ -26,6 +26,7 @@ type Variant = {
   nameDe: string
   sku: string | null
   price: number | null  // null = použij cenu produktu
+  comparePrice: number | null
   stock: number
   attributes: Record<string, string>
   parameters: Record<string, string>
@@ -96,6 +97,9 @@ export default function ProductDetailClient({
 
   // Active price and stock — variant overrides product if set
   const activePrice = selectedVariant?.price ?? product.price
+  const activeComparePrice = selectedVariant
+    ? (selectedVariant.comparePrice ?? product.comparePrice)
+    : product.comparePrice
   const activeStock = selectedVariant?.stock ?? product.stock
   const activeSku = selectedVariant?.sku || product.sku
   const isOutOfStock = activeStock <= 0
@@ -219,10 +223,10 @@ export default function ProductDetailClient({
           {/* Price — updates with variant */}
           <div className="flex items-end gap-3 mb-1">
             <span className="text-3xl font-bold text-forest">{fmt(activePrice)}</span>
-            {product.comparePrice && product.comparePrice > activePrice && (
+            {activeComparePrice && activeComparePrice > activePrice && (
               <>
-                <span className="text-xl text-gray-soft line-through">{fmt(product.comparePrice)}</span>
-                <Badge variant="sale">-{Math.round((1 - activePrice / product.comparePrice) * 100)}%</Badge>
+                <span className="text-xl text-gray-soft line-through">{fmt(activeComparePrice)}</span>
+                <Badge variant="sale">-{Math.round((1 - activePrice / activeComparePrice) * 100)}%</Badge>
               </>
             )}
           </div>

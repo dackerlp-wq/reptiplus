@@ -26,7 +26,7 @@ type Axis = { name: string; values: string[]; newVal: string }
 type Variant = {
   id?: string
   name_cs: string; name_en: string; name_de: string
-  sku: string; price: string; stock: string; restock_date: string
+  sku: string; price: string; compare_price: string; stock: string; restock_date: string
   attributes: Record<string, string>
   parameters: Record<string, string>
   expanded: boolean
@@ -45,7 +45,7 @@ interface ProductData {
 function makeVariant(attrs: Record<string, string> = {}, expanded = true): Variant {
   return {
     name_cs: Object.values(attrs).join(' / '),
-    name_en: '', name_de: '', sku: '', price: '', stock: '0', restock_date: '',
+    name_en: '', name_de: '', sku: '', price: '', compare_price: '', stock: '0', restock_date: '',
     attributes: attrs, parameters: {},
     expanded, newParamKey: '', newParamVal: '',
   }
@@ -124,6 +124,7 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
             id: v.id,
             name_cs: v.name_cs || '', name_en: v.name_en || '', name_de: v.name_de || '',
             sku: v.sku || '', price: v.price !== null ? String(v.price) : '',
+            compare_price: v.compare_price !== null && v.compare_price !== undefined ? String(v.compare_price) : '',
             stock: String(v.stock ?? 0), restock_date: v.restock_date || '',
             attributes: v.attributes || {}, parameters: v.parameters || {},
             expanded: idx === 0, newParamKey: '', newParamVal: '',
@@ -314,6 +315,7 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
           variants: variants.map((v, i) => ({
             name_cs: v.name_cs, name_en: v.name_en || v.name_cs, name_de: v.name_de || v.name_cs,
             sku: v.sku || null, price: v.price ? parseFloat(v.price) : null,
+            compare_price: v.compare_price ? parseFloat(v.compare_price) : null,
             stock: parseInt(v.stock || '0'), restock_date: v.restock_date || null,
             attributes: v.attributes, parameters: v.parameters, sort_order: i,
           })),
@@ -663,6 +665,7 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
                     </th>
                     <th className="px-3 py-2 text-left text-xs font-bold text-gray-soft uppercase tracking-wider">Varianta</th>
                     <th className="px-3 py-2 text-left text-xs font-bold text-gray-soft uppercase tracking-wider w-28">Cena (Kč)</th>
+                    <th className="px-3 py-2 text-left text-xs font-bold text-gray-soft uppercase tracking-wider w-28">Přeškrt. cena</th>
                     <th className="px-3 py-2 text-left text-xs font-bold text-gray-soft uppercase tracking-wider w-24">Sklad</th>
                     <th className="px-3 py-2 text-left text-xs font-bold text-gray-soft uppercase tracking-wider">Stav zásoby</th>
                     <th className="px-3 py-2 text-left text-xs font-bold text-gray-soft uppercase tracking-wider w-32">SKU</th>
@@ -700,6 +703,12 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
                             <input type="number" step="0.01" value={v.price}
                               onChange={e => setV(i, { price: e.target.value })}
                               placeholder="z produktu"
+                              className="w-full border border-cream-dark rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-forest" />
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <input type="number" step="0.01" value={v.compare_price}
+                              onChange={e => setV(i, { compare_price: e.target.value })}
+                              placeholder="—"
                               className="w-full border border-cream-dark rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-forest" />
                           </td>
                           <td className="px-3 py-2.5">

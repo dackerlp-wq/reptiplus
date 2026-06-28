@@ -38,6 +38,12 @@ export async function POST(req: NextRequest) {
   const priceNum = parseFloat(price)
   const vatNum = parseFloat(vatRate || '21')
   const priceExcl = priceNum / (1 + vatNum / 100)
+  const comparePriceNum = comparePrice ? parseFloat(comparePrice) : null
+
+  // Auto: new products always get is_new=1 and a 90-day badge window
+  const newUntil = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+  // Auto: is_sale=1 whenever a compare_price is set
+  const autoIsSale = (comparePriceNum && comparePriceNum > priceNum) ? 1 : (isSale ? 1 : 0)
 
   await supabaseAdmin.from('products').insert({
     id, slug,
@@ -52,15 +58,16 @@ export async function POST(req: NextRequest) {
     price: priceNum,
     price_excl: Math.round(priceExcl * 100) / 100,
     vat_rate: vatNum,
-    compare_price: comparePrice ? parseFloat(comparePrice) : null,
+    compare_price: comparePriceNum,
     stock: parseInt(stock || '0'),
     low_stock_threshold: parseInt(lowStockThreshold || '5'),
     images: JSON.stringify(images || []),
     parameters: JSON.stringify(parameters || {}),
     is_active: isActive ? 1 : 0,
     is_featured: isFeatured ? 1 : 0,
-    is_new: isNew ? 1 : 0,
-    is_sale: isSale ? 1 : 0,
+    is_new: 1,
+    new_until: newUntil,
+    is_sale: autoIsSale,
     weight: weight ? parseFloat(weight) : null,
   })
 

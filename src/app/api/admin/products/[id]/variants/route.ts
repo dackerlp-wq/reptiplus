@@ -32,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { variants } = body as {
     variants: {
       name_cs: string; name_en?: string; name_de?: string
-      sku?: string; price?: number | null; stock?: number
+      sku?: string; price?: number | null; compare_price?: number | null; stock?: number
       attributes?: Record<string, string>; parameters?: Record<string, string>
       restock_date?: string | null; sort_order?: number
     }[]
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       name_de: v.name_de || v.name_cs,
       sku: v.sku || null,
       price: v.price ?? null,
+      compare_price: v.compare_price ?? null,
       stock: v.stock ?? 0,
       attributes: v.attributes ?? {},
       parameters: v.parameters ?? {},
@@ -56,6 +57,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       sort_order: v.sort_order ?? i,
     }))
     await supabaseAdmin.from('product_variants').insert(rows)
+
+    // Auto-flag product as on sale if any variant has compare_price > price
+    const anyOnSale = variants.some(v =>
+      v.compare_price != null && v.price != null && v.compare_price > v.price
+    )
+    if (anyOnSale) {
+      await supabaseAdmin.from('products').update({ is_sale: 1 }).eq('id', id)
+    }
   }
 
   return NextResponse.json({ success: true })

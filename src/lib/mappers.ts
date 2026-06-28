@@ -24,7 +24,9 @@ export function mapProduct(p: Record<string, any>) {
     parameters: p.parameters,
     isActive: p.is_active,
     isFeatured: p.is_featured,
-    isNew: p.is_new,
+    // isNew respects the 3-month auto-expiry window (new_until)
+    isNew: p.is_new === 1 && (!p.new_until || new Date(p.new_until) > new Date()) ? 1 : 0,
+    newUntil: p.new_until ?? null,
     isSale: p.is_sale,
     weight: p.weight,
     createdAt: p.created_at,

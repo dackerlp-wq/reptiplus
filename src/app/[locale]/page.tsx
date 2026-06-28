@@ -163,6 +163,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
+      {/* New arrivals — newest first, auto-expiry applied via mapper */}
+      {newProds.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 py-12">
+          <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-charcoal">✨ {t('new_products')}</h2>
+            <Link href={`/${locale}/obchod?filtr=novinka`} className="flex items-center gap-1 text-sm text-forest font-medium hover:underline">
+              {t('view_all')} <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {newProds.map(p => (
+              <ProductCard key={p.id} product={p as Product} locale={locale} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Sale banner */}
       {saleProds.length > 0 && (
         <section className="bg-earth/10 border-y border-earth/20 py-12">
@@ -178,23 +195,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 <ProductCard key={p.id} product={p as Product} locale={locale} />
               ))}
             </div>
-          </div>
-        </section>
-      )}
-
-      {/* New arrivals */}
-      {newProds.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 py-12">
-          <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-charcoal">✨ {t('new_products')}</h2>
-            <Link href={`/${locale}/obchod?filtr=novinka`} className="flex items-center gap-1 text-sm text-forest font-medium hover:underline">
-              {t('view_all')} <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {newProds.map(p => (
-              <ProductCard key={p.id} product={p as Product} locale={locale} />
-            ))}
           </div>
         </section>
       )}

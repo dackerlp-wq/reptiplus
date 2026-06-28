@@ -18,8 +18,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const priceNum = parseFloat(body.price)
   const vatNum = parseFloat(body.vatRate || '21')
   const priceExcl = priceNum / (1 + vatNum / 100)
+  const comparePriceNum = body.comparePrice ? parseFloat(body.comparePrice) : null
+  // Auto is_sale: set when compare_price > price; manual isSale toggle can also force it
+  const autoIsSale = (comparePriceNum && comparePriceNum > priceNum) ? 1 : (body.isSale ? 1 : 0)
 
-  await supabaseAdmin.from('products').update({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updatePayload: Record<string, any> = {
     name_cs: body.nameCs,
     name_en: body.nameEn || body.nameCs,
     name_de: body.nameDe || body.nameCs,
@@ -30,7 +34,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     price: priceNum,
     price_excl: Math.round(priceExcl * 100) / 100,
     vat_rate: vatNum,
-    compare_price: body.comparePrice ? parseFloat(body.comparePrice) : null,
+    compare_price: comparePriceNum,
     stock: parseInt(body.stock || '0'),
     low_stock_threshold: parseInt(body.lowStockThreshold || '5'),
     images: typeof body.images === 'string' ? body.images : JSON.stringify(body.images || []),
@@ -38,10 +42,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     is_active: body.isActive ? 1 : 0,
     is_featured: body.isFeatured ? 1 : 0,
     is_new: body.isNew ? 1 : 0,
-    is_sale: body.isSale ? 1 : 0,
+    is_sale: autoIsSale,
     weight: body.weight ? parseFloat(body.weight) : null,
     updated_at: new Date().toISOString(),
-  }).eq('id', id)
+  }
+
+  // Preserve/update new_until if admin explicitly sends it
+  if (body.newUntil !== undefined) updatePayload.new_until = body.newUntil || null
+
+  await supabaseAdmin.from('products').update(updatePayload).eq('id', id)
 
   return NextResponse.json({ success: true })
 }
