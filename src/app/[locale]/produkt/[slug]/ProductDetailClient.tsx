@@ -248,19 +248,27 @@ export default function ProductDetailClient({
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {valuesForKey.map(val => {
-                          const matchingVariants = variants.filter(v => v.attributes[attrKey] === val)
+                          // Only show this value if it exists in combination with all other currently selected attrs
+                          const currentAttrs = selectedVariant?.attributes ?? {}
+                          const compatibleVariants = variants.filter(v => {
+                            if (v.attributes[attrKey] !== val) return false
+                            // Must match every other currently selected attribute
+                            return attributeKeys
+                              .filter(k => k !== attrKey)
+                              .every(k => !currentAttrs[k] || v.attributes[k] === currentAttrs[k])
+                          })
+                          // Hide entirely if no compatible combination exists
+                          if (compatibleVariants.length === 0) return null
+
                           const isSelected = selectedVariant?.attributes[attrKey] === val
-                          const allOutOfStock = matchingVariants.every(v => v.stock <= 0)
-                          const restockDt = allOutOfStock ? matchingVariants[0]?.restockDate : null
+                          const allOutOfStock = compatibleVariants.every(v => v.stock <= 0)
+                          const restockDt = allOutOfStock ? compatibleVariants[0]?.restockDate : null
                           return (
                             <div key={val} className="flex flex-col items-center gap-0.5">
                               <button
                                 onClick={() => {
-                                  // Preserve selections from other attribute keys
-                                  const currentAttrs = selectedVariant?.attributes ?? {}
                                   const desired = { ...currentAttrs, [attrKey]: val }
-                                  // Find best match: most attribute keys matching desired
-                                  const scored = matchingVariants.map(v => {
+                                  const scored = compatibleVariants.map(v => {
                                     const score = Object.entries(desired).filter(
                                       ([k, dv]) => v.attributes[k] === dv
                                     ).length
