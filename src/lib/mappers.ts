@@ -29,6 +29,7 @@ export function mapProduct(p: Record<string, any>) {
     weight: p.weight,
     createdAt: p.created_at,
     updatedAt: p.updated_at,
+    hasVariants: p.hasVariants ?? false,
   }
 }
 

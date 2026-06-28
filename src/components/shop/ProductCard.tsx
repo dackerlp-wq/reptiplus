@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ShoppingCart, Heart, Eye, X, Star } from 'lucide-react'
+import { ShoppingCart, Heart, Eye, X, Layers } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { useCartStore } from '@/store/cart'
@@ -26,6 +26,7 @@ export interface Product {
   isSale?: number | null
   isFeatured?: number | null
   lowStockThreshold?: number | null
+  hasVariants?: boolean
 }
 
 interface ProductCardProps {
@@ -94,13 +95,24 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
               </button>
             </div>
             {!isOutOfStock && (
-              <button
-                onClick={handleAddToCart}
-                className="absolute bottom-0 left-0 right-0 bg-forest text-white py-2.5 text-sm font-medium flex items-center justify-center gap-2 translate-y-full group-hover:translate-y-0 transition-transform duration-200"
-              >
-                <ShoppingCart className="w-4 h-4" />
-                {t('add_to_cart')}
-              </button>
+              product.hasVariants ? (
+                <Link
+                  href={`/${locale}/produkt/${product.slug}`}
+                  onClick={e => e.stopPropagation()}
+                  className="absolute bottom-0 left-0 right-0 bg-forest text-white py-2.5 text-sm font-medium flex items-center justify-center gap-2 translate-y-full group-hover:translate-y-0 transition-transform duration-200"
+                >
+                  <Layers className="w-4 h-4" />
+                  Vybrat variantu
+                </Link>
+              ) : (
+                <button
+                  onClick={handleAddToCart}
+                  className="absolute bottom-0 left-0 right-0 bg-forest text-white py-2.5 text-sm font-medium flex items-center justify-center gap-2 translate-y-full group-hover:translate-y-0 transition-transform duration-200"
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  {t('add_to_cart')}
+                </button>
+              )
             )}
           </div>
           <div className="p-3">
@@ -167,13 +179,25 @@ export default function ProductCard({ product, locale }: ProductCardProps) {
                 </p>
                 <div className="mt-auto flex flex-col gap-2">
                   {!isOutOfStock && (
-                    <Button
-                      onClick={(e) => { handleAddToCart(e); setPreviewOpen(false) }}
-                      size="sm"
-                      className="w-full"
-                    >
-                      <ShoppingCart className="w-4 h-4" /> {t('add_to_cart')}
-                    </Button>
+                    product.hasVariants ? (
+                      <Link
+                        href={`/${locale}/produkt/${product.slug}`}
+                        onClick={() => setPreviewOpen(false)}
+                        className="w-full"
+                      >
+                        <Button size="sm" className="w-full">
+                          <Layers className="w-4 h-4" /> Vybrat variantu
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Button
+                        onClick={(e) => { handleAddToCart(e); setPreviewOpen(false) }}
+                        size="sm"
+                        className="w-full"
+                      >
+                        <ShoppingCart className="w-4 h-4" /> {t('add_to_cart')}
+                      </Button>
+                    )
                   )}
                   <Link
                     href={`/${locale}/produkt/${product.slug}`}

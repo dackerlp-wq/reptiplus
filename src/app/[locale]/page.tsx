@@ -11,16 +11,25 @@ async function getHomeData() {
     { data: featuredProdsRaw },
     { data: saleProdsRaw },
     { data: catsRaw },
+    { data: variantProductIds },
   ] = await Promise.all([
     supabaseAdmin.from('products').select('*').eq('is_active', 1).eq('is_new', 1).order('created_at', { ascending: false }).limit(4),
     supabaseAdmin.from('products').select('*').eq('is_active', 1).eq('is_featured', 1).limit(8),
     supabaseAdmin.from('products').select('*').eq('is_active', 1).eq('is_sale', 1).limit(4),
-    supabaseAdmin.from('categories').select('*').order('sort_order'),
+    supabaseAdmin.from('categories').select('*').is('parent_id', null).order('sort_order'),
+    supabaseAdmin.from('product_variants').select('product_id'),
   ])
+
+  const variantSet = new Set((variantProductIds || []).map(r => r.product_id))
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const withVariants = (rows: any[]) =>
+    rows.map(p => mapProduct({ ...p, hasVariants: variantSet.has(p.id) }))
+
   return {
-    newProds: (newProdsRaw || []).map(mapProduct),
-    featuredProds: (featuredProdsRaw || []).map(mapProduct),
-    saleProds: (saleProdsRaw || []).map(mapProduct),
+    newProds: withVariants(newProdsRaw || []),
+    featuredProds: withVariants(featuredProdsRaw || []),
+    saleProds: withVariants(saleProdsRaw || []),
     cats: (catsRaw || []).map(mapCategory),
   }
 }

@@ -40,10 +40,18 @@ export async function GET(req: NextRequest) {
   else if (sort === 'price_desc') query = query.order('price', { ascending: false })
   else query = query.order('created_at', { ascending: false })
 
-  const { data: allProducts } = await query
+  const [{ data: allProducts }, { data: variantRows }] = await Promise.all([
+    query,
+    supabaseAdmin.from('product_variants').select('product_id'),
+  ])
+
+  const variantSet = new Set((variantRows || []).map(r => r.product_id))
 
   const total = allProducts?.length || 0
   const paginated = (allProducts || []).slice((page - 1) * limit, page * limit)
 
-  return NextResponse.json({ products: paginated.map(mapProduct), total, page, pages: Math.ceil(total / limit) })
+  return NextResponse.json({
+    products: paginated.map(p => mapProduct({ ...p, hasVariants: variantSet.has(p.id) })),
+    total, page, pages: Math.ceil(total / limit),
+  })
 }
