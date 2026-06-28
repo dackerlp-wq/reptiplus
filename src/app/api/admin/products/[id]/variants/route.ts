@@ -29,7 +29,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params
   const body = await req.json()
-  const { variants } = body as { variants: { name_cs: string; name_en?: string; name_de?: string; sku?: string; price?: number; stock?: number; sort_order?: number }[] }
+  const { variants } = body as {
+    variants: {
+      name_cs: string; name_en?: string; name_de?: string
+      sku?: string; price?: number | null; stock?: number
+      attributes?: Record<string, string>; parameters?: Record<string, string>
+      sort_order?: number
+    }[]
+  }
 
   await supabaseAdmin.from('product_variants').delete().eq('product_id', id)
 
@@ -43,6 +50,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       sku: v.sku || null,
       price: v.price ?? null,
       stock: v.stock ?? 0,
+      attributes: v.attributes ?? {},
+      parameters: v.parameters ?? {},
       sort_order: v.sort_order ?? i,
     }))
     await supabaseAdmin.from('product_variants').insert(rows)
