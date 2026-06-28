@@ -21,7 +21,15 @@ export async function GET(req: NextRequest) {
       .select('id')
       .eq('slug', category)
       .single()
-    if (cat) query = query.eq('category_id', cat.id)
+    if (cat) {
+      // Include products from this category AND all descendant subcategories
+      const { data: children } = await supabaseAdmin
+        .from('categories')
+        .select('id')
+        .eq('parent_id', cat.id)
+      const ids = [cat.id, ...(children || []).map(c => c.id)]
+      query = query.in('category_id', ids)
+    }
   }
 
   if (search) {
