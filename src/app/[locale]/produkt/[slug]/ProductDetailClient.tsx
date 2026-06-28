@@ -28,6 +28,8 @@ type Variant = {
   price: number | null  // null = použij cenu produktu
   stock: number
   attributes: Record<string, string>
+  parameters: Record<string, string>
+  restockDate: string | null
   sortOrder: number
 }
 
@@ -86,7 +88,10 @@ export default function ProductDetailClient({
   const name = getName(product, locale)
   const description = getDescription(product, locale)
   const catName = getCatName(category, locale)
-  const parameters = JSON.parse(product.parameters || '{}') as Record<string, string>
+  const productParameters = JSON.parse(product.parameters || '{}') as Record<string, string>
+  const parameters = selectedVariant
+    ? { ...productParameters, ...selectedVariant.parameters }
+    : productParameters
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
 
   // Active price and stock — variant overrides product if set
@@ -246,24 +251,34 @@ export default function ProductDetailClient({
                           const matchingVariants = variants.filter(v => v.attributes[attrKey] === val)
                           const isSelected = selectedVariant?.attributes[attrKey] === val
                           const allOutOfStock = matchingVariants.every(v => v.stock <= 0)
+                          const restockDt = allOutOfStock ? matchingVariants[0]?.restockDate : null
                           return (
-                            <button
-                              key={val}
-                              onClick={() => {
-                                const match = matchingVariants[0]
-                                if (match) setSelectedVariant(match)
-                              }}
-                              disabled={allOutOfStock}
-                              className={`px-3 py-1.5 text-sm rounded-lg border-2 transition-all font-medium
-                                ${isSelected
-                                  ? 'border-forest bg-forest text-white'
-                                  : allOutOfStock
-                                    ? 'border-cream-dark text-gray-soft line-through cursor-not-allowed'
-                                    : 'border-cream-dark hover:border-forest hover:text-forest'
-                                }`}
-                            >
-                              {val}
-                            </button>
+                            <div key={val} className="flex flex-col items-center gap-0.5">
+                              <button
+                                onClick={() => {
+                                  const match = matchingVariants[0]
+                                  if (match) setSelectedVariant(match)
+                                }}
+                                disabled={allOutOfStock}
+                                title={allOutOfStock && restockDt ? `Čekáme dodání do: ${new Date(restockDt).toLocaleDateString('cs-CZ')}` : undefined}
+                                className={`px-3 py-1.5 text-sm rounded-lg border-2 transition-all font-medium
+                                  ${isSelected
+                                    ? 'border-forest bg-forest text-white'
+                                    : allOutOfStock
+                                      ? 'border-cream-dark bg-cream text-gray-soft line-through cursor-not-allowed'
+                                      : 'border-cream-dark hover:border-forest hover:text-forest'
+                                  }`}
+                              >
+                                {val}
+                              </button>
+                              {allOutOfStock && (
+                                <span className="text-[10px] text-gray-400 font-mono">
+                                  {restockDt
+                                    ? new Date(restockDt).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' })
+                                    : 'Vyprodáno'}
+                                </span>
+                              )}
+                            </div>
                           )
                         })}
                       </div>
@@ -286,23 +301,32 @@ export default function ProductDetailClient({
                       const isSelected = selectedVariant?.id === v.id
                       const outOfStock = v.stock <= 0
                       return (
-                        <button
-                          key={v.id}
-                          onClick={() => setSelectedVariant(v)}
-                          disabled={outOfStock}
-                          className={`px-3 py-1.5 text-sm rounded-lg border-2 transition-all font-medium
-                            ${isSelected
-                              ? 'border-forest bg-forest text-white'
-                              : outOfStock
-                                ? 'border-cream-dark text-gray-soft line-through cursor-not-allowed'
-                                : 'border-cream-dark hover:border-forest hover:text-forest'
-                            }`}
-                        >
-                          {getVariantName(v, locale)}
-                          {v.price !== null && v.price !== product.price && (
-                            <span className="ml-1.5 text-xs opacity-80">{fmt(v.price)}</span>
+                        <div key={v.id} className="flex flex-col items-center gap-0.5">
+                          <button
+                            onClick={() => setSelectedVariant(v)}
+                            disabled={outOfStock}
+                            title={outOfStock && v.restockDate ? `Čekáme dodání do: ${new Date(v.restockDate).toLocaleDateString('cs-CZ')}` : undefined}
+                            className={`px-3 py-1.5 text-sm rounded-lg border-2 transition-all font-medium
+                              ${isSelected
+                                ? 'border-forest bg-forest text-white'
+                                : outOfStock
+                                  ? 'border-cream-dark bg-cream text-gray-soft line-through cursor-not-allowed'
+                                  : 'border-cream-dark hover:border-forest hover:text-forest'
+                              }`}
+                          >
+                            {getVariantName(v, locale)}
+                            {v.price !== null && v.price !== product.price && (
+                              <span className="ml-1.5 text-xs opacity-80">{fmt(v.price)}</span>
+                            )}
+                          </button>
+                          {outOfStock && (
+                            <span className="text-[10px] text-gray-400 font-mono">
+                              {v.restockDate
+                                ? new Date(v.restockDate).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' })
+                                : 'Vyprodáno'}
+                            </span>
                           )}
-                        </button>
+                        </div>
                       )
                     })}
                   </div>
@@ -315,7 +339,9 @@ export default function ProductDetailClient({
           <div className={`flex items-center gap-2 mb-5 text-sm font-medium ${isOutOfStock ? 'text-gray-400' : isLowStock ? 'text-amber-600' : 'text-sage-dark'}`}>
             <Package className="w-4 h-4" />
             {isOutOfStock
-              ? t('out_of_stock')
+              ? selectedVariant?.restockDate
+                ? `Čekáme dodání do: ${new Date(selectedVariant.restockDate).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                : t('out_of_stock')
               : isLowStock
                 ? `${tShop('low_stock')} — zbývá ${activeStock} ks`
                 : `${t('in_stock')} (${activeStock} ks)`}

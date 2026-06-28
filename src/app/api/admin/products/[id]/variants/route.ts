@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       name_cs: string; name_en?: string; name_de?: string
       sku?: string; price?: number | null; stock?: number
       attributes?: Record<string, string>; parameters?: Record<string, string>
-      sort_order?: number
+      restock_date?: string | null; sort_order?: number
     }[]
   }
 
@@ -52,6 +52,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       stock: v.stock ?? 0,
       attributes: v.attributes ?? {},
       parameters: v.parameters ?? {},
+      restock_date: v.restock_date || null,
       sort_order: v.sort_order ?? i,
     }))
     await supabaseAdmin.from('product_variants').insert(rows)

@@ -93,6 +93,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     price: v.price as number | null,
     stock: v.stock as number,
     attributes: (v.attributes || {}) as Record<string, string>,
+    parameters: (v.parameters || {}) as Record<string, string>,
+    restockDate: (v.restock_date || null) as string | null,
     sortOrder: v.sort_order as number,
   }))
 
