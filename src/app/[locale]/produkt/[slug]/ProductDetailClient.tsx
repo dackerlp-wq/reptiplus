@@ -256,7 +256,18 @@ export default function ProductDetailClient({
                             <div key={val} className="flex flex-col items-center gap-0.5">
                               <button
                                 onClick={() => {
-                                  const match = matchingVariants[0]
+                                  // Preserve selections from other attribute keys
+                                  const currentAttrs = selectedVariant?.attributes ?? {}
+                                  const desired = { ...currentAttrs, [attrKey]: val }
+                                  // Find best match: most attribute keys matching desired
+                                  const scored = matchingVariants.map(v => {
+                                    const score = Object.entries(desired).filter(
+                                      ([k, dv]) => v.attributes[k] === dv
+                                    ).length
+                                    return { v, score }
+                                  })
+                                  scored.sort((a, b) => b.score - a.score)
+                                  const match = scored[0]?.v
                                   if (match) setSelectedVariant(match)
                                 }}
                                 disabled={allOutOfStock}
