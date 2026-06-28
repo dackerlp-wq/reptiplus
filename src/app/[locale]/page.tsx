@@ -2,9 +2,9 @@ import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
 import { mapProduct, mapCategory } from '@/lib/mappers'
-import type { Product } from '@/components/shop/ProductCard'
+import ProductCard, { type Product } from '@/components/shop/ProductCard'
 import { Package, Truck, Shield, Headphones, ArrowRight, Zap, BookOpen } from 'lucide-react'
-import HomeProductTabs from '@/components/shop/HomeProductTabs'
+import HomeProductNav from '@/components/shop/HomeProductTabs'
 
 async function getHomeData() {
   const [
@@ -139,14 +139,52 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* Product tabs: Nejprodávanější / Novinky / Výprodej */}
-      <HomeProductTabs
-        featured={featuredProds as Product[]}
-        newProds={newProds as Product[]}
-        saleProds={saleProds as Product[]}
-        locale={locale}
-        labels={{ featured: t('bestsellers'), new: t('new_products'), sale: t('sale'), viewAll: t('view_all') }}
-      />
+      {/* Scroll-nav + Nejprodávanější */}
+      <section id="sekce-doporucene" className="max-w-7xl mx-auto px-4 pb-12">
+        <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
+          <HomeProductNav labels={{ featured: t('bestsellers'), new: t('new_products'), sale: t('sale') }} />
+          <Link href={`/${locale}/obchod?filtr=doporucene`} className="flex items-center gap-1 text-sm text-forest font-medium hover:underline">
+            {t('view_all')} <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+        {featuredProds.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {featuredProds.map(p => <ProductCard key={p.id} product={p as Product} locale={locale} />)}
+          </div>
+        ) : <p className="text-gray-soft text-sm py-8 text-center">Žádné doporučené produkty.</p>}
+      </section>
+
+      {/* Novinky */}
+      <section id="sekce-novinky" className="max-w-7xl mx-auto px-4 pb-12">
+        <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-charcoal">✨ {t('new_products')}</h2>
+          <Link href={`/${locale}/obchod?filtr=novinka`} className="flex items-center gap-1 text-sm text-forest font-medium hover:underline">
+            {t('view_all')} <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+        {newProds.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {newProds.map(p => <ProductCard key={p.id} product={p as Product} locale={locale} />)}
+          </div>
+        ) : <p className="text-gray-soft text-sm py-8 text-center">Žádné novinky.</p>}
+      </section>
+
+      {/* Výprodej */}
+      {saleProds.length > 0 && (
+        <section id="sekce-sleva" className="bg-earth/10 border-y border-earth/20 py-12">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-charcoal">🏷️ {t('sale')}</h2>
+              <Link href={`/${locale}/obchod?filtr=sleva`} className="flex items-center gap-1 text-sm text-forest font-medium hover:underline">
+                {t('view_all')} <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {saleProds.map(p => <ProductCard key={p.id} product={p as Product} locale={locale} />)}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Blog / info strip */}
       <section className="bg-forest text-white py-12">
