@@ -58,13 +58,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }))
     await supabaseAdmin.from('product_variants').insert(rows)
 
-    // Auto-flag product as on sale if any variant has compare_price > price
+    // Sync product-level stock to sum of variant stocks
+    const totalStock = variants.reduce((sum, v) => sum + (v.stock ?? 0), 0)
     const anyOnSale = variants.some(v =>
       v.compare_price != null && v.price != null && v.compare_price > v.price
     )
-    if (anyOnSale) {
-      await supabaseAdmin.from('products').update({ is_sale: 1 }).eq('id', id)
-    }
+    await supabaseAdmin.from('products').update({
+      stock: totalStock,
+      ...(anyOnSale ? { is_sale: 1 } : {}),
+    }).eq('id', id)
+  } else {
+    // No variants — stock stays on product itself, nothing to sync
   }
 
   return NextResponse.json({ success: true })

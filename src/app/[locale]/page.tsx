@@ -2,8 +2,9 @@ import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
 import { mapProduct, mapCategory } from '@/lib/mappers'
-import ProductCard, { type Product } from '@/components/shop/ProductCard'
+import type { Product } from '@/components/shop/ProductCard'
 import { Package, Truck, Shield, Headphones, ArrowRight, Zap, BookOpen } from 'lucide-react'
+import HomeProductTabs from '@/components/shop/HomeProductTabs'
 
 async function getHomeData() {
   const [
@@ -138,66 +139,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      {/* Featured */}
-      <section className="max-w-7xl mx-auto px-4 pb-12">
-        <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
-          <div className="flex gap-1 bg-cream-dark rounded-xl p-1">
-            <button className="px-4 py-2 rounded-lg bg-white text-sm font-medium text-forest shadow-sm">
-              {t('bestsellers')}
-            </button>
-            <button className="px-4 py-2 rounded-lg text-sm font-medium text-gray-soft hover:text-charcoal transition-colors">
-              {t('new_products')}
-            </button>
-            <button className="px-4 py-2 rounded-lg text-sm font-medium text-gray-soft hover:text-charcoal transition-colors">
-              {t('sale')}
-            </button>
-          </div>
-          <Link href={`/${locale}/obchod`} className="flex items-center gap-1 text-sm text-forest font-medium hover:underline">
-            {t('view_all')} <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {featuredProds.map(p => (
-            <ProductCard key={p.id} product={p as Product} locale={locale} />
-          ))}
-        </div>
-      </section>
-
-      {/* New arrivals — newest first, auto-expiry applied via mapper */}
-      {newProds.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 py-12">
-          <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-charcoal">✨ {t('new_products')}</h2>
-            <Link href={`/${locale}/obchod?filtr=novinka`} className="flex items-center gap-1 text-sm text-forest font-medium hover:underline">
-              {t('view_all')} <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {newProds.map(p => (
-              <ProductCard key={p.id} product={p as Product} locale={locale} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Sale banner */}
-      {saleProds.length > 0 && (
-        <section className="bg-earth/10 border-y border-earth/20 py-12">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex flex-wrap gap-4 items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-charcoal">🏷️ {t('sale')}</h2>
-              <Link href={`/${locale}/obchod?filtr=sleva`} className="flex items-center gap-1 text-sm text-forest font-medium hover:underline">
-                {t('view_all')} <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {saleProds.map(p => (
-                <ProductCard key={p.id} product={p as Product} locale={locale} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Product tabs: Nejprodávanější / Novinky / Výprodej */}
+      <HomeProductTabs
+        featured={featuredProds as Product[]}
+        newProds={newProds as Product[]}
+        saleProds={saleProds as Product[]}
+        locale={locale}
+        labels={{ featured: t('bestsellers'), new: t('new_products'), sale: t('sale'), viewAll: t('view_all') }}
+      />
 
       {/* Blog / info strip */}
       <section className="bg-forest text-white py-12">
