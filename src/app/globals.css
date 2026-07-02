@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand green — from logo */
-  --color-forest: #58B82A;
-  --color-forest-dark: #3E8A1C;
-  --color-forest-light: #6FCF38;
+  /* Brand green — exact from logo SVG #75B135 */
+  --color-forest: #75B135;
+  --color-forest-dark: #4E7A22;
+  --color-forest-light: #8DC94D;
 
   --color-earth: #6B4226;
   --color-earth-light: #8B5A3C;
