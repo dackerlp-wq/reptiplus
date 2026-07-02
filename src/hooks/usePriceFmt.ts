@@ -7,37 +7,33 @@ export function usePriceFmt() {
   const eurRate = useEurRate()
   const isEur = locale !== 'cs'
 
-  const fmt = (czk: number): string => {
-    if (isEur && eurRate) {
-      const eur = czk / eurRate
-      return new Intl.NumberFormat(locale === 'de' ? 'de-DE' : 'en-GB', {
-        style: 'currency',
-        currency: 'EUR',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(eur)
-    }
-    return new Intl.NumberFormat('cs-CZ', {
-      style: 'currency',
-      currency: 'CZK',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(czk)
+  const fmtEur = (czk: number): string => {
+    if (!eurRate) return ''
+    return new Intl.NumberFormat(locale === 'de' ? 'de-DE' : 'en-GB', {
+      style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2,
+    }).format(czk / eurRate)
   }
 
-  // Secondary display: when EUR is primary, show CZK in small; when CZK primary, show EUR
+  const fmtCzk = (czk: number): string =>
+    new Intl.NumberFormat('cs-CZ', {
+      style: 'currency', currency: 'CZK', minimumFractionDigits: 0, maximumFractionDigits: 0,
+    }).format(czk)
+
+  // Primary price display
+  const fmt = (czk: number): string => {
+    if (isEur) return eurRate ? fmtEur(czk) : '…'
+    return fmtCzk(czk)
+  }
+
+  // Secondary price (CS → EUR, EN/DE → nothing)
   const fmtSecondary = (czk: number): string | null => {
-    if (isEur) {
-      return new Intl.NumberFormat('cs-CZ', {
-        style: 'currency',
-        currency: 'CZK',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(czk)
+    if (!isEur) {
+      // Czech: show EUR alongside Kč
+      if (!eurRate) return null
+      return fmtEur(czk)
     }
-    if (!eurRate) return null
-    const eur = czk / eurRate
-    return `≈ ${new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(eur)} €`
+    // English / German: no secondary — EUR only
+    return null
   }
 
   return { fmt, fmtSecondary, isEur, eurRate }

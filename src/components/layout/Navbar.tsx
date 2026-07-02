@@ -2,13 +2,14 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ShoppingCart, User, Search, Menu, X, ChevronDown, Globe, ChevronRight, ArrowRight } from 'lucide-react'
 import { useCartStore } from '@/store/cart'
 import { cn } from '@/lib/utils'
 import { usePriceFmt } from '@/hooks/usePriceFmt'
 import Logo from '@/components/layout/Logo'
+import SearchBar from '@/components/shop/SearchBar'
 
 type Category = {
   id: string
@@ -52,13 +53,11 @@ export default function Navbar({ locale }: { locale: string }) {
   const t = useTranslations('nav')
   const tShop = useTranslations('shop')
   const pathname = usePathname()
-  const router = useRouter()
   const cartCount = useCartStore(s => s.itemCount())
   const { fmt } = usePriceFmt()
 
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
   const [megaOpen, setMegaOpen] = useState(false)
   const [langDropdown, setLangDropdown] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -288,37 +287,16 @@ export default function Navbar({ locale }: { locale: string }) {
 
             {/* Right side actions */}
             <div className="flex items-center gap-1 ml-auto">
-              {/* Search */}
-              {searchOpen ? (
-                <div className="flex items-center gap-2 bg-cream-dark rounded-lg px-3 py-1.5">
-                  <input
-                    autoFocus
-                    type="text"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && searchQuery.trim()) {
-                        router.push(`/${locale}/obchod?hledat=${encodeURIComponent(searchQuery)}`)
-                        setSearchOpen(false)
-                        setSearchQuery('')
-                      }
-                      if (e.key === 'Escape') setSearchOpen(false)
-                    }}
-                    placeholder={t('search')}
-                    className="bg-transparent text-sm outline-none w-40 placeholder-gray-soft"
-                  />
-                  <button onClick={() => setSearchOpen(false)}>
-                    <X className="w-4 h-4 text-gray-soft" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setSearchOpen(true)}
-                  className="p-2 rounded-lg hover:bg-sage/30 text-charcoal hover:text-forest transition-colors"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
-              )}
+              {/* Search — desktop inline, mobile toggle */}
+              <div className="hidden md:block w-56">
+                <SearchBar placeholder={t('search')} onClose={() => setSearchOpen(false)} />
+              </div>
+              <button
+                onClick={() => setSearchOpen(!searchOpen)}
+                className="md:hidden p-2 rounded-lg hover:bg-sage/30 text-charcoal hover:text-forest transition-colors"
+              >
+                <Search className="w-5 h-5" />
+              </button>
 
               {/* Language */}
               <div
@@ -446,6 +424,17 @@ export default function Navbar({ locale }: { locale: string }) {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Mobile search panel */}
+        {searchOpen && (
+          <div className="md:hidden border-t border-cream-dark bg-white px-4 py-3">
+            <SearchBar
+              placeholder={t('search')}
+              onClose={() => setSearchOpen(false)}
+              className="w-full"
+            />
           </div>
         )}
       </header>
