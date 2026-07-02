@@ -67,7 +67,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   return (
     <div>
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-forest-dark via-forest to-forest-light overflow-hidden">
+      <section className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1A2D12 0%, #2E6616 50%, #3E8A1C 100%)' }}>
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 right-20 w-64 h-64 rounded-full bg-gold blur-3xl" />
           <div className="absolute bottom-0 left-10 w-48 h-48 rounded-full bg-sage blur-2xl" />

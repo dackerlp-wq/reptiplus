@@ -1,28 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  --color-forest: #1B4332;
-  --color-forest-dark: #0f2b1f;
-  --color-forest-light: #2D6A4F;
+  /* Brand green — from logo */
+  --color-forest: #58B82A;
+  --color-forest-dark: #3E8A1C;
+  --color-forest-light: #6FCF38;
+
   --color-earth: #6B4226;
   --color-earth-light: #8B5A3C;
   --color-gold: #C9A84C;
   --color-gold-light: #DFC068;
-  --color-cream: #F5F0E8;
-  --color-cream-dark: #EAE3D5;
-  --color-sage: #D4E6C3;
-  --color-sage-dark: #A8C899;
-  --color-charcoal: #1A1A1A;
+
+  /* Backgrounds — slightly cooler/fresher to complement bright green */
+  --color-cream: #F4F7F0;
+  --color-cream-dark: #E2EAD8;
+  --color-sage: #C8E6A8;
+  --color-sage-dark: #94CC68;
+
+  --color-charcoal: #2D2D2D;
   --color-gray-soft: #6B7280;
   --color-white: #ffffff;
 
-  /* Blog mock palette */
+  /* Blog / editorial palette */
   --color-ink: #1B1F17;
-  --color-moss: #33533C;
+  --color-moss: #3A6B2A;
   --color-amber: #E8A33D;
-  --color-paper: #F3EEE0;
+  --color-paper: #F2F5EE;
   --color-terracotta: #C2562E;
-  --color-forest-deep: #16241A;
+  --color-forest-deep: #1A2D12;
 
   --font-sans: var(--font-inter, 'Inter'), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains, 'JetBrains Mono'), monospace;

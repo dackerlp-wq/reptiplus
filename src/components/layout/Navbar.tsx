@@ -8,6 +8,7 @@ import { ShoppingCart, User, Search, Menu, X, ChevronDown, Globe, ChevronRight, 
 import { useCartStore } from '@/store/cart'
 import { cn } from '@/lib/utils'
 import { usePriceFmt } from '@/hooks/usePriceFmt'
+import Logo from '@/components/layout/Logo'
 
 type Category = {
   id: string
@@ -148,12 +149,7 @@ export default function Navbar({ locale }: { locale: string }) {
         <nav className="max-w-7xl mx-auto px-4">
           <div className="flex items-center h-16 gap-4">
             {/* Logo */}
-            <Link href={`/${locale}`} className="flex items-center gap-2 shrink-0">
-              <div className="w-9 h-9 rounded-lg bg-forest flex items-center justify-center">
-                <span className="text-white font-bold text-lg">R</span>
-              </div>
-              <span className="font-bold text-xl text-forest tracking-tight">Reptiplus</span>
-            </Link>
+            <Logo locale={locale} />
 
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-1 flex-1 mx-4">
