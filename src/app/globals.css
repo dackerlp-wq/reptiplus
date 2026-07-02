@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand green — logo #77AD2E, darkened for UI contrast */
-  --color-forest: #3D7010;
-  --color-forest-dark: #254A08;
-  --color-forest-light: #569818;
+  /* Brand green — based on logo #77AD2E */
+  --color-forest: #2E6B0A;
+  --color-forest-dark: #1B4206;
+  --color-forest-light: #4A9018;
 
   --color-earth: #6B4226;
   --color-earth-light: #8B5A3C;
-  --color-gold: #A67C20;
-  --color-gold-light: #C49A3A;
+  --color-gold: #C08A20;
+  --color-gold-light: #D9A83A;
 
-  /* Backgrounds */
-  --color-cream: #EEF2E8;
-  --color-cream-dark: #CCDAB8;
-  --color-sage: #A8CC84;
-  --color-sage-dark: #72A84A;
+  /* Backgrounds — warm neutral, NOT green */
+  --color-cream: #F7F4EF;
+  --color-cream-dark: #E8E2D8;
+  --color-sage: #D4E8C0;
+  --color-sage-dark: #9CC870;
 
-  --color-charcoal: #2D2D2D;
+  --color-charcoal: #1C1C1C;
   --color-gray-soft: #6B7280;
   --color-white: #ffffff;
 
