@@ -84,114 +84,86 @@ export default async function BlogPage({
   return (
     <>
       <style>{`
-        .specimen-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-        .specimen-card:hover { transform: translateY(-3px); box-shadow: 6px 6px 0 var(--color-ink); }
-        .specimen-featured:hover { transform: translateY(-2px); box-shadow: 7px 7px 0 var(--color-ink); }
+        .blog-card { transition: box-shadow 0.2s ease, border-color 0.2s ease; }
+        .blog-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-color: var(--color-forest); }
       `}</style>
 
       {/* Hero */}
-      <header style={{ background: 'var(--color-forest-deep)', color: 'var(--color-paper)' }}
-        className="px-8 py-16 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-72 h-72 rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, var(--color-amber), transparent 70%)', transform: 'translate(30%, -30%)' }} />
-        <div className="max-w-5xl mx-auto relative">
-          <div className="flex items-center gap-3 mb-5 text-xs uppercase tracking-widest"
-            style={{ color: 'var(--color-amber)', fontFamily: 'var(--font-mono)' }}>
-            <span className="w-7 h-px" style={{ background: 'var(--color-amber)' }} />
-            Terénní deník chovatele
+      <header className="bg-white border-b border-cream-dark px-8 py-12">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="inline-block w-1 h-5 rounded-full bg-forest" />
+            <span className="text-xs font-bold uppercase tracking-widest text-forest" style={{ fontFamily: 'var(--font-mono)' }}>
+              Terénní deník chovatele
+            </span>
           </div>
-          <h1 className="text-5xl font-bold leading-tight mb-4 max-w-2xl"
-            style={{ fontFamily: 'var(--font-display)' }}>
+          <h1 className="text-4xl font-bold text-charcoal leading-tight mb-3" style={{ fontFamily: 'var(--font-display)' }}>
             Vše, co potřebuje vědět{' '}
-            <em className="not-italic" style={{ color: 'var(--color-amber)' }}>každý terarista</em>.
+            <em className="not-italic text-forest">každý terarista</em>.
           </h1>
-          <p className="text-base max-w-lg" style={{ color: 'rgba(243,238,224,0.7)', lineHeight: 1.7 }}>
+          <p className="text-gray-soft max-w-lg leading-relaxed">
             Praktické návody, srovnání vybavení a postřehy ze světa teraristiky — psané lidmi, kteří plazy skutečně chovají.
           </p>
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-8 py-14 grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
+      <div className="max-w-5xl mx-auto px-8 py-10 grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-10">
         <div>
           {/* Active filter indicator */}
           {filterLabel && (
-            <div className="flex items-center gap-3 mb-8 px-4 py-3"
-              style={{ background: 'rgba(232,163,61,0.1)', border: '1.5px solid rgba(232,163,61,0.4)' }}>
-              <span className="text-sm font-bold" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-forest-deep)' }}>
-                {filterLabel}
-              </span>
+            <div className="flex items-center gap-3 mb-6 px-4 py-2.5 bg-forest/5 border border-forest/20 rounded-xl">
+              <span className="text-sm font-semibold text-forest">{filterLabel}</span>
               <Link href={`/${locale}/blog`}
-                className="ml-auto text-xs font-bold px-2.5 py-1 hover:opacity-80 transition-opacity"
-                style={{ background: 'var(--color-amber)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)' }}>
-                × Zrušit filtr
+                className="ml-auto text-xs font-bold px-2.5 py-1 bg-forest text-white rounded-lg hover:bg-forest-dark transition-colors">
+                × Zrušit
               </Link>
             </div>
           )}
 
-          {/* Featured — card overlay pattern: absolute Link covers card, tag links sit above it */}
+          {/* Featured */}
           {featured && (
-            <div className="block mb-10 group">
-              <article className="specimen-card specimen-featured flex flex-col md:flex-row"
-                style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)', position: 'relative' }}>
-                {/* Invisible overlay link for the whole card */}
+            <div className="mb-8">
+              <article className="blog-card bg-white border border-cream-dark rounded-2xl overflow-hidden relative">
                 <Link href={`/${locale}/blog/${featured.slug}`} className="absolute inset-0 z-[1]" aria-label={getTitle(featured as Record<string, unknown>)} />
-
-                <div className="absolute -top-px right-6 px-3 py-1.5 text-xs font-bold uppercase tracking-widest"
-                  style={{ background: 'var(--color-amber)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1.5px solid var(--color-ink)', borderTop: 'none', zIndex: 2 }}>
+                <div className="absolute top-3 left-3 z-[2] px-2.5 py-1 text-xs font-bold uppercase tracking-wide bg-gold text-white rounded-lg">
                   Doporučujeme
                 </div>
-
                 {featured.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={featured.image} alt="" className="md:w-2/5 h-48 md:h-auto object-cover relative z-0" style={{ borderRight: '1.5px solid var(--color-ink)' }} />
+                  <img src={featured.image} alt="" className="w-full h-52 object-cover" />
                 ) : (
-                  <div className="md:w-2/5 h-48 md:h-64 flex items-center justify-center relative z-0" style={{ background: 'var(--color-moss)', borderRight: '1.5px solid var(--color-ink)' }}>
-                    <span className="text-6xl opacity-30">🦎</span>
+                  <div className="w-full h-52 flex items-center justify-center bg-sage/30">
+                    <span className="text-6xl opacity-40">🦎</span>
                   </div>
                 )}
-
-                <div className="flex-1 p-8 flex flex-col justify-center relative z-[2]">
+                <div className="p-7 relative z-[2]">
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {(featured as any).blog_categories && (
-                    <div className="mb-2">
-                      <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5"
-                        style={{ background: 'var(--color-moss)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)' }}>
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {getCatName((featured as any).blog_categories)}
-                      </span>
-                    </div>
+                    <span className="text-xs font-semibold text-forest bg-forest/10 px-2 py-0.5 rounded-full mr-2">
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {getCatName((featured as any).blog_categories)}
+                    </span>
                   )}
-                  <div className="flex items-center gap-3 text-xs mb-3" style={{ color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>
+                  <div className="flex items-center gap-2 text-xs text-gray-soft mt-2 mb-3">
                     <span>{formatDate(featured.published_at || featured.created_at, locale as Locale)}</span>
-                    <span style={{ color: 'var(--color-terracotta)' }}>/</span>
+                    <span>·</span>
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <span>{(featured as any).blog_authors?.name || 'Reptiplus'}</span>
                   </div>
-                  <h2 className="text-2xl font-bold mb-3 leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                  <h2 className="text-2xl font-bold text-charcoal mb-2 leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
                     {getTitle(featured as Record<string, unknown>)}
                   </h2>
-                  {featured.excerpt && <p className="text-sm mb-3" style={{ color: '#3C4138', lineHeight: 1.65 }}>{featured.excerpt}</p>}
+                  {featured.excerpt && <p className="text-sm text-gray-soft leading-relaxed mb-4">{featured.excerpt}</p>}
                   {getPostTags(featured).length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-4">
-                      {getPostTags(featured).slice(0, 3).map((tag, i) => (
+                    <div className="flex flex-wrap gap-1.5">
+                      {getPostTags(featured).slice(0, 4).map((tag, i) => (
                         <Link key={i} href={`/${locale}/blog?tag=${tag.slug}`}
-                          className="px-2 py-0.5 text-xs rounded-full hover:opacity-80 relative z-[2]"
-                          style={{ background: 'rgba(232,163,61,0.18)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.35)' }}>
+                          className="px-2 py-0.5 text-xs bg-cream text-gray-soft border border-cream-dark rounded-full hover:border-forest hover:text-forest transition-colors relative z-[2]">
                           {getTagName(tag)}
                         </Link>
                       ))}
-                      {getPostTags(featured).length > 3 && (
-                        <span className="px-2 py-0.5 text-xs rounded-full relative z-[2]"
-                          style={{ background: 'rgba(27,31,23,0.08)', color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>
-                          +{getPostTags(featured).length - 3}
-                        </span>
-                      )}
                     </div>
                   )}
-                  <span className="text-sm font-bold uppercase tracking-wide inline-flex items-center gap-1.5"
-                    style={{ color: 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>
-                    {t('read_more')} →
-                  </span>
                 </div>
               </article>
             </div>
@@ -199,96 +171,81 @@ export default async function BlogPage({
 
           {/* Article feed */}
           {posts.length === 0 && (
-            <p className="text-center py-16" style={{ color: 'var(--color-moss)' }}>{t('no_posts')}</p>
+            <p className="text-center py-16 text-gray-soft">{t('no_posts')}</p>
           )}
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-4">
             {rest.map((post) => (
-              <div key={post.id} className="group">
-                <article className="specimen-card p-7"
-                  style={{ background: 'var(--color-paper)', border: '1.5px solid var(--color-ink)', borderRadius: 2, position: 'relative' }}>
-                  {/* Overlay link covers the whole card */}
-                  <Link href={`/${locale}/blog/${post.slug}`} className="absolute inset-0 z-[1]" aria-label={getTitle(post as Record<string, unknown>)} />
-
-                  <div className="absolute -top-px right-6 px-3 py-1 text-xs font-bold uppercase tracking-wider"
-                    style={{ background: 'var(--color-moss)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)', border: '1.5px solid var(--color-ink)', borderTop: 'none', zIndex: 2 }}>
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {(post as any).blog_categories ? getCatName((post as any).blog_categories) : (locale === 'cs' ? 'Článek' : locale === 'en' ? 'Article' : 'Artikel')}
-                  </div>
-
-                  <div className="flex gap-6 relative z-[2]">
-                    {post.image && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={post.image} alt="" className="w-36 h-36 object-cover shrink-0" style={{ border: '1.5px solid var(--color-ink)' }} />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 text-xs mb-3" style={{ color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>
-                        <span>{formatDate(post.published_at || post.created_at, locale as Locale)}</span>
-                        <span style={{ color: 'var(--color-terracotta)' }}>/</span>
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        <span>{(post as any).blog_authors?.name || 'Reptiplus'}</span>
-                      </div>
-                      <h2 className="text-xl font-bold mb-2 leading-snug" style={{ fontFamily: 'var(--font-display)' }}>
-                        {getTitle(post as Record<string, unknown>)}
-                      </h2>
-                      {post.excerpt && <p className="text-sm mb-3 line-clamp-2" style={{ color: '#3C4138', lineHeight: 1.65 }}>{post.excerpt}</p>}
-                      {getPostTags(post).length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                          {getPostTags(post).slice(0, 3).map((tag, i) => (
-                            <Link key={i} href={`/${locale}/blog?tag=${tag.slug}`}
-                              className="px-2 py-0.5 text-xs rounded-full hover:opacity-80 transition-opacity relative z-[2]"
-                              style={{ background: 'rgba(232,163,61,0.18)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.35)' }}>
-                              {getTagName(tag)}
-                            </Link>
-                          ))}
-                          {getPostTags(post).length > 3 && (
-                            <span className="px-2 py-0.5 text-xs rounded-full relative z-[2]"
-                              style={{ background: 'rgba(27,31,23,0.08)', color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>
-                              +{getPostTags(post).length - 3}
-                            </span>
-                          )}
-                        </div>
+              <article key={post.id} className="blog-card bg-white border border-cream-dark rounded-xl overflow-hidden relative">
+                <Link href={`/${locale}/blog/${post.slug}`} className="absolute inset-0 z-[1]" aria-label={getTitle(post as Record<string, unknown>)} />
+                <div className="flex gap-0">
+                  {post.image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={post.image} alt="" className="w-40 h-full object-cover shrink-0" style={{ minHeight: 120 }} />
+                  )}
+                  <div className="flex-1 p-5 min-w-0 relative z-[2]">
+                    <div className="flex items-center gap-2 text-xs text-gray-soft mb-2">
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {(post as any).blog_categories && (
+                        <span className="text-forest font-semibold">
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                          {getCatName((post as any).blog_categories)}
+                        </span>
                       )}
-                      <span className="text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1"
-                        style={{ color: 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>
-                        {t('read_more')} →
-                      </span>
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {(post as any).blog_categories && <span>·</span>}
+                      <span>{formatDate(post.published_at || post.created_at, locale as Locale)}</span>
+                      <span>·</span>
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      <span>{(post as any).blog_authors?.name || 'Reptiplus'}</span>
                     </div>
+                    <h2 className="text-lg font-bold text-charcoal mb-1 leading-snug" style={{ fontFamily: 'var(--font-display)' }}>
+                      {getTitle(post as Record<string, unknown>)}
+                    </h2>
+                    {post.excerpt && <p className="text-sm text-gray-soft line-clamp-2 mb-2">{post.excerpt}</p>}
+                    {getPostTags(post).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {getPostTags(post).slice(0, 3).map((tag, i) => (
+                          <Link key={i} href={`/${locale}/blog?tag=${tag.slug}`}
+                            className="px-2 py-0.5 text-xs bg-cream text-gray-soft border border-cream-dark rounded-full hover:border-forest hover:text-forest transition-colors relative z-[2]">
+                            {getTagName(tag)}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </article>
-              </div>
+                </div>
+              </article>
             ))}
           </div>
         </div>
 
         {/* Sidebar */}
-        <aside className="self-start sticky top-6 space-y-6">
-          <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)', padding: '24px' }}>
-            <h3 className="text-xs font-bold uppercase tracking-widest mb-4 pb-3"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)', borderBottom: '1px solid rgba(27,31,23,0.12)' }}>
+        <aside className="self-start sticky top-6 space-y-4">
+          <div className="bg-white border border-cream-dark rounded-xl p-5">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-forest mb-3 pb-3 border-b border-cream-dark" style={{ fontFamily: 'var(--font-mono)' }}>
               {t('title')}
             </h3>
-            <p className="text-sm" style={{ color: '#3C4138', lineHeight: 1.65 }}>
+            <p className="text-sm text-gray-soft leading-relaxed">
               Praktické rady a tipy o chovu plazů přímo od nás.
             </p>
           </div>
 
           {/* Blog categories */}
           {(allBlogCats || []).length > 0 && (
-            <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
-              <div className="px-4 py-3 text-xs font-bold uppercase tracking-widest"
-                style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
-                {locale === 'cs' ? 'Kategorie' : locale === 'en' ? 'Categories' : 'Kategorien'}
+            <div className="bg-white border border-cream-dark rounded-xl overflow-hidden">
+              <div className="px-4 py-3 bg-cream border-b border-cream-dark">
+                <span className="text-xs font-bold uppercase tracking-widest text-charcoal" style={{ fontFamily: 'var(--font-mono)' }}>
+                  {locale === 'cs' ? 'Kategorie' : locale === 'en' ? 'Categories' : 'Kategorien'}
+                </span>
               </div>
-              <div className="p-4 flex flex-col gap-1">
+              <div className="p-3 flex flex-col gap-0.5">
                 <Link href={`/${locale}/blog`}
-                  className="text-sm px-2 py-1 rounded hover:opacity-80 transition-opacity font-medium"
-                  style={{ color: !catSlug ? 'var(--color-terracotta)' : 'var(--color-ink)', fontFamily: 'var(--font-mono)' }}>
-                  {locale === 'cs' ? '— Všechny kategorie' : locale === 'en' ? '— All categories' : '— Alle Kategorien'}
+                  className={`text-sm px-3 py-1.5 rounded-lg transition-colors font-medium ${!catSlug ? 'bg-forest/10 text-forest' : 'text-gray-soft hover:text-forest hover:bg-cream'}`}>
+                  {locale === 'cs' ? 'Všechny' : locale === 'en' ? 'All' : 'Alle'}
                 </Link>
                 {(allBlogCats || []).map(c => (
                   <Link key={c.id} href={`/${locale}/blog?kategorie=${c.slug}`}
-                    className="text-sm px-2 py-1 rounded hover:opacity-80 transition-opacity"
-                    style={{ color: catSlug === c.slug ? 'var(--color-terracotta)' : 'var(--color-ink)', fontFamily: 'var(--font-mono)', fontWeight: catSlug === c.slug ? 700 : 400 }}>
+                    className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${catSlug === c.slug ? 'bg-forest/10 text-forest font-semibold' : 'text-gray-soft hover:text-forest hover:bg-cream'}`}>
                     {getCatName(c)}
                   </Link>
                 ))}
@@ -296,24 +253,22 @@ export default async function BlogPage({
             </div>
           )}
 
-          {/* Tags cloud — randomised, max 15 */}
+          {/* Tags cloud */}
           {(allTags || []).length > 0 && (
-            <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
-              <div className="px-4 py-3 text-xs font-bold uppercase tracking-widest"
-                style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
-                {locale === 'cs' ? 'Štítky' : locale === 'en' ? 'Tags' : 'Tags'}
+            <div className="bg-white border border-cream-dark rounded-xl overflow-hidden">
+              <div className="px-4 py-3 bg-cream border-b border-cream-dark">
+                <span className="text-xs font-bold uppercase tracking-widest text-charcoal" style={{ fontFamily: 'var(--font-mono)' }}>
+                  {locale === 'cs' ? 'Štítky' : locale === 'en' ? 'Tags' : 'Tags'}
+                </span>
               </div>
               <div className="p-4 flex flex-wrap gap-2">
                 {[...(allTags || [])].sort(() => Math.random() - 0.5).slice(0, 15).map(tag => (
                   <Link key={tag.id} href={`/${locale}/blog?tag=${tag.slug}`}
-                    className="px-2.5 py-1 text-xs rounded-full hover:opacity-80 transition-opacity"
-                    style={{
-                      background: tagSlug === tag.slug ? 'var(--color-amber)' : 'rgba(232,163,61,0.15)',
-                      color: 'var(--color-forest-deep)',
-                      fontFamily: 'var(--font-mono)',
-                      border: `1px solid ${tagSlug === tag.slug ? 'var(--color-amber)' : 'rgba(232,163,61,0.4)'}`,
-                      fontWeight: tagSlug === tag.slug ? 700 : 600,
-                    }}>
+                    className={`px-2.5 py-1 text-xs rounded-full transition-colors border ${
+                      tagSlug === tag.slug
+                        ? 'bg-forest text-white border-forest'
+                        : 'bg-cream text-gray-soft border-cream-dark hover:border-forest hover:text-forest'
+                    }`}>
                     {getTagName(tag)}
                   </Link>
                 ))}

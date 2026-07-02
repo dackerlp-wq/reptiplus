@@ -187,18 +187,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       )}
 
       {/* Blog / info strip */}
-      <section className="bg-forest text-white py-12">
+      <section className="bg-cream-dark border-y border-cream-dark py-12">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-center">
           <div className="flex-1">
-            <div className="inline-flex items-center gap-2 bg-gold/20 border border-gold/30 text-gold px-3 py-1 rounded-full text-xs font-medium mb-4">
+            <div className="inline-flex items-center gap-2 bg-forest/10 border border-forest/20 text-forest px-3 py-1 rounded-full text-xs font-medium mb-4">
               <BookOpen className="w-3.5 h-3.5" />
               Blog
             </div>
-            <h2 className="text-2xl font-bold mb-3">{tBlog('home_title')}</h2>
-            <p className="text-sage leading-relaxed">{tBlog('home_subtitle')}</p>
+            <h2 className="text-2xl font-bold text-charcoal mb-3">{tBlog('home_title')}</h2>
+            <p className="text-gray-soft leading-relaxed">{tBlog('home_subtitle')}</p>
             <Link
               href={`/${locale}/blog`}
-              className="inline-flex items-center gap-2 mt-6 bg-gold text-charcoal font-semibold px-5 py-2.5 rounded-xl hover:bg-gold-light transition-colors"
+              className="inline-flex items-center gap-2 mt-6 bg-forest text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-forest-dark transition-colors"
             >
               {tBlog('go_to_blog')} <ArrowRight className="w-4 h-4" />
             </Link>

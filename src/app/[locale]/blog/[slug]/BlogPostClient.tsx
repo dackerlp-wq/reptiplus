@@ -227,55 +227,45 @@ export default function BlogPostClient({
       {mentionPopup && (
         <div
           ref={popupRef}
-          className="fixed z-[200] w-76 shadow-2xl overflow-hidden"
-          style={{
-            width: 304,
-            left: popupStyle.left,
-            top: popupStyle.top,
-            border: '1.5px solid var(--color-ink)',
-            background: 'var(--color-paper)',
-          }}
+          className="fixed z-[200] shadow-2xl overflow-hidden rounded-xl border border-cream-dark bg-white"
+          style={{ width: 304, left: popupStyle.left, top: popupStyle.top }}
         >
-          <div className="flex items-center justify-between px-4 py-2.5"
-            style={{ background: 'var(--color-moss)', borderBottom: '1.5px solid var(--color-ink)' }}>
-            <span className="text-xs font-bold uppercase tracking-widest"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-amber)' }}>
+          <div className="flex items-center justify-between px-4 py-2.5 bg-cream border-b border-cream-dark">
+            <span className="text-xs font-bold uppercase tracking-widest text-forest" style={{ fontFamily: 'var(--font-mono)' }}>
               {tx.mentionedProduct}
             </span>
-            <button onClick={() => setMentionPopup(null)} className="opacity-70 hover:opacity-100 text-white">
+            <button onClick={() => setMentionPopup(null)} className="text-gray-soft hover:text-charcoal">
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {mentionPopup.loading ? (
-            <div className="px-4 py-8 text-sm text-center" style={{ color: 'var(--color-moss)' }}>{tx.loading}</div>
+            <div className="px-4 py-8 text-sm text-center text-gray-soft">{tx.loading}</div>
           ) : mentionPopup.product ? (
             <>
               <div className="flex gap-3 p-4">
                 {getFirstImage(mentionPopup.product.images) ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={getFirstImage(mentionPopup.product.images)} alt="" className="w-20 h-20 object-cover shrink-0"
-                    style={{ border: '1.5px solid var(--color-ink)' }} />
+                  <img src={getFirstImage(mentionPopup.product.images)} alt="" className="w-20 h-20 object-cover shrink-0 rounded-lg border border-cream-dark" />
                 ) : (
-                  <div className="w-20 h-20 shrink-0" style={{ background: 'rgba(201,168,76,0.2)', border: '1.5px solid var(--color-ink)' }} />
+                  <div className="w-20 h-20 shrink-0 rounded-lg bg-cream border border-cream-dark" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm leading-snug mb-1"
-                    style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
+                  <p className="font-bold text-sm leading-snug mb-1 text-charcoal">
                     {getProductName(mentionPopup.product)}
                   </p>
                   {mentionPopup.product.categories && (
-                    <p className="text-xs mb-1.5" style={{ color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>
+                    <p className="text-xs mb-1.5 text-gray-soft">
                       {mentionPopup.product.categories.name_cs}
                     </p>
                   )}
                   {mentionPopup.product.price > 0 && (
-                    <p className="text-base font-bold" style={{ color: 'var(--color-terracotta)' }}>
+                    <p className="text-base font-bold text-forest">
                       {fmtPrice(mentionPopup.product.price)}
                     </p>
                   )}
                   {mentionPopup.product.stock === 0 && (
-                    <p className="text-xs font-bold mt-0.5" style={{ color: 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>
+                    <p className="text-xs font-bold mt-0.5 text-earth">
                       {tx.soldOut}
                     </p>
                   )}
@@ -284,15 +274,13 @@ export default function BlogPostClient({
               <div className="flex gap-2 px-4 pb-4">
                 <Link href={`/${locale}/produkt/${mentionPopup.product.slug}`}
                   onClick={() => setMentionPopup(null)}
-                  className="flex-1 py-2 text-xs font-bold text-center hover:opacity-80 transition-opacity"
-                  style={{ border: '1.5px solid var(--color-ink)', color: 'var(--color-ink)', fontFamily: 'var(--font-mono)' }}>
+                  className="flex-1 py-2 text-xs font-semibold text-center border border-cream-dark rounded-lg hover:border-forest hover:text-forest transition-colors text-charcoal">
                   {tx.productDetail}
                 </Link>
                 <button
                   onClick={addMentionToCart}
                   disabled={mentionPopup.product.stock === 0}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold transition-opacity hover:opacity-90 disabled:opacity-40"
-                  style={{ background: 'var(--color-terracotta)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)' }}>
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold bg-forest text-white rounded-lg hover:bg-forest-dark transition-colors disabled:opacity-40">
                   <ShoppingCart className="w-3.5 h-3.5" />
                   {tx.addToCart}
                 </button>
@@ -300,21 +288,20 @@ export default function BlogPostClient({
             </>
           ) : (
             <div className="px-4 py-4">
-              <p className="text-sm font-bold" style={{ color: 'var(--color-ink)' }}>{mentionPopup.productName}</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--color-terracotta)' }}>{tx.notFound}</p>
+              <p className="text-sm font-bold text-charcoal">{mentionPopup.productName}</p>
+              <p className="text-xs mt-1 text-earth">{tx.notFound}</p>
             </div>
           )}
         </div>
       )}
 
       {/* Reading progress bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 h-0.5" style={{ background: 'rgba(27,31,23,0.08)' }}>
-        <div className="h-full transition-all duration-75" style={{ width: `${readPct}%`, background: 'var(--color-amber)' }} />
+      <div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-cream-dark">
+        <div className="h-full transition-all duration-75 bg-forest" style={{ width: `${readPct}%` }} />
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12" ref={articleRef}>
-        <Link href={`/${locale}/blog`} className="inline-flex items-center gap-1.5 text-sm mb-8 hover:opacity-70 transition-opacity"
-          style={{ color: 'var(--color-moss)', fontFamily: 'var(--font-mono)' }}>
+        <Link href={`/${locale}/blog`} className="inline-flex items-center gap-1.5 text-sm mb-8 text-forest hover:text-forest-dark transition-colors font-medium">
           {tx.back}
         </Link>
 
@@ -325,34 +312,31 @@ export default function BlogPostClient({
             <article>
               {post.image && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={post.image} alt={title} className="w-full h-72 object-cover mb-8"
-                  style={{ border: '1.5px solid var(--color-ink)' }} />
+                <img src={post.image} alt={title} className="w-full h-72 object-cover mb-8 rounded-2xl" />
               )}
 
-              <h1 className="text-4xl font-bold leading-tight mb-4"
-                style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
+              <h1 className="text-4xl font-bold leading-tight mb-4 text-charcoal" style={{ fontFamily: 'var(--font-display)' }}>
                 {title}
               </h1>
 
               {/* Meta row */}
-              <div className="flex flex-wrap items-center gap-2.5 text-xs mb-8 pb-5"
-                style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)', borderBottom: '1px solid rgba(27,31,23,0.12)' }}>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-soft mb-8 pb-5 border-b border-cream-dark">
                 <span>{formatDate(post.published_at || post.created_at, locale)}</span>
-                <span style={{ color: 'var(--color-terracotta)' }}>/</span>
+                <span>·</span>
                 <span>{author?.name || 'Reptiplus'}</span>
-                <span style={{ color: 'var(--color-terracotta)' }}>/</span>
+                <span>·</span>
                 <span>♥ {likes}</span>
-                <span style={{ color: 'var(--color-terracotta)' }}>/</span>
+                <span>·</span>
                 <span>💬 {commentsCount}</span>
               </div>
 
               {/* Article content */}
               {content ? (
-                <div ref={contentRef} className="prose prose-sm max-w-none"
-                  style={{ color: '#3C4138', lineHeight: 1.78 }}
+                <div ref={contentRef} className="prose prose-sm max-w-none text-charcoal"
+                  style={{ lineHeight: 1.78 }}
                   dangerouslySetInnerHTML={{ __html: content }} />
               ) : (
-                <p style={{ color: 'var(--color-moss)' }}>Obsah tohoto článku není dostupný.</p>
+                <p className="text-gray-soft">Obsah tohoto článku není dostupný.</p>
               )}
             </article>
 
@@ -361,8 +345,7 @@ export default function BlogPostClient({
               <div className="flex flex-wrap gap-2 mt-10 mb-6">
                 {categoryLinks.map(c => (
                   <Link key={c.id} href={`/${locale}/obchod?kategorie=${c.id}`}
-                    className="text-xs font-bold px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
-                    style={{ background: 'rgba(51,83,60,0.1)', color: 'var(--color-moss)', fontFamily: 'var(--font-mono)', border: '1px solid var(--color-moss)' }}>
+                    className="text-xs font-semibold px-3 py-1.5 rounded-full bg-forest/10 text-forest border border-forest/20 hover:bg-forest/20 transition-colors">
                     {c.name_cs}
                   </Link>
                 ))}
@@ -370,50 +353,37 @@ export default function BlogPostClient({
             )}
 
             {/* Engage bar: likes + share */}
-            <div className="flex items-center gap-4 py-5 mt-4"
-              style={{ borderTop: '1px solid rgba(27,31,23,0.12)', borderBottom: '1px solid rgba(27,31,23,0.12)' }}>
+            <div className="flex items-center gap-4 py-5 mt-4 border-t border-b border-cream-dark">
               <button onClick={handleLike} disabled={likeLoading}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold transition-all disabled:opacity-50"
-                style={{
-                  border: '1.5px solid var(--color-ink)',
-                  background: liked ? 'var(--color-terracotta)' : 'transparent',
-                  color: liked ? 'var(--color-paper)' : 'var(--color-ink)',
-                }}>
+                className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border transition-colors disabled:opacity-50 ${
+                  liked ? 'bg-forest text-white border-forest' : 'border-cream-dark text-charcoal hover:border-forest hover:text-forest'
+                }`}>
                 ♥ {tx.likes} · <strong>{likes}</strong>
               </button>
-              <div className="text-sm" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
-                💬 {comments.length || commentsCount}
-              </div>
+              <div className="text-sm text-gray-soft">💬 {comments.length || commentsCount}</div>
               <div className="flex items-center gap-2 ml-auto">
-                <span className="text-xs font-bold uppercase tracking-wide hidden sm:block"
-                  style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>{tx.share}:</span>
+                <span className="text-xs font-semibold text-gray-soft hidden sm:block">{tx.share}:</span>
                 <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="w-9 h-9 flex items-center justify-center text-sm font-bold hover:opacity-70 transition-opacity"
-                  style={{ border: '1.5px solid var(--color-ink)', color: 'var(--color-ink)' }}>f</a>
+                  className="w-9 h-9 flex items-center justify-center text-sm font-bold rounded-lg border border-cream-dark text-charcoal hover:border-forest hover:text-forest transition-colors">f</a>
                 <button
                   onClick={() => { navigator.clipboard?.writeText(window.location.href); toast(tx.linkCopied, 'success') }}
-                  className="w-9 h-9 flex items-center justify-center text-sm hover:opacity-70 transition-opacity"
-                  style={{ border: '1.5px solid var(--color-ink)', color: 'var(--color-ink)' }}>🔗</button>
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-cream-dark text-charcoal hover:border-forest hover:text-forest transition-colors">🔗</button>
               </div>
             </div>
 
             {/* Author box */}
             {author && (
-              <div className="flex items-center gap-5 p-5 mt-6 mb-8" style={{ border: '1.5px solid var(--color-ink)' }}>
-                <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0 text-xl font-bold overflow-hidden"
-                  style={{ background: 'var(--color-moss)', color: 'var(--color-paper)', fontFamily: 'var(--font-display)' }}>
+              <div className="flex items-center gap-5 p-5 mt-6 mb-8 bg-cream rounded-2xl border border-cream-dark">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0 text-xl font-bold overflow-hidden bg-forest text-white">
                   {author.avatar_url
                     // eslint-disable-next-line @next/next/no-img-element
                     ? <img src={author.avatar_url} alt="" className="w-full h-full object-cover" />
                     : (author.avatar_initial || author.name[0])}
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-widest mb-1"
-                    style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
-                    {author.name}
-                  </h4>
-                  {author.bio && <p className="text-sm" style={{ color: '#3C4138', lineHeight: 1.55 }}>{author.bio}</p>}
+                  <h4 className="text-sm font-bold text-charcoal mb-1">{author.name}</h4>
+                  {author.bio && <p className="text-sm text-gray-soft leading-relaxed">{author.bio}</p>}
                 </div>
               </div>
             )}
@@ -421,31 +391,27 @@ export default function BlogPostClient({
             {/* Comments */}
             <div>
               <div className="flex items-center gap-3 mb-6">
-                <span className="text-xs font-bold uppercase tracking-widest"
-                  style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-moss)' }}>
+                <span className="text-sm font-bold text-charcoal">
                   {tx.comments} ({comments.length || commentsCount})
                 </span>
-                <div className="flex-1 h-px" style={{ background: 'rgba(27,31,23,0.12)' }} />
+                <div className="flex-1 h-px bg-cream-dark" />
               </div>
 
-              <form onSubmit={submitComment} className="mb-8 p-5" style={{ border: '1.5px solid var(--color-ink)' }}>
+              <form onSubmit={submitComment} className="mb-8 p-5 bg-white rounded-xl border border-cream-dark">
                 <textarea value={commentForm.content} onChange={e => setCommentForm(f => ({ ...f, content: e.target.value }))}
                   placeholder={tx.commentPlaceholder} rows={3} required
-                  className="w-full resize-none text-sm p-3 mb-3 focus:outline-none"
-                  style={{ border: '1.5px solid rgba(27,31,23,0.18)', background: 'var(--color-paper)' }} />
+                  className="w-full resize-none text-sm p-3 mb-3 rounded-lg border border-cream-dark focus:outline-none focus:border-forest bg-cream" />
                 <div className="flex flex-col sm:flex-row gap-3 mb-3">
                   <input type="text" value={commentForm.guestName} onChange={e => setCommentForm(f => ({ ...f, guestName: e.target.value }))}
-                    placeholder={tx.namePlaceholder} className="flex-1 px-3 py-2 text-sm focus:outline-none"
-                    style={{ border: '1.5px solid rgba(27,31,23,0.18)', background: 'var(--color-paper)' }} />
+                    placeholder={tx.namePlaceholder} className="flex-1 px-3 py-2 text-sm rounded-lg border border-cream-dark bg-cream focus:outline-none focus:border-forest" />
                   <input type="email" value={commentForm.guestEmail} onChange={e => setCommentForm(f => ({ ...f, guestEmail: e.target.value }))}
-                    placeholder={tx.emailPlaceholder} className="flex-1 px-3 py-2 text-sm focus:outline-none"
-                    style={{ border: '1.5px solid rgba(27,31,23,0.18)', background: 'var(--color-paper)' }} />
+                    placeholder={tx.emailPlaceholder} className="flex-1 px-3 py-2 text-sm rounded-lg border border-cream-dark bg-cream focus:outline-none focus:border-forest" />
                 </div>
                 <input type="text" name="website" value={commentForm.website} onChange={e => setCommentForm(f => ({ ...f, website: e.target.value }))} className="sr-only" tabIndex={-1} autoComplete="off" />
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs hidden sm:block" style={{ color: '#8A9085', fontFamily: 'var(--font-mono)' }}>{tx.loggedInNote}</span>
-                  <button type="submit" disabled={submitting} className="px-5 py-2 text-sm font-bold shrink-0 disabled:opacity-50"
-                    style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)' }}>
+                  <span className="text-xs text-gray-soft hidden sm:block">{tx.loggedInNote}</span>
+                  <button type="submit" disabled={submitting}
+                    className="px-5 py-2 text-sm font-bold bg-forest text-white rounded-xl hover:bg-forest-dark transition-colors disabled:opacity-50 shrink-0">
                     {submitting ? tx.sending : tx.send}
                   </button>
                 </div>
@@ -453,27 +419,25 @@ export default function BlogPostClient({
 
               <div>
                 {comments.length === 0 && (
-                  <p className="text-sm" style={{ color: 'var(--color-moss)' }}>{tx.noComments}</p>
+                  <p className="text-sm text-gray-soft">{tx.noComments}</p>
                 )}
                 {comments.map(c => {
                   const name = c.users ? `${c.users.first_name} ${c.users.last_name}` : (c.guest_name || tx.guest)
                   const isUser = !!c.users
                   return (
-                    <div key={c.id} className="flex gap-4 py-5" style={{ borderBottom: '1px solid rgba(27,31,23,0.08)' }}>
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold"
-                        style={{ background: isUser ? 'var(--color-moss)' : '#8A9085', color: 'var(--color-paper)', fontFamily: 'var(--font-display)' }}>
+                    <div key={c.id} className="flex gap-4 py-5 border-b border-cream-dark">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-white ${isUser ? 'bg-forest' : 'bg-gray-soft'}`}>
                         {name[0]?.toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="font-bold text-sm" style={{ color: 'var(--color-ink)' }}>{name}</span>
-                          <span className="text-xs px-2 py-0.5 rounded-full"
-                            style={{ background: isUser ? 'rgba(51,83,60,0.12)' : 'rgba(194,86,46,0.12)', color: isUser ? 'var(--color-moss)' : 'var(--color-terracotta)', fontFamily: 'var(--font-mono)' }}>
+                          <span className="font-bold text-sm text-charcoal">{name}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isUser ? 'bg-forest/10 text-forest' : 'bg-cream text-gray-soft'}`}>
                             {isUser ? tx.loggedIn : tx.guest}
                           </span>
-                          <span className="text-xs" style={{ color: '#8A9085' }}>{formatDate(c.created_at, locale)}</span>
+                          <span className="text-xs text-gray-soft">{formatDate(c.created_at, locale)}</span>
                         </div>
-                        <p className="text-sm" style={{ color: '#3C4138', lineHeight: 1.6 }}>{c.content}</p>
+                        <p className="text-sm text-charcoal leading-relaxed">{c.content}</p>
                       </div>
                     </div>
                   )
@@ -483,44 +447,35 @@ export default function BlogPostClient({
           </div>{/* end main column */}
 
           {/* ── RIGHT SIDEBAR ── */}
-          <aside className="sticky top-6 space-y-6">
+          <aside className="sticky top-6 space-y-4">
 
             {/* Mentioned products */}
             {productLinks.length > 0 && (
-              <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
-                <div className="px-4 py-3 text-xs font-bold uppercase tracking-widest"
-                  style={{ background: 'var(--color-moss)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
-                  {tx.mentionedProducts}
+              <div className="bg-white border border-cream-dark rounded-xl overflow-hidden">
+                <div className="px-4 py-3 bg-cream border-b border-cream-dark">
+                  <span className="text-xs font-bold uppercase tracking-widest text-forest" style={{ fontFamily: 'var(--font-mono)' }}>
+                    {tx.mentionedProducts}
+                  </span>
                 </div>
-                <div className="divide-y" style={{ borderColor: 'rgba(27,31,23,0.1)' }}>
+                <div className="divide-y divide-cream-dark">
                   {productLinks.map(p => (
                     <div key={p.id} className="flex gap-3 p-3">
                       {getFirstImage(p.images) ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={getFirstImage(p.images)} alt="" className="w-14 h-14 object-cover shrink-0"
-                          style={{ border: '1.5px solid var(--color-ink)' }} />
+                        <img src={getFirstImage(p.images)} alt="" className="w-14 h-14 object-cover shrink-0 rounded-lg border border-cream-dark" />
                       ) : (
-                        <div className="w-14 h-14 shrink-0" style={{ background: 'rgba(201,168,76,0.2)', border: '1.5px solid var(--color-ink)' }} />
+                        <div className="w-14 h-14 shrink-0 rounded-lg bg-cream border border-cream-dark" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold leading-tight mb-0.5"
-                          style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
-                          {getProductName(p)}
-                        </p>
-                        {p.price > 0 && (
-                          <p className="text-sm font-bold mb-2" style={{ color: 'var(--color-terracotta)' }}>
-                            {fmtPrice(p.price)}
-                          </p>
-                        )}
+                        <p className="text-sm font-bold leading-tight mb-0.5 text-charcoal">{getProductName(p)}</p>
+                        {p.price > 0 && <p className="text-sm font-bold mb-2 text-forest">{fmtPrice(p.price)}</p>}
                         <div className="flex gap-2">
                           <Link href={`/${locale}/produkt/${p.slug}`}
-                            className="px-2.5 py-1 text-xs font-bold hover:opacity-80 transition-opacity"
-                            style={{ border: '1.5px solid var(--color-ink)', fontFamily: 'var(--font-mono)', color: 'var(--color-ink)' }}>
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-cream-dark text-charcoal hover:border-forest hover:text-forest transition-colors">
                             {tx.productDetail}
                           </Link>
                           <button onClick={() => doAddToCart(p)} disabled={p.stock === 0}
-                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold transition-opacity hover:opacity-90 disabled:opacity-40"
-                            style={{ background: 'var(--color-terracotta)', color: 'var(--color-paper)', fontFamily: 'var(--font-mono)' }}>
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold bg-forest text-white rounded-lg hover:bg-forest-dark transition-colors disabled:opacity-40">
                             <ShoppingCart className="w-3 h-3" />
                             {p.stock === 0 ? tx.soldOut : tx.addToCart}
                           </button>
@@ -534,16 +489,16 @@ export default function BlogPostClient({
 
             {/* Tags */}
             {tags.length > 0 && (
-              <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
-                <div className="px-4 py-3 text-xs font-bold uppercase tracking-widest"
-                  style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
-                  {tx.tags}
+              <div className="bg-white border border-cream-dark rounded-xl overflow-hidden">
+                <div className="px-4 py-3 bg-cream border-b border-cream-dark">
+                  <span className="text-xs font-bold uppercase tracking-widest text-charcoal" style={{ fontFamily: 'var(--font-mono)' }}>
+                    {tx.tags}
+                  </span>
                 </div>
                 <div className="p-4 flex flex-wrap gap-2">
                   {tags.map(tag => (
                     <Link key={tag.id} href={`/${locale}/blog?tag=${tag.slug}`}
-                      className="px-2.5 py-1 text-xs rounded-full hover:opacity-80 transition-opacity"
-                      style={{ background: 'rgba(232,163,61,0.15)', color: 'var(--color-forest-deep)', fontFamily: 'var(--font-mono)', border: '1px solid rgba(232,163,61,0.4)', fontWeight: 600 }}>
+                      className="px-2.5 py-1 text-xs rounded-full bg-cream text-gray-soft border border-cream-dark hover:border-forest hover:text-forest transition-colors font-medium">
                       {(tag[`name_${locale}` as keyof BlogTag] as string) || tag.name_cs}
                     </Link>
                   ))}
@@ -553,25 +508,23 @@ export default function BlogPostClient({
 
             {/* Related articles */}
             {related.length > 0 && (
-              <div style={{ border: '1.5px solid var(--color-ink)', background: 'var(--color-paper)' }}>
-                <div className="px-4 py-3 text-xs font-bold uppercase tracking-widest"
-                  style={{ background: 'var(--color-forest-deep)', color: 'var(--color-amber)', fontFamily: 'var(--font-mono)', borderBottom: '1.5px solid var(--color-ink)' }}>
-                  {tx.relatedArticles}
+              <div className="bg-white border border-cream-dark rounded-xl overflow-hidden">
+                <div className="px-4 py-3 bg-cream border-b border-cream-dark">
+                  <span className="text-xs font-bold uppercase tracking-widest text-charcoal" style={{ fontFamily: 'var(--font-mono)' }}>
+                    {tx.relatedArticles}
+                  </span>
                 </div>
-                <div>
+                <div className="divide-y divide-cream-dark">
                   {related.map(r => (
                     <Link key={r.id} href={`/${locale}/blog/${r.slug}`}
-                      className="flex gap-3 p-3 hover:opacity-80 transition-opacity"
-                      style={{ color: 'var(--color-ink)', borderBottom: '1px solid rgba(27,31,23,0.08)' }}>
+                      className="flex gap-3 p-3 hover:bg-cream transition-colors">
                       {r.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={r.image} alt="" className="w-14 h-14 object-cover shrink-0"
-                          style={{ border: '1.5px solid var(--color-ink)' }} />
+                        <img src={r.image} alt="" className="w-14 h-14 object-cover shrink-0 rounded-lg border border-cream-dark" />
                       ) : (
-                        <div className="w-14 h-14 shrink-0" style={{ background: 'var(--color-moss)', opacity: 0.3 }} />
+                        <div className="w-14 h-14 shrink-0 rounded-lg bg-sage/30" />
                       )}
-                      <span className="text-sm font-bold leading-snug self-center"
-                        style={{ fontFamily: 'var(--font-display)' }}>
+                      <span className="text-sm font-semibold text-charcoal leading-snug self-center hover:text-forest transition-colors">
                         {getRelatedTitle(r)}
                       </span>
                     </Link>
