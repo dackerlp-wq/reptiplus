@@ -12,9 +12,9 @@ export default function Logo({ locale, className = '' }: LogoProps) {
       <Image
         src="/logo.svg"
         alt="Repti Plus"
-        width={120}
-        height={48}
-        className="h-12 w-auto"
+        width={160}
+        height={80}
+        className="h-14 w-auto"
         priority
       />
     </Link>
