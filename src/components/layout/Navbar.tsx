@@ -147,7 +147,7 @@ export default function Navbar({ locale }: { locale: string }) {
         scrolled && 'shadow-md'
       )}>
         <nav className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center h-20 gap-4">
+          <div className="flex items-center h-24 gap-4">
             {/* Logo */}
             <Logo locale={locale} />
 
