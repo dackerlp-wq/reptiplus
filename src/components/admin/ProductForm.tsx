@@ -9,15 +9,9 @@ import {
   Upload, X, Wand2, Plus, Trash2, ChevronDown, ChevronUp,
   Package, Tag, Percent, Layers, Zap, GripVertical,
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
 import dynamic from 'next/dynamic'
 
 const RichEditor = dynamic(() => import('@/components/admin/RichEditor'), { ssr: false })
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 type Category = { id: string; name_cs: string; parent_id: string | null; sort_order: number }
 
@@ -196,12 +190,13 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
     if (!files.length) return
     setUploading(true)
     for (const file of files) {
-      const ext = file.name.split('.').pop()
-      const path = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { error } = await supabase.storage.from('images').upload(path, file, { upsert: false })
-      if (error) { toast(`Chyba: ${file.name}`, 'error'); continue }
-      const { data } = supabase.storage.from('images').getPublicUrl(path)
-      setForm(f => ({ ...f, images: [...f.images, data.publicUrl] }))
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('folder', 'products')
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const json = await res.json()
+      if (!res.ok) { toast(`Chyba: ${json.error || file.name}`, 'error'); continue }
+      setForm(f => ({ ...f, images: [...f.images, json.url] }))
     }
     setUploading(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
