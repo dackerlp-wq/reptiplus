@@ -281,7 +281,7 @@ class Zoo_Vouchers_REST {
             'status_label' => $this->zoo_status_label( $v->status ),
             'product_id'   => (int) $v->product_id,
             'product'      => $label,
-            'redeemed_at'  => $v->used_at ? gmdate( 'c', strtotime( $v->used_at ) ) : null,
+            'redeemed_at'  => $v->used_at ? get_gmt_from_date( $v->used_at, 'c' ) : null,
             'redeemable'   => $redeemable,
             'redeem_note'  => $redeemable ? '' : $this->noredeem_short( $v->doc_type ),
         );
@@ -295,7 +295,7 @@ class Zoo_Vouchers_REST {
             'product_id'  => (int) $v->product_id,
             'expires'     => $v->valid_until ? date_i18n( get_option( 'date_format' ), strtotime( $v->valid_until ) ) : null,
             'issued'      => $v->created_at,
-            'redeemed_at' => $v->used_at ? gmdate( 'c', strtotime( $v->used_at ) ) : null,
+            'redeemed_at' => $v->used_at ? get_gmt_from_date( $v->used_at, 'c' ) : null,
         );
     }
 

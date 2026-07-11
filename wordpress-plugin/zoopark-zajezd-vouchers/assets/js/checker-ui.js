@@ -71,7 +71,7 @@
         }
         if(st==='redeemed'||st==='used'){
             if(isRedeemedToday(item))
-                return {cls:'zvc-hero-warn', text:'Vstupenka uplatněna DNES'+(item.redeemed_at?' v '+fmtTime(item.redeemed_at):''), tone:'warn', beep:'warn'};
+                return {cls:'zvc-hero-ok', text:'✓ Vstupenka uplatněna DNES'+(item.redeemed_at?' v '+fmtTime(item.redeemed_at):'')+' — Vstup povolen', tone:'ok', beep:'ok'};
             return {cls:'zvc-hero-bad', text:'Vstupenka již uplatněna'+(item.redeemed_at?' '+fmtDate(item.redeemed_at):'')+' — VSTUP NEPOVOLEN', tone:'err', beep:'error'};
         }
         if(st==='expired') return {cls:'zvc-hero-bad', text:'Vstupenka vypršela — VSTUP NEPOVOLEN', tone:'err', beep:'error'};
