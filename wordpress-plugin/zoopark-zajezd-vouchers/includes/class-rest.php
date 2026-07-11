@@ -109,6 +109,11 @@ class Zoo_Vouchers_REST {
 
     private function zoo_group_response( $status, $message, $v, $info ) {
         $siblings = $this->siblings_for_order( (int) $v->order_id );
+        // Naskenovaný voucher musí být v seznamu vždy — i ručně vytvořený
+        // (order_id = 0), který nemá žádné sourozence z objednávky.
+        if ( ! $this->is_hidden_type( $v->doc_type ) && ! $this->key_in_siblings( 'zoo:' . (int) $v->id, $siblings ) ) {
+            array_unshift( $siblings, $this->zoo_item( $v ) );
+        }
         return array(
             'status'   => $status,
             'message'  => $message,
@@ -140,6 +145,9 @@ class Zoo_Vouchers_REST {
     private function sky_group_response( $status, $message, $voucher, $info ) {
         $order_id = $this->sky_order_id_for( $voucher->ID );
         $siblings = $this->siblings_for_order( $order_id );
+        if ( ! $this->key_in_siblings( 'sky:' . (int) $voucher->ID, $siblings ) ) {
+            array_unshift( $siblings, $this->sky_item( $voucher ) );
+        }
         return array(
             'status'   => $status,
             'message'  => $message,
@@ -480,6 +488,14 @@ class Zoo_Vouchers_REST {
         if ( $doc_type === 'krmeni' ) return 'Uplatní se přes rezervaci';
         if ( $doc_type === 'permanentka_neprenosna' || $doc_type === 'permanentka_prenosna' ) return 'Opakovaný vstup — neuplatňuje se';
         return 'Neuplatňuje se na pokladně';
+    }
+
+    private function key_in_siblings( $key, $items ) {
+        foreach ( $items as $it ) {
+            $k = ( isset( $it['source'] ) ? $it['source'] : 'zoo' ) . ':' . ( isset( $it['id'] ) ? $it['id'] : 0 );
+            if ( $k === $key ) return true;
+        }
+        return false;
     }
 
     private function count_parking( $items ) {
