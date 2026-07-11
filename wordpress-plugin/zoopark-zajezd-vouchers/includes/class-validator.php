@@ -124,19 +124,19 @@ class Zoo_Vouchers_Validator {
             <!-- SOUHRNNÁ POČÍTADLA -->
             <div id="zvc-summary" class="zvc-summary-counters"></div>
 
-            <!-- UPLATNIT VŠE -->
-            <div class="zvc-actions-top">
-              <button id="zvc-redeem-all" class="zvc-btn zvc-btn-danger zvc-btn-xl">
-                &#9889; Uplatnit všechny aktivní vstupenky z objednávky
-              </button>
-            </div>
-
             <!-- QR ČTEČKA -->
             <div id="zvc-reader" class="zvc-reader" style="display:none;"></div>
 
             <!-- SEZNAM VOUCHERŮ -->
             <div class="zvc-result" id="zvc-result" style="display:none;">
               <div class="zvc-list" id="zvc-list"></div>
+            </div>
+
+            <!-- UPLATNIT VŠE (až dole pod seznamem, jen u objednávky s více vstupenkami) -->
+            <div class="zvc-actions-bottom" id="zvc-actions-bottom" style="display:none;">
+              <button id="zvc-redeem-all" class="zvc-btn zvc-btn-danger zvc-btn-xl">
+                &#9889; Uplatnit všechny aktivní vstupenky z objednávky
+              </button>
             </div>
 
           </div><!-- /zvc-body -->

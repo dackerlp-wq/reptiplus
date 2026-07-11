@@ -15,7 +15,7 @@
     const PRODUCT_LABELS = {14698:'Dospělý — Do 15:00',14699:'Dospělý — Od 15:00',14696:'Dítě (od 3 let) — Do 15:00',14697:'Dítě (od 3 let) — Od 15:00',14700:'Student / senior — Do 15:00',14701:'Student / senior — Od 15:00',14702:'Dítě (do 3 let) — Do 15:00',14703:'Dítě (do 3 let) — Od 15:00',14704:'Parkování — Do 15:00',14705:'Parkování — Od 15:00'};
     const PARKING_IDS = new Set([14704,14705]);
     const $ = (sel)=>document.querySelector(sel);
-    const el = {status:$('#zvc-status'),list:$('#zvc-list'),result:$('#zvc-result'),summary:$('#zvc-summary'),orderInput:$('#zvc-order-input'),orderBtn:$('#zvc-order-find'),codeInput:$('#zvc-code-input'),codeBtn:$('#zvc-code-check'),scanBtn:$('#zvc-start-scan'),scanHelp:$('#zvc-scan-help'),reader:$('#zvc-reader'),redeemAll:$('#zvc-redeem-all')};
+    const el = {status:$('#zvc-status'),list:$('#zvc-list'),result:$('#zvc-result'),summary:$('#zvc-summary'),orderInput:$('#zvc-order-input'),orderBtn:$('#zvc-order-find'),codeInput:$('#zvc-code-input'),codeBtn:$('#zvc-code-check'),scanBtn:$('#zvc-start-scan'),scanHelp:$('#zvc-scan-help'),reader:$('#zvc-reader'),redeemAll:$('#zvc-redeem-all'),actions:$('#zvc-actions-bottom')};
 
     // Klíč položky napříč zdroji: "zoo:123" / "sky:456"
     function itemKey(item){ return (item.source||'zoo')+':'+item.id; }
@@ -118,10 +118,26 @@
         </div>`;
     }
 
+    // Aktivní uplatnitelné vstupenky (pro tlačítko „Uplatnit vše" + souhrn)
+    function activeRedeemable(){
+        return current.siblings.filter(x=>x.redeemable!==false&&(x.status_label||x.status||'').toLowerCase()==='active');
+    }
+    function updateBulkButton(){
+        const act=activeRedeemable();
+        if(!el.actions) return;
+        if(act.length>=2){
+            el.actions.style.display='block';
+            if(el.redeemAll) el.redeemAll.textContent='⚡ Uplatnit všechny aktivní vstupenky ('+act.length+')';
+        }else{
+            el.actions.style.display='none';
+        }
+    }
+
     function renderList(){
         if(!current.siblings.length){
             el.list.innerHTML='<div class="zvc-empty">Žádné vstupenky v objednávce.</div>';
             el.result.style.display='block';
+            updateBulkButton();
             return;
         }
         let rest=[...current.siblings];
@@ -151,6 +167,7 @@
                 await redeemItems([key]);
             });
         });
+        updateBulkButton();
     }
 
     // Rozloží "source:id" na {source,id}
@@ -184,7 +201,19 @@
 
     async function checkCode(code){if(!code){setStatus('Zadej kód voucheru.','warn');return;}setStatus('Ověřuji…','');try{const res=await fetch(ZVC.restBase+'/check-voucher',{method:'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':ZVC.nonce},body:JSON.stringify({code})});const data=await res.json();if(data&&data.siblings&&data.group){current.order_id=data.group.order_id||null;current.counts=data.group.counts||{total:0,parking:0};current.siblings=Array.isArray(data.siblings)?data.siblings:[];current.scannedKey=data.scanned||null;renderSummary();renderList();const _si=current.scannedKey?current.siblings.find(x=>itemKey(x)===current.scannedKey):null;if(_si){const s=scannedState(_si);setStatus(s.text,s.tone);beep(s.beep);}else if(data.status==='noredeem'){setStatus('ℹ '+(data.message||'Tento voucher se na pokladně neuplatňuje.'),'warn');beep('warn');}else{setStatus((data.message||'Voucher nenalezen.'),'err');beep('error');}}else{setStatus((data&&data.message)||'Voucher nenalezen.','err');beep('error');}if(el.codeInput)el.codeInput.value='';}catch(e){setStatus('Chyba spojení: '+e.message,'err');beep('error');}}
 
-    async function redeemAll(){const actives=current.siblings.filter(x=>x.redeemable!==false&&(x.status_label||x.status||'').toLowerCase()==='active').map(itemKey);if(!actives.length){alert('Žádné aktivní vstupenky k uplatnění.');return;}const count=actives.length;if(!confirm(`Opravdu uplatnit VŠECH ${count} aktivních poukazů v objednávce #${current.order_id}?`))return;await redeemItems(actives);}
+    async function redeemAll(){
+        const items=activeRedeemable();
+        if(!items.length){alert('Žádné aktivní vstupenky k uplatnění.');return;}
+        // Souhrn po typech — pokladní ověří u zákazníka, než uplatní vše naráz
+        const groups={};
+        items.forEach(it=>{const label=productLabel(it.product_id,it.product);groups[label]=(groups[label]||0)+1;});
+        const lines=Object.keys(groups).map(k=>'   • '+groups[k]+'× '+k).join('\n');
+        const msg='OVĚŘTE U ZÁKAZNÍKA:\n\nChcete dnes uplatnit všechny tyto vstupy?\n\n'
+            +lines+'\n\nCelkem: '+items.length+' vstupenek\n\n'
+            +'Potvrdit uplatnění VŠECH naráz?';
+        if(!confirm(msg))return;
+        await redeemItems(items.map(itemKey));
+    }
 
     function stopScanner(){try{if(html5QrCode){html5QrCode.stop().then(()=>{try{html5QrCode.clear();}catch(_){}}).catch(()=>{});}}catch(_){}el.reader.style.display='none';if(el.scanBtn)el.scanBtn.textContent='📷 QR';}
 

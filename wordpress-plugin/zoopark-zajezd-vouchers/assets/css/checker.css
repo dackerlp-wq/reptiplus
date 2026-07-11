@@ -550,3 +550,7 @@
   letter-spacing:.08em;
   color:#6b7280;
 }
+
+/* Tlačítko „Uplatnit vše" přesunuté pod seznam vstupenek */
+.zvc-actions-bottom { margin-top: 18px; padding-top: 16px; border-top: 2px dashed var(--cream-dark, #EAE3D5); }
+.zvc-actions-bottom .zvc-btn-xl { width: 100%; }
