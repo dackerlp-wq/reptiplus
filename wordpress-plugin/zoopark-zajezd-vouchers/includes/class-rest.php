@@ -127,9 +127,10 @@ class Zoo_Vouchers_REST {
     private function handle_sky_check( $voucher ) {
         $info   = $this->sky_voucher_info( $voucher );
 
-        // Krmení se na pokladně nezobrazuje ani neuplatňuje (řeší Amelia)
-        if ( $this->sky_is_feeding( $voucher ) ) {
-            return $this->sky_group_response( 'noredeem', $this->noredeem_message( 'krmeni' ), $voucher, $info );
+        // Zážitky/programy (krmení, den ošetřovatelem…) se na pokladně
+        // nezobrazují ani neuplatňují — řeší se rezervací.
+        if ( $this->sky_is_hidden( $voucher ) ) {
+            return $this->sky_group_response( 'noredeem', 'Tento poukaz se na pokladně neuplatňuje — řeší se rezervací (krmení, zážitky apod.).', $voucher, $info );
         }
 
         $status = $voucher->post_status;
@@ -151,7 +152,7 @@ class Zoo_Vouchers_REST {
     private function sky_group_response( $status, $message, $voucher, $info ) {
         $order_id = $this->sky_order_id_for( $voucher->ID );
         $siblings = $this->siblings_for_order( $order_id, 'sky' );
-        if ( ! $this->sky_is_feeding( $voucher ) && ! $this->key_in_siblings( 'sky:' . (int) $voucher->ID, $siblings ) ) {
+        if ( ! $this->sky_is_hidden( $voucher ) && ! $this->key_in_siblings( 'sky:' . (int) $voucher->ID, $siblings ) ) {
             array_unshift( $siblings, $this->sky_item( $voucher ) );
         }
         return array(
@@ -270,7 +271,7 @@ class Zoo_Vouchers_REST {
             ) );
             foreach ( array_map( 'intval', $q->posts ?: array() ) as $id ) {
                 $post = get_post( $id );
-                if ( ! $post || $this->sky_is_feeding( $post ) ) continue; // krmení skryté i u SkyVerge
+                if ( ! $post || $this->sky_is_hidden( $post ) ) continue; // zážitky (krmení, ošetřovatel…) skryté i u SkyVerge
                 $items[] = $this->sky_item( $post );
             }
         }
@@ -503,15 +504,23 @@ class Zoo_Vouchers_REST {
     }
 
     /**
-     * SkyVerge vouchery nemají doc_type — krmení poznáme podle názvu produktu.
-     * Klíčová slova lze upravit filtrem `zoo_vouchers_feeding_keywords`.
+     * SkyVerge vouchery nemají doc_type — ne-vstupenkové poukazy (zážitky/programy
+     * jako krmení, den ošetřovatelem, pro odvážné) poznáme podle názvu produktu.
+     * Ty se na pokladně nezobrazují ani neuplatňují — řeší se rezervací.
+     * Klíčová slova lze upravit filtrem `zoo_vouchers_hidden_sky_keywords`.
      */
-    private function sky_is_feeding( $post ) {
+    private function sky_is_hidden( $post ) {
         if ( ! $post ) return false;
         $pid   = (int) get_post_meta( $post->ID, '_product_id', true );
         $title = $pid ? get_the_title( $pid ) : ( isset( $post->post_title ) ? $post->post_title : '' );
         $title = function_exists( 'mb_strtolower' ) ? mb_strtolower( (string) $title ) : strtolower( (string) $title );
-        $needles = apply_filters( 'zoo_vouchers_feeding_keywords', array( 'krmen' ) );
+        $needles = apply_filters( 'zoo_vouchers_hidden_sky_keywords', array(
+            'krmen',        // krmení zvířat
+            'ošetřovatel', 'osetrovatel', // den ošetřovatelem
+            'odvážn', 'odvazn',           // pro odvážné
+            'zážitk', 'zazitk',           // zážitkové programy
+            'prohlídk', 'prohlidk',       // komentované prohlídky
+        ) );
         foreach ( (array) $needles as $n ) {
             if ( $n !== '' && strpos( $title, $n ) !== false ) return true;
         }

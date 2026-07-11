@@ -110,7 +110,14 @@ a to vždy **ručním potvrzením** zaměstnance (nikdy automaticky při naskeno
   „Uplatnit vše") — řeší se rezervací v Amelii.
 
 Seznam uplatnitelných typů lze upravit filtrem `zoo_vouchers_redeemable_types`,
-skryté typy filtrem `zoo_vouchers_hidden_types` (výchozí `['krmeni']`).
+skryté typy nových voucherů filtrem `zoo_vouchers_hidden_types` (výchozí
+`['krmeni']`).
+
+U starších SkyVerge voucherů (bez typu) se ne-vstupenkové poukazy (krmení, den
+ošetřovatelem, pro odvážné, zážitky, prohlídky) poznají podle názvu produktu a
+také se na pokladně nezobrazují. Klíčová slova upravíte filtrem
+`zoo_vouchers_hidden_sky_keywords`. Objednávka zpracovaná oběma systémy se navíc
+nemíchá — naskenování voucheru ukáže jen sourozence ze stejné generace.
 
 Pokladní může:
 
