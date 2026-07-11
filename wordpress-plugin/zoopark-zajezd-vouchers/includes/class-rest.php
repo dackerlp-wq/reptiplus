@@ -108,7 +108,7 @@ class Zoo_Vouchers_REST {
     }
 
     private function zoo_group_response( $status, $message, $v, $info ) {
-        $siblings = $this->siblings_for_order( (int) $v->order_id );
+        $siblings = $this->siblings_for_order( (int) $v->order_id, 'zoo' );
         // Naskenovaný voucher musí být v seznamu vždy — i ručně vytvořený
         // (order_id = 0), který nemá žádné sourozence z objednávky.
         if ( ! $this->is_hidden_type( $v->doc_type ) && ! $this->key_in_siblings( 'zoo:' . (int) $v->id, $siblings ) ) {
@@ -126,6 +126,12 @@ class Zoo_Vouchers_REST {
 
     private function handle_sky_check( $voucher ) {
         $info   = $this->sky_voucher_info( $voucher );
+
+        // Krmení se na pokladně nezobrazuje ani neuplatňuje (řeší Amelia)
+        if ( $this->sky_is_feeding( $voucher ) ) {
+            return $this->sky_group_response( 'noredeem', $this->noredeem_message( 'krmeni' ), $voucher, $info );
+        }
+
         $status = $voucher->post_status;
 
         if ( $status === 'wcpdf-redeemed' ) {
@@ -144,8 +150,8 @@ class Zoo_Vouchers_REST {
 
     private function sky_group_response( $status, $message, $voucher, $info ) {
         $order_id = $this->sky_order_id_for( $voucher->ID );
-        $siblings = $this->siblings_for_order( $order_id );
-        if ( ! $this->key_in_siblings( 'sky:' . (int) $voucher->ID, $siblings ) ) {
+        $siblings = $this->siblings_for_order( $order_id, 'sky' );
+        if ( ! $this->sky_is_feeding( $voucher ) && ! $this->key_in_siblings( 'sky:' . (int) $voucher->ID, $siblings ) ) {
             array_unshift( $siblings, $this->sky_item( $voucher ) );
         }
         return array(
@@ -165,7 +171,10 @@ class Zoo_Vouchers_REST {
         $order_id = (int) $r->get_param( 'order_id' );
         if ( ! $order_id ) return new WP_REST_Response( array( 'ok' => false, 'message' => 'Chybí order_id.' ), 200 );
 
-        $siblings = $this->siblings_for_order( $order_id );
+        // Objednávku zpracovanou oběma systémy neber jako mix: má-li staré
+        // SkyVerge vouchery, je to legacy objednávka → nemíchej do ní nové.
+        $sky_siblings = $this->siblings_for_order( $order_id, 'sky' );
+        $siblings     = ! empty( $sky_siblings ) ? $sky_siblings : $this->siblings_for_order( $order_id, 'zoo' );
         if ( ! $siblings ) {
             return new WP_REST_Response( array( 'ok' => false, 'message' => 'Pro tuto objednávku nejsou žádné vouchery.' ), 200 );
         }
@@ -230,20 +239,27 @@ class Zoo_Vouchers_REST {
     /* ─────────────────────────────────────────────────────────────
        Sloučení sourozenců objednávky z obou zdrojů
     ───────────────────────────────────────────────────────────── */
-    private function siblings_for_order( $order_id ) {
+    /**
+     * Sourozenci objednávky. $only_source ('zoo'|'sky'|'') omezí na jeden systém —
+     * při naskenování voucheru chceme jen sourozence ze STEJNÉ generace, jinak by
+     * se u objednávek zpracovaných oběma systémy míchaly staré i nové vouchery.
+     */
+    private function siblings_for_order( $order_id, $only_source = '' ) {
         $order_id = (int) $order_id;
         if ( ! $order_id ) return array();
 
         $items = array();
 
         // Zoo vouchery
-        foreach ( Zoo_Vouchers_Database::get_by_order( $order_id ) as $row ) {
-            if ( $this->is_hidden_type( $row->doc_type ) ) continue; // krmení se v pokladně nezobrazuje
-            $items[] = $this->zoo_item( new Zoo_Vouchers_Voucher( $row ) );
+        if ( $only_source === '' || $only_source === 'zoo' ) {
+            foreach ( Zoo_Vouchers_Database::get_by_order( $order_id ) as $row ) {
+                if ( $this->is_hidden_type( $row->doc_type ) ) continue; // krmení se v pokladně nezobrazuje
+                $items[] = $this->zoo_item( new Zoo_Vouchers_Voucher( $row ) );
+            }
         }
 
         // SkyVerge vouchery
-        if ( $this->legacy_enabled() ) {
+        if ( ( $only_source === '' || $only_source === 'sky' ) && $this->legacy_enabled() ) {
             $q = new WP_Query( array(
                 'post_type'      => 'wc_voucher',
                 'post_status'    => array( 'wcpdf-active', 'wcpdf-redeemed', 'wcpdf-expired', 'wcpdf-voided', 'draft', 'pending', 'publish' ),
@@ -253,7 +269,9 @@ class Zoo_Vouchers_REST {
                 'meta_query'     => array( array( 'key' => '_order_id', 'value' => $order_id ) ),
             ) );
             foreach ( array_map( 'intval', $q->posts ?: array() ) as $id ) {
-                $items[] = $this->sky_item( get_post( $id ) );
+                $post = get_post( $id );
+                if ( ! $post || $this->sky_is_feeding( $post ) ) continue; // krmení skryté i u SkyVerge
+                $items[] = $this->sky_item( $post );
             }
         }
 
@@ -482,6 +500,22 @@ class Zoo_Vouchers_REST {
     private function is_hidden_type( $doc_type ) {
         $hidden = apply_filters( 'zoo_vouchers_hidden_types', array( 'krmeni' ) );
         return in_array( $doc_type, (array) $hidden, true );
+    }
+
+    /**
+     * SkyVerge vouchery nemají doc_type — krmení poznáme podle názvu produktu.
+     * Klíčová slova lze upravit filtrem `zoo_vouchers_feeding_keywords`.
+     */
+    private function sky_is_feeding( $post ) {
+        if ( ! $post ) return false;
+        $pid   = (int) get_post_meta( $post->ID, '_product_id', true );
+        $title = $pid ? get_the_title( $pid ) : ( isset( $post->post_title ) ? $post->post_title : '' );
+        $title = function_exists( 'mb_strtolower' ) ? mb_strtolower( (string) $title ) : strtolower( (string) $title );
+        $needles = apply_filters( 'zoo_vouchers_feeding_keywords', array( 'krmen' ) );
+        foreach ( (array) $needles as $n ) {
+            if ( $n !== '' && strpos( $title, $n ) !== false ) return true;
+        }
+        return false;
     }
 
     private function noredeem_short( $doc_type ) {
