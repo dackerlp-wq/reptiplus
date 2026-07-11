@@ -23,9 +23,14 @@ vypnout filtrem `add_filter( 'zoo_vouchers_legacy_skyverge', '__return_false' )`
 
 ## Instalace
 
-1. Nahraj `zoo-vouchers/` do `wp-content/plugins/`
-2. V adresáři pluginu spusť: `composer install`
-3. Aktivuj plugin v WP Admin → Pluginy
+1. Nahraj adresář pluginu do `wp-content/plugins/` (nebo použij *Nahrát plugin* přes ZIP)
+2. Aktivuj plugin v WP Admin → Pluginy
+   - Při aktivaci se založí databázová tabulka `wp_zoo_vouchers`.
+3. Vyžaduje **aktivní WooCommerce**.
+
+> **Composer není potřeba.** PDF (tFPDF) i QR (phpqrcode / vlastní fallback)
+> knihovny jsou přibalené v `lib/` včetně fontu DejaVuSans. `composer install`
+> stáhne pouze nevyužité TCPDF a lze ho vynechat.
 
 ---
 
