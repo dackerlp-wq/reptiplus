@@ -508,3 +508,14 @@
   .zvc-headline     { flex-direction: row; }
   .zvc-pill         { min-width: calc(50% - 5px); }
 }
+/* Poznámka u voucherů, které se na pokladně neuplatňují (permanentky, krmení) */
+.zvc-noredeem-note{
+  font-size:12px;
+  font-weight:600;
+  color:#7d4e00;
+  background:#fff3cd;
+  border:1px solid #ffe08a;
+  border-radius:6px;
+  padding:4px 10px;
+  white-space:nowrap;
+}

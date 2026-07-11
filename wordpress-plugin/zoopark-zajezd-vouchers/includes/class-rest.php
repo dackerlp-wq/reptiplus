@@ -96,6 +96,13 @@ class Zoo_Vouchers_REST {
             return $this->zoo_group_response( 'expired', 'Voucher je po expiraci.', $v, $this->zoo_voucher_info( $v ) );
         }
 
+        // Na pokladně se uplatňují jen vstupenky. Permanentky (opakovaný vstup)
+        // ani krmení (uplatnění přes rezervaci Amelia) se zde NEoznačují jako
+        // použité — jen se zobrazí, aby pokladní viděl(a), že jsou platné.
+        if ( ! $this->is_redeemable_type( $v->doc_type ) ) {
+            return $this->zoo_group_response( 'noredeem', $this->noredeem_message( $v->doc_type ), $v, $this->zoo_voucher_info( $v ) );
+        }
+
         $v->mark_used();
         $v = Zoo_Vouchers_Voucher::find_by_id( $v->id );
         return $this->zoo_group_response( 'valid', 'Voucher ověřen a uplatněn.', $v, $this->zoo_voucher_info( $v ) );
@@ -204,6 +211,8 @@ class Zoo_Vouchers_REST {
             } else {
                 $v = Zoo_Vouchers_Voucher::find_by_id( $id );
                 if ( ! $v || ! $v->is_active() ) { $skipped[] = $it; continue; }
+                // Jen vstupenky — permanentky a krmení se na pokladně neuplatňují
+                if ( ! $this->is_redeemable_type( $v->doc_type ) ) { $skipped[] = $it; continue; }
                 $v->mark_used();
                 $updated[] = array( 'source' => 'zoo', 'id' => $id );
             }
@@ -256,6 +265,7 @@ class Zoo_Vouchers_REST {
         if ( $v->is_krmeni() && $v->animal_key ) $sub .= ' · ' . $v->animal_label();
         if ( $sub ) $label .= ' — ' . $sub;
 
+        $redeemable = $this->is_redeemable_type( $v->doc_type );
         return array(
             'source'       => 'zoo',
             'id'           => (int) $v->id,
@@ -265,6 +275,8 @@ class Zoo_Vouchers_REST {
             'product_id'   => (int) $v->product_id,
             'product'      => $label,
             'redeemed_at'  => $v->used_at ? gmdate( 'c', strtotime( $v->used_at ) ) : null,
+            'redeemable'   => $redeemable,
+            'redeem_note'  => $redeemable ? '' : $this->noredeem_short( $v->doc_type ),
         );
     }
 
@@ -293,6 +305,9 @@ class Zoo_Vouchers_REST {
             'product_id'   => $pid,
             'product'      => get_the_title( $pid ),
             'redeemed_at'  => $red ? gmdate( 'c', (int) $red ) : null,
+            // Starší SkyVerge vouchery jsou vstupenky původního systému → uplatnitelné
+            'redeemable'   => true,
+            'redeem_note'  => '',
         );
     }
 
@@ -431,6 +446,32 @@ class Zoo_Vouchers_REST {
         $s = preg_replace( '/\s+/u', '', $s );
         $s = ltrim( $s, "-#" );
         return $s;
+    }
+
+    /**
+     * Uplatňují se na pokladně jen vstupenky. Permanentky (opakovaný vstup)
+     * ani krmení (rezervace přes Amelii) se zde neoznačují jako použité.
+     * Seznam lze rozšířit filtrem `zoo_vouchers_redeemable_types`.
+     */
+    private function is_redeemable_type( $doc_type ) {
+        $types = apply_filters( 'zoo_vouchers_redeemable_types', array( 'vstupenka' ) );
+        return in_array( $doc_type, (array) $types, true );
+    }
+
+    private function noredeem_message( $doc_type ) {
+        if ( $doc_type === 'krmeni' ) {
+            return 'Poukaz na krmení — uplatňuje se přes rezervaci (Amelia), ne na pokladně.';
+        }
+        if ( $doc_type === 'permanentka_neprenosna' || $doc_type === 'permanentka_prenosna' ) {
+            return 'Permanentka je platná — opakovaný vstup, na pokladně se neuplatňuje.';
+        }
+        return 'Tento typ voucheru se na pokladně neuplatňuje.';
+    }
+
+    private function noredeem_short( $doc_type ) {
+        if ( $doc_type === 'krmeni' ) return 'Uplatní se přes rezervaci';
+        if ( $doc_type === 'permanentka_neprenosna' || $doc_type === 'permanentka_prenosna' ) return 'Opakovaný vstup — neuplatňuje se';
+        return 'Neuplatňuje se na pokladně';
     }
 
     private function count_parking( $items ) {

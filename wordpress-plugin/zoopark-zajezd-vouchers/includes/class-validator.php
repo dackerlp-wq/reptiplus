@@ -125,7 +125,7 @@ class Zoo_Vouchers_Validator {
             <!-- UPLATNIT VŠE -->
             <div class="zvc-actions-top">
               <button id="zvc-redeem-all" class="zvc-btn zvc-btn-danger zvc-btn-xl">
-                &#9889; Uplatnit všechny aktivní z objednávky
+                &#9889; Uplatnit všechny aktivní vstupenky z objednávky
               </button>
             </div>
 

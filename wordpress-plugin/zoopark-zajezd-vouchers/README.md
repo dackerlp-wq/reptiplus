@@ -99,6 +99,18 @@ Doporučený postup: vygeneruj testovací PDF z admin panelu a porovnej s origin
 Přidej shortcode `[zoo_voucher_validator]` (nebo alias `[voucher_checker]`) na
 interní stránku. Rozhraní je společné pro obě generace voucherů.
 
+### Co se na pokladně uplatňuje
+
+Na pokladně se uplatňují (= označí jako použité) **pouze vstupenky** (`vstupenka`).
+
+- **Permanentky** se NEuplatňují — jde o opakovaný vstup, nesmí se „spálit" na
+  první sken. Zobrazí se jen jako platné.
+- **Krmení** se NEuplatňuje zde — řeší se rezervací v Amelii.
+
+Naskenování permanentky/krmení tedy voucher **nezmění**, jen ověří jeho pravost
+a platnost. Tlačítko „Uplatnit" ani „Uplatnit vše" se na ně nevztahují. Seznam
+uplatnitelných typů lze upravit filtrem `zoo_vouchers_redeemable_types`.
+
 Pokladní může:
 
 - **Naskenovat QR kamerou** (mobil/tablet – tlačítko 📷 QR) nebo zadat kód ručně
