@@ -11,7 +11,7 @@
 (function(){
     'use strict';
     let html5QrCode = null;
-    let current = { order_id: null, siblings: [], counts: { total: 0, parking: 0 } };
+    let current = { order_id: null, siblings: [], counts: { total: 0, parking: 0 }, scannedKey: null };
     const PRODUCT_LABELS = {14698:'Dospělý — Do 15:00',14699:'Dospělý — Od 15:00',14696:'Dítě (od 3 let) — Do 15:00',14697:'Dítě (od 3 let) — Od 15:00',14700:'Student / senior — Do 15:00',14701:'Student / senior — Od 15:00',14702:'Dítě (do 3 let) — Do 15:00',14703:'Dítě (do 3 let) — Od 15:00',14704:'Parkování — Do 15:00',14705:'Parkování — Od 15:00'};
     const PARKING_IDS = new Set([14704,14705]);
     const $ = (sel)=>document.querySelector(sel);
@@ -56,42 +56,77 @@
         </div>`;
     }
 
+    function fmtDate(iso){if(!iso)return '';try{const d=new Date(iso);const pad=n=>String(n).padStart(2,'0');return`${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`;}catch(_){return iso;}}
+    function rankSort(a,b){const rank=item=>{const st=(item.status_label||item.status||'').toLowerCase();if(st==='active')return 0;if(isRedeemedToday(item))return 1;return 2;};return rank(a)-rank(b);}
+
+    function cardHtml(item,opts){
+        opts=opts||{};
+        const label=productLabel(item.product_id,item.product);
+        const key=itemKey(item);
+        const st=(item.status_label||item.status||'').toLowerCase();
+        const isActive=st==='active';
+        const redeemedToday=isRedeemedToday(item)&&!PARKING_IDS.has(Number(item.product_id));
+        const canRedeem=isActive&&item.redeemable!==false;
+
+        let cls=boxClass(item);
+        if(opts.scanned) cls+=' zvc-box-scanned';
+
+        // Výrazný baner jen u naskenované vstupenky
+        let hero='';
+        if(opts.scanned){
+            if(redeemedToday){
+                hero='<div class="zvc-hero zvc-hero-ok">✓ Vstupenka uplatněna dnes — Vstup povolen</div>';
+            }else if(st==='redeemed'||st==='used'){
+                hero='<div class="zvc-hero zvc-hero-bad">⚠ Vstupenka již byla uplatněna'+(item.redeemed_at?' '+fmtDate(item.redeemed_at):'')+' — NEPOVOLOVAT vstup</div>';
+            }else if(st==='expired'){
+                hero='<div class="zvc-hero zvc-hero-bad">✗ Vstupenka je po expiraci</div>';
+            }else if(canRedeem){
+                hero='<div class="zvc-hero zvc-hero-warn">⚠ Vstupenka zatím NEuplatněna — potvrďte tlačítkem „Uplatnit" ↓</div>';
+            }
+        }
+
+        const badge=(!opts.scanned&&redeemedToday)?'<div class="zvc-badge-ok">✓ Vstup povolen</div>':'';
+        const redAt=item.redeemed_at?'Uplatněno: '+fmtDatetime(item.redeemed_at):'';
+        const stLabel=statusLabel(item);
+        const redeemBtn=canRedeem
+            ?`<button class="zvc-btn-single-redeem" data-key="${key}">⚡ Uplatnit vstupenku</button>`
+            :(isActive&&item.redeem_note?`<span class="zvc-noredeem-note">${item.redeem_note}</span>`:'');
+        return`<div class="${cls}" data-key="${key}">
+            ${hero}
+            <div class="zvc-row-top">
+                <div class="zvc-code">${item.number||''}</div>
+                <div class="zvc-status-badge">${stLabel}</div>
+            </div>
+            <div class="zvc-product">${label}</div>
+            <div class="zvc-row-bot">
+                <div class="zvc-meta">${redAt}</div>
+                ${redeemBtn}
+            </div>
+            ${badge}
+        </div>`;
+    }
+
     function renderList(){
         if(!current.siblings.length){
-            el.list.innerHTML='<div class="zvc-empty">Žádné vouchery v objednávce.</div>';
+            el.list.innerHTML='<div class="zvc-empty">Žádné vstupenky v objednávce.</div>';
             el.result.style.display='block';
             return;
         }
-        const sorted=[...current.siblings].sort((a,b)=>{
-            const rank=item=>{const st=(item.status_label||item.status||'').toLowerCase();if(st==='active')return 0;if(isRedeemedToday(item))return 1;return 2;};
-            return rank(a)-rank(b);
-        });
-        el.list.innerHTML=sorted.map(item=>{
-            const label=productLabel(item.product_id,item.product);
-            const cls=boxClass(item);
-            const key=itemKey(item);
-            const badge=isRedeemedToday(item)&&!PARKING_IDS.has(Number(item.product_id))
-                ?'<div class="zvc-badge-ok">✓ Vstup povolen</div>':'';
-            const redAt=item.redeemed_at?'Uplatněno: '+fmtDatetime(item.redeemed_at):'';
-            const stLabel=statusLabel(item);
-            const isActive=(item.status_label||item.status||'').toLowerCase()==='active';
-            const canRedeem=isActive&&item.redeemable!==false;
-            const redeemBtn=canRedeem
-                ?`<button class="zvc-btn-single-redeem" data-key="${key}">⚡ Uplatnit</button>`
-                :(isActive&&item.redeem_note?`<span class="zvc-noredeem-note">${item.redeem_note}</span>`:'');
-            return`<div class="${cls}" data-key="${key}">
-                <div class="zvc-row-top">
-                    <div class="zvc-code">${item.number||''}</div>
-                    <div class="zvc-status-badge">${stLabel}</div>
-                </div>
-                <div class="zvc-product">${label}</div>
-                <div class="zvc-row-bot">
-                    <div class="zvc-meta">${redAt}</div>
-                    ${redeemBtn}
-                </div>
-                ${badge}
-            </div>`;
-        }).join('');
+        let rest=[...current.siblings];
+        let scanned=null;
+        if(current.scannedKey){
+            const idx=rest.findIndex(x=>itemKey(x)===current.scannedKey);
+            if(idx>=0) scanned=rest.splice(idx,1)[0];
+        }
+        rest.sort(rankSort);
+
+        let html='';
+        if(scanned){
+            html+=cardHtml(scanned,{scanned:true});
+            if(rest.length) html+='<div class="zvc-section-sub">Další vstupenky v objednávce</div>';
+        }
+        html+=rest.map(it=>cardHtml(it,{})).join('');
+        el.list.innerHTML=html;
         el.result.style.display='block';
 
         // Připoj listenery na jednotlivá tlačítka Uplatnit
@@ -121,19 +156,21 @@
             });
             const data=await res.json();
             if(data&&data.ok){
-                setStatus('✓ Uplatněno '+((data.updated||[]).length)+' poukazů.','ok');
+                setStatus('✓ Uplatněno '+((data.updated||[]).length)+' vstupenek. Vstup povolen.','ok');
                 beep('ok');
             }else{
                 setStatus('Chyba při uplatnění.','err');
                 beep('error');
             }
-            if(current.order_id) fetchByOrder(current.order_id);
+            // U jednotlivého potvrzení nech vstupenku zvýrazněnou (zelený „Vstup povolen")
+            const keep=(items.length===1)?(items[0].source+':'+items[0].id):null;
+            if(current.order_id) fetchByOrder(current.order_id,keep);
         }catch(e){setStatus('Chyba spojení: '+e.message,'err');beep('error');}
     }
 
-    async function fetchByOrder(orderId){setStatus('Hledám objednávku…','');try{const res=await fetch(ZVC.restBase+'/order?order_id='+encodeURIComponent(orderId),{headers:{'X-WP-Nonce':ZVC.nonce}});const data=await res.json();if(!data.ok){setStatus(data.message||'Objednávka nenalezena.','err');beep('error');el.list.innerHTML='';return;}current.order_id=data.group.order_id||null;current.counts=data.group.counts||{total:0,parking:0};current.siblings=Array.isArray(data.siblings)?data.siblings:[];renderSummary();renderList();setStatus('Objednávka #'+current.order_id+' — '+current.siblings.length+' voucherů','ok');beep('ok');}catch(e){setStatus('Chyba spojení: '+e.message,'err');beep('error');}}
+    async function fetchByOrder(orderId,keepScannedKey){setStatus('Hledám objednávku…','');try{const res=await fetch(ZVC.restBase+'/order?order_id='+encodeURIComponent(orderId),{headers:{'X-WP-Nonce':ZVC.nonce}});const data=await res.json();if(!data.ok){setStatus(data.message||'Objednávka nenalezena.','err');beep('error');el.list.innerHTML='';return;}current.order_id=data.group.order_id||null;current.counts=data.group.counts||{total:0,parking:0};current.siblings=Array.isArray(data.siblings)?data.siblings:[];current.scannedKey=keepScannedKey||null;renderSummary();renderList();if(!keepScannedKey){setStatus('Objednávka #'+current.order_id+' — '+current.siblings.length+' vstupenek','ok');beep('ok');}}catch(e){setStatus('Chyba spojení: '+e.message,'err');beep('error');}}
 
-    async function checkCode(code){if(!code){setStatus('Zadej kód voucheru.','warn');return;}setStatus('Ověřuji…','');try{const res=await fetch(ZVC.restBase+'/check-voucher',{method:'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':ZVC.nonce},body:JSON.stringify({code})});const data=await res.json();if(data&&data.siblings&&data.group){current.order_id=data.group.order_id||null;current.counts=data.group.counts||{total:0,parking:0};current.siblings=Array.isArray(data.siblings)?data.siblings:[];renderSummary();renderList();if(data.status==='valid'){setStatus('✓ Voucher ověřen a uplatněn.','ok');beep('ok');}else if(data.status==='noredeem'){setStatus('ℹ '+(data.message||'Tento voucher se na pokladně neuplatňuje.'),'warn');beep('warn');}else if(data.status==='used'){setStatus('⚠ Voucher již byl použit.','warn');beep('warn');}else if(data.status==='expired'){setStatus('✗ Voucher je po expiraci.','err');beep('error');}else{setStatus((data.message||'Voucher nenalezen.'),'err');beep('error');}}else{setStatus((data&&data.message)||'Voucher nenalezen.','err');beep('error');}if(el.codeInput)el.codeInput.value='';}catch(e){setStatus('Chyba spojení: '+e.message,'err');beep('error');}}
+    async function checkCode(code){if(!code){setStatus('Zadej kód voucheru.','warn');return;}setStatus('Ověřuji…','');try{const res=await fetch(ZVC.restBase+'/check-voucher',{method:'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':ZVC.nonce},body:JSON.stringify({code})});const data=await res.json();if(data&&data.siblings&&data.group){current.order_id=data.group.order_id||null;current.counts=data.group.counts||{total:0,parking:0};current.siblings=Array.isArray(data.siblings)?data.siblings:[];current.scannedKey=data.scanned||null;renderSummary();renderList();if(data.status==='ready'){setStatus('⚠ Vstupenka platná — NEuplatněna. Potvrďte tlačítkem „Uplatnit".','warn');beep('warn');}else if(data.status==='noredeem'){setStatus('ℹ '+(data.message||'Tento voucher se na pokladně neuplatňuje.'),'warn');beep('warn');}else if(data.status==='used'){setStatus('⚠ Vstupenka již byla uplatněna.','warn');beep('warn');}else if(data.status==='expired'){setStatus('✗ Voucher je po expiraci.','err');beep('error');}else{setStatus((data.message||'Voucher nenalezen.'),'err');beep('error');}}else{setStatus((data&&data.message)||'Voucher nenalezen.','err');beep('error');}if(el.codeInput)el.codeInput.value='';}catch(e){setStatus('Chyba spojení: '+e.message,'err');beep('error');}}
 
     async function redeemAll(){const actives=current.siblings.filter(x=>x.redeemable!==false&&(x.status_label||x.status||'').toLowerCase()==='active').map(itemKey);if(!actives.length){alert('Žádné aktivní vstupenky k uplatnění.');return;}const count=actives.length;if(!confirm(`Opravdu uplatnit VŠECH ${count} aktivních poukazů v objednávce #${current.order_id}?`))return;await redeemItems(actives);}
 

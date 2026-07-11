@@ -103,9 +103,8 @@ class Zoo_Vouchers_REST {
             return $this->zoo_group_response( 'noredeem', $this->noredeem_message( $v->doc_type ), $v, $this->zoo_voucher_info( $v ) );
         }
 
-        $v->mark_used();
-        $v = Zoo_Vouchers_Voucher::find_by_id( $v->id );
-        return $this->zoo_group_response( 'valid', 'Voucher ověřen a uplatněn.', $v, $this->zoo_voucher_info( $v ) );
+        // NEuplatňujeme automaticky — pokladní musí potvrdit ručně tlačítkem „Uplatnit".
+        return $this->zoo_group_response( 'ready', 'Vstupenka je platná — potvrďte uplatnění tlačítkem „Uplatnit".', $v, $this->zoo_voucher_info( $v ) );
     }
 
     private function zoo_group_response( $status, $message, $v, $info ) {
@@ -114,6 +113,7 @@ class Zoo_Vouchers_REST {
             'status'   => $status,
             'message'  => $message,
             'voucher'  => $info,
+            'scanned'  => 'zoo:' . (int) $v->id,
             'group'    => array( 'order_id' => (int) $v->order_id, 'counts' => $this->count_parking( $siblings ) ),
             'siblings' => $siblings,
         );
@@ -133,11 +133,8 @@ class Zoo_Vouchers_REST {
             return $this->sky_group_response( 'invalid', 'Voucher není aktivní.', $voucher, $info );
         }
 
-        $now = time();
-        update_post_meta( $voucher->ID, '_zvc_redeemed_at', $now );
-        wp_update_post( array( 'ID' => $voucher->ID, 'post_status' => 'wcpdf-redeemed' ) );
-        $info['redeemed_at'] = gmdate( 'c', $now );
-        return $this->sky_group_response( 'valid', 'Voucher ověřen a uplatněn.', $voucher, $info );
+        // NEuplatňujeme automaticky — pokladní musí potvrdit ručně tlačítkem „Uplatnit".
+        return $this->sky_group_response( 'ready', 'Vstupenka je platná — potvrďte uplatnění tlačítkem „Uplatnit".', $voucher, $info );
     }
 
     private function sky_group_response( $status, $message, $voucher, $info ) {
@@ -147,6 +144,7 @@ class Zoo_Vouchers_REST {
             'status'   => $status,
             'message'  => $message,
             'voucher'  => $info,
+            'scanned'  => 'sky:' . (int) $voucher->ID,
             'group'    => array( 'order_id' => $order_id, 'counts' => $this->count_parking( $siblings ) ),
             'siblings' => $siblings,
         );
@@ -232,6 +230,7 @@ class Zoo_Vouchers_REST {
 
         // Zoo vouchery
         foreach ( Zoo_Vouchers_Database::get_by_order( $order_id ) as $row ) {
+            if ( $this->is_hidden_type( $row->doc_type ) ) continue; // krmení se v pokladně nezobrazuje
             $items[] = $this->zoo_item( new Zoo_Vouchers_Voucher( $row ) );
         }
 
@@ -466,6 +465,15 @@ class Zoo_Vouchers_REST {
             return 'Permanentka je platná — opakovaný vstup, na pokladně se neuplatňuje.';
         }
         return 'Tento typ voucheru se na pokladně neuplatňuje.';
+    }
+
+    /**
+     * Typy, které se na pokladně vůbec nezobrazují (krmení – řeší se v Amelii).
+     * Lze upravit filtrem `zoo_vouchers_hidden_types`.
+     */
+    private function is_hidden_type( $doc_type ) {
+        $hidden = apply_filters( 'zoo_vouchers_hidden_types', array( 'krmeni' ) );
+        return in_array( $doc_type, (array) $hidden, true );
     }
 
     private function noredeem_short( $doc_type ) {

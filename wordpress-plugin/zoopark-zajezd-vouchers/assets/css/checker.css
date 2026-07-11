@@ -519,3 +519,32 @@
   padding:4px 10px;
   white-space:nowrap;
 }
+
+/* ── Naskenovaná vstupenka: zvýraznění + výrazný baner ───────────────── */
+.zvc-box-scanned{
+  box-shadow:0 0 0 3px rgba(27,67,50,.35), 4px 4px 0 rgba(0,0,0,.08);
+  position:relative;
+}
+.zvc-hero{
+  margin:-2px -2px 12px;
+  padding:12px 14px;
+  border-radius:8px 8px 0 0;
+  font-weight:800;
+  font-size:16px;
+  line-height:1.25;
+  text-align:center;
+  letter-spacing:.2px;
+}
+.zvc-hero-ok{   background:#28a745; color:#fff; }
+.zvc-hero-warn{ background:#fd7e14; color:#fff; }
+.zvc-hero-bad{  background:#dc3545; color:#fff; }
+
+/* Oddělovač „Další vstupenky v objednávce" */
+.zvc-section-sub{
+  margin:16px 0 8px;
+  font-size:13px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#6b7280;
+}

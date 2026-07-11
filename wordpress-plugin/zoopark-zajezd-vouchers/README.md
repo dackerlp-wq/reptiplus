@@ -101,23 +101,31 @@ interní stránku. Rozhraní je společné pro obě generace voucherů.
 
 ### Co se na pokladně uplatňuje
 
-Na pokladně se uplatňují (= označí jako použité) **pouze vstupenky** (`vstupenka`).
+Na pokladně se uplatňují (= označí jako použité) **pouze vstupenky** (`vstupenka`),
+a to vždy **ručním potvrzením** zaměstnance (nikdy automaticky při naskenování).
 
 - **Permanentky** se NEuplatňují — jde o opakovaný vstup, nesmí se „spálit" na
-  první sken. Zobrazí se jen jako platné.
-- **Krmení** se NEuplatňuje zde — řeší se rezervací v Amelii.
+  první sken. Zobrazí se jen jako platné (view-only).
+- **Krmení** se na pokladně **vůbec nezobrazuje** ani nepotvrzuje (ani v
+  „Uplatnit vše") — řeší se rezervací v Amelii.
 
-Naskenování permanentky/krmení tedy voucher **nezmění**, jen ověří jeho pravost
-a platnost. Tlačítko „Uplatnit" ani „Uplatnit vše" se na ně nevztahují. Seznam
-uplatnitelných typů lze upravit filtrem `zoo_vouchers_redeemable_types`.
+Seznam uplatnitelných typů lze upravit filtrem `zoo_vouchers_redeemable_types`,
+skryté typy filtrem `zoo_vouchers_hidden_types` (výchozí `['krmeni']`).
 
 Pokladní může:
 
-- **Naskenovat QR kamerou** (mobil/tablet – tlačítko 📷 QR) nebo zadat kód ručně
-  → voucher se ověří a **rovnou uplatní** (se zvukovým pípnutím ok/varování/chyba).
-- **Vyhledat celou objednávku** podle čísla → zobrazí všechny vouchery objednávky
-  (nové i staré SkyVerge dohromady) se souhrnnými dlaždicemi.
-- **Uplatnit jednotlivě** nebo tlačítkem **„Uplatnit všechny aktivní"** naráz.
+- **Naskenovat QR kamerou** (mobil/tablet – tlačítko 📷 QR) nebo zadat kód ručně.
+  Vstupenka se **NEuplatní automaticky** — jen se ověří a zobrazí s výrazným
+  oranžovým upozorněním *„Vstupenka zatím NEuplatněna — potvrďte tlačítkem
+  Uplatnit"*. Zaměstnanec musí uplatnění **potvrdit ručně**.
+- Naskenovaná vstupenka se zobrazí **nahoře a zvýrazněná**, pod ní ostatní
+  vstupenky téže objednávky.
+- Po potvrzení (nebo když už byla uplatněna dnes) se ukáže zelené
+  **„Vstupenka uplatněna dnes — Vstup povolen"**. Uplatnění v jiný den →
+  červené varování *„NEPOVOLOVAT vstup"*.
+- **Vyhledat celou objednávku** podle čísla → zobrazí všechny vstupenky
+  objednávky (nové i staré SkyVerge) se souhrnnými dlaždicemi.
+- **Uplatnit jednotlivě** nebo tlačítkem **„Uplatnit všechny aktivní vstupenky"**.
 
 ### REST API (namespace `zoo/v1`)
 
