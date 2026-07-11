@@ -1,0 +1,510 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+/* ─── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --orange:    #FF8C1A;
+  --orange-lt: #FFB35C;
+  --green:     #5BBD3A;
+  --green-dk:  #3d8f24;
+  --brown:     #1E1610;
+  --brown2:    #2e2018;
+  --cream:     #FAF4EB;
+  --cream2:    #EDE0CC;
+  --card-bg:   #FFFDF8;
+  --red:       #E03434;
+  --red-dk:    #B52222;
+  --grey:      #9A8A78;
+  --grey-lt:   #C4B5A5;
+  --active-bg: #FFF7EC;
+  --active-bd: #FFCF85;
+  --done-bg:   #F0FAE8;
+  --done-bd:   #A8E07A;
+  --used-bg:   #F4F4F2;
+  --shadow-sm: 0 2px 8px rgba(30,22,16,.08);
+  --shadow-md: 0 6px 28px rgba(30,22,16,.13);
+  --shadow-lg: 0 12px 48px rgba(30,22,16,.18);
+  --radius:    16px;
+  --radius-sm: 10px;
+  --radius-xs: 7px;
+  --font-h:    'Barlow Condensed', sans-serif;
+  --font-b:    'DM Sans', sans-serif;
+}
+
+/* ─── RESET ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ─── CONTAINER ──────────────────────────────────────────── */
+.zvc-container {
+  font-family: var(--font-b);
+  background: var(--cream);
+  min-height: 100vh;
+  padding-bottom: 80px;
+  color: var(--brown);
+}
+
+/* ─── PAGE HEADER ────────────────────────────────────────── */
+.zvc-page-header {
+  background: var(--brown);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 18px,
+    rgba(255,255,255,.022) 18px,
+    rgba(255,255,255,.022) 36px
+  );
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 4px solid var(--orange);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0,0,0,.28);
+}
+.zvc-logo-icon {
+  font-size: 2rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.3));
+}
+.zvc-page-title {
+  font-family: var(--font-h);
+  font-size: clamp(1.2rem, 3vw, 1.7rem);
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.zvc-page-title span {
+  color: var(--orange);
+}
+
+/* ─── MAIN BODY ──────────────────────────────────────────── */
+.zvc-body {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 20px 0;
+}
+
+/* ─── CONTROLS CARD ──────────────────────────────────────── */
+.zvc-controls-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 22px 24px;
+  margin-bottom: 16px;
+  border: 1.5px solid var(--cream2);
+}
+.zvc-section-label {
+  font-family: var(--font-h);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--grey);
+  margin: 0 0 8px;
+}
+.zvc-ctrl-group {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.zvc-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  color: var(--grey-lt);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.zvc-divider::before,
+.zvc-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--cream2);
+}
+
+/* ─── INPUTS ─────────────────────────────────────────────── */
+.zvc-input {
+  flex: 1;
+  font-family: var(--font-b);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 12px 15px;
+  border: 2px solid var(--cream2);
+  border-radius: var(--radius-sm);
+  background: var(--cream);
+  color: var(--brown);
+  outline: none;
+  transition: border-color .18s, box-shadow .18s, background .18s;
+  min-width: 0;
+}
+.zvc-input::placeholder {
+  color: var(--grey-lt);
+  font-weight: 400;
+  font-size: .92rem;
+}
+.zvc-input:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(255,140,26,.16);
+  background: #fff;
+}
+
+/* ─── BUTTONS ─────────────────────────────────────────────── */
+.zvc-btn {
+  font-family: var(--font-h);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 12px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s, background .15s, filter .12s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1;
+  position: relative;
+  overflow: hidden;
+}
+.zvc-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background .12s;
+}
+.zvc-btn:hover::after { background: rgba(255,255,255,.1); }
+.zvc-btn:active { transform: scale(.95); }
+
+.zvc-btn-primary {
+  background: linear-gradient(135deg, var(--orange) 0%, #FF6B00 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(255,107,0,.35);
+}
+.zvc-btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(255,107,0,.45);
+  filter: brightness(1.06);
+}
+
+.zvc-btn-alt {
+  background: linear-gradient(135deg, var(--green) 0%, var(--green-dk) 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(91,189,58,.3);
+}
+.zvc-btn-alt:hover { filter: brightness(1.07); }
+
+.zvc-btn-danger {
+  background: linear-gradient(135deg, #FF4444 0%, var(--red-dk) 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(224,52,52,.32);
+}
+.zvc-btn-danger:hover { filter: brightness(1.07); }
+
+.zvc-btn-xl {
+  font-size: 1.1rem;
+  padding: 15px 28px;
+  width: 100%;
+  border-radius: var(--radius-sm);
+  letter-spacing: .1em;
+}
+
+/* ─── STATUS BAR ─────────────────────────────────────────── */
+.zvc-statusbar {
+  background: var(--brown2);
+  color: rgba(255,255,255,.9);
+  font-family: var(--font-h);
+  font-size: .88rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 11px 18px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  transition: background .3s, box-shadow .3s;
+  border: 1.5px solid rgba(255,255,255,.06);
+}
+.zvc-statusbar .zvc-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--orange-lt);
+  flex-shrink: 0;
+  animation: zvc-pulse 1.8s ease-in-out infinite;
+}
+@keyframes zvc-pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .35; transform: scale(.65); }
+}
+.zvc-statusbar.is-ok  { background: #234d0c; box-shadow: 0 0 0 1.5px var(--green); }
+.zvc-statusbar.is-ok .zvc-dot  { background: var(--green); animation: none; }
+.zvc-statusbar.is-err { background: #5a1010; box-shadow: 0 0 0 1.5px var(--red); }
+.zvc-statusbar.is-err .zvc-dot { background: #ff9090; animation: none; }
+.zvc-statusbar.is-warn { background: #4a3010; box-shadow: 0 0 0 1.5px var(--orange-lt); }
+.zvc-statusbar.is-warn .zvc-dot { background: var(--orange-lt); animation: none; }
+
+/* ─── SUMMARY PILLS ──────────────────────────────────────── */
+.zvc-summary-counters { margin-bottom: 16px; }
+.zvc-headline {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.zvc-pill {
+  background: var(--card-bg);
+  border: 2px solid var(--cream2);
+  border-radius: var(--radius-sm);
+  padding: 10px 18px 10px 14px;
+  font-size: .9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--shadow-sm);
+  flex: 1;
+  min-width: 130px;
+  transition: transform .12s, box-shadow .12s;
+}
+.zvc-pill:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.zvc-pill-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.zvc-pill-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.zvc-pill-body span {
+  color: var(--grey);
+  font-size: .72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.zvc-pill-body b {
+  font-family: var(--font-h);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--brown);
+}
+.zvc-pill-active { border-color: var(--active-bd); background: var(--active-bg); }
+.zvc-pill-active .zvc-pill-body b { color: #c06000; }
+.zvc-pill-done   { border-color: var(--done-bd); background: var(--done-bg); }
+.zvc-pill-done   .zvc-pill-body b { color: var(--green-dk); }
+.zvc-pill-park   { border-color: #c8d8f0; background: #f0f5fd; }
+.zvc-pill-park   .zvc-pill-body b { color: #2a5ab0; }
+
+/* ─── ACTIONS ────────────────────────────────────────────── */
+.zvc-actions-top { margin-bottom: 16px; }
+
+/* ─── HELP HINT ──────────────────────────────────────────── */
+.zvc-help {
+  background: #fff8ee;
+  border-left: 3px solid var(--orange);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  padding: 8px 12px;
+  font-size: .84rem;
+  color: var(--brown2);
+  margin-top: 10px;
+  display: none;
+}
+
+/* ─── QR READER ──────────────────────────────────────────── */
+.zvc-reader {
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+  border: 3px solid var(--orange);
+  background: var(--brown);
+  box-shadow: var(--shadow-md);
+}
+
+/* ─── VOUCHER LIST ───────────────────────────────────────── */
+.zvc-result { }
+.zvc-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 12px;
+}
+.zvc-box {
+  border-radius: var(--radius);
+  padding: 15px 16px 15px 22px;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+  transition: transform .15s, box-shadow .15s;
+  position: relative;
+  overflow: hidden;
+  border: 1.5px solid var(--cream2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.zvc-box::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 6px;
+  border-radius: 4px 0 0 4px;
+}
+.zvc-box:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+/* Active */
+.zvc-box-active { border-color: var(--active-bd); background: var(--active-bg); }
+.zvc-box-active::before { background: linear-gradient(180deg, var(--orange) 0%, #FF6B00 100%); }
+
+/* Used */
+.zvc-box-used { opacity: .7; background: var(--used-bg); }
+.zvc-box-used::before { background: var(--grey-lt); }
+
+/* Expired */
+.zvc-box-expired { opacity: .55; }
+.zvc-box-expired::before { background: #d0c8bf; }
+
+/* Done today */
+.zvc-box-goodtoday { background: var(--done-bg); border-color: var(--done-bd); box-shadow: 0 4px 18px rgba(91,189,58,.18); }
+.zvc-box-goodtoday::before { background: linear-gradient(180deg, var(--green) 0%, var(--green-dk) 100%); }
+
+/* ─── CARD INTERNALS ─────────────────────────────────────── */
+.zvc-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.zvc-code {
+  font-family: var(--font-h);
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--grey);
+  letter-spacing: .04em;
+  word-break: break-all;
+  flex: 1;
+  line-height: 1.3;
+}
+.zvc-status-badge {
+  font-family: var(--font-h);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 50px;
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+.zvc-box-active    .zvc-status-badge { background: rgba(255,140,26,.15); color: #b86400; }
+.zvc-box-used      .zvc-status-badge { background: rgba(154,138,120,.12); color: var(--grey); }
+.zvc-box-expired   .zvc-status-badge { background: #eee; color: #aaa; }
+.zvc-box-goodtoday .zvc-status-badge { background: rgba(91,189,58,.2); color: var(--green-dk); }
+
+.zvc-product {
+  font-family: var(--font-h);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  color: var(--brown);
+  line-height: 1.2;
+}
+
+/* ─── CARD BOTTOM ROW ────────────────────────────────────── */
+.zvc-row-bot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 2px;
+}
+.zvc-meta {
+  font-size: .76rem;
+  color: var(--grey);
+  flex: 1;
+}
+
+/* ─── INDIVIDUAL REDEEM BUTTON ───────────────────────────── */
+.zvc-btn-single-redeem {
+  font-family: var(--font-h);
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  border: none;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--orange) 0%, #e06a00 100%);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(255,107,0,.3);
+  transition: transform .1s, box-shadow .12s, filter .12s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.zvc-btn-single-redeem:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 5px 15px rgba(255,107,0,.4);
+  transform: translateY(-1px);
+}
+.zvc-btn-single-redeem:active { transform: scale(.93); }
+.zvc-btn-single-redeem:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ─── VSTUP POVOLEN BADGE ────────────────────────────────── */
+.zvc-badge-ok {
+  background: linear-gradient(135deg, var(--green) 0%, var(--green-dk) 100%);
+  color: #fff;
+  font-family: var(--font-h);
+  font-size: .88rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: var(--radius-xs);
+  text-align: center;
+  box-shadow: 0 3px 12px rgba(91,189,58,.3);
+}
+
+/* ─── EMPTY STATE ────────────────────────────────────────── */
+.zvc-empty {
+  grid-column: 1/-1;
+  text-align: center;
+  color: var(--grey);
+  font-size: 1rem;
+  padding: 48px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  border: 2px dashed var(--cream2);
+}
+
+/* ─── FLASH ANIMATIONS ───────────────────────────────────── */
+@keyframes zvc-flash-ok  { 0%{background:#c8f0a8} 100%{background:var(--done-bg)} }
+@keyframes zvc-flash-err { 0%{background:#ffd4d4} 100%{background:var(--card-bg)} }
+.zvc-flash-ok  { animation: zvc-flash-ok  .7s ease forwards; }
+.zvc-flash-err { animation: zvc-flash-err .7s ease forwards; }
+
+/* ─── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .zvc-page-header  { padding: 14px 16px; position: static; }
+  .zvc-body         { padding: 14px 12px 0; }
+  .zvc-controls-card{ padding: 14px 14px; }
+  .zvc-ctrl-group   { flex-direction: column; }
+  .zvc-btn          { width: 100%; text-align: center; justify-content: center; }
+  .zvc-list         { grid-template-columns: 1fr; }
+  .zvc-headline     { flex-direction: row; }
+  .zvc-pill         { min-width: calc(50% - 5px); }
+}

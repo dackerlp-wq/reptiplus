@@ -1,0 +1,9 @@
+FPDF instalace:
+1. Stáhni fpdf.php z: http://www.fpdf.org  (tlačítko Download)
+2. Rozbal ZIP
+3. Zkopíruj soubor fpdf.php do této složky: zoo-vouchers/lib/fpdf.php
+4. To je vše – žádný composer, žádné další soubory.
+
+Volitelně pro QR kód:
+1. Stáhni phpqrcode z: https://sourceforge.net/projects/phpqrcode/
+2. Zkopíruj soubor qrlib.php do: zoo-vouchers/lib/qrlib.php

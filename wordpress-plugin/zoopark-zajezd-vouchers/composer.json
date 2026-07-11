@@ -1,0 +1,5 @@
+{
+    "name": "zoopark-zajezd/zoo-vouchers",
+    "require": { "tecnickcom/tcpdf": "^6.7" },
+    "config": { "vendor-dir": "vendor" }
+}
