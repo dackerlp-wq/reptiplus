@@ -186,9 +186,25 @@
 
     async function redeemAll(){const actives=current.siblings.filter(x=>x.redeemable!==false&&(x.status_label||x.status||'').toLowerCase()==='active').map(itemKey);if(!actives.length){alert('Žádné aktivní vstupenky k uplatnění.');return;}const count=actives.length;if(!confirm(`Opravdu uplatnit VŠECH ${count} aktivních poukazů v objednávce #${current.order_id}?`))return;await redeemItems(actives);}
 
-    function startScanner(){try{html5QrCode=new Html5Qrcode('zvc-reader');el.reader.style.display='block';html5QrCode.start({facingMode:'environment'},{fps:10,qrbox:260},async(decodedText)=>{await html5QrCode.stop();html5QrCode.clear();el.reader.style.display='none';checkCode(decodedText.trim());},(_)=>{}).then(()=>{setStatus('Skenuji — namiř kameru na QR kód…','');if(el.scanBtn)el.scanBtn.textContent='Zastavit skener';}).catch(e=>{setStatus('Nelze spustit kameru: '+e,'err');});}catch(e){setStatus('Kamera není podporována v tomto prohlížeči.','err');}}
+    function stopScanner(){try{if(html5QrCode){html5QrCode.stop().then(()=>{try{html5QrCode.clear();}catch(_){}}).catch(()=>{});}}catch(_){}el.reader.style.display='none';if(el.scanBtn)el.scanBtn.textContent='📷 QR';}
 
-    function init(){if(isMobileLike()&&el.scanBtn){el.scanBtn.style.display='inline-block';if(el.scanHelp)el.scanHelp.style.display='block';}setStatus('Připraveno — zadej ID objednávky nebo naskenuj voucher.','');el.orderBtn&&el.orderBtn.addEventListener('click',()=>{const v=String(el.orderInput.value||'').trim();if(!/^[0-9]+$/.test(v)){setStatus('Zadej platné číslo objednávky.','warn');return;}fetchByOrder(v);});el.orderInput&&el.orderInput.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault();el.orderBtn.click();}});el.codeBtn&&el.codeBtn.addEventListener('click',()=>{checkCode(String(el.codeInput.value||'').trim());});el.codeInput&&el.codeInput.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault();el.codeBtn.click();}});el.scanBtn&&el.scanBtn.addEventListener('click',startScanner);el.redeemAll&&el.redeemAll.addEventListener('click',redeemAll);}
+    function startScanner(){
+        // Přesná diagnostika místo obecného „nepodporováno"
+        if(typeof Html5Qrcode==='undefined'){setStatus('Skener se nenačetl — obnovte stránku (na mobilu potáhněte dolů / Ctrl+F5).','err');beep('warn');return;}
+        if(!window.isSecureContext){setStatus('Kamera funguje jen přes zabezpečené https:// spojení. Otevřete stránku přes https.','err');beep('warn');return;}
+        if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){setStatus('Tento prohlížeč nepovoluje přístup ke kameře.','err');beep('warn');return;}
+        try{
+            html5QrCode=new Html5Qrcode('zvc-reader');
+            el.reader.style.display='block';
+            html5QrCode.start({facingMode:'environment'},{fps:10,qrbox:260},async(decodedText)=>{await html5QrCode.stop();try{html5QrCode.clear();}catch(_){}el.reader.style.display='none';if(el.scanBtn)el.scanBtn.textContent='📷 QR';checkCode(decodedText.trim());},(_)=>{})
+              .then(()=>{setStatus('Skenuji — namiř kameru na QR kód…','');if(el.scanBtn)el.scanBtn.textContent='✕ Zastavit skener';})
+              .catch(e=>{el.reader.style.display='none';const m=String((e&&e.name)||e||'');if(m.indexOf('NotAllowed')>=0)setStatus('Přístup ke kameře byl zamítnut. Povolte kameru pro tuto stránku v prohlížeči.','err');else if(m.indexOf('NotFound')>=0||m.indexOf('Overconstrained')>=0)setStatus('Nenalezena žádná kamera.','err');else setStatus('Nelze spustit kameru: '+m,'err');beep('warn');});
+        }catch(e){setStatus('Kameru nelze spustit: '+((e&&e.message)||e),'err');beep('warn');}
+    }
+
+    function toggleScanner(){if(el.reader&&el.reader.style.display==='block'){stopScanner();setStatus('Skener zastaven.','');}else{startScanner();}}
+
+    function init(){if(isMobileLike()&&el.scanBtn){el.scanBtn.style.display='inline-block';if(el.scanHelp)el.scanHelp.style.display='block';}setStatus('Připraveno — zadej ID objednávky nebo naskenuj voucher.','');el.orderBtn&&el.orderBtn.addEventListener('click',()=>{const v=String(el.orderInput.value||'').trim();if(!/^[0-9]+$/.test(v)){setStatus('Zadej platné číslo objednávky.','warn');return;}fetchByOrder(v);});el.orderInput&&el.orderInput.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault();el.orderBtn.click();}});el.codeBtn&&el.codeBtn.addEventListener('click',()=>{checkCode(String(el.codeInput.value||'').trim());});el.codeInput&&el.codeInput.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault();el.codeBtn.click();}});el.scanBtn&&el.scanBtn.addEventListener('click',toggleScanner);el.redeemAll&&el.redeemAll.addEventListener('click',redeemAll);}
 
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

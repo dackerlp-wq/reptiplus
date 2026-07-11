@@ -22,9 +22,11 @@ class Zoo_Vouchers_Validator {
     }
 
     public static function register_assets() {
+        // Knihovna skeneru je přibalená v pluginu (žádné CDN — na mobilech
+        // ho často blokuje CSP/síť/doplněk, což hlásilo „kamera nepodporována").
         wp_register_script(
             'html5-qrcode',
-            'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js',
+            ZOO_VOUCHERS_URL . 'assets/js/html5-qrcode.min.js',
             array(), '2.3.8', true
         );
         wp_register_script(
