@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Návod pro obsluhu – Ověřování voucherů</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    color: #1A1A1A; font-size: 11pt; line-height: 1.5; margin: 0;
+  }
+  h1 { font-size: 25pt; margin: 0 0 2mm; color: #1B4332; letter-spacing: -0.3px; }
+  h2 {
+    font-size: 15pt; color: #fff; background: #1B4332;
+    padding: 3mm 4mm; border-radius: 4px; margin: 9mm 0 4mm;
+  }
+  h3 { font-size: 12.5pt; color: #1B4332; margin: 6mm 0 2mm; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1.5mm; }
+  strong { color: #0f2b1f; }
+  .lead { font-size: 11.5pt; color: #444; }
+  .eyebrow { font-family: "Courier New", monospace; font-size: 9pt; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase; color: #C9A84C; margin: 0 0 1mm; }
+  .cover { border-bottom: 3px solid #C9A84C; padding-bottom: 6mm; margin-bottom: 4mm; }
+  .cover .zoo { font-size: 30pt; }
+  .box { border: 1.5px solid #EAE3D5; border-radius: 6px; padding: 4mm 5mm; margin: 3mm 0; background: #F5F0E8; }
+  .callout { border-left: 4px solid #C9A84C; background: #FBF7EF; padding: 3mm 4mm; border-radius: 0 5px 5px 0; margin: 3mm 0; }
+  .warn { border-left: 4px solid #C2562E; background: #FCF0EB; padding: 3mm 4mm; border-radius: 0 5px 5px 0; margin: 3mm 0; }
+  .warn strong { color: #C2562E; }
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0; font-size: 10.5pt; }
+  th { background: #1B4332; color: #fff; text-align: left; padding: 2.5mm 3mm; font-size: 10pt; }
+  td { padding: 2.5mm 3mm; border-bottom: 1px solid #EAE3D5; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAF7F1; }
+  .pill { display: inline-block; padding: 1mm 3mm; border-radius: 20px; font-size: 9.5pt; font-weight: 700; color: #fff; white-space: nowrap; }
+  .g { background: #28a745; } .o { background: #E8A33D; } .r { background: #dc3545; }
+  .step { display: flex; gap: 4mm; margin: 0 0 4mm; align-items: flex-start; }
+  .step .n { flex: 0 0 8mm; height: 8mm; border-radius: 50%; background: #1B4332; color: #fff;
+    font-weight: 700; font-size: 12pt; display: flex; align-items: center; justify-content: center; }
+  .step .t { flex: 1; }
+  .step .t b { color: #1B4332; }
+  .footer { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid #EAE3D5; font-size: 9pt; color: #888; }
+  .avoid-break { page-break-inside: avoid; }
+  .pagebreak { page-break-before: always; }
+  code { background: #EAE3D5; padding: 0.5mm 1.5mm; border-radius: 3px; font-size: 10pt; }
+  .kbd { background: #1A1A1A; color: #fff; padding: 0.5mm 2mm; border-radius: 3px; font-size: 9.5pt; font-family: "Courier New", monospace; }
+</style>
+</head>
+<body>
+
+  <div class="cover">
+    <p class="eyebrow">Zoopark Zájezd — Pokladní systém</p>
+    <h1>Ověřování voucherů</h1>
+    <p class="lead">Podrobný návod pro obsluhu pokladny — jak zkontrolovat a uplatnit vstupenky zákazníků pomocí QR kódu nebo ručního zadání.</p>
+  </div>
+
+  <div class="callout avoid-break">
+    <strong>Ve zkratce:</strong> Zákazník ukáže voucher (PDF nebo e-mail). Vy ho
+    <strong>naskenujete</strong> nebo zadáte kód. Systém ukáže <strong>barevný stav</strong>.
+    U platné vstupenky <strong>kliknete na „Uplatnit"</strong> — teprve tím je vstup potvrzen.
+  </div>
+
+  <h2>1. Otevření pokladní stránky</h2>
+  <ul>
+    <li>Otevřete v prohlížeči interní stránku s ověřováním voucherů (adresu vám dá vedoucí).</li>
+    <li>Funguje na počítači, tabletu i mobilu.</li>
+    <li><strong>Na mobilu použijte Chrome nebo Safari</strong> a stránku mějte přes <span class="kbd">https://</span> (zámeček v adresním řádku) — jinak nepůjde kamera.</li>
+  </ul>
+
+  <h2>2. Tři způsoby ověření</h2>
+
+  <div class="step avoid-break">
+    <div class="n">A</div>
+    <div class="t"><b>Naskenovat QR kód (nejrychlejší)</b><br>
+      Na mobilu/tabletu klepněte na tlačítko <b>QR</b>, namiřte kameru na QR kód na voucheru.
+      Po načtení se voucher rovnou zobrazí.</div>
+  </div>
+  <div class="step avoid-break">
+    <div class="n">B</div>
+    <div class="t"><b>Zadat kód ručně</b><br>
+      Kód z voucheru (např. <code>ZOO-4H05-JMUS</code>) napište do pole
+      „Kód voucheru" a stiskněte <span class="kbd">Enter</span> nebo <b>Ověřit</b>.
+      Hodí se, když je QR kód poškozený.</div>
+  </div>
+  <div class="step avoid-break">
+    <div class="n">C</div>
+    <div class="t"><b>Vyhledat celou objednávku</b><br>
+      Zadejte <b>číslo objednávky</b> do pole „Vyhledat objednávku". Systém ukáže
+      <b>všechny vstupenky</b> té objednávky najednou.</div>
+  </div>
+
+  <div class="warn avoid-break">
+    <strong>Důležité — uplatnění je ruční!</strong> Naskenováním se vstupenka
+    <strong>NEuplatní automaticky</strong>. Vždy ji musíte potvrdit tlačítkem
+    <strong>„Uplatnit vstupenku"</strong>. Chrání to před nechtěným uplatněním při náhodném skenu.
+  </div>
+
+  <h2>3. Barvy stavů — co znamenají a co dělat</h2>
+  <p>Po ověření se nahoře i na kartě vstupenky objeví barevný pruh:</p>
+  <table class="avoid-break">
+    <thead>
+      <tr><th style="width:34mm">Barva</th><th>Význam</th><th style="width:50mm">Co udělat</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="pill g">ZELENÁ — v pořádku</span></td>
+        <td>Vstupenka je platná a <b>ještě nebyla uplatněna</b>.</td>
+        <td>Klikněte <b>„Uplatnit vstupenku"</b> a pusťte návštěvníka.</td>
+      </tr>
+      <tr>
+        <td><span class="pill g">ZELENÁ — uplatněna dnes</span></td>
+        <td>Vstupenka byla uplatněna <b>dnes</b> (i před chvílí vámi). „Vstup povolen."</td>
+        <td>Vstup je v pořádku. Nic dalšího neděláte.</td>
+      </tr>
+      <tr>
+        <td><span class="pill r">ČERVENÁ</span></td>
+        <td>Uplatněna <b>jiný den</b>, <b>vypršelá</b>, nebo <b>neplatná</b>. „VSTUP NEPOVOLEN."</td>
+        <td><b>Nepouštějte.</b> Ukažte zákazníkovi datum uplatnění / expirace.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size:10pt;color:#666">Pozn.: Oranžová dlaždice „Aktivní" v horním souhrnu je jen počítadlo, ne stav konkrétní vstupenky.</p>
+
+  <div class="pagebreak"></div>
+
+  <h2>4. Uplatnění vstupenek</h2>
+  <h3>Jedna vstupenka</h3>
+  <p>U zelené (platné) vstupenky klikněte na <b>„Uplatnit vstupenku"</b>. Pruh zezelená s textem
+  <b>„Vstupenka uplatněna dnes — Vstup povolen"</b>.</p>
+  <h3>Celá objednávka najednou</h3>
+  <p>Když má zákazník víc vstupenek v jedné objednávce, můžete použít červené tlačítko
+  <b>„Uplatnit všechny aktivní vstupenky z objednávky"</b>. Uplatní naráz všechny platné vstupenky.</p>
+  <div class="box avoid-break">
+    <strong>Jak vypadá seznam:</strong> Naskenovaná vstupenka je vždy <b>nahoře přes celý řádek</b>
+    a zvýrazněná. Pod ní (nadpis „Další vstupenky v objednávce") jsou ostatní vstupenky téže objednávky.
+  </div>
+
+  <h2>5. Co se na pokladně NEuplatňuje</h2>
+  <table class="avoid-break">
+    <thead><tr><th style="width:45mm">Typ poukazu</th><th>Jak se chová</th></tr></thead>
+    <tbody>
+      <tr><td><b>Vstupenky</b> (dárkové vstupenky, dospělý/dítě…)</td><td>Uplatňují se na pokladně — viz výše.</td></tr>
+      <tr><td><b>Permanentky</b></td><td>Zobrazí se jako <b>platné</b>, ale <b>neuplatňují se</b> — jde o opakovaný vstup, nesmí se „spálit".</td></tr>
+      <tr><td><b>Krmení zvířat</b></td><td><b>Vůbec se nezobrazí.</b> Řeší se rezervací (Amelia), ne na pokladně.</td></tr>
+      <tr><td><b>Zážitky</b> (den ošetřovatelem, pro odvážné, prohlídky…)</td><td><b>Nezobrazí se</b> jako vstupenka. Řeší se rezervací.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>6. QR skener na mobilu — řešení potíží</h2>
+  <table class="avoid-break">
+    <thead><tr><th style="width:62mm">Hláška / problém</th><th>Co s tím</th></tr></thead>
+    <tbody>
+      <tr><td>„Kamera funguje jen přes https"</td><td>Otevřete stránku přes <span class="kbd">https://</span> (se zámečkem), ne přes http nebo IP adresu.</td></tr>
+      <tr><td>„Přístup ke kameře byl zamítnut"</td><td>V prohlížeči povolte kameru pro tuto stránku (ikona zámečku → Oprávnění → Kamera → Povolit) a zkuste znovu.</td></tr>
+      <tr><td>„Skener se nenačetl"</td><td>Obnovte stránku (na mobilu potáhněte prstem dolů), zkontrolujte připojení.</td></tr>
+      <tr><td>„Nenalezena žádná kamera"</td><td>Zařízení nemá dostupnou kameru — zadejte kód ručně (způsob B).</td></tr>
+      <tr><td>Kamera nechytá QR</td><td>Přisviťte, přibližte, otřete objektiv. Případně zadejte kód ručně.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout avoid-break">
+    <strong>Tip:</strong> Tlačítko <b>QR</b> skener zapíná i vypíná. Vždy funguje i
+    <b>ruční zadání kódu</b> — když cokoli selže, opište kód z voucheru.
+  </div>
+
+  <h2>7. Zvuková signalizace</h2>
+  <ul>
+    <li><b>Příjemné pípnutí</b> = v pořádku (platná / uplatněno dnes).</li>
+    <li><b>Varovné pípnutí</b> = pozor, přečtěte si text (např. ještě neuplatněno).</li>
+    <li><b>Chybový tón</b> = problém (nepovolit vstup / nenalezeno).</li>
+  </ul>
+  <p style="font-size:10pt;color:#666">Vždy se řiďte hlavně <b>textem a barvou</b> na obrazovce, zvuk je jen doplněk.</p>
+
+  <div class="box avoid-break">
+    <h3 style="margin-top:0">Rychlý postup u pokladny</h3>
+    <ol style="margin-bottom:0">
+      <li>Zákazník ukáže voucher → <b>naskenujte</b> (QR) nebo zadejte kód.</li>
+      <li>Podívejte se na <b>barvu</b>: zelená = OK, červená = nepouštět.</li>
+      <li>Je-li zelená a čeká na uplatnění → klikněte <b>„Uplatnit vstupenku"</b>.</li>
+      <li>Objeví se <b>„Vstup povolen"</b> → pusťte návštěvníka.</li>
+    </ol>
+  </div>
+
+  <div class="footer">
+    Zoopark Zájezd — Zoopark Zájezd Vouchers v3.0.0 · Interní návod pro obsluhu pokladny.
+    Při technických potížích kontaktujte správce webu.
+  </div>
+
+</body>
+</html>
