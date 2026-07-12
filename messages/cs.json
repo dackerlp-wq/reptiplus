@@ -41,7 +41,18 @@
     "count": "{count, plural, =0 {Žádné produkty} one {# produkt} few {# produkty} other {# produktů}}",
     "empty": "Zatím tu nejsou žádné produkty.",
     "sortNewest": "Nejnovější",
-    "viewAll": "Zobrazit vše"
+    "viewAll": "Zobrazit vše",
+    "filters": "Filtry",
+    "category": "Kategorie",
+    "brand": "Značka",
+    "allCategories": "Všechny kategorie",
+    "allBrands": "Všechny značky",
+    "sort": "Řazení",
+    "sortPriceAsc": "Cena: od nejnižší",
+    "sortPriceDesc": "Cena: od nejvyšší",
+    "inStockOnly": "Pouze skladem",
+    "clear": "Zrušit filtry",
+    "searchPlaceholder": "Hledat produkty…"
   },
   "Footer": {
     "tagline": "Specializovaný obchod s teraristickým vybavením pro chovatele plazů a exotických zvířat.",

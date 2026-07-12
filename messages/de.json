@@ -41,7 +41,18 @@
     "count": "{count, plural, =0 {Keine Produkte} one {# Produkt} other {# Produkte}}",
     "empty": "Es gibt noch keine Produkte.",
     "sortNewest": "Neueste",
-    "viewAll": "Alle ansehen"
+    "viewAll": "Alle ansehen",
+    "filters": "Filter",
+    "category": "Kategorie",
+    "brand": "Marke",
+    "allCategories": "Alle Kategorien",
+    "allBrands": "Alle Marken",
+    "sort": "Sortierung",
+    "sortPriceAsc": "Preis: aufsteigend",
+    "sortPriceDesc": "Preis: absteigend",
+    "inStockOnly": "Nur auf Lager",
+    "clear": "Filter zurücksetzen",
+    "searchPlaceholder": "Produkte suchen…"
   },
   "Footer": {
     "tagline": "Ein Fachgeschäft für Terrarienausstattung für Halter von Reptilien und exotischen Tieren.",

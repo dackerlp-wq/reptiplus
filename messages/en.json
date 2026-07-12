@@ -41,7 +41,18 @@
     "count": "{count, plural, =0 {No products} one {# product} other {# products}}",
     "empty": "There are no products yet.",
     "sortNewest": "Newest",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "filters": "Filters",
+    "category": "Category",
+    "brand": "Brand",
+    "allCategories": "All categories",
+    "allBrands": "All brands",
+    "sort": "Sort",
+    "sortPriceAsc": "Price: low to high",
+    "sortPriceDesc": "Price: high to low",
+    "inStockOnly": "In stock only",
+    "clear": "Clear filters",
+    "searchPlaceholder": "Search products…"
   },
   "Footer": {
     "tagline": "A specialist shop for terrarium equipment for keepers of reptiles and exotic animals.",
