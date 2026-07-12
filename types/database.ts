@@ -64,6 +64,24 @@ export type Database = {
           },
         ]
       }
+      app_setting: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       article: {
         Row: {
           body: string | null
@@ -382,6 +400,7 @@ export type Database = {
       }
       order: {
         Row: {
+          admin_note: string | null
           billing_address: Json | null
           comgate_ref: string | null
           created_at: string
@@ -400,9 +419,11 @@ export type Database = {
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total: number
+          tracking_number: string | null
           updated_at: string
         }
         Insert: {
+          admin_note?: string | null
           billing_address?: Json | null
           comgate_ref?: string | null
           created_at?: string
@@ -421,9 +442,11 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           total?: number
+          tracking_number?: string | null
           updated_at?: string
         }
         Update: {
+          admin_note?: string | null
           billing_address?: Json | null
           comgate_ref?: string | null
           created_at?: string
@@ -442,6 +465,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           total?: number
+          tracking_number?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -518,6 +542,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_method: {
+        Row: {
+          code: string
+          created_at: string
+          fee_czk: number
+          fee_eur: number | null
+          id: string
+          is_active: boolean
+          name_i18n: Json
+          provider: Database["public"]["Enums"]["payment_provider"]
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          fee_czk?: number
+          fee_eur?: number | null
+          id?: string
+          is_active?: boolean
+          name_i18n?: Json
+          provider?: Database["public"]["Enums"]["payment_provider"]
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          fee_czk?: number
+          fee_eur?: number | null
+          id?: string
+          is_active?: boolean
+          name_i18n?: Json
+          provider?: Database["public"]["Enums"]["payment_provider"]
+          sort_order?: number
+        }
+        Relationships: []
       }
       product: {
         Row: {
@@ -756,6 +816,42 @@ export type Database = {
           },
         ]
       }
+      shipping_method: {
+        Row: {
+          carrier: Database["public"]["Enums"]["carrier"]
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name_i18n: Json
+          price_czk: number
+          price_eur: number | null
+          sort_order: number
+        }
+        Insert: {
+          carrier?: Database["public"]["Enums"]["carrier"]
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_i18n?: Json
+          price_czk?: number
+          price_eur?: number | null
+          sort_order?: number
+        }
+        Update: {
+          carrier?: Database["public"]["Enums"]["carrier"]
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_i18n?: Json
+          price_czk?: number
+          price_eur?: number | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
       wishlist_item: {
         Row: {
           added_at: string
@@ -801,6 +897,7 @@ export type Database = {
     }
     Enums: {
       address_type: "billing" | "shipping"
+      carrier: "ppl" | "zasilkovna" | "balikovna" | "personal" | "other"
       discount_type: "percent" | "fixed"
       order_status:
         | "new"
@@ -810,6 +907,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "refunded"
+      payment_provider: "comgate" | "cod" | "bank_transfer"
       payment_status: "pending" | "paid" | "failed" | "refunded"
       user_role: "customer" | "staff" | "admin"
     }
@@ -940,6 +1038,7 @@ export const Constants = {
   public: {
     Enums: {
       address_type: ["billing", "shipping"],
+      carrier: ["ppl", "zasilkovna", "balikovna", "personal", "other"],
       discount_type: ["percent", "fixed"],
       order_status: [
         "new",
@@ -950,6 +1049,7 @@ export const Constants = {
         "cancelled",
         "refunded",
       ],
+      payment_provider: ["comgate", "cod", "bank_transfer"],
       payment_status: ["pending", "paid", "failed", "refunded"],
       user_role: ["customer", "staff", "admin"],
     },

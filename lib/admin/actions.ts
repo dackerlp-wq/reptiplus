@@ -89,3 +89,161 @@ export async function deleteProductAction(formData: FormData) {
   await svc.from("product").delete().eq("id", id);
   revalidatePath("/", "layout");
 }
+
+/* ── Kategorie ─────────────────────────────────────────────────────────── */
+export async function saveCategoryAction(formData: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const id = str(formData, "id") || null;
+  const locale = str(formData, "locale") || "cs";
+  const name = i18n(formData, "name");
+  const payload = {
+    slug: str(formData, "slug"),
+    name: name.cs,
+    name_i18n: name,
+    parent_id: str(formData, "parent_id") || null,
+    sort_order: parseInt(str(formData, "sort_order") || "0", 10),
+    is_published: formData.get("is_published") === "on",
+  };
+  const { error } = id
+    ? await svc.from("category").update(payload).eq("id", id)
+    : await svc.from("category").insert(payload);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+  redirect(`/${locale}/admin/categories`);
+}
+
+export async function deleteCategoryAction(formData: FormData) {
+  await assertAdmin();
+  await createServiceClient().from("category").delete().eq("id", str(formData, "id"));
+  revalidatePath("/", "layout");
+}
+
+/* ── Značky ────────────────────────────────────────────────────────────── */
+export async function saveBrandAction(formData: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const id = str(formData, "id") || null;
+  const locale = str(formData, "locale") || "cs";
+  const payload = {
+    name: str(formData, "name"),
+    slug: str(formData, "slug"),
+    description_i18n: i18n(formData, "description"),
+    sort_order: parseInt(str(formData, "sort_order") || "0", 10),
+    is_published: formData.get("is_published") === "on",
+  };
+  const { error } = id
+    ? await svc.from("brand").update(payload).eq("id", id)
+    : await svc.from("brand").insert(payload);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+  redirect(`/${locale}/admin/brands`);
+}
+
+export async function deleteBrandAction(formData: FormData) {
+  await assertAdmin();
+  await createServiceClient().from("brand").delete().eq("id", str(formData, "id"));
+  revalidatePath("/", "layout");
+}
+
+/* ── Objednávky ────────────────────────────────────────────────────────── */
+export async function updateOrderAction(formData: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const id = str(formData, "id");
+  await svc
+    .from("order")
+    .update({
+      status: str(formData, "status") as never,
+      payment_status: str(formData, "payment_status") as never,
+      shipping_method: str(formData, "shipping_method") || null,
+      tracking_number: str(formData, "tracking_number") || null,
+      admin_note: str(formData, "admin_note") || null,
+    })
+    .eq("id", id);
+  revalidatePath("/", "layout");
+}
+
+/* ── Nastavení / integrace ─────────────────────────────────────────────── */
+async function upsertSetting(key: string, value: Record<string, unknown>) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  await svc
+    .from("app_setting")
+    .upsert({ key, value: value as never }, { onConflict: "key" });
+  revalidatePath("/", "layout");
+}
+
+export async function saveGeneralAction(fd: FormData) {
+  await upsertSetting("shop.general", {
+    name: str(fd, "name"),
+    email: str(fd, "email"),
+    phone: str(fd, "phone"),
+  });
+}
+export async function saveComgateAction(fd: FormData) {
+  await upsertSetting("integrations.comgate", {
+    merchant: str(fd, "merchant"),
+    secret: str(fd, "secret"),
+    test: fd.get("test") === "on",
+  });
+}
+export async function savePplAction(fd: FormData) {
+  await upsertSetting("integrations.ppl", {
+    clientId: str(fd, "clientId"),
+    clientSecret: str(fd, "clientSecret"),
+  });
+}
+export async function saveZasilkovnaAction(fd: FormData) {
+  await upsertSetting("integrations.zasilkovna", {
+    apiKey: str(fd, "apiKey"),
+    apiPassword: str(fd, "apiPassword"),
+    eshopId: str(fd, "eshopId"),
+  });
+}
+
+/* ── Doprava / platby ──────────────────────────────────────────────────── */
+export async function saveShippingMethodAction(fd: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const id = str(fd, "id") || null;
+  const payload = {
+    code: str(fd, "code"),
+    name_i18n: i18n(fd, "name"),
+    carrier: (str(fd, "carrier") || "other") as never,
+    price_czk: money(fd, "price_czk") ?? 0,
+    price_eur: money(fd, "price_eur"),
+    is_active: fd.get("is_active") === "on",
+    sort_order: parseInt(str(fd, "sort_order") || "0", 10),
+  };
+  if (id) await svc.from("shipping_method").update(payload).eq("id", id);
+  else await svc.from("shipping_method").insert(payload);
+  revalidatePath("/", "layout");
+}
+export async function deleteShippingMethodAction(fd: FormData) {
+  await assertAdmin();
+  await createServiceClient().from("shipping_method").delete().eq("id", str(fd, "id"));
+  revalidatePath("/", "layout");
+}
+export async function savePaymentMethodAction(fd: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const id = str(fd, "id") || null;
+  const payload = {
+    code: str(fd, "code"),
+    name_i18n: i18n(fd, "name"),
+    provider: (str(fd, "provider") || "comgate") as never,
+    fee_czk: money(fd, "fee_czk") ?? 0,
+    fee_eur: money(fd, "fee_eur"),
+    is_active: fd.get("is_active") === "on",
+    sort_order: parseInt(str(fd, "sort_order") || "0", 10),
+  };
+  if (id) await svc.from("payment_method").update(payload).eq("id", id);
+  else await svc.from("payment_method").insert(payload);
+  revalidatePath("/", "layout");
+}
+export async function deletePaymentMethodAction(fd: FormData) {
+  await assertAdmin();
+  await createServiceClient().from("payment_method").delete().eq("id", str(fd, "id"));
+  revalidatePath("/", "layout");
+}
