@@ -9,6 +9,8 @@ export type ProductListItem = {
   name_i18n: I18n;
   price_czk: number;
   price_eur: number | null;
+  compare_at_czk: number | null;
+  compare_at_eur: number | null;
   stock_qty: number;
   is_featured: boolean;
   brand: { name: string; slug: string } | null;
@@ -29,7 +31,7 @@ export type CategoryItem = {
 };
 
 const LIST_COLS =
-  "id,slug,name,name_i18n,price_czk,price_eur,stock_qty,is_featured, brand:brand_id(name,slug)";
+  "id,slug,name,name_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug)";
 
 export async function getProducts(opts?: {
   featured?: boolean;
@@ -45,6 +47,31 @@ export async function getProducts(opts?: {
   return (data ?? []) as unknown as ProductListItem[];
 }
 
+/** Nejnovější produkty (sekce „Novinky") */
+export async function getNewProducts(limit = 4): Promise<ProductListItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("product")
+    .select(LIST_COLS)
+    .eq("is_published", true)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return (data ?? []) as unknown as ProductListItem[];
+}
+
+/** Produkty ve slevě (compare_at nastaveno) */
+export async function getSaleProducts(limit = 4): Promise<ProductListItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("product")
+    .select(LIST_COLS)
+    .eq("is_published", true)
+    .not("compare_at_czk", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return (data ?? []) as unknown as ProductListItem[];
+}
+
 export async function getProductBySlug(
   slug: string,
 ): Promise<ProductDetail | null> {
@@ -52,7 +79,7 @@ export async function getProductBySlug(
   const { data } = await supabase
     .from("product")
     .select(
-      "id,slug,name,name_i18n,description,description_i18n,price_czk,price_eur,stock_qty,is_featured, brand:brand_id(name,slug), category:category_id(slug,name_i18n), product_attribute(key,value,sort_order)",
+      "id,slug,name,name_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), category:category_id(slug,name_i18n), product_attribute(key,value,sort_order)",
     )
     .eq("slug", slug)
     .eq("is_published", true)

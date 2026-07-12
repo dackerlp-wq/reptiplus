@@ -2,7 +2,13 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ArrowRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { getProducts, getRootCategories } from "@/lib/queries";
+import {
+  getNewProducts,
+  getProducts,
+  getRootCategories,
+  getSaleProducts,
+} from "@/lib/queries";
+import type { ProductListItem } from "@/lib/queries";
 import { ProductCard } from "@/components/reptiplus/product-card";
 import { CategoryCard } from "@/components/reptiplus/category-card";
 
@@ -15,10 +21,20 @@ export default async function HomePage({
   setRequestLocale(locale);
   const t = await getTranslations("Home");
 
-  const [featured, categories] = await Promise.all([
+  const [featured, latest, sale, categories] = await Promise.all([
     getProducts({ featured: true }),
+    getNewProducts(4),
+    getSaleProducts(4),
     getRootCategories(),
   ]);
+
+  const productGrid = (items: ProductListItem[]) => (
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {items.map((product) => (
+        <ProductCard key={product.id} product={product} locale={locale} />
+      ))}
+    </div>
+  );
 
   return (
     <>
@@ -69,7 +85,7 @@ export default async function HomePage({
         </section>
       )}
 
-      {/* Doporučené produkty */}
+      {/* Doporučujeme */}
       {featured.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 py-8">
           <div className="mb-8">
@@ -78,11 +94,29 @@ export default async function HomePage({
             </h2>
             <p className="mt-2 text-gray-soft">{t("featuredSubtitle")}</p>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((product) => (
-              <ProductCard key={product.id} product={product} locale={locale} />
-            ))}
+          {productGrid(featured)}
+        </section>
+      )}
+
+      {/* Novinky */}
+      {latest.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-8">
+          <div className="mb-8">
+            <h2 className="font-display text-3xl font-bold">{t("newTitle")}</h2>
+            <p className="mt-2 text-gray-soft">{t("newSubtitle")}</p>
           </div>
+          {productGrid(latest)}
+        </section>
+      )}
+
+      {/* Ve slevě */}
+      {sale.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-8">
+          <div className="mb-8">
+            <h2 className="font-display text-3xl font-bold">{t("saleTitle")}</h2>
+            <p className="mt-2 text-gray-soft">{t("saleSubtitle")}</p>
+          </div>
+          {productGrid(sale)}
         </section>
       )}
 

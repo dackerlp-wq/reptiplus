@@ -3,7 +3,13 @@ import { Leaf } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { ProductListItem } from "@/lib/queries";
-import { formatPrice, pickI18n, priceForLocale } from "@/lib/i18n";
+import {
+  compareForLocale,
+  discountPercent,
+  formatPrice,
+  pickI18n,
+  priceForLocale,
+} from "@/lib/i18n";
 import { AddToCartButton } from "./add-to-cart-button";
 
 export async function ProductCard({
@@ -15,7 +21,10 @@ export async function ProductCard({
 }) {
   const t = await getTranslations("Product");
   const name = pickI18n(product.name_i18n, locale, product.name);
-  const price = formatPrice(priceForLocale(product, locale), locale);
+  const priceMinor = priceForLocale(product, locale);
+  const compareMinor = compareForLocale(product, locale);
+  const discount = discountPercent(priceMinor, compareMinor);
+  const price = formatPrice(priceMinor, locale);
   const href = `/produkt/${product.slug}`;
 
   const stockLabel =
@@ -38,10 +47,16 @@ export async function ProductCard({
         className="relative flex aspect-square items-center justify-center bg-paper"
       >
         <Leaf className="size-12 text-forest-light/30" />
-        {product.is_featured && (
-          <span className="absolute left-3 top-3 rounded-md bg-gold px-2 py-1 text-xs font-semibold text-white">
-            {t("featured")}
+        {discount ? (
+          <span className="absolute left-3 top-3 rounded-md bg-error px-2 py-1 text-xs font-semibold text-white">
+            −{discount}%
           </span>
+        ) : (
+          product.is_featured && (
+            <span className="absolute left-3 top-3 rounded-md bg-gold px-2 py-1 text-xs font-semibold text-white">
+              {t("featured")}
+            </span>
+          )
         )}
       </Link>
 
@@ -58,9 +73,18 @@ export async function ProductCard({
         </Link>
 
         <div className="mt-auto flex items-center justify-between pt-2">
-          <span className="font-mono text-lg font-semibold text-forest">
-            {price}
-          </span>
+          <div className="flex items-baseline gap-2">
+            <span
+              className={`font-mono text-lg font-semibold ${discount ? "text-error" : "text-forest"}`}
+            >
+              {price}
+            </span>
+            {discount && compareMinor !== null && (
+              <span className="font-mono text-sm text-gray-soft line-through">
+                {formatPrice(compareMinor, locale)}
+              </span>
+            )}
+          </div>
           <span className={`text-xs font-medium ${stockClass}`}>
             {stockLabel}
           </span>

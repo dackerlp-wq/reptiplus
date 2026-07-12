@@ -121,6 +121,14 @@ on conflict (slug) do update set
   is_published     = excluded.is_published,
   is_featured      = excluded.is_featured;
 
+-- ── Ve slevě (compare_at > price) ──────────────────────────────────────────
+update public.product set compare_at_czk = 19900, compare_at_eur = 799
+  where slug = 'zoo-med-basking-spot-lamp-150w';
+update public.product set compare_at_czk = 24900, compare_at_eur = 999
+  where slug = 'exo-terra-sun-glo-neodymium-100w';
+update public.product set compare_at_czk = 34900, compare_at_eur = 1399
+  where slug = 'repashy-day-gecko-mrf-60g';
+
 -- ── Ukázkové parametry ─────────────────────────────────────────────────────
 insert into public.product_attribute (product_id, key, value, sort_order)
 select p.id, a.key, a.value, a.ord from public.product p

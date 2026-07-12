@@ -9,11 +9,9 @@ export async function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-cream-dark bg-cream/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-4">
-        <Link
-          href="/"
-          className="font-display text-2xl font-bold tracking-tight text-forest"
-        >
-          Reptiplus
+        <Link href="/" aria-label="Reptiplus" className="shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Reptiplus" className="h-8 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">

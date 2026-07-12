@@ -5,7 +5,13 @@ import { ArrowLeft, Leaf } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { getProductBySlug } from "@/lib/queries";
-import { formatPrice, pickI18n, priceForLocale } from "@/lib/i18n";
+import {
+  compareForLocale,
+  discountPercent,
+  formatPrice,
+  pickI18n,
+  priceForLocale,
+} from "@/lib/i18n";
 import { AddToCartButton } from "@/components/reptiplus/add-to-cart-button";
 
 export async function generateMetadata({
@@ -43,7 +49,10 @@ export default async function ProductPage({
     locale,
     product.description,
   );
-  const price = formatPrice(priceForLocale(product, locale), locale);
+  const priceMinor = priceForLocale(product, locale);
+  const compareMinor = compareForLocale(product, locale);
+  const discount = discountPercent(priceMinor, compareMinor);
+  const price = formatPrice(priceMinor, locale);
   const attributes = [...(product.product_attribute ?? [])].sort(
     (a, b) => a.sort_order - b.sort_order,
   );
@@ -69,9 +78,23 @@ export default async function ProductPage({
             </span>
           )}
           <h1 className="mt-2 font-display text-4xl font-bold">{name}</h1>
-          <p className="mt-4 font-mono text-3xl font-semibold text-forest">
-            {price}
-          </p>
+          <div className="mt-4 flex items-baseline gap-3">
+            <span
+              className={`font-mono text-3xl font-semibold ${discount ? "text-error" : "text-forest"}`}
+            >
+              {price}
+            </span>
+            {discount && compareMinor !== null && (
+              <>
+                <span className="font-mono text-xl text-gray-soft line-through">
+                  {formatPrice(compareMinor, locale)}
+                </span>
+                <span className="rounded-md bg-error px-2 py-1 text-sm font-semibold text-white">
+                  −{discount}%
+                </span>
+              </>
+            )}
+          </div>
 
           {description && (
             <p className="mt-6 leading-relaxed text-charcoal/80">

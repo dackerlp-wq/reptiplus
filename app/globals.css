@@ -40,21 +40,25 @@
   --radius-2xl: 1rem;
 }
 
-html {
-  -webkit-text-size-adjust: 100%;
-}
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
 
-body {
-  background-color: var(--color-cream);
-  color: var(--color-charcoal);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-}
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-charcoal);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
 
-h1,
-h2,
-h3 {
-  font-family: var(--font-display);
-  color: var(--color-ink);
-  letter-spacing: -0.025em;
+  /* Base font + barva pro nadpisy. V @layer base, aby utility (text-white,
+     text-ink…) měly přednost — jinak by unlayered pravidlo přebilo Tailwind. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    color: var(--color-ink);
+    letter-spacing: -0.025em;
+  }
 }

@@ -520,6 +520,8 @@ export type Database = {
         Row: {
           brand_id: string | null
           category_id: string | null
+          compare_at_czk: number | null
+          compare_at_eur: number | null
           created_at: string
           description: string | null
           description_i18n: Json | null
@@ -540,6 +542,8 @@ export type Database = {
         Insert: {
           brand_id?: string | null
           category_id?: string | null
+          compare_at_czk?: number | null
+          compare_at_eur?: number | null
           created_at?: string
           description?: string | null
           description_i18n?: Json | null
@@ -560,6 +564,8 @@ export type Database = {
         Update: {
           brand_id?: string | null
           category_id?: string | null
+          compare_at_czk?: number | null
+          compare_at_eur?: number | null
           created_at?: string
           description?: string | null
           description_i18n?: Json | null

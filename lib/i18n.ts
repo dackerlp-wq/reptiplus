@@ -32,6 +32,22 @@ export function priceForLocale(
     : (row.price_eur ?? 0);
 }
 
+/** porovnávací (původní) cena ve správné měně, nebo null */
+export function compareForLocale(
+  row: { compare_at_czk: number | null; compare_at_eur: number | null },
+  locale: Locale,
+): number | null {
+  return localeCurrency[locale] === "CZK"
+    ? row.compare_at_czk
+    : row.compare_at_eur;
+}
+
+/** procento slevy (kladné celé číslo) nebo null */
+export function discountPercent(price: number, compareAt: number | null): number | null {
+  if (!compareAt || compareAt <= price) return null;
+  return Math.round((1 - price / compareAt) * 100);
+}
+
 type I18nField = Record<string, string | undefined> | null | undefined;
 
 /** přeložená hodnota s fallbackem na cs, pak na base text */
