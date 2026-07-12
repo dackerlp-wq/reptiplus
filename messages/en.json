@@ -67,5 +67,22 @@
     "cs": "Čeština",
     "en": "English",
     "de": "Deutsch"
+  },
+  "Auth": {
+    "loginTitle": "Sign in",
+    "registerTitle": "Create account",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full name",
+    "loginButton": "Sign in",
+    "registerButton": "Create account",
+    "toRegister": "No account? Sign up",
+    "toLogin": "Already have an account? Sign in",
+    "accountTitle": "My account",
+    "loggedInAs": "Signed in as",
+    "logout": "Sign out",
+    "confirmEmailNotice": "Account created. Check your email to confirm your registration.",
+    "myOrders": "My orders",
+    "noOrders": "You have no orders yet."
   }
 }

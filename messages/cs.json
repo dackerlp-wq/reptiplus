@@ -67,5 +67,22 @@
     "cs": "Čeština",
     "en": "English",
     "de": "Deutsch"
+  },
+  "Auth": {
+    "loginTitle": "Přihlášení",
+    "registerTitle": "Registrace",
+    "email": "E-mail",
+    "password": "Heslo",
+    "fullName": "Jméno a příjmení",
+    "loginButton": "Přihlásit se",
+    "registerButton": "Vytvořit účet",
+    "toRegister": "Nemáte účet? Zaregistrujte se",
+    "toLogin": "Už máte účet? Přihlaste se",
+    "accountTitle": "Můj účet",
+    "loggedInAs": "Přihlášen jako",
+    "logout": "Odhlásit se",
+    "confirmEmailNotice": "Účet vytvořen. Zkontrolujte e-mail a potvrďte registraci.",
+    "myOrders": "Moje objednávky",
+    "noOrders": "Zatím nemáte žádné objednávky."
   }
 }

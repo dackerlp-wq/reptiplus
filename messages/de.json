@@ -67,5 +67,22 @@
     "cs": "Čeština",
     "en": "English",
     "de": "Deutsch"
+  },
+  "Auth": {
+    "loginTitle": "Anmelden",
+    "registerTitle": "Konto erstellen",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "fullName": "Vollständiger Name",
+    "loginButton": "Anmelden",
+    "registerButton": "Konto erstellen",
+    "toRegister": "Kein Konto? Registrieren",
+    "toLogin": "Bereits ein Konto? Anmelden",
+    "accountTitle": "Mein Konto",
+    "loggedInAs": "Angemeldet als",
+    "logout": "Abmelden",
+    "confirmEmailNotice": "Konto erstellt. Bitte bestätigen Sie Ihre Registrierung per E-Mail.",
+    "myOrders": "Meine Bestellungen",
+    "noOrders": "Sie haben noch keine Bestellungen."
   }
 }
