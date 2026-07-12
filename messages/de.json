@@ -1,0 +1,56 @@
+{
+  "Nav": {
+    "home": "Start",
+    "products": "Produkte",
+    "categories": "Kategorien",
+    "blog": "Haltungs-Ratgeber",
+    "cart": "Warenkorb",
+    "account": "Konto",
+    "search": "Produkte suchen…"
+  },
+  "Home": {
+    "heroKicker": "Spezialisierter Terraristik-Bedarf",
+    "heroTitle": "Eine Welt der Terrarien für Ihre Reptilien",
+    "heroSubtitle": "Beleuchtung, Wärme, Nahrungsergänzung und Futter von den besten Marken — alles, was Ihre Tiere für ein langes und gesundes Leben brauchen.",
+    "heroCta": "Produkte ansehen",
+    "heroCtaSecondary": "Haltungs-Ratgeber",
+    "categoriesTitle": "Produktkategorien",
+    "featuredTitle": "Empfohlen",
+    "featuredSubtitle": "Bewährte Produkte, auf die Halter schwören.",
+    "newsletterTitle": "Newsletter",
+    "newsletterSubtitle": "Haltungstipps, Neuigkeiten und Angebote direkt in Ihr Postfach.",
+    "newsletterPlaceholder": "Ihre E-Mail",
+    "newsletterCta": "Abonnieren"
+  },
+  "Product": {
+    "addToCart": "In den Warenkorb",
+    "inStock": "Auf Lager",
+    "lowStock": "Wenige verfügbar",
+    "outOfStock": "Ausverkauft",
+    "parameters": "Technische Daten",
+    "featured": "Empfohlen",
+    "added": "Hinzugefügt",
+    "backToCatalog": "Zurück zu den Produkten"
+  },
+  "Catalog": {
+    "title": "Alle Produkte",
+    "count": "{count, plural, =0 {Keine Produkte} one {# Produkt} other {# Produkte}}",
+    "empty": "Es gibt noch keine Produkte.",
+    "sortNewest": "Neueste",
+    "viewAll": "Alle ansehen"
+  },
+  "Footer": {
+    "tagline": "Ein Fachgeschäft für Terrarienausstattung für Halter von Reptilien und exotischen Tieren.",
+    "shop": "Shop",
+    "about": "Über uns",
+    "aboutText": "Reptiplus ist ein Shop von Haltern für Halter.",
+    "contact": "Kontakt",
+    "rights": "Alle Rechte vorbehalten."
+  },
+  "Switcher": {
+    "language": "Sprache",
+    "cs": "Čeština",
+    "en": "English",
+    "de": "Deutsch"
+  }
+}

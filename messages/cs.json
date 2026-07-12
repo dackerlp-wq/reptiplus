@@ -1,0 +1,56 @@
+{
+  "Nav": {
+    "home": "Domů",
+    "products": "Produkty",
+    "categories": "Kategorie",
+    "blog": "Průvodce chovem",
+    "cart": "Košík",
+    "account": "Účet",
+    "search": "Hledat produkty…"
+  },
+  "Home": {
+    "heroKicker": "Specializovaná teraristika",
+    "heroTitle": "Svět terárií pro vaše plazy",
+    "heroSubtitle": "Osvětlení, teplo, doplňky stravy i krmivo od těch nejlepších značek — vše, co vaši svěřenci potřebují k dlouhému a zdravému životu.",
+    "heroCta": "Prohlédnout produkty",
+    "heroCtaSecondary": "Průvodce chovem",
+    "categoriesTitle": "Kategorie produktů",
+    "featuredTitle": "Doporučujeme",
+    "featuredSubtitle": "Prověřené kusy, na které chovatelé nedají dopustit.",
+    "newsletterTitle": "Odběr novinek",
+    "newsletterSubtitle": "Tipy pro chov, novinky a slevy přímo do vaší schránky.",
+    "newsletterPlaceholder": "Váš e-mail",
+    "newsletterCta": "Odebírat"
+  },
+  "Product": {
+    "addToCart": "Do košíku",
+    "inStock": "Skladem",
+    "lowStock": "Poslední kusy",
+    "outOfStock": "Vyprodáno",
+    "parameters": "Parametry",
+    "featured": "Doporučujeme",
+    "added": "Přidáno",
+    "backToCatalog": "Zpět na produkty"
+  },
+  "Catalog": {
+    "title": "Všechny produkty",
+    "count": "{count, plural, =0 {Žádné produkty} one {# produkt} few {# produkty} other {# produktů}}",
+    "empty": "Zatím tu nejsou žádné produkty.",
+    "sortNewest": "Nejnovější",
+    "viewAll": "Zobrazit vše"
+  },
+  "Footer": {
+    "tagline": "Specializovaný obchod s teraristickým vybavením pro chovatele plazů a exotických zvířat.",
+    "shop": "Nákup",
+    "about": "O nás",
+    "aboutText": "Reptiplus je obchod od chovatelů pro chovatele.",
+    "contact": "Kontakt",
+    "rights": "Všechna práva vyhrazena."
+  },
+  "Switcher": {
+    "language": "Jazyk",
+    "cs": "Čeština",
+    "en": "English",
+    "de": "Deutsch"
+  }
+}

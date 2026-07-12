@@ -1,0 +1,56 @@
+{
+  "Nav": {
+    "home": "Home",
+    "products": "Products",
+    "categories": "Categories",
+    "blog": "Care guides",
+    "cart": "Cart",
+    "account": "Account",
+    "search": "Search products…"
+  },
+  "Home": {
+    "heroKicker": "Specialist reptile supplies",
+    "heroTitle": "A world of terrariums for your reptiles",
+    "heroSubtitle": "Lighting, heating, supplements and food from the best brands — everything your animals need for a long and healthy life.",
+    "heroCta": "Browse products",
+    "heroCtaSecondary": "Care guides",
+    "categoriesTitle": "Product categories",
+    "featuredTitle": "Featured",
+    "featuredSubtitle": "Proven picks that keepers swear by.",
+    "newsletterTitle": "Newsletter",
+    "newsletterSubtitle": "Care tips, news and deals straight to your inbox.",
+    "newsletterPlaceholder": "Your email",
+    "newsletterCta": "Subscribe"
+  },
+  "Product": {
+    "addToCart": "Add to cart",
+    "inStock": "In stock",
+    "lowStock": "Low stock",
+    "outOfStock": "Sold out",
+    "parameters": "Specifications",
+    "featured": "Featured",
+    "added": "Added",
+    "backToCatalog": "Back to products"
+  },
+  "Catalog": {
+    "title": "All products",
+    "count": "{count, plural, =0 {No products} one {# product} other {# products}}",
+    "empty": "There are no products yet.",
+    "sortNewest": "Newest",
+    "viewAll": "View all"
+  },
+  "Footer": {
+    "tagline": "A specialist shop for terrarium equipment for keepers of reptiles and exotic animals.",
+    "shop": "Shop",
+    "about": "About",
+    "aboutText": "Reptiplus is a shop built by keepers, for keepers.",
+    "contact": "Contact",
+    "rights": "All rights reserved."
+  },
+  "Switcher": {
+    "language": "Language",
+    "cs": "Čeština",
+    "en": "English",
+    "de": "Deutsch"
+  }
+}

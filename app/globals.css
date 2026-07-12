@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  /* Primární — forest */
+  --color-forest: #2e6b0a;
+  --color-forest-light: #4a9018;
+  --color-forest-dark: #1b4206;
+  --color-forest-deep: #1a2d12;
+  --color-moss: #3a6b2a;
+
+  /* Akcent — earth / gold */
+  --color-earth: #6b4226;
+  --color-gold: #c08a20;
+  --color-gold-light: #d9a83a;
+  --color-amber: #e8a33d;
+
+  /* Pozadí — teplá off-white */
+  --color-cream: #f7f4ef;
+  --color-cream-dark: #e8e2d8;
+  --color-paper: #f2f5ee;
+
+  /* Text */
+  --color-ink: #1b1f17;
+  --color-charcoal: #1c1c1c;
+  --color-gray-soft: #6b7280;
+
+  /* Stav */
+  --color-success: #00a544;
+  --color-error: #fb2c36;
+
+  /* Fonty (proměnné z next/font) */
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  /* Radiusy */
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1rem;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-charcoal);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  color: var(--color-ink);
+  letter-spacing: -0.025em;
+}
