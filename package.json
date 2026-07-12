@@ -9,8 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.12",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.2",
+    "ai": "^7.0.22",
     "clsx": "^2.1.1",
     "lucide-react": "^1.24.0",
     "next": "^16.2.10",

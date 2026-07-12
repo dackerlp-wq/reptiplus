@@ -201,6 +201,9 @@ export async function saveZasilkovnaAction(fd: FormData) {
     eshopId: str(fd, "eshopId"),
   });
 }
+export async function saveAiAction(fd: FormData) {
+  await upsertSetting("integrations.ai", { anthropicKey: str(fd, "anthropicKey") });
+}
 
 /* ── Doprava / platby ──────────────────────────────────────────────────── */
 export async function saveShippingMethodAction(fd: FormData) {

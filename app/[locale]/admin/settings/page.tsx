@@ -7,6 +7,7 @@ import {
   saveComgateAction,
   savePplAction,
   saveZasilkovnaAction,
+  saveAiAction,
   saveShippingMethodAction,
   deleteShippingMethodAction,
   savePaymentMethodAction,
@@ -36,6 +37,7 @@ export default async function AdminSettingsPage() {
   const comgate = get("integrations.comgate");
   const ppl = get("integrations.ppl");
   const zas = get("integrations.zasilkovna");
+  const ai = get("integrations.ai");
 
   return (
     <div className="max-w-4xl">
@@ -144,6 +146,28 @@ export default async function AdminSettingsPage() {
               </label>
             </div>
             <button className={saveBtn}>Uložit Zásilkovnu</button>
+          </form>
+
+          <form action={saveAiAction} className={`${card} space-y-3`}>
+            <div>
+              <h2 className="font-display text-lg font-semibold">AI překlady</h2>
+              <p className="text-sm text-gray-soft">
+                Klíč pro automatický překlad textů (tlačítko „Přeložit z ČJ" u
+                produktů, kategorií, značek). Vlož Anthropic API klíč z
+                console.anthropic.com. Bez klíče tlačítko překladu nefunguje.
+              </p>
+            </div>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Anthropic API klíč</span>
+              <input
+                name="anthropicKey"
+                type="password"
+                placeholder="sk-ant-..."
+                defaultValue={String(ai.anthropicKey ?? "")}
+                className={input}
+              />
+            </label>
+            <button className={saveBtn}>Uložit AI klíč</button>
           </form>
         </div>
 

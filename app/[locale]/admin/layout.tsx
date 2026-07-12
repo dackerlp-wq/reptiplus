@@ -9,7 +9,6 @@ import {
   LogOut,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import type { Locale } from "@/i18n/routing";
 import { requireAdmin } from "@/lib/admin/auth";
 import { signOutAction } from "@/lib/auth/actions";
 
@@ -33,41 +32,62 @@ export default async function AdminLayout({
   await requireAdmin(locale);
 
   return (
-    <div className="mx-auto flex max-w-7xl gap-6 px-4 py-8">
-      <aside className="hidden w-56 shrink-0 flex-col gap-1 md:flex">
-        <p className="mb-3 px-3 font-display text-lg font-bold text-forest">
-          Reptiplus Admin
-        </p>
-        {NAV.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-charcoal hover:bg-white"
-          >
-            <item.icon className="size-4" /> {item.label}
+    <div className="min-h-dvh bg-cream">
+      {/* Horní lišta */}
+      <header className="sticky top-0 z-40 border-b border-cream-dark bg-white">
+        <div className="flex items-center gap-4 px-4 py-3">
+          <Link href="/admin" className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="Reptiplus" className="h-7 w-auto" />
+            <span className="rounded-md bg-forest/10 px-2 py-0.5 text-xs font-semibold text-forest">
+              Admin
+            </span>
           </Link>
-        ))}
-
-        <div className="mt-auto flex flex-col gap-1 pt-6">
-          <Link
-            href="/"
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-soft hover:bg-white"
-          >
-            <ExternalLink className="size-4" /> Zpět na web
-          </Link>
-          <form action={signOutAction}>
-            <input type="hidden" name="redirectTo" value={`/${locale}`} />
-            <button
-              type="submit"
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-soft hover:bg-white"
+          <div className="ml-auto flex items-center gap-1">
+            <Link
+              href="/"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-soft hover:bg-cream"
             >
-              <LogOut className="size-4" /> Odhlásit
-            </button>
-          </form>
+              <ExternalLink className="size-4" /> Zpět na web
+            </Link>
+            <form action={signOutAction}>
+              <input type="hidden" name="redirectTo" value={`/${locale}`} />
+              <button className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-soft hover:bg-cream">
+                <LogOut className="size-4" /> Odhlásit
+              </button>
+            </form>
+          </div>
         </div>
-      </aside>
+        {/* Mobilní navigace */}
+        <nav className="flex gap-1 overflow-x-auto border-t border-cream px-2 py-2 md:hidden">
+          {NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-charcoal hover:bg-cream"
+            >
+              <item.icon className="size-4" /> {item.label}
+            </Link>
+          ))}
+        </nav>
+      </header>
 
-      <main className="min-w-0 flex-1">{children}</main>
+      <div className="flex">
+        {/* Postranní menu */}
+        <aside className="sticky top-[57px] hidden h-[calc(100dvh-57px)] w-56 shrink-0 flex-col gap-1 border-r border-cream-dark bg-white p-3 md:flex">
+          {NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-charcoal hover:bg-cream"
+            >
+              <item.icon className="size-4" /> {item.label}
+            </Link>
+          ))}
+        </aside>
+
+        <main className="min-w-0 flex-1 p-6 lg:p-8">{children}</main>
+      </div>
     </div>
   );
 }

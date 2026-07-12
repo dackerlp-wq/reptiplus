@@ -4,8 +4,6 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
-import { Navbar } from "@/components/reptiplus/navbar";
-import { Footer } from "@/components/reptiplus/footer";
 import "../globals.css";
 
 const fraunces = Fraunces({
@@ -54,13 +52,7 @@ export default async function LocaleLayout({
       className={`${fraunces.variable} ${inter.variable} ${jetbrains.variable}`}
     >
       <body>
-        <NextIntlClientProvider>
-          <div className="flex min-h-dvh flex-col">
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-        </NextIntlClientProvider>
+        <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>
   );
