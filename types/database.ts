@@ -67,39 +67,48 @@ export type Database = {
       article: {
         Row: {
           body: string | null
+          body_i18n: Json | null
           category_id: string | null
           cover_url: string | null
           created_at: string
           excerpt: string | null
+          excerpt_i18n: Json | null
           id: string
           is_published: boolean
           published_at: string | null
           slug: string
           title: string
+          title_i18n: Json | null
         }
         Insert: {
           body?: string | null
+          body_i18n?: Json | null
           category_id?: string | null
           cover_url?: string | null
           created_at?: string
           excerpt?: string | null
+          excerpt_i18n?: Json | null
           id?: string
           is_published?: boolean
           published_at?: string | null
           slug: string
           title: string
+          title_i18n?: Json | null
         }
         Update: {
           body?: string | null
+          body_i18n?: Json | null
           category_id?: string | null
           cover_url?: string | null
           created_at?: string
           excerpt?: string | null
+          excerpt_i18n?: Json | null
           id?: string
           is_published?: boolean
           published_at?: string | null
           slug?: string
           title?: string
+          title_i18n?: Json | null
         }
         Relationships: [
           {
@@ -115,6 +124,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          description_i18n: Json | null
           id: string
           is_published: boolean
           logo_url: string | null
@@ -125,6 +135,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          description_i18n?: Json | null
           id?: string
           is_published?: boolean
           logo_url?: string | null
@@ -135,6 +146,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          description_i18n?: Json | null
           id?: string
           is_published?: boolean
           logo_url?: string | null
@@ -229,10 +241,12 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          description_i18n: Json | null
           id: string
           image_url: string | null
           is_published: boolean
           name: string
+          name_i18n: Json | null
           parent_id: string | null
           slug: string
           sort_order: number
@@ -240,10 +254,12 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          description_i18n?: Json | null
           id?: string
           image_url?: string | null
           is_published?: boolean
           name: string
+          name_i18n?: Json | null
           parent_id?: string | null
           slug: string
           sort_order?: number
@@ -251,10 +267,12 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          description_i18n?: Json | null
           id?: string
           image_url?: string | null
           is_published?: boolean
           name?: string
+          name_i18n?: Json | null
           parent_id?: string | null
           slug?: string
           sort_order?: number
@@ -500,17 +518,19 @@ export type Database = {
       }
       product: {
         Row: {
-          base_price: number
           brand_id: string | null
           category_id: string | null
           created_at: string
-          currency: string
           description: string | null
+          description_i18n: Json | null
           ean: string | null
           id: string
           is_featured: boolean
           is_published: boolean
           name: string
+          name_i18n: Json | null
+          price_czk: number
+          price_eur: number | null
           search_vector: unknown
           sku: string | null
           slug: string
@@ -518,17 +538,19 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          base_price?: number
           brand_id?: string | null
           category_id?: string | null
           created_at?: string
-          currency?: string
           description?: string | null
+          description_i18n?: Json | null
           ean?: string | null
           id?: string
           is_featured?: boolean
           is_published?: boolean
           name: string
+          name_i18n?: Json | null
+          price_czk?: number
+          price_eur?: number | null
           search_vector?: unknown
           sku?: string | null
           slug: string
@@ -536,17 +558,19 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          base_price?: number
           brand_id?: string | null
           category_id?: string | null
           created_at?: string
-          currency?: string
           description?: string | null
+          description_i18n?: Json | null
           ean?: string | null
           id?: string
           is_featured?: boolean
           is_published?: boolean
           name?: string
+          name_i18n?: Json | null
+          price_czk?: number
+          price_eur?: number | null
           search_vector?: unknown
           sku?: string | null
           slug?: string
@@ -638,7 +662,8 @@ export type Database = {
         Row: {
           id: string
           name: string
-          price: number | null
+          price_czk: number | null
+          price_eur: number | null
           product_id: string
           sku: string | null
           sort_order: number
@@ -647,7 +672,8 @@ export type Database = {
         Insert: {
           id?: string
           name: string
-          price?: number | null
+          price_czk?: number | null
+          price_eur?: number | null
           product_id: string
           sku?: string | null
           sort_order?: number
@@ -656,7 +682,8 @@ export type Database = {
         Update: {
           id?: string
           name?: string
-          price?: number | null
+          price_czk?: number | null
+          price_eur?: number | null
           product_id?: string
           sku?: string | null
           sort_order?: number
