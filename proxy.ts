@@ -8,7 +8,7 @@ const intlMiddleware = createMiddleware(routing);
 function defaultLocaleForHost(host: string): Locale {
   const h = host.toLowerCase();
   if (h.includes("reptiplus.cz")) return "cs";
-  if (h.includes("reptiplus.eu") || h.includes("reptiplus.store")) return "en";
+  if (h.includes("reptiplus.eu") || h.includes("reptiplus.shop")) return "en";
   return routing.defaultLocale; // dev / localhost
 }
 
