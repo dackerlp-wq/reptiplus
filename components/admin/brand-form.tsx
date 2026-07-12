@@ -1,5 +1,6 @@
 import { saveBrandAction } from "@/lib/admin/actions";
 import type { Locale } from "@/i18n/routing";
+import { LangFields } from "@/components/admin/lang-fields";
 
 const input =
   "w-full rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm outline-none focus:border-forest";
@@ -38,12 +39,13 @@ export function BrandForm({
         </label>
       </div>
 
-      <fieldset className="space-y-3">
-        <legend className={legend}>Popis (cs / en / de)</legend>
-        <textarea name="description_cs" rows={2} defaultValue={d.cs ?? ""} placeholder="Česky" className={input} />
-        <textarea name="description_en" rows={2} defaultValue={d.en ?? ""} placeholder="English" className={input} />
-        <textarea name="description_de" rows={2} defaultValue={d.de ?? ""} placeholder="Deutsch" className={input} />
-      </fieldset>
+      <div className="rounded-xl border border-cream-dark bg-paper p-4">
+        <LangFields
+          fields={[
+            { name: "description", label: "Popis", type: "textarea", values: d },
+          ]}
+        />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5">

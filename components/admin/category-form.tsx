@@ -2,6 +2,7 @@ import { saveCategoryAction } from "@/lib/admin/actions";
 import { pickI18n } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 import type { CategoryItem } from "@/lib/queries";
+import { LangFields } from "@/components/admin/lang-fields";
 
 const input =
   "w-full rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm outline-none focus:border-forest";
@@ -35,12 +36,9 @@ export function CategoryForm({
       {category && <input type="hidden" name="id" value={category.id} />}
       <input type="hidden" name="locale" value={locale} />
 
-      <fieldset className="space-y-3">
-        <legend className={legend}>Název (cs / en / de)</legend>
-        <input name="name_cs" required defaultValue={n.cs ?? ""} placeholder="Česky" className={input} />
-        <input name="name_en" defaultValue={n.en ?? ""} placeholder="English" className={input} />
-        <input name="name_de" defaultValue={n.de ?? ""} placeholder="Deutsch" className={input} />
-      </fieldset>
+      <div className="rounded-xl border border-cream-dark bg-paper p-4">
+        <LangFields fields={[{ name: "name", label: "Název", values: n }]} />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5">
