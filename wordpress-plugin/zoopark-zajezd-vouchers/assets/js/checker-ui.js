@@ -275,29 +275,83 @@
     function resetAll(){current={order_id:null,siblings:[],counts:{total:0,parking:0},scannedKey:null};el.summary.innerHTML='';el.list.innerHTML='';el.result.style.display='none';if(el.actions)el.actions.style.display='none';}
     function finishReset(){resetAll();lock=false;setLocked(false);closeModal();setStatus('Připraveno — načtěte další vstupenku.','');if(el.codeInput)el.codeInput.focus();}
 
-    // Uplatnitelná vstupenka → vynucené rozhodnutí, blokuje další sken
-    function showPending(item){
+    function isActiveRedeemable(it){return it.redeemable!==false&&(it.status_label||it.status||'').toLowerCase()==='active';}
+
+    // Uplatnitelná vstupenka → okno se seznamem vstupenek objednávky (naskenovaná
+    // předvybraná), lze zaškrtnout i ostatní a uplatnit naráz. Blokuje další sken.
+    function showPending(scanned){
         lockScanning();
-        setStatus('⚠ ROZHODNĚTE: Uplatnit vstupenku, nebo Zrušit.','warn');
+        setStatus('⚠ ROZHODNĚTE: vyberte vstupenky a Uplatnit, nebo Zrušit.','warn');
+
+        // naskenovaná první, pak ostatní (aktivní nahoře)
+        const list=[...current.siblings].sort((a,b)=>{
+            const ak=itemKey(a)===itemKey(scanned)?0:1, bk=itemKey(b)===itemKey(scanned)?0:1;
+            return ak!==bk?ak-bk:rankSort(a,b);
+        });
+
+        let rows='';
+        list.forEach(it=>{
+            const key=itemKey(it), isScan=key===itemKey(scanned), label=productLabel(it.product_id,it.product);
+            if(isActiveRedeemable(it)){
+                rows+='<label class="zvc-pk-row'+(isScan?' zvc-pk-scanned':'')+'">'
+                    +'<input type="checkbox" class="zvc-pk-cb" data-key="'+key+'"'+(isScan?' checked':'')+'>'
+                    +'<span class="zvc-pk-info"><span class="zvc-pk-code">'+(it.number||'')+'</span>'
+                    +'<span class="zvc-pk-type">'+label+'</span></span>'
+                    +(isScan?'<span class="zvc-pk-tag">naskenováno</span>':'')+'</label>';
+            }else{
+                rows+='<div class="zvc-pk-row zvc-pk-off"><span class="zvc-pk-info">'
+                    +'<span class="zvc-pk-code">'+(it.number||'')+'</span>'
+                    +'<span class="zvc-pk-type">'+label+'</span></span>'
+                    +'<span class="zvc-pk-state">'+statusLabel(it)+'</span></div>';
+            }
+        });
+
+        const activeCount=list.filter(isActiveRedeemable).length;
+        const orderLine=current.order_id?('Objednávka #'+current.order_id+' — vyberte, které vstupy uplatnit:'):'Vyberte, které vstupy uplatnit:';
+
         const html='<div class="zvc-hero zvc-hero-ok">✓ VSTUPENKA JE V POŘÁDKU</div>'
             +'<div class="zvc-m-body">'
-            +'<div class="zvc-m-code">'+(item.number||'')+'</div>'
-            +'<div class="zvc-m-type">'+productLabel(item.product_id,item.product)+'</div>'
-            +'<p class="zvc-m-instr">Pro vpuštění návštěvníka klikněte na <b>Uplatnit</b>. Dokud nerozhodnete, nelze načíst další.</p>'
+            +'<div class="zvc-pk-order">'+orderLine+'</div>'
+            +(activeCount>1?'<label class="zvc-pk-all"><input type="checkbox" id="zvc-pk-allcb"> Označit všechny aktivní</label>':'')
+            +'<div class="zvc-pk-list">'+rows+'</div>'
             +'<div class="zvc-m-btns">'
             +'<button class="zvc-m-btn zvc-m-cancel" id="zvc-m-cancel">✕ Zrušit</button>'
             +'<button class="zvc-m-btn zvc-m-ok" id="zvc-m-ok">⚡ Uplatnit vstupenku</button>'
             +'</div></div>';
         openModal(html);
-        document.getElementById('zvc-m-cancel').onclick=function(){setStatus('Uplatnění zrušeno.','');finishReset();};
-        document.getElementById('zvc-m-ok').onclick=async function(){
-            const b=this;b.disabled=true;b.textContent='Uplatňuji…';
+
+        const card=document.getElementById('zvc-modal-card');
+        const cbs=Array.prototype.slice.call(card.querySelectorAll('.zvc-pk-cb'));
+        const okBtn=card.querySelector('#zvc-m-ok');
+        const allCb=card.querySelector('#zvc-pk-allcb');
+        const selectedKeys=()=>cbs.filter(c=>c.checked).map(c=>c.dataset.key);
+        function refresh(){
+            const n=selectedKeys().length;
+            okBtn.disabled=n===0;
+            okBtn.textContent=n<=1?'⚡ Uplatnit vstupenku':('⚡ Uplatnit vybrané ('+n+')');
+            if(allCb) allCb.checked=cbs.length>0&&cbs.every(c=>c.checked);
+        }
+        cbs.forEach(c=>c.addEventListener('change',refresh));
+        if(allCb) allCb.addEventListener('change',function(){cbs.forEach(c=>{c.checked=allCb.checked;});refresh();});
+        refresh();
+
+        card.querySelector('#zvc-m-cancel').onclick=function(){setStatus('Uplatnění zrušeno.','');finishReset();};
+        okBtn.onclick=async function(){
+            const keys=selectedKeys();
+            if(!keys.length) return;
+            okBtn.disabled=true; okBtn.textContent='Uplatňuji…';
+            const items=keys.map(parseKey).map(x=>({source:x.source,id:x.id}));
             try{
-                const res=await fetch(ZVC.restBase+'/redeem',{method:'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':ZVC.nonce},body:JSON.stringify({items:[{source:item.source||'zoo',id:item.id}]})});
+                const res=await fetch(ZVC.restBase+'/redeem',{method:'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':ZVC.nonce},body:JSON.stringify({items})});
                 const data=await res.json();
-                if(data&&data.ok&&(data.updated||[]).length){beep('ok');showDone([item]);}
-                else{beep('error');b.disabled=false;b.textContent='⚡ Uplatnit vstupenku';alert('Uplatnění se nezdařilo, zkuste znovu.');}
-            }catch(e){beep('error');b.disabled=false;b.textContent='⚡ Uplatnit vstupenku';alert('Chyba spojení: '+e.message);}
+                if(data&&data.ok&&(data.updated||[]).length){
+                    beep('ok');
+                    const upKeys=(data.updated||[]).map(u=>u.source+':'+u.id);
+                    let done=current.siblings.filter(x=>upKeys.indexOf(itemKey(x))>=0);
+                    if(!done.length) done=keys.map(k=>current.siblings.find(x=>itemKey(x)===k)).filter(Boolean);
+                    showDone(done);
+                }else{beep('error');refresh();alert('Uplatnění se nezdařilo, zkuste znovu.');}
+            }catch(e){beep('error');refresh();alert('Chyba spojení: '+e.message);}
         };
     }
 
