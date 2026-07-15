@@ -199,7 +199,33 @@
 
     async function fetchByOrder(orderId,keepScannedKey){setStatus('Hledám objednávku…','');try{const res=await fetch(ZVC.restBase+'/order?order_id='+encodeURIComponent(orderId),{headers:{'X-WP-Nonce':ZVC.nonce}});const data=await res.json();if(!data.ok){setStatus(data.message||'Objednávka nenalezena.','err');beep('error');el.list.innerHTML='';return;}current.order_id=data.group.order_id||null;current.counts=data.group.counts||{total:0,parking:0};current.siblings=Array.isArray(data.siblings)?data.siblings:[];current.scannedKey=keepScannedKey||null;renderSummary();renderList();if(keepScannedKey){const _si=current.siblings.find(x=>itemKey(x)===keepScannedKey);if(_si){const s=scannedState(_si);setStatus(s.text,s.tone);beep(s.beep);}}else{setStatus('Objednávka #'+current.order_id+' — '+current.siblings.length+' vstupenek','ok');beep('ok');}}catch(e){setStatus('Chyba spojení: '+e.message,'err');beep('error');}}
 
-    async function checkCode(code){if(!code){setStatus('Zadej kód voucheru.','warn');return;}setStatus('Ověřuji…','');try{const res=await fetch(ZVC.restBase+'/check-voucher',{method:'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':ZVC.nonce},body:JSON.stringify({code})});const data=await res.json();if(data&&data.siblings&&data.group){current.order_id=data.group.order_id||null;current.counts=data.group.counts||{total:0,parking:0};current.siblings=Array.isArray(data.siblings)?data.siblings:[];current.scannedKey=data.scanned||null;renderSummary();renderList();const _si=current.scannedKey?current.siblings.find(x=>itemKey(x)===current.scannedKey):null;if(_si){const s=scannedState(_si);setStatus(s.text,s.tone);beep(s.beep);}else if(data.status==='noredeem'){setStatus('ℹ '+(data.message||'Tento voucher se na pokladně neuplatňuje.'),'warn');beep('warn');}else{setStatus((data.message||'Voucher nenalezen.'),'err');beep('error');}}else{setStatus((data&&data.message)||'Voucher nenalezen.','err');beep('error');}if(el.codeInput)el.codeInput.value='';}catch(e){setStatus('Chyba spojení: '+e.message,'err');beep('error');}}
+    async function checkCode(code){
+        if(lock){setStatus('Nejdřív dokončete aktuální vstupenku — Uplatnit nebo Zrušit.','warn');return;}
+        if(!code){setStatus('Zadej kód voucheru.','warn');return;}
+        setStatus('Ověřuji…','');
+        try{
+            const res=await fetch(ZVC.restBase+'/check-voucher',{method:'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':ZVC.nonce},body:JSON.stringify({code})});
+            const data=await res.json();
+            if(el.codeInput)el.codeInput.value='';
+            if(data&&data.siblings&&data.group){
+                current.order_id=data.group.order_id||null;current.counts=data.group.counts||{total:0,parking:0};
+                current.siblings=Array.isArray(data.siblings)?data.siblings:[];current.scannedKey=data.scanned||null;
+                renderSummary();renderList();
+                const si=current.scannedKey?current.siblings.find(x=>itemKey(x)===current.scannedKey):null;
+                if(si&&(si.status_label||si.status||'').toLowerCase()==='active'&&si.redeemable!==false){
+                    beep('warn');showPending(si);                       // uplatnitelná → vyžádat rozhodnutí (blokuje další sken)
+                }else if(si){
+                    const s=scannedState(si);beep(s.beep);showInfo(s.cls,s.text);   // použitá / expirovaná / permanentka
+                }else if(data.status==='noredeem'){
+                    beep('warn');showInfo('zvc-hero-warn','ℹ '+(data.message||'Tento voucher se na pokladně neuplatňuje.'));
+                }else{
+                    beep('error');showInfo('zvc-hero-bad',data.message||'Voucher nenalezen.');
+                }
+            }else{
+                beep('error');showInfo('zvc-hero-bad',(data&&data.message)||'Voucher nenalezen.');
+            }
+        }catch(e){setStatus('Chyba spojení: '+e.message,'err');beep('error');}
+    }
 
     async function redeemAll(){
         const items=activeRedeemable();
@@ -233,7 +259,93 @@
 
     function toggleScanner(){if(el.reader&&el.reader.style.display==='block'){stopScanner();setStatus('Skener zastaven.','');}else{startScanner();}}
 
-    function init(){if(isMobileLike()&&el.scanBtn){el.scanBtn.style.display='inline-block';if(el.scanHelp)el.scanHelp.style.display='block';}setStatus('Připraveno — zadej ID objednávky nebo naskenuj voucher.','');el.orderBtn&&el.orderBtn.addEventListener('click',()=>{const v=String(el.orderInput.value||'').trim();if(!/^[0-9]+$/.test(v)){setStatus('Zadej platné číslo objednávky.','warn');return;}fetchByOrder(v);});el.orderInput&&el.orderInput.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault();el.orderBtn.click();}});el.codeBtn&&el.codeBtn.addEventListener('click',()=>{checkCode(String(el.codeInput.value||'').trim());});el.codeInput&&el.codeInput.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault();el.codeBtn.click();}});el.scanBtn&&el.scanBtn.addEventListener('click',toggleScanner);el.redeemAll&&el.redeemAll.addEventListener('click',redeemAll);}
+    /* ─────────── Blokující rozhodnutí (Uplatnit / Zrušit) + potvrzení ─────────── */
+    let lock=false;
 
-    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+    function modalLayer(){
+        let m=document.getElementById('zvc-modal');
+        if(!m){m=document.createElement('div');m.id='zvc-modal';m.className='zvc-modal';m.style.display='none';m.innerHTML='<div class="zvc-modal-card" id="zvc-modal-card"></div>';document.body.appendChild(m);}
+        return m;
+    }
+    function openModal(html){const m=modalLayer();document.getElementById('zvc-modal-card').innerHTML=html;m.style.display='flex';}
+    function closeModal(){const m=document.getElementById('zvc-modal');if(m)m.style.display='none';}
+
+    function setLocked(dis){[el.codeInput,el.orderInput,el.codeBtn,el.orderBtn].forEach(x=>{if(x)x.disabled=dis;});}
+    function lockScanning(){lock=true;if(el.reader&&el.reader.style.display==='block')stopScanner();setLocked(true);}
+    function resetAll(){current={order_id:null,siblings:[],counts:{total:0,parking:0},scannedKey:null};el.summary.innerHTML='';el.list.innerHTML='';el.result.style.display='none';if(el.actions)el.actions.style.display='none';}
+    function finishReset(){resetAll();lock=false;setLocked(false);closeModal();setStatus('Připraveno — načtěte další vstupenku.','');if(el.codeInput)el.codeInput.focus();}
+
+    // Uplatnitelná vstupenka → vynucené rozhodnutí, blokuje další sken
+    function showPending(item){
+        lockScanning();
+        setStatus('⚠ ROZHODNĚTE: Uplatnit vstupenku, nebo Zrušit.','warn');
+        const html='<div class="zvc-hero zvc-hero-ok">✓ VSTUPENKA JE V POŘÁDKU</div>'
+            +'<div class="zvc-m-body">'
+            +'<div class="zvc-m-code">'+(item.number||'')+'</div>'
+            +'<div class="zvc-m-type">'+productLabel(item.product_id,item.product)+'</div>'
+            +'<p class="zvc-m-instr">Pro vpuštění návštěvníka klikněte na <b>Uplatnit</b>. Dokud nerozhodnete, nelze načíst další.</p>'
+            +'<div class="zvc-m-btns">'
+            +'<button class="zvc-m-btn zvc-m-cancel" id="zvc-m-cancel">✕ Zrušit</button>'
+            +'<button class="zvc-m-btn zvc-m-ok" id="zvc-m-ok">⚡ Uplatnit vstupenku</button>'
+            +'</div></div>';
+        openModal(html);
+        document.getElementById('zvc-m-cancel').onclick=function(){setStatus('Uplatnění zrušeno.','');finishReset();};
+        document.getElementById('zvc-m-ok').onclick=async function(){
+            const b=this;b.disabled=true;b.textContent='Uplatňuji…';
+            try{
+                const res=await fetch(ZVC.restBase+'/redeem',{method:'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':ZVC.nonce},body:JSON.stringify({items:[{source:item.source||'zoo',id:item.id}]})});
+                const data=await res.json();
+                if(data&&data.ok&&(data.updated||[]).length){beep('ok');showDone([item]);}
+                else{beep('error');b.disabled=false;b.textContent='⚡ Uplatnit vstupenku';alert('Uplatnění se nezdařilo, zkuste znovu.');}
+            }catch(e){beep('error');b.disabled=false;b.textContent='⚡ Uplatnit vstupenku';alert('Chyba spojení: '+e.message);}
+        };
+    }
+
+    // Potvrzení po uplatnění + seznam uplatněných → OK připraví na další sken
+    function showDone(list){
+        const rows=list.map(it=>'<div class="zvc-done-row"><span class="zvc-done-code">'+(it.number||'')+'</span><span class="zvc-done-type">'+productLabel(it.product_id,it.product)+'</span></div>').join('');
+        const html='<div class="zvc-hero zvc-hero-ok">✓ UPLATNĚNO — VSTUP POVOLEN</div>'
+            +'<div class="zvc-m-body"><div class="zvc-done-list">'+rows+'</div>'
+            +'<p class="zvc-m-instr">Uplatněno '+list.length+' vstupenek. Klikněte OK a načtěte další.</p>'
+            +'<div class="zvc-m-btns"><button class="zvc-m-btn zvc-m-ok" id="zvc-m-done">OK — DALŠÍ</button></div></div>';
+        openModal(html);
+        setStatus('✓ Uplatněno. Připraveno na další.','ok');
+        document.getElementById('zvc-m-done').onclick=function(){finishReset();};
+    }
+
+    // Neuplatnitelný výsledek (použitá/expirovaná/permanentka/nenalezeno) → potvrdit OK
+    function showInfo(heroCls,text){
+        lockScanning();
+        const html='<div class="zvc-hero '+heroCls+'">'+text+'</div>'
+            +'<div class="zvc-m-body"><div class="zvc-m-btns"><button class="zvc-m-btn zvc-m-ok" id="zvc-m-info">OK — DALŠÍ</button></div></div>';
+        openModal(html);
+        document.getElementById('zvc-m-info').onclick=function(){finishReset();};
+    }
+
+    /* ─────────── Vestavěný zámek stránky (bez WP cookies) ─────────── */
+    function initGate(cb){
+        const code=(ZVC.gateCode||'').trim();
+        if(!code){cb();return;}
+        try{if(localStorage.getItem('zvc_gate_ok')==='1'){cb();return;}}catch(_){}
+        const ov=document.createElement('div');ov.className='zvc-gate';
+        ov.innerHTML='<div class="zvc-gate-card"><div class="zvc-gate-icon">🔒</div><h2>Přístup k pokladně</h2>'
+            +'<p>Zadejte přístupový kód.</p>'
+            +'<input type="password" id="zvc-gate-input" autocomplete="off" autocapitalize="off" placeholder="Kód…">'
+            +'<button id="zvc-gate-btn">Vstoupit</button>'
+            +'<div id="zvc-gate-err" class="zvc-gate-err"></div></div>';
+        document.body.appendChild(ov);
+        const inp=ov.querySelector('#zvc-gate-input'),btn=ov.querySelector('#zvc-gate-btn'),err=ov.querySelector('#zvc-gate-err');
+        function tryOpen(){
+            if(inp.value===code){try{localStorage.setItem('zvc_gate_ok','1');}catch(_){}ov.parentNode&&ov.parentNode.removeChild(ov);cb();}
+            else{err.textContent='Nesprávný kód.';inp.value='';inp.focus();}
+        }
+        btn.addEventListener('click',tryOpen);
+        inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();tryOpen();}});
+        inp.focus();
+    }
+
+    function init(){if(isMobileLike()&&el.scanBtn){el.scanBtn.style.display='inline-block';if(el.scanHelp)el.scanHelp.style.display='block';}setStatus('Připraveno — zadej ID objednávky nebo naskenuj voucher.','');el.orderBtn&&el.orderBtn.addEventListener('click',()=>{const v=String(el.orderInput.value||'').trim();if(!/^[0-9]+$/.test(v)){setStatus('Zadej platné číslo objednávky.','warn');return;}fetchByOrder(v);});el.orderInput&&el.orderInput.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault();el.orderBtn.click();}});el.codeBtn&&el.codeBtn.addEventListener('click',()=>{checkCode(String(el.codeInput.value||'').trim());});el.codeInput&&el.codeInput.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault();el.codeBtn.click();}});el.scanBtn&&el.scanBtn.addEventListener('click',toggleScanner);el.redeemAll&&el.redeemAll.addEventListener('click',redeemAll);if(el.codeInput)el.codeInput.focus();}
+
+    function boot(){initGate(init);}
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

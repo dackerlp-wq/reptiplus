@@ -50,6 +50,8 @@ class Zoo_Vouchers_Validator {
         wp_localize_script( 'zoo-vouchers-checker-ui', 'ZVC', array(
             'restBase' => esc_url_raw( rest_url( 'zoo/v1' ) ),
             'nonce'    => wp_create_nonce( 'wp_rest' ),
+            // Vestavěný zámek stránky (nezávislý na WP cookies). Prázdné = vypnuto.
+            'gateCode' => (string) apply_filters( 'zoo_vouchers_gate_code', 'Chameleon' ),
         ) );
     }
 
