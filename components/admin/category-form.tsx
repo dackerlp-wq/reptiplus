@@ -12,6 +12,7 @@ type Row = {
   id: string;
   slug: string;
   name_i18n: Record<string, string> | null;
+  description_i18n: Record<string, string> | null;
   parent_id: string | null;
   sort_order: number;
   is_published: boolean;
@@ -27,6 +28,7 @@ export function CategoryForm({
   locale: Locale;
 }) {
   const n = category?.name_i18n ?? {};
+  const d = category?.description_i18n ?? {};
   const parents = categories.filter(
     (c) => !c.parent_id && c.id !== category?.id,
   );
@@ -37,7 +39,12 @@ export function CategoryForm({
       <input type="hidden" name="locale" value={locale} />
 
       <div className="rounded-xl border border-cream-dark bg-paper p-4">
-        <LangFields fields={[{ name: "name", label: "Název", values: n }]} />
+        <LangFields
+          fields={[
+            { name: "name", label: "Název", values: n },
+            { name: "description", label: "Popis", type: "rich", values: d },
+          ]}
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

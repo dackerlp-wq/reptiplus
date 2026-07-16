@@ -224,13 +224,7 @@ export default async function AdminSettingsPage() {
             </h2>
             <LangFields
               fields={[
-                {
-                  name: "content",
-                  label: "Obsah",
-                  type: "textarea",
-                  rows: 14,
-                  values: terms,
-                },
+                { name: "content", label: "Obsah", type: "rich", values: terms },
               ]}
             />
             <button className={saveBtn}>Uložit obchodní podmínky</button>
@@ -243,13 +237,7 @@ export default async function AdminSettingsPage() {
             </h2>
             <LangFields
               fields={[
-                {
-                  name: "content",
-                  label: "Obsah",
-                  type: "textarea",
-                  rows: 14,
-                  values: privacy,
-                },
+                { name: "content", label: "Obsah", type: "rich", values: privacy },
               ]}
             />
             <button className={saveBtn}>Uložit GDPR</button>

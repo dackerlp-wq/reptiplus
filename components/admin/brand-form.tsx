@@ -42,7 +42,7 @@ export function BrandForm({
       <div className="rounded-xl border border-cream-dark bg-paper p-4">
         <LangFields
           fields={[
-            { name: "description", label: "Popis", type: "textarea", values: d },
+            { name: "description", label: "Popis", type: "rich", values: d },
           ]}
         />
       </div>

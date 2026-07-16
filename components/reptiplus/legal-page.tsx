@@ -19,9 +19,10 @@ export async function LegalPage({
       <h1 className="mb-6 font-display text-4xl font-bold">{title}</h1>
 
       {content ? (
-        <div className="whitespace-pre-wrap text-sm leading-relaxed text-charcoal">
-          {content}
-        </div>
+        <div
+          className="rich-content text-charcoal"
+          dangerouslySetInnerHTML={{ __html: content }}
+        />
       ) : (
         <p className="rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-sm text-charcoal">
           {notice}

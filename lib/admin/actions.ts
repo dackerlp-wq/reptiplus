@@ -331,10 +331,13 @@ export async function saveCategoryAction(formData: FormData) {
   const id = str(formData, "id") || null;
   const locale = str(formData, "locale") || "cs";
   const name = i18n(formData, "name");
+  const description = i18n(formData, "description");
   const payload = {
     slug: str(formData, "slug"),
     name: name.cs,
     name_i18n: name,
+    description: description.cs || null,
+    description_i18n: description,
     parent_id: str(formData, "parent_id") || null,
     sort_order: parseInt(str(formData, "sort_order") || "0", 10),
     is_published: formData.get("is_published") === "on",

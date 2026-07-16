@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RichEditor } from "@/components/admin/rich-editor";
 
 type Values = { cs?: string; en?: string; de?: string } | null | undefined;
 
 type Field = {
   name: string;
   label: string;
-  type?: "input" | "textarea";
+  type?: "input" | "textarea" | "rich";
   values?: Values;
   placeholder?: string;
   rows?: number;
@@ -147,6 +148,21 @@ export function LangFields({
           )}
           {LOCALES.map(([code]) => {
             const hidden = code !== locale;
+            if (f.type === "rich") {
+              return (
+                <div key={code} className={cn(hidden && "hidden")}>
+                  <input
+                    type="hidden"
+                    name={`${f.name}_${code}`}
+                    value={vals[f.name]?.[code] ?? ""}
+                  />
+                  <RichEditor
+                    value={vals[f.name]?.[code] ?? ""}
+                    onChange={(html) => setVal(f.name, code, html)}
+                  />
+                </div>
+              );
+            }
             const common = {
               name: `${f.name}_${code}`,
               value: vals[f.name]?.[code] ?? "",

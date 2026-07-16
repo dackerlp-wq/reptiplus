@@ -101,9 +101,10 @@ export default async function ProductPage({
           </div>
 
           {description && (
-            <p className="mt-6 leading-relaxed text-charcoal/80">
-              {description}
-            </p>
+            <div
+              className="rich-content mt-6 text-charcoal/80"
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
           )}
 
           {attributes.length > 0 && (

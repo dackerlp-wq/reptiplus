@@ -42,6 +42,7 @@ export default async function CategoryPage({
   ]);
 
   const name = pickI18n(category.name_i18n, locale, category.name);
+  const description = pickI18n(category.description_i18n, locale, "");
   const subcategories = allCategories.filter((c) => c.parent_id === category.id);
 
   return (
@@ -55,12 +56,19 @@ export default async function CategoryPage({
         <span className="text-ink">{name}</span>
       </nav>
 
-      <div className="mb-8 flex items-end justify-between">
+      <div className="mb-4 flex items-end justify-between">
         <h1 className="font-display text-4xl font-bold">{name}</h1>
         <span className="text-sm text-gray-soft">
           {t("count", { count: products.length })}
         </span>
       </div>
+
+      {description && (
+        <div
+          className="rich-content mb-8 max-w-3xl text-charcoal/80"
+          dangerouslySetInnerHTML={{ __html: description }}
+        />
+      )}
 
       {/* Podkategorie */}
       {subcategories.length > 0 && (

@@ -66,6 +66,7 @@ export type CategoryItem = {
   slug: string;
   name: string;
   name_i18n: I18n;
+  description_i18n?: I18n;
   parent_id?: string | null;
 };
 
@@ -177,7 +178,7 @@ export async function getCategoryBySlug(
   const supabase = await createClient();
   const { data } = await supabase
     .from("category")
-    .select("id,slug,name,name_i18n,parent_id")
+    .select("id,slug,name,name_i18n,description_i18n,parent_id")
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle();

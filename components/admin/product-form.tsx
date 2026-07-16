@@ -71,7 +71,7 @@ export function ProductForm({
           <LangFields
             fields={[
               { name: "name", label: "Název", values: n },
-              { name: "description", label: "Popis", type: "textarea", values: d },
+              { name: "description", label: "Popis", type: "rich", values: d },
             ]}
           />
         </div>

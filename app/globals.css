@@ -62,3 +62,61 @@
     letter-spacing: -0.025em;
   }
 }
+
+/* Formátovaný obsah z WYSIWYG editoru (popisy, právní stránky) */
+@layer components {
+  .rich-content {
+    line-height: 1.7;
+  }
+  .rich-content > :first-child {
+    margin-top: 0;
+  }
+  .rich-content > :last-child {
+    margin-bottom: 0;
+  }
+  .rich-content p {
+    margin: 0.75rem 0;
+  }
+  .rich-content h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 1.4rem 0 0.6rem;
+  }
+  .rich-content h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 1.1rem 0 0.5rem;
+  }
+  .rich-content ul {
+    list-style: disc;
+    padding-left: 1.4rem;
+    margin: 0.75rem 0;
+  }
+  .rich-content ol {
+    list-style: decimal;
+    padding-left: 1.4rem;
+    margin: 0.75rem 0;
+  }
+  .rich-content li {
+    margin: 0.25rem 0;
+  }
+  .rich-content a {
+    color: var(--color-forest);
+    text-decoration: underline;
+  }
+  .rich-content strong {
+    font-weight: 700;
+  }
+  .rich-content em {
+    font-style: italic;
+  }
+  .rich-content s {
+    text-decoration: line-through;
+  }
+  .rich-content blockquote {
+    border-left: 3px solid var(--color-cream-dark);
+    padding-left: 1rem;
+    color: var(--color-gray-soft);
+    margin: 1rem 0;
+  }
+}
