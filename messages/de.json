@@ -45,6 +45,26 @@
     "manufacturer": "Über den Hersteller",
     "backToCatalog": "Zurück zu den Produkten"
   },
+  "Reviews": {
+    "title": "Bewertungen & Rezensionen",
+    "count": "{count, plural, =0 {Keine Bewertungen} one {# Bewertung} other {# Bewertungen}}",
+    "none": "Noch keine Bewertungen. Seien Sie der Erste!",
+    "anonymous": "Kunde",
+    "write": "Bewertung schreiben",
+    "yourRating": "Ihre Bewertung",
+    "reviewTitle": "Titel (optional)",
+    "reviewBody": "Ihre Erfahrung mit dem Produkt",
+    "submit": "Bewertung senden",
+    "submitted": "Danke! Ihre Bewertung wartet auf Freigabe.",
+    "loginPrompt": "Nur angemeldete Kunden können Bewertungen schreiben.",
+    "login": "Anmelden",
+    "errors": {
+      "RATING": "Bitte wählen Sie eine Sternebewertung.",
+      "BODY": "Bitte schreiben Sie Ihre Bewertung.",
+      "AUTH": "Bitte melden Sie sich an, um zu bewerten.",
+      "SERVER": "Bewertung konnte nicht gesendet werden, bitte erneut versuchen."
+    }
+  },
   "Catalog": {
     "title": "Alle Produkte",
     "count": "{count, plural, =0 {Keine Produkte} one {# Produkt} other {# Produkte}}",

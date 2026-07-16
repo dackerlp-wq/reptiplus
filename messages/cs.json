@@ -45,6 +45,26 @@
     "manufacturer": "O výrobci",
     "backToCatalog": "Zpět na produkty"
   },
+  "Reviews": {
+    "title": "Hodnocení a recenze",
+    "count": "{count, plural, =0 {Žádné recenze} one {# recenze} few {# recenze} other {# recenzí}}",
+    "none": "Zatím bez hodnocení. Buďte první, kdo produkt ohodnotí!",
+    "anonymous": "Zákazník",
+    "write": "Napsat recenzi",
+    "yourRating": "Vaše hodnocení",
+    "reviewTitle": "Nadpis (nepovinné)",
+    "reviewBody": "Vaše zkušenost s produktem",
+    "submit": "Odeslat recenzi",
+    "submitted": "Děkujeme! Recenze čeká na schválení.",
+    "loginPrompt": "Recenzi mohou psát přihlášení zákazníci.",
+    "login": "Přihlásit se",
+    "errors": {
+      "RATING": "Vyberte prosím počet hvězdiček.",
+      "BODY": "Napište prosím text recenze.",
+      "AUTH": "Pro napsání recenze se přihlaste.",
+      "SERVER": "Recenzi se nepodařilo odeslat, zkuste to znovu."
+    }
+  },
   "Catalog": {
     "title": "Všechny produkty",
     "count": "{count, plural, =0 {Žádné produkty} one {# produkt} few {# produkty} other {# produktů}}",

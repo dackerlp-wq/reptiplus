@@ -5,8 +5,11 @@ import { ArrowLeft, Truck, ShieldCheck } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { ProductGallery } from "@/components/reptiplus/product-gallery";
 import { ProductBuyBox } from "@/components/reptiplus/product-buy-box";
+import { ProductReviews } from "@/components/reptiplus/product-reviews";
 import type { Locale } from "@/i18n/routing";
 import { getProductBySlug } from "@/lib/queries";
+import { getProductReviews } from "@/lib/reviews/queries";
+import { createClient } from "@/lib/supabase/server";
 import {
   compareForLocale,
   localeCurrency,
@@ -42,6 +45,12 @@ export default async function ProductPage({
 
   const product = await getProductBySlug(slug);
   if (!product) notFound();
+
+  const supabase = await createClient();
+  const [reviewsData, { data: authData }] = await Promise.all([
+    getProductReviews(product.id),
+    supabase.auth.getUser(),
+  ]);
 
   const name = pickI18n(product.name_i18n, locale, product.name);
   const shortDescription = pickI18n(
@@ -207,6 +216,15 @@ export default async function ProductPage({
           </div>
         </section>
       )}
+
+      {/* Hodnocení a recenze */}
+      <ProductReviews
+        productId={product.id}
+        reviews={reviewsData.reviews}
+        average={reviewsData.average}
+        count={reviewsData.count}
+        isLoggedIn={!!authData.user}
+      />
     </div>
   );
 }

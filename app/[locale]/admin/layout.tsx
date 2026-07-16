@@ -4,6 +4,7 @@ import {
   FolderTree,
   Tag,
   ShoppingBag,
+  Star,
   Settings,
   ExternalLink,
   LogOut,
@@ -18,6 +19,7 @@ const NAV = [
   { href: "/admin/categories", label: "Kategorie", icon: FolderTree },
   { href: "/admin/brands", label: "Značky", icon: Tag },
   { href: "/admin/orders", label: "Objednávky", icon: ShoppingBag },
+  { href: "/admin/reviews", label: "Recenze", icon: Star },
   { href: "/admin/settings", label: "Nastavení", icon: Settings },
 ];
 

@@ -45,6 +45,26 @@
     "manufacturer": "About the manufacturer",
     "backToCatalog": "Back to products"
   },
+  "Reviews": {
+    "title": "Ratings & reviews",
+    "count": "{count, plural, =0 {No reviews} one {# review} other {# reviews}}",
+    "none": "No ratings yet. Be the first to review this product!",
+    "anonymous": "Customer",
+    "write": "Write a review",
+    "yourRating": "Your rating",
+    "reviewTitle": "Title (optional)",
+    "reviewBody": "Your experience with the product",
+    "submit": "Submit review",
+    "submitted": "Thank you! Your review is awaiting approval.",
+    "loginPrompt": "Only signed-in customers can write reviews.",
+    "login": "Sign in",
+    "errors": {
+      "RATING": "Please select a star rating.",
+      "BODY": "Please write your review.",
+      "AUTH": "Please sign in to write a review.",
+      "SERVER": "Couldn't submit the review, please try again."
+    }
+  },
   "Catalog": {
     "title": "All products",
     "count": "{count, plural, =0 {No products} one {# product} other {# products}}",

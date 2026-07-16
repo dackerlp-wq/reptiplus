@@ -459,6 +459,23 @@ export async function saveAiAction(fd: FormData) {
   await upsertSetting("integrations.ai", { anthropicKey: str(fd, "anthropicKey") });
 }
 
+/* ── Recenze ───────────────────────────────────────────────────────────── */
+export async function approveReviewAction(fd: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  await svc
+    .from("review")
+    .update({ is_approved: fd.get("approved") === "1" })
+    .eq("id", str(fd, "id"));
+  revalidatePath("/", "layout");
+}
+
+export async function deleteReviewAction(fd: FormData) {
+  await assertAdmin();
+  await createServiceClient().from("review").delete().eq("id", str(fd, "id"));
+  revalidatePath("/", "layout");
+}
+
 /* ── Právní stránky (obchodní podmínky, GDPR) ──────────────────────────── */
 export async function saveLegalAction(fd: FormData) {
   await assertAdmin();
