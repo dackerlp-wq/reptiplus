@@ -36,6 +36,13 @@
     "featured": "Featured",
     "added": "Added",
     "variant": "Variant",
+    "sku": "Code",
+    "description": "Product description",
+    "delivery": "Shipping across the EU",
+    "deliveryText": "Packeta, PPL or personal pickup.",
+    "securePayment": "Secure payment",
+    "securePaymentText": "Card, bank transfer or cash on delivery.",
+    "manufacturer": "About the manufacturer",
     "backToCatalog": "Back to products"
   },
   "Catalog": {

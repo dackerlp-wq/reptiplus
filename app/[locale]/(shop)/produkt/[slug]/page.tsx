@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Truck, ShieldCheck } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { ProductGallery } from "@/components/reptiplus/product-gallery";
 import { ProductBuyBox } from "@/components/reptiplus/product-buy-box";
@@ -68,6 +68,12 @@ export default async function ProductPage({
     stock: v.stock_qty,
   }));
 
+  const brandName = product.brand?.name ?? "";
+  const brandDesc = product.brand
+    ? pickI18n(product.brand.description_i18n, locale, "")
+    : "";
+  const brandLogo = product.brand?.logo_url ?? null;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
       <Link
@@ -77,7 +83,8 @@ export default async function ProductPage({
         <ArrowLeft className="size-4" /> {t("backToCatalog")}
       </Link>
 
-      <div className="grid gap-10 md:grid-cols-2">
+      {/* Horní část — galerie + nákup */}
+      <div className="grid gap-10 lg:grid-cols-2">
         <ProductGallery images={product.images} name={name} />
 
         <div>
@@ -94,7 +101,7 @@ export default async function ProductPage({
             </p>
           )}
 
-          <div className="mt-4">
+          <div className="mt-5">
             <ProductBuyBox
               productId={product.id}
               locale={locale}
@@ -111,16 +118,44 @@ export default async function ProductPage({
             />
           </div>
 
-          {description && (
-            <div
-              className="rich-content mt-6 text-charcoal/80"
-              dangerouslySetInnerHTML={{ __html: description }}
-            />
+          {product.sku && (
+            <p className="mt-4 text-xs text-gray-soft">
+              {t("sku")}: <span className="font-mono">{product.sku}</span>
+            </p>
           )}
 
+          {/* Služby */}
+          <div className="mt-6 divide-y divide-cream-dark overflow-hidden rounded-xl border border-cream-dark bg-white">
+            <ServiceRow icon={Truck} title={t("delivery")} text={t("deliveryText")} />
+            <ServiceRow
+              icon={ShieldCheck}
+              title={t("securePayment")}
+              text={t("securePaymentText")}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Popis + parametry */}
+      {(description || attributes.length > 0) && (
+        <div className="mt-14 grid gap-10 lg:grid-cols-[1fr_20rem]">
+          <div>
+            {description && (
+              <section>
+                <h2 className="mb-4 font-display text-2xl font-bold">
+                  {t("description")}
+                </h2>
+                <div
+                  className="rich-content text-charcoal/90"
+                  dangerouslySetInnerHTML={{ __html: description }}
+                />
+              </section>
+            )}
+          </div>
+
           {attributes.length > 0 && (
-            <div className="mt-10">
-              <h2 className="mb-4 font-display text-xl font-semibold">
+            <aside>
+              <h2 className="mb-4 font-display text-2xl font-bold">
                 {t("parameters")}
               </h2>
               <dl className="divide-y divide-cream-dark rounded-xl border border-cream-dark bg-white">
@@ -138,9 +173,59 @@ export default async function ProductPage({
                   </div>
                 ))}
               </dl>
-            </div>
+            </aside>
           )}
         </div>
+      )}
+
+      {/* Výrobce */}
+      {product.brand && (
+        <section className="mt-14 rounded-2xl border border-cream-dark bg-paper p-6 md:p-8">
+          <h2 className="mb-5 font-display text-2xl font-bold">
+            {t("manufacturer")}
+          </h2>
+          <div className="flex flex-col gap-6 md:flex-row md:items-start">
+            {brandLogo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={brandLogo}
+                alt={brandName}
+                className="h-16 w-auto shrink-0 object-contain"
+              />
+            )}
+            <div>
+              <p className="font-display text-lg font-semibold text-ink">
+                {brandName}
+              </p>
+              {brandDesc && (
+                <div
+                  className="rich-content mt-2 text-charcoal/80"
+                  dangerouslySetInnerHTML={{ __html: brandDesc }}
+                />
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function ServiceRow({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 px-4 py-3">
+      <Icon className="mt-0.5 size-5 shrink-0 text-forest" />
+      <div className="text-sm">
+        <p className="font-medium text-ink">{title}</p>
+        <p className="text-gray-soft">{text}</p>
       </div>
     </div>
   );

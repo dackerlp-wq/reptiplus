@@ -36,6 +36,13 @@
     "featured": "Empfohlen",
     "added": "Hinzugefügt",
     "variant": "Variante",
+    "sku": "Art.-Nr.",
+    "description": "Produktbeschreibung",
+    "delivery": "Versand in die ganze EU",
+    "deliveryText": "Packeta, PPL oder Selbstabholung.",
+    "securePayment": "Sichere Zahlung",
+    "securePaymentText": "Karte, Überweisung oder Nachnahme.",
+    "manufacturer": "Über den Hersteller",
     "backToCatalog": "Zurück zu den Produkten"
   },
   "Catalog": {

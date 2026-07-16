@@ -36,6 +36,13 @@
     "featured": "Doporučujeme",
     "added": "Přidáno",
     "variant": "Varianta",
+    "sku": "Kód",
+    "description": "Popis produktu",
+    "delivery": "Doprava po celé ČR",
+    "deliveryText": "Zásilkovna, PPL i osobní odběr.",
+    "securePayment": "Bezpečná platba",
+    "securePaymentText": "Kartou, převodem i na dobírku.",
+    "manufacturer": "O výrobci",
     "backToCatalog": "Zpět na produkty"
   },
   "Catalog": {
