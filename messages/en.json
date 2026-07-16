@@ -127,6 +127,22 @@
     "deliveryTo": "Delivery to",
     "continueShopping": "Continue shopping"
   },
+  "ResetPassword": {
+    "title": "Reset password",
+    "subtitle": "Set a new password for your account.",
+    "email": "Email",
+    "requestHint": "Enter your account email and we'll send you a link to set a new password.",
+    "sendLink": "Send link",
+    "sent": "If the account exists, we've emailed a password reset link.",
+    "setHint": "Choose a new password (at least 8 characters).",
+    "newPassword": "New password",
+    "confirmPassword": "Repeat new password",
+    "save": "Save password",
+    "tooShort": "Password must be at least 8 characters.",
+    "mismatch": "Passwords do not match.",
+    "done": "Password set. Redirecting…",
+    "backToLogin": "Back to login"
+  },
   "OrderLookup": {
     "title": "Track your order",
     "subtitle": "Enter your order number and the email you ordered with.",
@@ -166,6 +182,7 @@
     "confirmEmailNotice": "Account created. Check your email to confirm your registration.",
     "myOrders": "My orders",
     "noOrders": "You have no orders yet.",
+    "forgotPassword": "Forgot password?",
     "statusNew": "New",
     "statusPaid": "Paid",
     "statusProcessing": "Processing",

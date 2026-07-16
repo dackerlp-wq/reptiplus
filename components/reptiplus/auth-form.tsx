@@ -62,6 +62,15 @@ export function AuthForm({
           />
         </label>
 
+        {mode === "login" && (
+          <Link
+            href="/obnova-hesla"
+            className="-mt-2 self-end text-sm text-gray-soft hover:text-forest"
+          >
+            {t("forgotPassword")}
+          </Link>
+        )}
+
         {isConfirm ? (
           <p className="rounded-lg bg-forest/10 px-3 py-2 text-sm text-forest">
             {t("confirmEmailNotice")}

@@ -127,6 +127,22 @@
     "deliveryTo": "Doručení na adresu",
     "continueShopping": "Pokračovat v nákupu"
   },
+  "ResetPassword": {
+    "title": "Obnova hesla",
+    "subtitle": "Nastavte si nové heslo ke svému účtu.",
+    "email": "E-mail",
+    "requestHint": "Zadejte e-mail účtu a pošleme vám odkaz pro nastavení nového hesla.",
+    "sendLink": "Poslat odkaz",
+    "sent": "Pokud účet existuje, poslali jsme na e-mail odkaz pro obnovu hesla.",
+    "setHint": "Zvolte si nové heslo (alespoň 8 znaků).",
+    "newPassword": "Nové heslo",
+    "confirmPassword": "Nové heslo znovu",
+    "save": "Uložit heslo",
+    "tooShort": "Heslo musí mít alespoň 8 znaků.",
+    "mismatch": "Hesla se neshodují.",
+    "done": "Heslo nastaveno. Přesměrováváme…",
+    "backToLogin": "Zpět na přihlášení"
+  },
   "OrderLookup": {
     "title": "Sledování objednávky",
     "subtitle": "Zadejte číslo objednávky a e-mail, na který jste objednávali.",
@@ -166,6 +182,7 @@
     "confirmEmailNotice": "Účet vytvořen. Zkontrolujte e-mail a potvrďte registraci.",
     "myOrders": "Moje objednávky",
     "noOrders": "Zatím nemáte žádné objednávky.",
+    "forgotPassword": "Zapomenuté heslo?",
     "statusNew": "Nová",
     "statusPaid": "Zaplacená",
     "statusProcessing": "Zpracovává se",
