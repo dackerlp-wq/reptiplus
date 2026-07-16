@@ -226,9 +226,11 @@ export async function createOrderAction(
         const h = await headers();
         const host = h.get("host");
         const proto = h.get("x-forwarded-proto") ?? "https";
-        const siteUrl =
-          process.env.NEXT_PUBLIC_SITE_URL ||
-          (host ? `${proto}://${host}` : "https://reptiplus.cz");
+        // Odkaz míří na doménu, kde zákazník objednal (.cz / .eu / .shop);
+        // env je jen fallback pro kontext bez requestu.
+        const siteUrl = host
+          ? `${proto}://${host}`
+          : process.env.NEXT_PUBLIC_SITE_URL || "https://reptiplus.cz";
 
         const emailData: OrderEmailData = {
           number: orderNumber,
