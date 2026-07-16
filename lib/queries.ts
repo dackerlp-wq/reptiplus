@@ -326,3 +326,21 @@ export async function searchSuggestions(
     price: priceForLocale(p, locale),
   }));
 }
+
+const deaccent = (s: string) =>
+  s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
+/** Návrhy kategorií pro našeptávač — shoda v názvu (bez ohledu na diakritiku). */
+export async function searchCategories(
+  locale: Locale,
+  q: string,
+  limit = 4,
+): Promise<{ slug: string; name: string }[]> {
+  const query = deaccent(q.trim());
+  if (query.length < 2) return [];
+  const cats = await getAllCategories();
+  return cats
+    .map((c) => ({ slug: c.slug, name: pickI18n(c.name_i18n, locale, c.name) }))
+    .filter((c) => deaccent(c.name).includes(query))
+    .slice(0, limit);
+}

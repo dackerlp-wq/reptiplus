@@ -12,6 +12,7 @@ type Field = {
   type?: "input" | "textarea";
   values?: Values;
   placeholder?: string;
+  rows?: number;
 };
 
 type Locale = "cs" | "en" | "de";
@@ -156,7 +157,7 @@ export function LangFields({
               className: cn(inputClass, hidden && "hidden"),
             };
             return f.type === "textarea" ? (
-              <textarea key={code} rows={3} {...common} />
+              <textarea key={code} rows={f.rows ?? 3} {...common} />
             ) : (
               <input key={code} {...common} />
             );

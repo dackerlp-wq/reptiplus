@@ -3,14 +3,14 @@ import { getShopContact } from "@/lib/settings";
 /** Sdílený shell pro právní stránky (obchodní podmínky, GDPR). */
 export async function LegalPage({
   title,
+  content,
   notice,
   sellerLabel,
-  children,
 }: {
   title: string;
+  content?: string;
   notice: string;
   sellerLabel: string;
-  children?: React.ReactNode;
 }) {
   const contact = await getShopContact();
 
@@ -18,14 +18,14 @@ export async function LegalPage({
     <section className="mx-auto max-w-3xl px-4 py-14">
       <h1 className="mb-6 font-display text-4xl font-bold">{title}</h1>
 
-      <p className="rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-sm text-charcoal">
-        {notice}
-      </p>
-
-      {children && (
-        <div className="mt-8 space-y-4 text-sm leading-relaxed text-charcoal">
-          {children}
+      {content ? (
+        <div className="whitespace-pre-wrap text-sm leading-relaxed text-charcoal">
+          {content}
         </div>
+      ) : (
+        <p className="rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-sm text-charcoal">
+          {notice}
+        </p>
       )}
 
       <div className="mt-10 rounded-xl border border-cream-dark bg-white p-6 text-sm">

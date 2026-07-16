@@ -316,6 +316,18 @@ export async function saveAiAction(fd: FormData) {
   await upsertSetting("integrations.ai", { anthropicKey: str(fd, "anthropicKey") });
 }
 
+/* ── Právní stránky (obchodní podmínky, GDPR) ──────────────────────────── */
+export async function saveLegalAction(fd: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const key = str(fd, "doc") === "privacy" ? "legal.privacy" : "legal.terms";
+  const content = i18n(fd, "content");
+  await svc
+    .from("app_setting")
+    .upsert({ key, value: content as never }, { onConflict: "key" });
+  revalidatePath("/", "layout");
+}
+
 /* ── Doprava / platby ──────────────────────────────────────────────────── */
 export async function saveShippingMethodAction(fd: FormData) {
   await assertAdmin();

@@ -22,3 +22,18 @@ export async function getShopContact(): Promise<ShopContact> {
     phone: v.phone ?? "",
   };
 }
+
+export type LegalKey = "legal.terms" | "legal.privacy";
+
+/** i18n obsah právní stránky z app_setting (editovatelné v adminu). */
+export async function getLegalContent(
+  key: LegalKey,
+): Promise<Record<string, string>> {
+  const svc = createServiceClient();
+  const { data } = await svc
+    .from("app_setting")
+    .select("value")
+    .eq("key", key)
+    .maybeSingle();
+  return (data?.value ?? {}) as Record<string, string>;
+}

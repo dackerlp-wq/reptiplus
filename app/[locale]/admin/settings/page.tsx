@@ -12,7 +12,10 @@ import {
   deleteShippingMethodAction,
   savePaymentMethodAction,
   deletePaymentMethodAction,
+  saveLegalAction,
 } from "@/lib/admin/actions";
+
+type I18nText = { cs?: string; en?: string; de?: string };
 
 const input =
   "w-full rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm outline-none focus:border-forest";
@@ -38,12 +41,14 @@ export default async function AdminSettingsPage() {
   const ppl = get("integrations.ppl");
   const zas = get("integrations.zasilkovna");
   const ai = get("integrations.ai");
+  const terms = get("legal.terms") as I18nText;
+  const privacy = get("legal.privacy") as I18nText;
 
   return (
     <div className="max-w-4xl">
       <h1 className="mb-6 font-display text-3xl font-bold">Nastavení</h1>
 
-      <AdminTabs tabs={["Obchod", "Integrace", "Doprava", "Platby"]}>
+      <AdminTabs tabs={["Obchod", "Integrace", "Doprava", "Platby", "Právní"]}>
         {/* ── Obchod ─────────────────────────────────────────────── */}
         <form action={saveGeneralAction} className={`${card} space-y-4`}>
           <div>
@@ -201,6 +206,54 @@ export default async function AdminSettingsPage() {
             <p className="mb-3 font-display font-semibold">Přidat platbu</p>
             <PaymentCard />
           </div>
+        </div>
+
+        {/* ── Právní ─────────────────────────────────────────────── */}
+        <div className="space-y-6">
+          <Hint>
+            Text se zobrazí na stránkách v patičce (Obchodní podmínky, Zpracování
+            osobních údajů). Piš prostý text — odstavce oddělíš prázdným řádkem.
+            Prázdné pole = návštěvníkovi se ukáže jen upozornění „dokument
+            připravujeme". EN/DE můžeš doplnit tlačítkem AI překladu.
+          </Hint>
+
+          <form action={saveLegalAction} className={`${card} space-y-4`}>
+            <input type="hidden" name="doc" value="terms" />
+            <h2 className="font-display text-lg font-semibold">
+              Obchodní podmínky
+            </h2>
+            <LangFields
+              fields={[
+                {
+                  name: "content",
+                  label: "Obsah",
+                  type: "textarea",
+                  rows: 14,
+                  values: terms,
+                },
+              ]}
+            />
+            <button className={saveBtn}>Uložit obchodní podmínky</button>
+          </form>
+
+          <form action={saveLegalAction} className={`${card} space-y-4`}>
+            <input type="hidden" name="doc" value="privacy" />
+            <h2 className="font-display text-lg font-semibold">
+              Zpracování osobních údajů
+            </h2>
+            <LangFields
+              fields={[
+                {
+                  name: "content",
+                  label: "Obsah",
+                  type: "textarea",
+                  rows: 14,
+                  values: privacy,
+                },
+              ]}
+            />
+            <button className={saveBtn}>Uložit GDPR</button>
+          </form>
         </div>
       </AdminTabs>
     </div>

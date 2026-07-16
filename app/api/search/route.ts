@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { searchSuggestions } from "@/lib/queries";
+import { searchSuggestions, searchCategories } from "@/lib/queries";
 import { formatPrice } from "@/lib/i18n";
 import { routing, type Locale } from "@/i18n/routing";
 
@@ -11,8 +11,13 @@ export async function GET(request: NextRequest) {
     ? (raw as Locale)
     : routing.defaultLocale;
 
-  const suggestions = await searchSuggestions(locale, q, 6);
+  const [suggestions, categories] = await Promise.all([
+    searchSuggestions(locale, q, 6),
+    searchCategories(locale, q, 4),
+  ]);
+
   return NextResponse.json({
+    categories,
     items: suggestions.map((s) => ({
       slug: s.slug,
       name: s.name,
