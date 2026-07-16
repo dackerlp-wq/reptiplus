@@ -14,19 +14,34 @@ export default async function EditProductPage({
 }) {
   const { locale, id } = await params;
   const svc = createServiceClient();
-  const [{ data: product }, { data: images }, categories, brands] =
-    await Promise.all([
-      svc.from("product").select("*").eq("id", id).maybeSingle(),
-      svc
-        .from("product_image")
-        .select("id, url, alt, sort_order")
-        .eq("product_id", id)
-        .order("sort_order"),
-      getAllCategories(),
-      getBrands(),
-    ]);
+  const [
+    { data: product },
+    { data: images },
+    { data: attrs },
+    { data: allKeys },
+    categories,
+    brands,
+  ] = await Promise.all([
+    svc.from("product").select("*").eq("id", id).maybeSingle(),
+    svc
+      .from("product_image")
+      .select("id, url, alt, sort_order")
+      .eq("product_id", id)
+      .order("sort_order"),
+    svc
+      .from("product_attribute")
+      .select("key, value, sort_order")
+      .eq("product_id", id)
+      .order("sort_order"),
+    svc.from("product_attribute").select("key"),
+    getAllCategories(),
+    getBrands(),
+  ]);
 
   if (!product) notFound();
+
+  const attributes = (attrs ?? []).map((a) => ({ key: a.key, value: a.value }));
+  const specKeys = [...new Set((allKeys ?? []).map((k) => k.key))].sort();
 
   return (
     <div>
@@ -45,6 +60,8 @@ export default async function EditProductPage({
           categories={categories}
           brands={brands}
           locale={locale}
+          attributes={attributes}
+          specKeys={specKeys}
         />
         <ProductImages productId={product.id} images={images ?? []} />
       </div>

@@ -4,6 +4,8 @@ import type { Locale } from "@/i18n/routing";
 import type { BrandItem, CategoryItem } from "@/lib/queries";
 import { LangFields } from "@/components/admin/lang-fields";
 import { Hint } from "@/components/admin/hint";
+import { EurFromCzk } from "@/components/admin/eur-from-czk";
+import { ProductSpecs } from "@/components/admin/product-specs";
 
 const input =
   "w-full rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm outline-none focus:border-forest";
@@ -35,11 +37,15 @@ export function ProductForm({
   categories,
   brands,
   locale,
+  attributes = [],
+  specKeys = [],
 }: {
   product?: ProductRow;
   categories: CategoryItem[];
   brands: BrandItem[];
   locale: Locale;
+  attributes?: { key: string; value: string }[];
+  specKeys?: string[];
 }) {
   const n = product?.name_i18n ?? {};
   const d = product?.description_i18n ?? {};
@@ -95,6 +101,13 @@ export function ProductForm({
         </label>
       </div>
 
+      <EurFromCzk
+        pairs={[
+          ["price_czk", "price_eur"],
+          ["compare_at_czk", "compare_at_eur"],
+        ]}
+      />
+
       <div className="grid gap-4 sm:grid-cols-3">
         <label className={label}>
           <span className={legend}>Kategorie</span>
@@ -135,6 +148,8 @@ export function ProductForm({
           Doporučujeme
         </label>
       </div>
+
+      <ProductSpecs initial={attributes} keys={specKeys} />
 
       <button type="submit" className="rounded-lg bg-forest px-6 py-2.5 text-sm font-semibold text-white hover:bg-forest-light">
         Uložit

@@ -64,13 +64,64 @@ export async function saveProductAction(formData: FormData) {
     is_featured: formData.get("is_featured") === "on",
   };
 
-  const { error } = id
-    ? await svc.from("product").update(payload).eq("id", id)
-    : await svc.from("product").insert(payload);
-  if (error) throw new Error(error.message);
+  let productId = id;
+  if (id) {
+    const { error } = await svc.from("product").update(payload).eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { data, error } = await svc
+      .from("product")
+      .insert(payload)
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    productId = data.id;
+  }
+
+  // Specifikace (product_attribute) — nahradit dle formuláře
+  if (productId && formData.has("attributes")) {
+    await syncProductAttributes(svc, productId, str(formData, "attributes"));
+  }
 
   revalidatePath("/", "layout");
   redirect(`/${locale}/admin/products`);
+}
+
+async function syncProductAttributes(
+  svc: ReturnType<typeof createServiceClient>,
+  productId: string,
+  raw: string,
+) {
+  let specs: { key: string; value: string }[] = [];
+  try {
+    const parsed = JSON.parse(raw || "[]");
+    if (Array.isArray(parsed)) {
+      specs = parsed
+        .filter(
+          (s) =>
+            s &&
+            typeof s.key === "string" &&
+            typeof s.value === "string" &&
+            s.key.trim() &&
+            s.value.trim(),
+        )
+        .map((s) => ({ key: s.key.trim(), value: s.value.trim() }));
+    }
+  } catch {
+    specs = [];
+  }
+
+  await svc.from("product_attribute").delete().eq("product_id", productId);
+  if (specs.length > 0) {
+    await svc.from("product_attribute").insert(
+      specs.map((s, i) => ({
+        product_id: productId,
+        key: s.key,
+        value: s.value,
+        sort_order: i,
+      })),
+    );
+  }
 }
 
 export async function togglePublishAction(formData: FormData) {
@@ -92,7 +143,7 @@ export async function deleteProductAction(formData: FormData) {
 
 /* ── Obrázky produktu (Supabase Storage bucket „products") ─────────────── */
 const STORAGE_BUCKET = "products";
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_IMAGE_BYTES = 6 * 1024 * 1024; // 6 MB (po kompresi v prohlížeči bývá výrazně méně)
 
 export type ImageActionResult = { ok: boolean; error?: string };
 
