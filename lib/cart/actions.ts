@@ -23,7 +23,20 @@ export async function addToCartAction(
     .eq("id", productId)
     .maybeSingle();
   if (!product || !product.is_published) return { ok: false, error: "NOT_FOUND" };
-  if (product.stock_qty <= 0) return { ok: false, error: "OUT_OF_STOCK" };
+
+  // Sklad podle varianty (má-li ji), jinak podle produktu.
+  let stock = product.stock_qty;
+  if (variantId) {
+    const { data: variant } = await svc
+      .from("product_variant")
+      .select("stock_qty")
+      .eq("id", variantId)
+      .eq("product_id", productId)
+      .maybeSingle();
+    if (!variant) return { ok: false, error: "NOT_FOUND" };
+    stock = variant.stock_qty;
+  }
+  if (stock <= 0) return { ok: false, error: "OUT_OF_STOCK" };
 
   const cartId = await getCartId(true);
   if (!cartId) return { ok: false, error: "CART" };
@@ -40,14 +53,14 @@ export async function addToCartAction(
   const { data: existing } = await existingQuery.maybeSingle();
 
   if (existing) {
-    const qtyNext = Math.min(existing.qty + add, product.stock_qty);
+    const qtyNext = Math.min(existing.qty + add, stock);
     await svc.from("cart_item").update({ qty: qtyNext }).eq("id", existing.id);
   } else {
     await svc.from("cart_item").insert({
       cart_id: cartId,
       product_id: productId,
       variant_id: variantId,
-      qty: Math.min(add, product.stock_qty),
+      qty: Math.min(add, stock),
     });
   }
 
@@ -68,7 +81,7 @@ export async function updateQtyAction(
   // Ověříme, že položka patří do TOHOTO košíku (nikdo nesáhne na cizí).
   const { data: item } = await svc
     .from("cart_item")
-    .select("id, product_id")
+    .select("id, product_id, variant_id")
     .eq("id", itemId)
     .eq("cart_id", cartId)
     .maybeSingle();
@@ -80,12 +93,22 @@ export async function updateQtyAction(
     return { ok: true };
   }
 
-  const { data: product } = await svc
-    .from("product")
-    .select("stock_qty")
-    .eq("id", item.product_id)
-    .maybeSingle();
-  const stock = product?.stock_qty ?? 0;
+  let stock: number;
+  if (item.variant_id) {
+    const { data: variant } = await svc
+      .from("product_variant")
+      .select("stock_qty")
+      .eq("id", item.variant_id)
+      .maybeSingle();
+    stock = variant?.stock_qty ?? 0;
+  } else {
+    const { data: product } = await svc
+      .from("product")
+      .select("stock_qty")
+      .eq("id", item.product_id)
+      .maybeSingle();
+    stock = product?.stock_qty ?? 0;
+  }
   if (stock <= 0) {
     await svc.from("cart_item").delete().eq("id", itemId).eq("cart_id", cartId);
     revalidatePath("/", "layout");

@@ -115,7 +115,7 @@ export async function getCart(locale: Locale): Promise<CartView> {
   const { data } = await svc
     .from("cart_item")
     .select(
-      "id, qty, variant_id, product:product_id(id,slug,name,name_i18n,sku,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_published,product_image(url,sort_order)), variant:variant_id(id,name,sku,price_czk,price_eur)",
+      "id, qty, variant_id, product:product_id(id,slug,name,name_i18n,sku,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_published,product_image(url,sort_order)), variant:variant_id(id,name,sku,price_czk,price_eur,stock_qty)",
     )
     .eq("cart_id", cartId)
     .order("added_at");
@@ -144,6 +144,7 @@ export async function getCart(locale: Locale): Promise<CartView> {
       sku: string | null;
       price_czk: number | null;
       price_eur: number | null;
+      stock_qty: number;
     } | null;
   };
 
@@ -166,7 +167,9 @@ export async function getCart(locale: Locale): Promise<CartView> {
     const unitPrice = priceForLocale(priceSource, locale);
     const compareAt = compareForLocale(r.product, locale);
 
-    const qty = Math.min(r.qty, r.product.stock_qty);
+    // Sklad podle varianty (má-li ji), jinak podle produktu.
+    const effectiveStock = r.variant ? r.variant.stock_qty : r.product.stock_qty;
+    const qty = Math.min(r.qty, effectiveStock);
     if (qty <= 0) continue;
 
     const lineTotal = unitPrice * qty;
@@ -191,7 +194,7 @@ export async function getCart(locale: Locale): Promise<CartView> {
       unitPrice,
       compareAt: compareAt && compareAt > unitPrice ? compareAt : null,
       qty,
-      stock: r.product.stock_qty,
+      stock: effectiveStock,
       lineTotal,
     });
   }

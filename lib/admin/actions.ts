@@ -82,9 +82,81 @@ export async function saveProductAction(formData: FormData) {
   if (productId && formData.has("attributes")) {
     await syncProductAttributes(svc, productId, str(formData, "attributes"));
   }
+  // Varianty (product_variant) — sync se zachováním ID existujících
+  if (productId && formData.has("variants")) {
+    await syncProductVariants(svc, productId, str(formData, "variants"));
+  }
 
   revalidatePath("/", "layout");
   redirect(`/${locale}/admin/products`);
+}
+
+async function syncProductVariants(
+  svc: ReturnType<typeof createServiceClient>,
+  productId: string,
+  raw: string,
+) {
+  type V = {
+    id?: string;
+    name?: string;
+    sku?: string;
+    price_czk?: string;
+    price_eur?: string;
+    stock_qty?: string;
+  };
+  let variants: V[] = [];
+  try {
+    const parsed = JSON.parse(raw || "[]");
+    if (Array.isArray(parsed)) {
+      variants = parsed.filter(
+        (v) => v && typeof v.name === "string" && v.name.trim(),
+      );
+    }
+  } catch {
+    variants = [];
+  }
+
+  const toMinor = (s?: string): number | null => {
+    const r = (s ?? "").replace(",", ".").trim();
+    if (!r) return null;
+    const n = parseFloat(r);
+    return Number.isFinite(n) ? Math.round(n * 100) : null;
+  };
+  const toStock = (s?: string): number => {
+    const n = parseInt((s ?? "").trim(), 10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  };
+
+  const { data: existing } = await svc
+    .from("product_variant")
+    .select("id")
+    .eq("product_id", productId);
+  const existingIds = new Set((existing ?? []).map((e) => e.id));
+  const keepIds = new Set<string>();
+
+  for (let i = 0; i < variants.length; i++) {
+    const v = variants[i];
+    const payload = {
+      product_id: productId,
+      name: (v.name ?? "").trim(),
+      sku: v.sku?.trim() || null,
+      price_czk: toMinor(v.price_czk),
+      price_eur: toMinor(v.price_eur),
+      stock_qty: toStock(v.stock_qty),
+      sort_order: i,
+    };
+    if (v.id && existingIds.has(v.id)) {
+      await svc.from("product_variant").update(payload).eq("id", v.id);
+      keepIds.add(v.id);
+    } else {
+      await svc.from("product_variant").insert(payload);
+    }
+  }
+
+  const toDelete = [...existingIds].filter((id) => !keepIds.has(id));
+  if (toDelete.length > 0) {
+    await svc.from("product_variant").delete().in("id", toDelete);
+  }
 }
 
 async function syncProductAttributes(

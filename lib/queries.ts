@@ -6,6 +6,16 @@ export type I18n = Record<string, string> | null;
 
 export type ProductImage = { url: string; alt: string | null; sort_order: number };
 
+export type ProductVariant = {
+  id: string;
+  name: string;
+  sku: string | null;
+  price_czk: number | null;
+  price_eur: number | null;
+  stock_qty: number;
+  sort_order: number;
+};
+
 export type ProductListItem = {
   id: string;
   slug: string;
@@ -27,6 +37,7 @@ export type ProductDetail = ProductListItem & {
   category: { slug: string; name_i18n: I18n } | null;
   product_attribute: { key: string; value: string; sort_order: number }[];
   images: ProductImage[];
+  variants: ProductVariant[];
 };
 
 /** Primární obrázek = nejnižší sort_order. */
@@ -117,20 +128,25 @@ export async function getProductBySlug(
   const { data } = await supabase
     .from("product")
     .select(
-      "id,slug,name,name_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), category:category_id(slug,name_i18n), product_attribute(key,value,sort_order), product_image(url,alt,sort_order)",
+      "id,slug,name,name_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), category:category_id(slug,name_i18n), product_attribute(key,value,sort_order), product_image(url,alt,sort_order), product_variant(id,name,sku,price_czk,price_eur,stock_qty,sort_order)",
     )
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle();
   if (!data) return null;
 
-  const { product_image, ...rest } = data as unknown as ProductDetail & {
-    product_image: ProductImage[] | null;
-  };
+  const { product_image, product_variant, ...rest } =
+    data as unknown as ProductDetail & {
+      product_image: ProductImage[] | null;
+      product_variant: ProductVariant[] | null;
+    };
   const images = [...(product_image ?? [])].sort(
     (a, b) => a.sort_order - b.sort_order,
   );
-  return { ...rest, image: pickImage(images), images };
+  const variants = [...(product_variant ?? [])].sort(
+    (a, b) => a.sort_order - b.sort_order,
+  );
+  return { ...rest, image: pickImage(images), images, variants };
 }
 
 export async function getRootCategories(): Promise<CategoryItem[]> {

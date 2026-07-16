@@ -6,6 +6,10 @@ import { LangFields } from "@/components/admin/lang-fields";
 import { Hint } from "@/components/admin/hint";
 import { EurFromCzk } from "@/components/admin/eur-from-czk";
 import { ProductSpecs } from "@/components/admin/product-specs";
+import {
+  ProductVariants,
+  type VariantRow,
+} from "@/components/admin/product-variants";
 
 const input =
   "w-full rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm outline-none focus:border-forest";
@@ -39,6 +43,7 @@ export function ProductForm({
   locale,
   attributes = [],
   specKeys = [],
+  variants = [],
 }: {
   product?: ProductRow;
   categories: CategoryItem[];
@@ -46,6 +51,7 @@ export function ProductForm({
   locale: Locale;
   attributes?: { key: string; value: string }[];
   specKeys?: string[];
+  variants?: VariantRow[];
 }) {
   const n = product?.name_i18n ?? {};
   const d = product?.description_i18n ?? {};
@@ -150,6 +156,8 @@ export function ProductForm({
       </div>
 
       <ProductSpecs initial={attributes} keys={specKeys} />
+
+      <ProductVariants initial={variants} />
 
       <button type="submit" className="rounded-lg bg-forest px-6 py-2.5 text-sm font-semibold text-white hover:bg-forest-light">
         Uložit

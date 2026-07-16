@@ -38,10 +38,25 @@ export default async function EditProductPage({
     getBrands(),
   ]);
 
+  const { data: variantRows } = await svc
+    .from("product_variant")
+    .select("id, name, sku, price_czk, price_eur, stock_qty, sort_order")
+    .eq("product_id", id)
+    .order("sort_order");
+
   if (!product) notFound();
 
   const attributes = (attrs ?? []).map((a) => ({ key: a.key, value: a.value }));
   const specKeys = [...new Set((allKeys ?? []).map((k) => k.key))].sort();
+  const money = (v: number | null) => (v == null ? "" : String(v / 100));
+  const variants = (variantRows ?? []).map((v) => ({
+    id: v.id,
+    name: v.name,
+    sku: v.sku ?? "",
+    price_czk: money(v.price_czk),
+    price_eur: money(v.price_eur),
+    stock_qty: String(v.stock_qty ?? 0),
+  }));
 
   return (
     <div>
@@ -62,6 +77,7 @@ export default async function EditProductPage({
           locale={locale}
           attributes={attributes}
           specKeys={specKeys}
+          variants={variants}
         />
         <ProductImages productId={product.id} images={images ?? []} />
       </div>

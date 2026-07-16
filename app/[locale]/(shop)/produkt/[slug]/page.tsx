@@ -4,16 +4,15 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { ProductGallery } from "@/components/reptiplus/product-gallery";
+import { ProductBuyBox } from "@/components/reptiplus/product-buy-box";
 import type { Locale } from "@/i18n/routing";
 import { getProductBySlug } from "@/lib/queries";
 import {
   compareForLocale,
-  discountPercent,
-  formatPrice,
+  localeCurrency,
   pickI18n,
   priceForLocale,
 } from "@/lib/i18n";
-import { AddToCartButton } from "@/components/reptiplus/add-to-cart-button";
 
 export async function generateMetadata({
   params,
@@ -52,11 +51,17 @@ export default async function ProductPage({
   );
   const priceMinor = priceForLocale(product, locale);
   const compareMinor = compareForLocale(product, locale);
-  const discount = discountPercent(priceMinor, compareMinor);
-  const price = formatPrice(priceMinor, locale);
   const attributes = [...(product.product_attribute ?? [])].sort(
     (a, b) => a.sort_order - b.sort_order,
   );
+
+  const isCzk = localeCurrency[locale] === "CZK";
+  const buyVariants = product.variants.map((v) => ({
+    id: v.id,
+    name: v.name,
+    price: (isCzk ? v.price_czk : v.price_eur) ?? priceMinor,
+    stock: v.stock_qty,
+  }));
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
@@ -77,22 +82,22 @@ export default async function ProductPage({
             </span>
           )}
           <h1 className="mt-2 font-display text-4xl font-bold">{name}</h1>
-          <div className="mt-4 flex items-baseline gap-3">
-            <span
-              className={`font-mono text-3xl font-semibold ${discount ? "text-error" : "text-forest"}`}
-            >
-              {price}
-            </span>
-            {discount && compareMinor !== null && (
-              <>
-                <span className="font-mono text-xl text-gray-soft line-through">
-                  {formatPrice(compareMinor, locale)}
-                </span>
-                <span className="rounded-md bg-error px-2 py-1 text-sm font-semibold text-white">
-                  −{discount}%
-                </span>
-              </>
-            )}
+
+          <div className="mt-4">
+            <ProductBuyBox
+              productId={product.id}
+              locale={locale}
+              basePrice={priceMinor}
+              baseCompare={compareMinor}
+              baseStock={product.stock_qty}
+              variants={buyVariants}
+              labels={{
+                variant: t("variant"),
+                addToCart: t("addToCart"),
+                added: t("added"),
+                outOfStock: t("outOfStock"),
+              }}
+            />
           </div>
 
           {description && (
@@ -100,15 +105,6 @@ export default async function ProductPage({
               {description}
             </p>
           )}
-
-          <div className="mt-6 max-w-xs">
-            <AddToCartButton
-              productId={product.id}
-              label={t("addToCart")}
-              addedLabel={t("added")}
-              disabled={product.stock_qty <= 0}
-            />
-          </div>
 
           {attributes.length > 0 && (
             <div className="mt-10">
