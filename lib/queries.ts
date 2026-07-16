@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { localeCurrency } from "@/lib/i18n";
+import { localeCurrency, pickI18n, priceForLocale } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 
 export type I18n = Record<string, string> | null;
@@ -288,4 +288,41 @@ export async function getFilteredProducts(
 
   const { data } = await query;
   return normalizeList(data);
+}
+
+export type SearchSuggestion = {
+  slug: string;
+  name: string;
+  imageUrl: string | null;
+  price: number;
+};
+
+/** Lehké návrhy pro našeptávač — pár produktů dle FTS (prefix), s obrázkem a cenou. */
+export async function searchSuggestions(
+  locale: Locale,
+  q: string,
+  limit = 6,
+): Promise<SearchSuggestion[]> {
+  const query = q.trim();
+  if (query.length < 2) return [];
+
+  const supabase = await createClient();
+  const tsq = toTsQuery(query);
+
+  let req = supabase
+    .from("product")
+    .select(
+      "slug,name,name_i18n,price_czk,price_eur, product_image(url,alt,sort_order)",
+    )
+    .eq("is_published", true)
+    .limit(limit);
+  if (tsq) req = req.textSearch("search_vector", tsq, { config: "simple" });
+
+  const { data } = await req;
+  return normalizeList(data).map((p) => ({
+    slug: p.slug,
+    name: pickI18n(p.name_i18n, locale, p.name),
+    imageUrl: p.image?.url ?? null,
+    price: priceForLocale(p, locale),
+  }));
 }

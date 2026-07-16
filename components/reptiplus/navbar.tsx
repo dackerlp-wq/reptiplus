@@ -51,7 +51,11 @@ export async function Navbar({ locale }: { locale: Locale }) {
             <img src="/logo.svg" alt="Reptiplus" className="h-11 w-auto md:h-14" />
           </Link>
 
-          <SearchBar placeholder={t("search")} className="hidden flex-1 sm:block" />
+          <SearchBar
+            placeholder={t("search")}
+            locale={locale}
+            className="hidden flex-1 sm:block"
+          />
 
           <div className="ml-auto flex items-center gap-2 sm:ml-0">
             <Link
@@ -78,7 +82,7 @@ export async function Navbar({ locale }: { locale: Locale }) {
 
         {/* Vyhledávání na mobilu */}
         <div className="mx-auto max-w-7xl px-4 pb-3 sm:hidden">
-          <SearchBar placeholder={t("search")} />
+          <SearchBar placeholder={t("search")} locale={locale} />
         </div>
       </div>
 
