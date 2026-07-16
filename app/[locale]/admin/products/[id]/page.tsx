@@ -69,18 +69,16 @@ export default async function EditProductPage({
       <h1 className="mb-8 font-display text-3xl font-bold">
         Upravit produkt
       </h1>
-      <div className="max-w-3xl space-y-6">
-        <ProductForm
-          product={product as never}
-          categories={categories}
-          brands={brands}
-          locale={locale}
-          attributes={attributes}
-          specKeys={specKeys}
-          variants={variants}
-        />
-        <ProductImages productId={product.id} images={images ?? []} />
-      </div>
+      <ProductForm
+        product={product as never}
+        categories={categories}
+        brands={brands}
+        locale={locale}
+        attributes={attributes}
+        specKeys={specKeys}
+        variants={variants}
+        imagesSlot={<ProductImages productId={product.id} images={images ?? []} />}
+      />
     </div>
   );
 }
