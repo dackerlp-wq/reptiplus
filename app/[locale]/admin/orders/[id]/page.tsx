@@ -132,6 +132,28 @@ export default async function OrderDetailPage({
                   {money(order.shipping ?? 0, order.currency)}
                 </span>
               </div>
+              {(order.payment_fee ?? 0) > 0 && (
+                <div className="flex justify-between text-gray-soft">
+                  <span>Poplatek za platbu</span>
+                  <span className="font-mono">
+                    {money(order.payment_fee ?? 0, order.currency)}
+                  </span>
+                </div>
+              )}
+              {order.discount > 0 && (
+                <div className="flex justify-between text-gray-soft">
+                  <span>Sleva</span>
+                  <span className="font-mono">
+                    − {money(order.discount, order.currency)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between text-gray-soft">
+                <span>Platba</span>
+                <span className="font-medium text-ink">
+                  {order.payment_method ?? "—"}
+                </span>
+              </div>
               <div className="flex justify-between font-semibold text-ink">
                 <span>Celkem</span>
                 <span className="font-mono">

@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import Image from "next/image";
 import { Leaf } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -44,9 +45,19 @@ export async function ProductCard({
     <div className="group flex flex-col overflow-hidden rounded-xl border border-cream-dark bg-white transition-shadow hover:shadow-lg">
       <Link
         href={href}
-        className="relative flex aspect-square items-center justify-center bg-paper"
+        className="relative flex aspect-square items-center justify-center overflow-hidden bg-paper"
       >
-        <Leaf className="size-12 text-forest-light/30" />
+        {product.image ? (
+          <Image
+            src={product.image.url}
+            alt={product.image.alt || name}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <Leaf className="size-12 text-forest-light/30" />
+        )}
         {discount ? (
           <span className="absolute left-3 top-3 rounded-md bg-error px-2 py-1 text-xs font-semibold text-white">
             −{discount}%
@@ -91,6 +102,7 @@ export async function ProductCard({
         </div>
 
         <AddToCartButton
+          productId={product.id}
           label={t("addToCart")}
           addedLabel={t("added")}
           disabled={product.stock_qty <= 0}

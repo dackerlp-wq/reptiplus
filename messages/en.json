@@ -6,7 +6,8 @@
     "blog": "Care guides",
     "cart": "Cart",
     "account": "Account",
-    "search": "Search products…"
+    "search": "Search products…",
+    "trackOrder": "Track order"
   },
   "Home": {
     "heroKicker": "Specialist reptile supplies",
@@ -54,6 +55,87 @@
     "clear": "Clear filters",
     "searchPlaceholder": "Search products…"
   },
+  "Cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty.",
+    "continueShopping": "Continue shopping",
+    "remove": "Remove",
+    "subtotal": "Subtotal",
+    "shippingNote": "Shipping and payment are selected at checkout.",
+    "checkout": "Proceed to checkout"
+  },
+  "Checkout": {
+    "title": "Checkout",
+    "contact": "Contact details",
+    "email": "Email",
+    "shippingAddress": "Shipping address",
+    "billingSame": "Billing address is the same as shipping",
+    "billingAddress": "Billing address",
+    "fullName": "Full name",
+    "street": "Street and number",
+    "city": "City",
+    "postalCode": "Postal code",
+    "country": "Country",
+    "countryCZ": "Czech Republic",
+    "countrySK": "Slovakia",
+    "phone": "Phone",
+    "shippingMethod": "Shipping",
+    "paymentMethod": "Payment",
+    "note": "Order note",
+    "summary": "Order summary",
+    "discountPlaceholder": "Discount code",
+    "apply": "Apply",
+    "discountApplied": "Code {code} applied",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "total": "Total",
+    "free": "Free",
+    "placeOrder": "Place order",
+    "placing": "Placing…",
+    "terms": "By placing the order you agree to the terms and conditions.",
+    "errors": {
+      "EMAIL": "Please enter a valid email.",
+      "ADDRESS": "Please fill in the full shipping address.",
+      "BILLING": "Please fill in the full billing address.",
+      "SHIPPING": "Please select a shipping method.",
+      "PAYMENT": "Please select a payment method.",
+      "EMPTY": "Your cart is empty.",
+      "STOCK": "Some item is no longer in stock in the requested quantity.",
+      "DISCOUNT": "The discount code is no longer valid, please remove it.",
+      "SERVER": "We couldn't complete the order. Please try again."
+    },
+    "discountErrors": {
+      "NOT_FOUND": "Discount code not found.",
+      "INACTIVE": "This code is not active.",
+      "NOT_STARTED": "This code is not valid yet.",
+      "EXPIRED": "This code has expired.",
+      "USED_UP": "This code has already been used up.",
+      "MIN_ORDER": "This code requires a higher order value.",
+      "CURRENCY": "This code cannot be applied in this currency."
+    }
+  },
+  "OrderConfirm": {
+    "title": "Thank you for your order!",
+    "subtitle": "We've sent a confirmation to your email.",
+    "payCod": "Cash on delivery — you'll pay when the parcel is delivered.",
+    "payBank": "Bank transfer — we'll email you the payment details. We ship once the payment arrives.",
+    "payOther": "We'll email you the payment instructions.",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping and payment",
+    "discount": "Discount",
+    "total": "Total",
+    "deliveryTo": "Delivery to",
+    "continueShopping": "Continue shopping"
+  },
+  "OrderLookup": {
+    "title": "Track your order",
+    "subtitle": "Enter your order number and the email you ordered with.",
+    "number": "Order number",
+    "email": "Email",
+    "submit": "View order",
+    "errorMissing": "Please enter both the order number and email.",
+    "errorNotFound": "Order not found. Check the number and email."
+  },
   "Footer": {
     "tagline": "A specialist shop for terrarium equipment for keepers of reptiles and exotic animals.",
     "shop": "Shop",
@@ -83,6 +165,13 @@
     "logout": "Sign out",
     "confirmEmailNotice": "Account created. Check your email to confirm your registration.",
     "myOrders": "My orders",
-    "noOrders": "You have no orders yet."
+    "noOrders": "You have no orders yet.",
+    "statusNew": "New",
+    "statusPaid": "Paid",
+    "statusProcessing": "Processing",
+    "statusShipped": "Shipped",
+    "statusDelivered": "Delivered",
+    "statusCancelled": "Cancelled",
+    "statusRefunded": "Refunded"
   }
 }

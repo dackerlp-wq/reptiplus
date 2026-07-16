@@ -1,8 +1,9 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Leaf } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { ProductGallery } from "@/components/reptiplus/product-gallery";
 import type { Locale } from "@/i18n/routing";
 import { getProductBySlug } from "@/lib/queries";
 import {
@@ -67,9 +68,7 @@ export default async function ProductPage({
       </Link>
 
       <div className="grid gap-10 md:grid-cols-2">
-        <div className="flex aspect-square items-center justify-center rounded-2xl bg-paper">
-          <Leaf className="size-24 text-forest-light/30" />
-        </div>
+        <ProductGallery images={product.images} name={name} />
 
         <div>
           {product.brand && (
@@ -104,6 +103,7 @@ export default async function ProductPage({
 
           <div className="mt-6 max-w-xs">
             <AddToCartButton
+              productId={product.id}
               label={t("addToCart")}
               addedLabel={t("added")}
               disabled={product.stock_qty <= 0}

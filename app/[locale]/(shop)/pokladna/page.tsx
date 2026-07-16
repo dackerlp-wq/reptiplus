@@ -1,0 +1,67 @@
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import type { Locale } from "@/i18n/routing";
+import { createClient } from "@/lib/supabase/server";
+import { getCart } from "@/lib/cart/cart";
+import { getShippingMethods, getPaymentMethods } from "@/lib/queries";
+import { localeCurrency, pickI18n } from "@/lib/i18n";
+import { CheckoutForm } from "@/components/reptiplus/checkout-form";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Checkout" });
+  return { title: t("title") };
+}
+
+export default async function CheckoutPage({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("Checkout");
+
+  const cart = await getCart(locale);
+  // Prázdný košík → zpět do košíku (nedává smysl objednávat nic)
+  if (cart.lines.length === 0) redirect(`/${locale}/kosik`);
+
+  const [shipping, payment, supabase] = await Promise.all([
+    getShippingMethods(),
+    getPaymentMethods(),
+    createClient(),
+  ]);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const currency = localeCurrency[locale];
+  const shippingOptions = shipping.map((m) => ({
+    code: m.code,
+    name: pickI18n(m.name_i18n, locale),
+    fee: (currency === "CZK" ? m.price_czk : m.price_eur) ?? 0,
+  }));
+  const paymentOptions = payment.map((m) => ({
+    code: m.code,
+    name: pickI18n(m.name_i18n, locale),
+    fee: (currency === "CZK" ? m.fee_czk : m.fee_eur) ?? 0,
+  }));
+
+  return (
+    <section className="mx-auto max-w-5xl px-4 py-12">
+      <h1 className="mb-8 font-display text-4xl font-bold">{t("title")}</h1>
+      <CheckoutForm
+        locale={locale}
+        subtotal={cart.subtotal}
+        shippingOptions={shippingOptions}
+        paymentOptions={paymentOptions}
+        defaultEmail={user?.email ?? ""}
+      />
+    </section>
+  );
+}

@@ -1,10 +1,12 @@
 import { getTranslations } from "next-intl/server";
 import { ShoppingCart, User } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { getCartCount } from "@/lib/cart/cart";
 import { LanguageSwitcher } from "./language-switcher";
 
 export async function Navbar() {
   const t = await getTranslations("Nav");
+  const cartCount = await getCartCount();
 
   return (
     <header className="sticky top-0 z-40 border-b border-cream-dark bg-cream/90 backdrop-blur">
@@ -47,9 +49,14 @@ export async function Navbar() {
           <Link
             href="/kosik"
             aria-label={t("cart")}
-            className="rounded-md p-2 text-charcoal transition-colors hover:bg-white hover:text-forest"
+            className="relative rounded-md p-2 text-charcoal transition-colors hover:bg-white hover:text-forest"
           >
             <ShoppingCart className="size-5" />
+            {cartCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex min-w-5 items-center justify-center rounded-full bg-forest px-1.5 text-xs font-semibold leading-5 text-white">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
           </Link>
         </div>
       </div>

@@ -6,7 +6,8 @@
     "blog": "Průvodce chovem",
     "cart": "Košík",
     "account": "Účet",
-    "search": "Hledat produkty…"
+    "search": "Hledat produkty…",
+    "trackOrder": "Sledovat objednávku"
   },
   "Home": {
     "heroKicker": "Specializovaná teraristika",
@@ -54,6 +55,87 @@
     "clear": "Zrušit filtry",
     "searchPlaceholder": "Hledat produkty…"
   },
+  "Cart": {
+    "title": "Košík",
+    "empty": "Váš košík je zatím prázdný.",
+    "continueShopping": "Pokračovat v nákupu",
+    "remove": "Odebrat",
+    "subtotal": "Mezisoučet",
+    "shippingNote": "Doprava a platba se vyberou v pokladně.",
+    "checkout": "Pokračovat k pokladně"
+  },
+  "Checkout": {
+    "title": "Pokladna",
+    "contact": "Kontaktní údaje",
+    "email": "E-mail",
+    "shippingAddress": "Dodací adresa",
+    "billingSame": "Fakturační adresa je stejná jako dodací",
+    "billingAddress": "Fakturační adresa",
+    "fullName": "Jméno a příjmení",
+    "street": "Ulice a číslo popisné",
+    "city": "Město",
+    "postalCode": "PSČ",
+    "country": "Země",
+    "countryCZ": "Česká republika",
+    "countrySK": "Slovensko",
+    "phone": "Telefon",
+    "shippingMethod": "Doprava",
+    "paymentMethod": "Platba",
+    "note": "Poznámka k objednávce",
+    "summary": "Souhrn objednávky",
+    "discountPlaceholder": "Slevový kód",
+    "apply": "Uplatnit",
+    "discountApplied": "Kód {code} uplatněn",
+    "subtotal": "Mezisoučet",
+    "discount": "Sleva",
+    "total": "Celkem",
+    "free": "Zdarma",
+    "placeOrder": "Závazně objednat",
+    "placing": "Odesílám…",
+    "terms": "Odesláním objednávky souhlasíte s obchodními podmínkami.",
+    "errors": {
+      "EMAIL": "Zadejte platný e-mail.",
+      "ADDRESS": "Vyplňte prosím celou dodací adresu.",
+      "BILLING": "Vyplňte prosím celou fakturační adresu.",
+      "SHIPPING": "Vyberte způsob dopravy.",
+      "PAYMENT": "Vyberte způsob platby.",
+      "EMPTY": "Váš košík je prázdný.",
+      "STOCK": "Některá položka již není skladem v požadovaném množství.",
+      "DISCOUNT": "Slevový kód už není platný, odeberte ho prosím.",
+      "SERVER": "Objednávku se nepodařilo dokončit. Zkuste to prosím znovu."
+    },
+    "discountErrors": {
+      "NOT_FOUND": "Slevový kód nebyl nalezen.",
+      "INACTIVE": "Tento kód není aktivní.",
+      "NOT_STARTED": "Platnost kódu ještě nezačala.",
+      "EXPIRED": "Platnost kódu vypršela.",
+      "USED_UP": "Kód byl již vyčerpán.",
+      "MIN_ORDER": "Kód platí až od vyšší hodnoty objednávky.",
+      "CURRENCY": "Tento kód nelze uplatnit v této měně."
+    }
+  },
+  "OrderConfirm": {
+    "title": "Děkujeme za objednávku!",
+    "subtitle": "Potvrzení jsme vám poslali na e-mail.",
+    "payCod": "Platba dobírkou — částku uhradíte při převzetí zásilky.",
+    "payBank": "Platba převodem — platební údaje vám zašleme e-mailem. Objednávku expedujeme po připsání platby.",
+    "payOther": "Pokyny k platbě vám zašleme e-mailem.",
+    "subtotal": "Mezisoučet",
+    "shipping": "Doprava a platba",
+    "discount": "Sleva",
+    "total": "Celkem",
+    "deliveryTo": "Doručení na adresu",
+    "continueShopping": "Pokračovat v nákupu"
+  },
+  "OrderLookup": {
+    "title": "Sledování objednávky",
+    "subtitle": "Zadejte číslo objednávky a e-mail, na který jste objednávali.",
+    "number": "Číslo objednávky",
+    "email": "E-mail",
+    "submit": "Zobrazit objednávku",
+    "errorMissing": "Vyplňte prosím číslo objednávky i e-mail.",
+    "errorNotFound": "Objednávka nebyla nalezena. Zkontrolujte číslo a e-mail."
+  },
   "Footer": {
     "tagline": "Specializovaný obchod s teraristickým vybavením pro chovatele plazů a exotických zvířat.",
     "shop": "Nákup",
@@ -83,6 +165,13 @@
     "logout": "Odhlásit se",
     "confirmEmailNotice": "Účet vytvořen. Zkontrolujte e-mail a potvrďte registraci.",
     "myOrders": "Moje objednávky",
-    "noOrders": "Zatím nemáte žádné objednávky."
+    "noOrders": "Zatím nemáte žádné objednávky.",
+    "statusNew": "Nová",
+    "statusPaid": "Zaplacená",
+    "statusProcessing": "Zpracovává se",
+    "statusShipped": "Odeslaná",
+    "statusDelivered": "Doručená",
+    "statusCancelled": "Stornovaná",
+    "statusRefunded": "Vrácená"
   }
 }

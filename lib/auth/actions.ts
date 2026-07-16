@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { mergeGuestCartOnLogin } from "@/lib/cart/cart";
 
 export type AuthState = { error?: string } | undefined;
 
@@ -14,8 +15,14 @@ export async function signInAction(
   const redirectTo = String(formData.get("redirectTo") ?? "/");
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
   if (error) return { error: error.message };
+
+  // Sloučit hostův košík do účtu, aby zákazník nepřišel o položky.
+  if (data.user) await mergeGuestCartOnLogin(data.user.id);
 
   redirect(redirectTo);
 }
@@ -39,6 +46,9 @@ export async function signUpAction(
 
   // Pokud je zapnuté potvrzení e-mailu, session nevznikne hned.
   if (!data.session) return { error: "CONFIRM_EMAIL" };
+
+  // Session vznikla hned → sloučit hostův košík do nového účtu.
+  if (data.user) await mergeGuestCartOnLogin(data.user.id);
 
   redirect(redirectTo);
 }

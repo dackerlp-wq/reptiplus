@@ -1,4 +1,4 @@
-import type { Locale } from "@/i18n/routing";
+import { routing, type Locale } from "@/i18n/routing";
 
 export const localeCurrency: Record<Locale, "CZK" | "EUR"> = {
   cs: "CZK",
@@ -12,10 +12,18 @@ const intlLocaleMap: Record<Locale, string> = {
   de: "de-DE",
 };
 
+/** Normalizuje případný neplatný vstup na podporované locale (fallback na výchozí). */
+function safeLocale(locale: Locale): Locale {
+  return (routing.locales as readonly string[]).includes(locale)
+    ? locale
+    : routing.defaultLocale;
+}
+
 /** minor units (haléře / eurocenty) → naformátovaná cena podle locale */
 export function formatPrice(minor: number, locale: Locale): string {
-  const currency = localeCurrency[locale];
-  return new Intl.NumberFormat(intlLocaleMap[locale], {
+  const loc = safeLocale(locale);
+  const currency = localeCurrency[loc];
+  return new Intl.NumberFormat(intlLocaleMap[loc], {
     style: "currency",
     currency,
     maximumFractionDigits: currency === "CZK" ? 0 : 2,
@@ -27,7 +35,7 @@ export function priceForLocale(
   row: { price_czk: number | null; price_eur: number | null },
   locale: Locale,
 ): number {
-  return localeCurrency[locale] === "CZK"
+  return localeCurrency[safeLocale(locale)] === "CZK"
     ? (row.price_czk ?? 0)
     : (row.price_eur ?? 0);
 }
@@ -37,7 +45,7 @@ export function compareForLocale(
   row: { compare_at_czk: number | null; compare_at_eur: number | null },
   locale: Locale,
 ): number | null {
-  return localeCurrency[locale] === "CZK"
+  return localeCurrency[safeLocale(locale)] === "CZK"
     ? row.compare_at_czk
     : row.compare_at_eur;
 }

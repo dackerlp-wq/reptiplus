@@ -5,6 +5,7 @@ import type { Locale } from "@/i18n/routing";
 import { getAllCategories, getBrands } from "@/lib/queries";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ProductForm } from "@/components/admin/product-form";
+import { ProductImages } from "@/components/admin/product-images";
 
 export default async function EditProductPage({
   params,
@@ -13,11 +14,17 @@ export default async function EditProductPage({
 }) {
   const { locale, id } = await params;
   const svc = createServiceClient();
-  const [{ data: product }, categories, brands] = await Promise.all([
-    svc.from("product").select("*").eq("id", id).maybeSingle(),
-    getAllCategories(),
-    getBrands(),
-  ]);
+  const [{ data: product }, { data: images }, categories, brands] =
+    await Promise.all([
+      svc.from("product").select("*").eq("id", id).maybeSingle(),
+      svc
+        .from("product_image")
+        .select("id, url, alt, sort_order")
+        .eq("product_id", id)
+        .order("sort_order"),
+      getAllCategories(),
+      getBrands(),
+    ]);
 
   if (!product) notFound();
 
@@ -32,12 +39,15 @@ export default async function EditProductPage({
       <h1 className="mb-8 font-display text-3xl font-bold">
         Upravit produkt
       </h1>
-      <ProductForm
-        product={product as never}
-        categories={categories}
-        brands={brands}
-        locale={locale}
-      />
+      <div className="max-w-3xl space-y-6">
+        <ProductForm
+          product={product as never}
+          categories={categories}
+          brands={brands}
+          locale={locale}
+        />
+        <ProductImages productId={product.id} images={images ?? []} />
+      </div>
     </div>
   );
 }

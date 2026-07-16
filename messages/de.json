@@ -6,7 +6,8 @@
     "blog": "Haltungs-Ratgeber",
     "cart": "Warenkorb",
     "account": "Konto",
-    "search": "Produkte suchen…"
+    "search": "Produkte suchen…",
+    "trackOrder": "Bestellung verfolgen"
   },
   "Home": {
     "heroKicker": "Spezialisierter Terraristik-Bedarf",
@@ -54,6 +55,87 @@
     "clear": "Filter zurücksetzen",
     "searchPlaceholder": "Produkte suchen…"
   },
+  "Cart": {
+    "title": "Warenkorb",
+    "empty": "Ihr Warenkorb ist leer.",
+    "continueShopping": "Weiter einkaufen",
+    "remove": "Entfernen",
+    "subtotal": "Zwischensumme",
+    "shippingNote": "Versand und Zahlung werden an der Kasse gewählt.",
+    "checkout": "Zur Kasse"
+  },
+  "Checkout": {
+    "title": "Kasse",
+    "contact": "Kontaktdaten",
+    "email": "E-Mail",
+    "shippingAddress": "Lieferadresse",
+    "billingSame": "Rechnungsadresse entspricht der Lieferadresse",
+    "billingAddress": "Rechnungsadresse",
+    "fullName": "Vor- und Nachname",
+    "street": "Straße und Hausnummer",
+    "city": "Stadt",
+    "postalCode": "PLZ",
+    "country": "Land",
+    "countryCZ": "Tschechien",
+    "countrySK": "Slowakei",
+    "phone": "Telefon",
+    "shippingMethod": "Versand",
+    "paymentMethod": "Zahlung",
+    "note": "Anmerkung zur Bestellung",
+    "summary": "Bestellübersicht",
+    "discountPlaceholder": "Rabattcode",
+    "apply": "Anwenden",
+    "discountApplied": "Code {code} angewendet",
+    "subtotal": "Zwischensumme",
+    "discount": "Rabatt",
+    "total": "Gesamt",
+    "free": "Kostenlos",
+    "placeOrder": "Zahlungspflichtig bestellen",
+    "placing": "Wird gesendet…",
+    "terms": "Mit der Bestellung stimmen Sie den AGB zu.",
+    "errors": {
+      "EMAIL": "Bitte geben Sie eine gültige E-Mail an.",
+      "ADDRESS": "Bitte füllen Sie die vollständige Lieferadresse aus.",
+      "BILLING": "Bitte füllen Sie die vollständige Rechnungsadresse aus.",
+      "SHIPPING": "Bitte wählen Sie eine Versandart.",
+      "PAYMENT": "Bitte wählen Sie eine Zahlungsart.",
+      "EMPTY": "Ihr Warenkorb ist leer.",
+      "STOCK": "Ein Artikel ist nicht mehr in der gewünschten Menge verfügbar.",
+      "DISCOUNT": "Der Rabattcode ist nicht mehr gültig, bitte entfernen Sie ihn.",
+      "SERVER": "Die Bestellung konnte nicht abgeschlossen werden. Bitte erneut versuchen."
+    },
+    "discountErrors": {
+      "NOT_FOUND": "Rabattcode nicht gefunden.",
+      "INACTIVE": "Dieser Code ist nicht aktiv.",
+      "NOT_STARTED": "Dieser Code ist noch nicht gültig.",
+      "EXPIRED": "Dieser Code ist abgelaufen.",
+      "USED_UP": "Dieser Code wurde bereits aufgebraucht.",
+      "MIN_ORDER": "Dieser Code erfordert einen höheren Bestellwert.",
+      "CURRENCY": "Dieser Code kann in dieser Währung nicht angewendet werden."
+    }
+  },
+  "OrderConfirm": {
+    "title": "Danke für Ihre Bestellung!",
+    "subtitle": "Wir haben Ihnen eine Bestätigung per E-Mail gesendet.",
+    "payCod": "Nachnahme — Sie zahlen bei der Zustellung des Pakets.",
+    "payBank": "Banküberweisung — wir senden Ihnen die Zahlungsdaten per E-Mail. Wir versenden nach Zahlungseingang.",
+    "payOther": "Wir senden Ihnen die Zahlungsanweisungen per E-Mail.",
+    "subtotal": "Zwischensumme",
+    "shipping": "Versand und Zahlung",
+    "discount": "Rabatt",
+    "total": "Gesamt",
+    "deliveryTo": "Lieferung an",
+    "continueShopping": "Weiter einkaufen"
+  },
+  "OrderLookup": {
+    "title": "Bestellung verfolgen",
+    "subtitle": "Geben Sie Ihre Bestellnummer und die E-Mail der Bestellung ein.",
+    "number": "Bestellnummer",
+    "email": "E-Mail",
+    "submit": "Bestellung anzeigen",
+    "errorMissing": "Bitte geben Sie Bestellnummer und E-Mail ein.",
+    "errorNotFound": "Bestellung nicht gefunden. Prüfen Sie Nummer und E-Mail."
+  },
   "Footer": {
     "tagline": "Ein Fachgeschäft für Terrarienausstattung für Halter von Reptilien und exotischen Tieren.",
     "shop": "Shop",
@@ -83,6 +165,13 @@
     "logout": "Abmelden",
     "confirmEmailNotice": "Konto erstellt. Bitte bestätigen Sie Ihre Registrierung per E-Mail.",
     "myOrders": "Meine Bestellungen",
-    "noOrders": "Sie haben noch keine Bestellungen."
+    "noOrders": "Sie haben noch keine Bestellungen.",
+    "statusNew": "Neu",
+    "statusPaid": "Bezahlt",
+    "statusProcessing": "In Bearbeitung",
+    "statusShipped": "Versandt",
+    "statusDelivered": "Zugestellt",
+    "statusCancelled": "Storniert",
+    "statusRefunded": "Erstattet"
   }
 }

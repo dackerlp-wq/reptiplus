@@ -412,6 +412,8 @@ export type Database = {
           id: string
           note: string | null
           number: string
+          payment_fee: number
+          payment_method: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           shipping: number
           shipping_address: Json | null
@@ -435,6 +437,8 @@ export type Database = {
           id?: string
           note?: string | null
           number: string
+          payment_fee?: number
+          payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           shipping?: number
           shipping_address?: Json | null
@@ -458,6 +462,8 @@ export type Database = {
           id?: string
           note?: string | null
           number?: string
+          payment_fee?: number
+          payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           shipping?: number
           shipping_address?: Json | null
@@ -893,7 +899,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      place_order: {
+        Args: { payload: Json }
+        Returns: string
+      }
+      cleanup_abandoned_carts: {
+        Args: { p_days?: number }
+        Returns: number
+      }
     }
     Enums: {
       address_type: "billing" | "shipping"

@@ -1,7 +1,9 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
+import { hasLocale } from "next-intl";
 import { ArrowRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import type { Locale } from "@/i18n/routing";
+import { routing, type Locale } from "@/i18n/routing";
 import {
   getNewProducts,
   getProducts,
@@ -18,6 +20,9 @@ export default async function HomePage({
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
+  // Neplatné locale (favicon.ico, boti, překlepy) → 404 ihned, bez DB dotazů.
+  // Index se renderuje i pro tyto segmenty (RSC renderuje page dřív než layout guard).
+  if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const t = await getTranslations("Home");
 

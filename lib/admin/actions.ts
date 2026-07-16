@@ -90,6 +90,117 @@ export async function deleteProductAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+/* ── Obrázky produktu (Supabase Storage bucket „products") ─────────────── */
+const STORAGE_BUCKET = "products";
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+export type ImageActionResult = { ok: boolean; error?: string };
+
+export async function uploadProductImagesAction(
+  formData: FormData,
+): Promise<ImageActionResult> {
+  await assertAdmin();
+  const productId = str(formData, "id");
+  if (!productId) return { ok: false, error: "MISSING_PRODUCT" };
+
+  const files = formData
+    .getAll("files")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.length === 0) return { ok: false, error: "NO_FILES" };
+
+  const svc = createServiceClient();
+
+  // Navázat na aktuální nejvyšší sort_order
+  const { data: existing } = await svc
+    .from("product_image")
+    .select("sort_order")
+    .eq("product_id", productId)
+    .order("sort_order", { ascending: false })
+    .limit(1);
+  let sort = (existing?.[0]?.sort_order ?? -1) + 1;
+
+  for (const file of files) {
+    if (!file.type.startsWith("image/")) return { ok: false, error: "NOT_IMAGE" };
+    if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "TOO_LARGE" };
+
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `${productId}/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await svc.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) return { ok: false, error: "UPLOAD" };
+
+    const { data: pub } = svc.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+    const { error: insErr } = await svc
+      .from("product_image")
+      .insert({ product_id: productId, url: pub.publicUrl, sort_order: sort++ });
+    if (insErr) return { ok: false, error: "DB" };
+  }
+
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/** Cesta v bucketu z veřejné URL (…/object/public/products/<path>). */
+function storagePathFromUrl(url: string): string | null {
+  const marker = `/object/public/${STORAGE_BUCKET}/`;
+  const i = url.indexOf(marker);
+  return i === -1 ? null : url.slice(i + marker.length);
+}
+
+export async function deleteProductImageAction(
+  formData: FormData,
+): Promise<ImageActionResult> {
+  await assertAdmin();
+  const id = str(formData, "imageId");
+  if (!id) return { ok: false, error: "MISSING" };
+  const svc = createServiceClient();
+
+  const { data: img } = await svc
+    .from("product_image")
+    .select("url")
+    .eq("id", id)
+    .maybeSingle();
+  if (img?.url) {
+    const path = storagePathFromUrl(img.url);
+    if (path) await svc.storage.from(STORAGE_BUCKET).remove([path]);
+  }
+  await svc.from("product_image").delete().eq("id", id);
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/** Nastaví obrázek jako hlavní (nejnižší sort_order). */
+export async function setPrimaryImageAction(
+  formData: FormData,
+): Promise<ImageActionResult> {
+  await assertAdmin();
+  const id = str(formData, "imageId");
+  const productId = str(formData, "id");
+  if (!id || !productId) return { ok: false, error: "MISSING" };
+  const svc = createServiceClient();
+
+  const { data: rows } = await svc
+    .from("product_image")
+    .select("id, sort_order")
+    .eq("product_id", productId)
+    .order("sort_order", { ascending: true });
+  if (!rows || rows.length === 0) return { ok: false, error: "MISSING" };
+
+  // Přeindexovat: vybraný na 0, ostatní 1..n v původním pořadí
+  const reordered = [
+    ...rows.filter((r) => r.id === id),
+    ...rows.filter((r) => r.id !== id),
+  ];
+  for (let i = 0; i < reordered.length; i++) {
+    if (reordered[i].sort_order !== i) {
+      await svc.from("product_image").update({ sort_order: i }).eq("id", reordered[i].id);
+    }
+  }
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
 /* ── Kategorie ─────────────────────────────────────────────────────────── */
 export async function saveCategoryAction(formData: FormData) {
   await assertAdmin();

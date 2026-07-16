@@ -34,6 +34,11 @@ export async function Footer() {
                 {nav("blog")}
               </Link>
             </li>
+            <li>
+              <Link href="/objednavka" className="hover:text-white">
+                {nav("trackOrder")}
+              </Link>
+            </li>
           </ul>
         </div>
 

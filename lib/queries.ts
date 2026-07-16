@@ -4,6 +4,8 @@ import type { Locale } from "@/i18n/routing";
 
 export type I18n = Record<string, string> | null;
 
+export type ProductImage = { url: string; alt: string | null; sort_order: number };
+
 export type ProductListItem = {
   id: string;
   slug: string;
@@ -16,6 +18,7 @@ export type ProductListItem = {
   stock_qty: number;
   is_featured: boolean;
   brand: { name: string; slug: string } | null;
+  image: { url: string; alt: string | null } | null; // primární obrázek
 };
 
 export type ProductDetail = ProductListItem & {
@@ -23,7 +26,29 @@ export type ProductDetail = ProductListItem & {
   description_i18n: I18n;
   category: { slug: string; name_i18n: I18n } | null;
   product_attribute: { key: string; value: string; sort_order: number }[];
+  images: ProductImage[];
 };
+
+/** Primární obrázek = nejnižší sort_order. */
+function pickImage(
+  images: ProductImage[] | null | undefined,
+): { url: string; alt: string | null } | null {
+  if (!images || images.length === 0) return null;
+  const first = [...images].sort((a, b) => a.sort_order - b.sort_order)[0];
+  return { url: first.url, alt: first.alt };
+}
+
+type RawListRow = Omit<ProductListItem, "image"> & {
+  product_image: ProductImage[] | null;
+};
+
+/** Doplní `image` (primární) a odstraní surové pole product_image. */
+function normalizeList(data: unknown): ProductListItem[] {
+  return ((data ?? []) as RawListRow[]).map(({ product_image, ...rest }) => ({
+    ...rest,
+    image: pickImage(product_image),
+  }));
+}
 
 export type CategoryItem = {
   id: string;
@@ -44,7 +69,7 @@ export type ProductFilters = {
 };
 
 const LIST_COLS =
-  "id,slug,name,name_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug)";
+  "id,slug,name,name_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), product_image(url,alt,sort_order)";
 
 export async function getProducts(opts?: {
   featured?: boolean;
@@ -57,7 +82,7 @@ export async function getProducts(opts?: {
     .order("created_at", { ascending: false });
   if (opts?.featured) query = query.eq("is_featured", true);
   const { data } = await query;
-  return (data ?? []) as unknown as ProductListItem[];
+  return normalizeList(data);
 }
 
 /** Nejnovější produkty (sekce „Novinky") */
@@ -69,7 +94,7 @@ export async function getNewProducts(limit = 4): Promise<ProductListItem[]> {
     .eq("is_published", true)
     .order("created_at", { ascending: false })
     .limit(limit);
-  return (data ?? []) as unknown as ProductListItem[];
+  return normalizeList(data);
 }
 
 /** Produkty ve slevě (compare_at nastaveno) */
@@ -82,7 +107,7 @@ export async function getSaleProducts(limit = 4): Promise<ProductListItem[]> {
     .not("compare_at_czk", "is", null)
     .order("created_at", { ascending: false })
     .limit(limit);
-  return (data ?? []) as unknown as ProductListItem[];
+  return normalizeList(data);
 }
 
 export async function getProductBySlug(
@@ -92,12 +117,20 @@ export async function getProductBySlug(
   const { data } = await supabase
     .from("product")
     .select(
-      "id,slug,name,name_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), category:category_id(slug,name_i18n), product_attribute(key,value,sort_order)",
+      "id,slug,name,name_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), category:category_id(slug,name_i18n), product_attribute(key,value,sort_order), product_image(url,alt,sort_order)",
     )
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle();
-  return (data as unknown as ProductDetail) ?? null;
+  if (!data) return null;
+
+  const { product_image, ...rest } = data as unknown as ProductDetail & {
+    product_image: ProductImage[] | null;
+  };
+  const images = [...(product_image ?? [])].sort(
+    (a, b) => a.sort_order - b.sort_order,
+  );
+  return { ...rest, image: pickImage(images), images };
 }
 
 export async function getRootCategories(): Promise<CategoryItem[]> {
@@ -133,6 +166,47 @@ export async function getCategoryBySlug(
     .eq("is_published", true)
     .maybeSingle();
   return (data as unknown as CategoryItem) ?? null;
+}
+
+export type ShippingMethodItem = {
+  id: string;
+  code: string;
+  name_i18n: I18n;
+  carrier: string;
+  price_czk: number;
+  price_eur: number | null;
+};
+
+export type PaymentMethodItem = {
+  id: string;
+  code: string;
+  name_i18n: I18n;
+  provider: string;
+  fee_czk: number;
+  fee_eur: number | null;
+};
+
+/** Aktivní dopravní metody (RLS: public read jen is_active=true). */
+export async function getShippingMethods(): Promise<ShippingMethodItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("shipping_method")
+    .select("id,code,name_i18n,carrier,price_czk,price_eur,sort_order")
+    .eq("is_active", true)
+    .order("sort_order");
+  return (data ?? []) as unknown as ShippingMethodItem[];
+}
+
+/** Aktivní platební metody. Comgate se skryje, dokud nejsou přístupy (nemá smysl nabízet nefunkční). */
+export async function getPaymentMethods(): Promise<PaymentMethodItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("payment_method")
+    .select("id,code,name_i18n,provider,fee_czk,fee_eur,sort_order")
+    .eq("is_active", true)
+    .neq("provider", "comgate")
+    .order("sort_order");
+  return (data ?? []) as unknown as PaymentMethodItem[];
 }
 
 export async function getBrands(): Promise<BrandItem[]> {
@@ -213,5 +287,5 @@ export async function getFilteredProducts(
   else query = query.order("created_at", { ascending: false });
 
   const { data } = await query;
-  return (data ?? []) as unknown as ProductListItem[];
+  return normalizeList(data);
 }
