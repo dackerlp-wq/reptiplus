@@ -141,6 +141,7 @@
     "tooShort": "Password must be at least 8 characters.",
     "mismatch": "Passwords do not match.",
     "done": "Password set. Redirecting…",
+    "expired": "The link is invalid or has expired. Request a new one.",
     "backToLogin": "Back to login"
   },
   "OrderLookup": {

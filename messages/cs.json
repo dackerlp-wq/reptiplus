@@ -141,6 +141,7 @@
     "tooShort": "Heslo musí mít alespoň 8 znaků.",
     "mismatch": "Hesla se neshodují.",
     "done": "Heslo nastaveno. Přesměrováváme…",
+    "expired": "Odkaz je neplatný nebo vypršel. Vyžádejte si nový.",
     "backToLogin": "Zpět na přihlášení"
   },
   "OrderLookup": {

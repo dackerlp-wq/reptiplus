@@ -1,18 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, CheckCircle2, KeyRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { createBrowserClient } from "@supabase/ssr";
+import { Loader2, CheckCircle2, KeyRound, AlertTriangle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { createClient } from "@/lib/supabase/client";
+import type { Database } from "@/types/database";
 
 type Phase = "loading" | "request" | "set" | "sent" | "done" | "expired";
 
 export function ResetPasswordForm({ locale }: { locale: Locale }) {
   const t = useTranslations("ResetPassword");
   const router = useRouter();
-  const supabase = createClient();
+
+  // Vlastní klient: token z URL zpracujeme sami (žádné auto-detect, které
+  // token spolkne dřív, než ho přečteme), implicit flow = hash token funguje
+  // i při otevření odkazu v jiném prohlížeči.
+  const supabase = useMemo(
+    () =>
+      createBrowserClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { flowType: "implicit", detectSessionInUrl: false } },
+      ),
+    [],
+  );
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [email, setEmail] = useState("");
@@ -24,7 +37,7 @@ export function ResetPasswordForm({ locale }: { locale: Locale }) {
   // Zachytit token z odkazu a založit recovery session.
   useEffect(() => {
     async function init() {
-      const hash = new URLSearchParams(window.location.hash.slice(1));
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
       const at = hash.get("access_token");
       const rt = hash.get("refresh_token");
       const code = new URLSearchParams(window.location.search).get("code");
@@ -34,21 +47,20 @@ export function ResetPasswordForm({ locale }: { locale: Locale }) {
           access_token: at,
           refresh_token: rt,
         });
-        if (!error) {
-          window.history.replaceState(null, "", window.location.pathname);
-          return setPhase("set");
-        }
+        window.history.replaceState(null, "", window.location.pathname);
+        return setPhase(error ? "expired" : "set");
       }
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!error) return setPhase("set");
+        window.history.replaceState(null, "", window.location.pathname);
+        return setPhase(error ? "expired" : "set");
       }
-      // Bez tokenu → nabídnout vyžádání odkazu e-mailem.
-      setPhase("request");
+      // Už přihlášený uživatel může heslo změnit přímo; jinak nabídni odkaz.
+      const { data } = await supabase.auth.getSession();
+      setPhase(data.session ? "set" : "request");
     }
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [supabase]);
 
   const sendReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +110,23 @@ export function ResetPasswordForm({ locale }: { locale: Locale }) {
       <div className="flex flex-col items-center gap-3 py-6 text-center">
         <CheckCircle2 className="size-10 text-success" />
         <p className="font-medium text-ink">{t("done")}</p>
+      </div>
+    );
+  }
+
+  if (phase === "expired") {
+    return (
+      <div className="space-y-4">
+        <p className="flex items-center gap-2 rounded-lg bg-error/10 px-4 py-3 text-sm text-error">
+          <AlertTriangle className="size-4 shrink-0" /> {t("expired")}
+        </p>
+        <button
+          type="button"
+          onClick={() => setPhase("request")}
+          className="w-full rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest-light"
+        >
+          {t("sendLink")}
+        </button>
       </div>
     );
   }
