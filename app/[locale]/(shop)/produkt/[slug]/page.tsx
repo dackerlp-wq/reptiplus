@@ -24,9 +24,9 @@ export async function generateMetadata({
   if (!product) return {};
   const name = pickI18n(product.name_i18n, locale, product.name);
   const description = pickI18n(
-    product.description_i18n,
+    product.short_description_i18n,
     locale,
-    product.description,
+    product.short_description,
   );
   return { title: name, description };
 }
@@ -44,6 +44,11 @@ export default async function ProductPage({
   if (!product) notFound();
 
   const name = pickI18n(product.name_i18n, locale, product.name);
+  const shortDescription = pickI18n(
+    product.short_description_i18n,
+    locale,
+    product.short_description,
+  );
   const description = pickI18n(
     product.description_i18n,
     locale,
@@ -82,6 +87,12 @@ export default async function ProductPage({
             </span>
           )}
           <h1 className="mt-2 font-display text-4xl font-bold">{name}</h1>
+
+          {shortDescription && (
+            <p className="mt-3 text-lg leading-relaxed text-charcoal/80">
+              {shortDescription}
+            </p>
+          )}
 
           <div className="mt-4">
             <ProductBuyBox

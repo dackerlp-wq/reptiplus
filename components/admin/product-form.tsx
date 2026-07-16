@@ -23,6 +23,7 @@ type ProductRow = {
   slug: string;
   sku: string | null;
   name_i18n: Record<string, string> | null;
+  short_description_i18n: Record<string, string> | null;
   description_i18n: Record<string, string> | null;
   price_czk: number;
   price_eur: number | null;
@@ -58,6 +59,7 @@ export function ProductForm({
   imagesSlot?: React.ReactNode;
 }) {
   const n = product?.name_i18n ?? {};
+  const sd = product?.short_description_i18n ?? {};
   const d = product?.description_i18n ?? {};
 
   return (
@@ -79,6 +81,13 @@ export function ProductForm({
               <LangFields
                 fields={[
                   { name: "name", label: "Název", values: n },
+                  {
+                    name: "short_description",
+                    label: "Krátký popis (perex)",
+                    type: "textarea",
+                    rows: 2,
+                    values: sd,
+                  },
                   {
                     name: "description",
                     label: "Popis",

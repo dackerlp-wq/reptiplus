@@ -44,12 +44,15 @@ export async function saveProductAction(formData: FormData) {
   const id = str(formData, "id") || null;
   const locale = str(formData, "locale") || "cs";
   const name = i18n(formData, "name");
+  const shortDescription = i18n(formData, "short_description");
   const description = i18n(formData, "description");
 
   const payload = {
     slug: str(formData, "slug"),
     name: name.cs,
     name_i18n: name,
+    short_description: shortDescription.cs || null,
+    short_description_i18n: shortDescription,
     description: description.cs || null,
     description_i18n: description,
     price_czk: money(formData, "price_czk") ?? 0,

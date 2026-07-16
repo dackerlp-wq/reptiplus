@@ -603,6 +603,8 @@ export type Database = {
           price_czk: number
           price_eur: number | null
           search_vector: unknown
+          short_description: string | null
+          short_description_i18n: Json
           sku: string | null
           slug: string
           stock_qty: number
@@ -625,6 +627,8 @@ export type Database = {
           price_czk?: number
           price_eur?: number | null
           search_vector?: unknown
+          short_description?: string | null
+          short_description_i18n?: Json
           sku?: string | null
           slug: string
           stock_qty?: number
@@ -647,6 +651,8 @@ export type Database = {
           price_czk?: number
           price_eur?: number | null
           search_vector?: unknown
+          short_description?: string | null
+          short_description_i18n?: Json
           sku?: string | null
           slug?: string
           stock_qty?: number
