@@ -2,11 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCart, getCartId } from "@/lib/cart/cart";
 import { localeCurrency } from "@/lib/i18n";
 import { validateDiscount, type DiscountError } from "@/lib/checkout/discount";
+import { sendMail } from "@/lib/email/client";
+import {
+  orderConfirmationEmail,
+  newOrderNotificationEmail,
+  type OrderEmailData,
+} from "@/lib/email/templates";
 import { routing, type Locale } from "@/i18n/routing";
 
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
@@ -212,8 +219,59 @@ export async function createOrderAction(
     });
 
     if (!error) {
+      const orderNumber = data ?? number;
+
+      // Potvrzovací e-maily — selhání nesmí shodit objednávku.
+      try {
+        const h = await headers();
+        const host = h.get("host");
+        const proto = h.get("x-forwarded-proto") ?? "https";
+        const siteUrl =
+          process.env.NEXT_PUBLIC_SITE_URL ||
+          (host ? `${proto}://${host}` : "https://reptiplus.cz");
+
+        const emailData: OrderEmailData = {
+          number: orderNumber,
+          email,
+          items: cart.lines.map((l) => ({
+            name: l.name,
+            qty: l.qty,
+            lineTotal: l.lineTotal,
+          })),
+          subtotal,
+          shipping: shippingFee,
+          paymentFee,
+          discount: discountAmount,
+          total,
+          currency,
+          paymentMethod: paymentCode,
+          shippingAddress: ship,
+          orderUrl: `${siteUrl}/${locale}/objednavka/${orderNumber}`,
+          locale,
+        };
+
+        const conf = orderConfirmationEmail(emailData);
+        await sendMail({ to: email, ...conf });
+
+        // Notifikace do obchodu (adresa z nastavení, nebo env fallback)
+        const { data: setting } = await svc
+          .from("app_setting")
+          .select("value")
+          .eq("key", "shop.general")
+          .maybeSingle();
+        const shopEmail =
+          (setting?.value as { email?: string } | null)?.email ||
+          process.env.SHOP_NOTIFY_EMAIL;
+        if (shopEmail) {
+          const notif = newOrderNotificationEmail(emailData);
+          await sendMail({ to: shopEmail, ...notif });
+        }
+      } catch (e) {
+        console.error("[checkout] e-maily se nepodařilo odeslat:", e);
+      }
+
       revalidatePath("/", "layout");
-      redirect(`/${locale}/objednavka/${data ?? number}`);
+      redirect(`/${locale}/objednavka/${orderNumber}`);
     }
 
     const msg = error.message ?? "";
