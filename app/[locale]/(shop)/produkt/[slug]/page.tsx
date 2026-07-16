@@ -118,8 +118,12 @@ export default async function ProductPage({
                     key={attr.key}
                     className="flex justify-between px-4 py-3 text-sm"
                   >
-                    <dt className="text-gray-soft">{attr.key}</dt>
-                    <dd className="font-medium text-ink">{attr.value}</dd>
+                    <dt className="text-gray-soft">
+                      {pickI18n(attr.key_i18n, locale, attr.key)}
+                    </dt>
+                    <dd className="font-medium text-ink">
+                      {pickI18n(attr.value_i18n, locale, attr.value)}
+                    </dd>
                   </div>
                 ))}
               </dl>

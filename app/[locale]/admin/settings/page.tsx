@@ -157,9 +157,12 @@ export default async function AdminSettingsPage() {
             <div>
               <h2 className="font-display text-lg font-semibold">AI překlady</h2>
               <p className="text-sm text-gray-soft">
-                Klíč pro automatický překlad textů (tlačítko „Přeložit z ČJ" u
-                produktů, kategorií, značek). Vlož Anthropic API klíč z
-                console.anthropic.com. Bez klíče tlačítko překladu nefunguje.
+                Překlady (tlačítko „Přeložit z ČJ") běží přes{" "}
+                <strong>Vercel AI Gateway</strong>. Nastav na Vercelu proměnnou{" "}
+                <code>AI_GATEWAY_API_KEY</code> (a volitelně model přes{" "}
+                <code>AI_GATEWAY_MODEL</code>, výchozí{" "}
+                <code>anthropic/claude-haiku-4.5</code>). Pole níže je zastaralé
+                (přímý Anthropic klíč) a už se nepoužívá.
               </p>
             </div>
             <label className="flex flex-col gap-1.5">

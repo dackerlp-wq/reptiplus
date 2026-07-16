@@ -5,7 +5,7 @@ import type { BrandItem, CategoryItem } from "@/lib/queries";
 import { LangFields } from "@/components/admin/lang-fields";
 import { Hint } from "@/components/admin/hint";
 import { EurFromCzk } from "@/components/admin/eur-from-czk";
-import { ProductSpecs } from "@/components/admin/product-specs";
+import { ProductSpecs, type SpecRow } from "@/components/admin/product-specs";
 import {
   ProductVariants,
   type VariantRow,
@@ -52,7 +52,7 @@ export function ProductForm({
   categories: CategoryItem[];
   brands: BrandItem[];
   locale: Locale;
-  attributes?: { key: string; value: string }[];
+  attributes?: SpecRow[];
   specKeys?: string[];
   variants?: VariantRow[];
   imagesSlot?: React.ReactNode;

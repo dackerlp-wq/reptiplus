@@ -30,7 +30,7 @@ export default async function EditProductPage({
       .order("sort_order"),
     svc
       .from("product_attribute")
-      .select("key, value, sort_order")
+      .select("key, value, key_i18n, value_i18n, sort_order")
       .eq("product_id", id)
       .order("sort_order"),
     svc.from("product_attribute").select("key"),
@@ -46,7 +46,14 @@ export default async function EditProductPage({
 
   if (!product) notFound();
 
-  const attributes = (attrs ?? []).map((a) => ({ key: a.key, value: a.value }));
+  const i18nOf = (base: string, j: unknown) => {
+    const v = (j ?? {}) as { cs?: string; en?: string; de?: string };
+    return { cs: v.cs || base, en: v.en || "", de: v.de || "" };
+  };
+  const attributes = (attrs ?? []).map((a) => ({
+    key: i18nOf(a.key, a.key_i18n),
+    value: i18nOf(a.value, a.value_i18n),
+  }));
   const specKeys = [...new Set((allKeys ?? []).map((k) => k.key))].sort();
   const money = (v: number | null) => (v == null ? "" : String(v / 100));
   const variants = (variantRows ?? []).map((v) => ({

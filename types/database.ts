@@ -673,23 +673,29 @@ export type Database = {
         Row: {
           id: string
           key: string
+          key_i18n: Json
           product_id: string
           sort_order: number
           value: string
+          value_i18n: Json
         }
         Insert: {
           id?: string
           key: string
+          key_i18n?: Json
           product_id: string
           sort_order?: number
           value: string
+          value_i18n?: Json
         }
         Update: {
           id?: string
           key?: string
+          key_i18n?: Json
           product_id?: string
           sort_order?: number
           value?: string
+          value_i18n?: Json
         }
         Relationships: [
           {

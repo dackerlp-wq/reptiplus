@@ -164,7 +164,14 @@ async function syncProductAttributes(
   productId: string,
   raw: string,
 ) {
-  let specs: { key: string; value: string }[] = [];
+  type I18n = { cs?: string; en?: string; de?: string };
+  type Item = {
+    key: string;
+    value: string;
+    key_i18n?: I18n;
+    value_i18n?: I18n;
+  };
+  let specs: Item[] = [];
   try {
     const parsed = JSON.parse(raw || "[]");
     if (Array.isArray(parsed)) {
@@ -177,7 +184,12 @@ async function syncProductAttributes(
             s.key.trim() &&
             s.value.trim(),
         )
-        .map((s) => ({ key: s.key.trim(), value: s.value.trim() }));
+        .map((s) => ({
+          key: s.key.trim(),
+          value: s.value.trim(),
+          key_i18n: (s.key_i18n ?? {}) as I18n,
+          value_i18n: (s.value_i18n ?? {}) as I18n,
+        }));
     }
   } catch {
     specs = [];
@@ -190,6 +202,8 @@ async function syncProductAttributes(
         product_id: productId,
         key: s.key,
         value: s.value,
+        key_i18n: (s.key_i18n ?? {}) as never,
+        value_i18n: (s.value_i18n ?? {}) as never,
         sort_order: i,
       })),
     );

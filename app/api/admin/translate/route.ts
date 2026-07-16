@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { generateText } from "ai";
-import { createAnthropic } from "@ai-sdk/anthropic";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
+
+// Model přes Vercel AI Gateway (creator/model). Lze změnit přes env.
+const MODEL = process.env.AI_GATEWAY_MODEL || "anthropic/claude-haiku-4.5";
 
 export async function POST(req: NextRequest) {
   // Autorizace — jen admin/staff
@@ -26,32 +27,20 @@ export async function POST(req: NextRequest) {
   );
   if (entries.length === 0) return NextResponse.json({ en: {}, de: {} });
 
-  // API klíč z nastavení (admin) nebo z env
-  const svc = createServiceClient();
-  const { data: setting } = await svc
-    .from("app_setting")
-    .select("value")
-    .eq("key", "integrations.ai")
-    .maybeSingle();
-  const apiKey =
-    (setting?.value as { anthropicKey?: string })?.anthropicKey ||
-    process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "NO_KEY" }, { status: 400 });
-
-  const anthropic = createAnthropic({ apiKey });
   const prompt = `Jsi překladatel e-shopu s teraristickým vybavením (chov plazů a exotických zvířat).
 Přelož následující ČESKÉ texty do angličtiny (klíč "en") a němčiny (klíč "de").
-Zachovej názvy značek a modelů (Arcadia, Zoo Med, Exo Terra, UVB, T5, LED, D3…) beze změny.
-Vrať POUZE validní JSON ve tvaru {"en":{...},"de":{...}} se stejnými klíči jako vstup, bez markdownu.
+
+Pravidla:
+- Některé hodnoty obsahují HTML formátování (značky <p>, <strong>, <em>, <s>, <ul>, <ol>, <li>, <a>, <h2>, <h3>). VŠECHNY HTML značky i jejich atributy zachovej PŘESNĚ beze změny — překládej pouze viditelný text mezi značkami.
+- Názvy značek a modelů (Arcadia, Zoo Med, Exo Terra, Repashy, UVB, T5, LED, D3…) nech beze změny.
+- Čísla, jednotky a technické hodnoty (35 W, 12 %, 54W, 90 g…) nech beze změny.
+- Vrať POUZE validní JSON ve tvaru {"en":{...},"de":{...}} se stejnými klíči jako vstup, bez markdownu.
 
 Vstup (JSON):
 ${JSON.stringify(Object.fromEntries(entries))}`;
 
   try {
-    const { text } = await generateText({
-      model: anthropic("claude-haiku-4-5-20251001"),
-      prompt,
-    });
+    const { text } = await generateText({ model: MODEL, prompt });
     const clean = text.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(clean);
     return NextResponse.json({ en: parsed.en ?? {}, de: parsed.de ?? {} });

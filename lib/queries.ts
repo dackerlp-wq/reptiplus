@@ -35,7 +35,13 @@ export type ProductDetail = ProductListItem & {
   description: string | null;
   description_i18n: I18n;
   category: { slug: string; name_i18n: I18n } | null;
-  product_attribute: { key: string; value: string; sort_order: number }[];
+  product_attribute: {
+    key: string;
+    value: string;
+    key_i18n: I18n;
+    value_i18n: I18n;
+    sort_order: number;
+  }[];
   images: ProductImage[];
   variants: ProductVariant[];
 };
@@ -129,7 +135,7 @@ export async function getProductBySlug(
   const { data } = await supabase
     .from("product")
     .select(
-      "id,slug,name,name_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), category:category_id(slug,name_i18n), product_attribute(key,value,sort_order), product_image(url,alt,sort_order), product_variant(id,name,sku,price_czk,price_eur,stock_qty,sort_order)",
+      "id,slug,name,name_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), category:category_id(slug,name_i18n), product_attribute(key,value,key_i18n,value_i18n,sort_order), product_image(url,alt,sort_order), product_variant(id,name,sku,price_czk,price_eur,stock_qty,sort_order)",
     )
     .eq("slug", slug)
     .eq("is_published", true)

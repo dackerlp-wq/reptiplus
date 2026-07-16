@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RichEditor } from "@/components/admin/rich-editor";
+import { translateFromCs } from "@/lib/admin/translate-client";
 
 type Values = { cs?: string; en?: string; de?: string } | null | undefined;
 
@@ -62,38 +63,25 @@ export function LangFields({
     setError(null);
     const texts: Record<string, string> = {};
     for (const f of fields) texts[f.name] = vals[f.name]?.cs ?? "";
-    try {
-      const res = await fetch("/api/admin/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texts }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(
-          data.error === "NO_KEY"
-            ? "Chybí AI klíč — doplň ho v Nastavení → Integrace → AI překlady."
-            : "Překlad se nezdařil, zkus to znovu.",
-        );
-        return;
-      }
-      setVals((p) => {
-        const next = { ...p };
-        for (const f of fields) {
-          next[f.name] = {
-            ...next[f.name],
-            en: data.en?.[f.name] ?? next[f.name].en,
-            de: data.de?.[f.name] ?? next[f.name].de,
-          };
-        }
-        return next;
-      });
-      setLocale("en");
-    } catch {
-      setError("Překlad se nezdařil, zkus to znovu.");
-    } finally {
+    const res = await translateFromCs(texts);
+    if (!res.ok) {
+      setError("Překlad se nezdařil. Zkontroluj AI Gateway a zkus to znovu.");
       setBusy(false);
+      return;
     }
+    setVals((p) => {
+      const next = { ...p };
+      for (const f of fields) {
+        next[f.name] = {
+          ...next[f.name],
+          en: res.en[f.name] ?? next[f.name].en,
+          de: res.de[f.name] ?? next[f.name].de,
+        };
+      }
+      return next;
+    });
+    setLocale("en");
+    setBusy(false);
   }
 
   return (
