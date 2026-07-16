@@ -180,7 +180,7 @@
         try{
             const res=await fetch(ZVC.restBase+'/redeem',{
                 method:'POST',
-                headers:{'Content-Type':'application/json','X-WP-Nonce':ZVC.nonce},
+                headers:{'Content-Type':'application/json'},
                 body:JSON.stringify({items})
             });
             const data=await res.json();
@@ -197,14 +197,14 @@
         }catch(e){setStatus('Chyba spojení: '+e.message,'err');beep('error');}
     }
 
-    async function fetchByOrder(orderId,keepScannedKey){setStatus('Hledám objednávku…','');try{const res=await fetch(ZVC.restBase+'/order?order_id='+encodeURIComponent(orderId),{headers:{'X-WP-Nonce':ZVC.nonce}});const data=await res.json();if(!data.ok){setStatus(data.message||'Objednávka nenalezena.','err');beep('error');el.list.innerHTML='';return;}current.order_id=data.group.order_id||null;current.counts=data.group.counts||{total:0,parking:0};current.siblings=Array.isArray(data.siblings)?data.siblings:[];current.scannedKey=keepScannedKey||null;renderSummary();renderList();if(keepScannedKey){const _si=current.siblings.find(x=>itemKey(x)===keepScannedKey);if(_si){const s=scannedState(_si);setStatus(s.text,s.tone);beep(s.beep);}}else{setStatus('Objednávka #'+current.order_id+' — '+current.siblings.length+' vstupenek','ok');beep('ok');}}catch(e){setStatus('Chyba spojení: '+e.message,'err');beep('error');}}
+    async function fetchByOrder(orderId,keepScannedKey){setStatus('Hledám objednávku…','');try{const res=await fetch(ZVC.restBase+'/order?order_id='+encodeURIComponent(orderId));const data=await res.json();if(!data.ok){setStatus(data.message||'Objednávka nenalezena.','err');beep('error');el.list.innerHTML='';return;}current.order_id=data.group.order_id||null;current.counts=data.group.counts||{total:0,parking:0};current.siblings=Array.isArray(data.siblings)?data.siblings:[];current.scannedKey=keepScannedKey||null;renderSummary();renderList();if(keepScannedKey){const _si=current.siblings.find(x=>itemKey(x)===keepScannedKey);if(_si){const s=scannedState(_si);setStatus(s.text,s.tone);beep(s.beep);}}else{setStatus('Objednávka #'+current.order_id+' — '+current.siblings.length+' vstupenek','ok');beep('ok');}}catch(e){setStatus('Chyba spojení: '+e.message,'err');beep('error');}}
 
     async function checkCode(code){
         if(lock){setStatus('Nejdřív dokončete aktuální vstupenku — Uplatnit nebo Zrušit.','warn');return;}
         if(!code){setStatus('Zadej kód voucheru.','warn');return;}
         setStatus('Ověřuji…','');
         try{
-            const res=await fetch(ZVC.restBase+'/check-voucher',{method:'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':ZVC.nonce},body:JSON.stringify({code})});
+            const res=await fetch(ZVC.restBase+'/check-voucher',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
             const data=await res.json();
             if(el.codeInput)el.codeInput.value='';
             if(data&&data.siblings&&data.group){
@@ -342,7 +342,7 @@
             okBtn.disabled=true; okBtn.textContent='Uplatňuji…';
             const items=keys.map(parseKey).map(x=>({source:x.source,id:x.id}));
             try{
-                const res=await fetch(ZVC.restBase+'/redeem',{method:'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':ZVC.nonce},body:JSON.stringify({items})});
+                const res=await fetch(ZVC.restBase+'/redeem',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
                 const data=await res.json();
                 if(data&&data.ok&&(data.updated||[]).length){
                     beep('ok');
