@@ -43,6 +43,8 @@
     "securePayment": "Bezpečná platba",
     "securePaymentText": "Kartou, převodem i na dobírku.",
     "manufacturer": "O výrobci",
+    "upsell": "Doporučujeme k tomuto",
+    "related": "Podobné produkty",
     "backToCatalog": "Zpět na produkty"
   },
   "Reviews": {

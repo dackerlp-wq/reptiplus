@@ -6,8 +6,14 @@ import { Link } from "@/i18n/navigation";
 import { ProductGallery } from "@/components/reptiplus/product-gallery";
 import { ProductBuyBox } from "@/components/reptiplus/product-buy-box";
 import { ProductReviews } from "@/components/reptiplus/product-reviews";
+import { ProductCard } from "@/components/reptiplus/product-card";
 import type { Locale } from "@/i18n/routing";
-import { getProductBySlug } from "@/lib/queries";
+import type { ProductListItem } from "@/lib/queries";
+import {
+  getProductBySlug,
+  getRelatedProducts,
+  getUpsellProducts,
+} from "@/lib/queries";
 import { getProductReviews } from "@/lib/reviews/queries";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -47,10 +53,24 @@ export default async function ProductPage({
   if (!product) notFound();
 
   const supabase = await createClient();
-  const [reviewsData, { data: authData }] = await Promise.all([
+  const [reviewsData, { data: authData }, related, upsell] = await Promise.all([
     getProductReviews(product.id),
     supabase.auth.getUser(),
+    getRelatedProducts(product.id, product.category_id, 4),
+    getUpsellProducts(product.id, 4),
   ]);
+
+  const productSection = (title: string, items: ProductListItem[]) =>
+    items.length > 0 ? (
+      <section className="mt-14">
+        <h2 className="mb-6 font-display text-2xl font-bold">{title}</h2>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {items.map((p) => (
+            <ProductCard key={p.id} product={p} locale={locale} />
+          ))}
+        </div>
+      </section>
+    ) : null;
 
   const name = pickI18n(product.name_i18n, locale, product.name);
   const shortDescription = pickI18n(
@@ -187,6 +207,9 @@ export default async function ProductPage({
         </div>
       )}
 
+      {/* Doporučujeme také (upsell) */}
+      {productSection(t("upsell"), upsell)}
+
       {/* Výrobce */}
       {product.brand && (
         <section className="mt-14 rounded-2xl border border-cream-dark bg-paper p-6 md:p-8">
@@ -225,6 +248,9 @@ export default async function ProductPage({
         count={reviewsData.count}
         isLoggedIn={!!authData.user}
       />
+
+      {/* Podobné produkty */}
+      {productSection(t("related"), related)}
     </div>
   );
 }

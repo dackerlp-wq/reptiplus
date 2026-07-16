@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { createServiceClient } from "@/lib/supabase/service";
 import { BrandForm } from "@/components/admin/brand-form";
+import { BrandLogo } from "@/components/admin/brand-logo";
 
 export default async function EditBrandPage({
   params,
@@ -25,7 +26,10 @@ export default async function EditBrandPage({
         <ArrowLeft className="size-4" /> Značky
       </Link>
       <h1 className="mb-8 font-display text-3xl font-bold">Upravit značku</h1>
-      <BrandForm brand={brand as never} locale={locale} />
+      <div className="max-w-2xl space-y-6">
+        <BrandForm brand={brand as never} locale={locale} />
+        <BrandLogo brandId={brand.id} logoUrl={brand.logo_url} />
+      </div>
     </div>
   );
 }

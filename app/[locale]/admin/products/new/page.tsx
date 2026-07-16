@@ -12,12 +12,15 @@ export default async function NewProductPage({
 }) {
   const { locale } = await params;
   const svc = createServiceClient();
-  const [categories, brands, { data: allKeys }] = await Promise.all([
-    getAllCategories(),
-    getBrands(),
-    svc.from("product_attribute").select("key"),
-  ]);
+  const [categories, brands, { data: allKeys }, { data: allProds }] =
+    await Promise.all([
+      getAllCategories(),
+      getBrands(),
+      svc.from("product_attribute").select("key"),
+      svc.from("product").select("id, name").order("name"),
+    ]);
   const specKeys = [...new Set((allKeys ?? []).map((k) => k.key))].sort();
+  const allProducts = (allProds ?? []).map((p) => ({ id: p.id, name: p.name }));
 
   return (
     <div>
@@ -33,6 +36,7 @@ export default async function NewProductPage({
         brands={brands}
         locale={locale}
         specKeys={specKeys}
+        allProducts={allProducts}
       />
     </div>
   );

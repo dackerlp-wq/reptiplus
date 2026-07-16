@@ -43,6 +43,7 @@ export type ProductDetail = Omit<ProductListItem, "brand"> & {
   short_description_i18n: I18n;
   description: string | null;
   description_i18n: I18n;
+  category_id: string | null;
   category: { slug: string; name_i18n: I18n } | null;
   product_attribute: {
     key: string;
@@ -144,7 +145,7 @@ export async function getProductBySlug(
   const { data } = await supabase
     .from("product")
     .select(
-      "id,slug,name,name_i18n,sku,short_description,short_description_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug,logo_url,description_i18n), category:category_id(slug,name_i18n), product_attribute(key,value,key_i18n,value_i18n,sort_order), product_image(url,alt,sort_order), product_variant(id,name,sku,price_czk,price_eur,stock_qty,sort_order)",
+      "id,slug,name,name_i18n,sku,short_description,short_description_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured,category_id, brand:brand_id(name,slug,logo_url,description_i18n), category:category_id(slug,name_i18n), product_attribute(key,value,key_i18n,value_i18n,sort_order), product_image(url,alt,sort_order), product_variant(id,name,sku,price_czk,price_eur,stock_qty,sort_order)",
     )
     .eq("slug", slug)
     .eq("is_published", true)
@@ -320,6 +321,43 @@ export async function getFilteredProducts(
 
   const { data } = await query;
   return normalizeList(data);
+}
+
+/** Podobné produkty — stejná kategorie, mimo aktuální produkt. */
+export async function getRelatedProducts(
+  productId: string,
+  categoryId: string | null,
+  limit = 4,
+): Promise<ProductListItem[]> {
+  if (!categoryId) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("product")
+    .select(LIST_COLS)
+    .eq("is_published", true)
+    .eq("category_id", categoryId)
+    .neq("id", productId)
+    .order("is_featured", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return normalizeList(data);
+}
+
+/** Ručně vybrané upsell produkty (jen publikované). */
+export async function getUpsellProducts(
+  productId: string,
+  limit = 6,
+): Promise<ProductListItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("product_upsell")
+    .select(`sort_order, product:upsell_product_id(${LIST_COLS})`)
+    .eq("product_id", productId)
+    .order("sort_order")
+    .limit(limit);
+  const rows = (data ?? []) as unknown as { product: unknown | null }[];
+  const products = rows.map((r) => r.product).filter((p) => !!p);
+  return normalizeList(products);
 }
 
 export type SearchSuggestion = {

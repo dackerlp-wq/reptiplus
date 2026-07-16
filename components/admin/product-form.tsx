@@ -48,6 +48,8 @@ export function ProductForm({
   specKeys = [],
   variants = [],
   imagesSlot,
+  allProducts = [],
+  upsellIds = [],
 }: {
   product?: ProductRow;
   categories: CategoryItem[];
@@ -57,6 +59,8 @@ export function ProductForm({
   specKeys?: string[];
   variants?: VariantRow[];
   imagesSlot?: React.ReactNode;
+  allProducts?: { id: string; name: string }[];
+  upsellIds?: string[];
 }) {
   const n = product?.name_i18n ?? {};
   const sd = product?.short_description_i18n ?? {};
@@ -104,6 +108,33 @@ export function ProductForm({
           <ProductSpecs initial={attributes} keys={specKeys} />
 
           <ProductVariants initial={variants} />
+
+          {/* Upsell — doporučené produkty */}
+          <div className="rounded-xl border border-cream-dark bg-paper p-4">
+            <h2 className="font-display text-lg font-semibold">
+              Doporučené produkty (upsell)
+            </h2>
+            <p className="mb-3 text-xs text-gray-soft">
+              Zobrazí se na detailu v sekci „Doporučujeme k tomuto". Držte Ctrl
+              (Cmd) pro výběr více.
+            </p>
+            <input type="hidden" name="upsell_present" value="1" />
+            <select
+              name="upsell"
+              multiple
+              size={8}
+              defaultValue={upsellIds}
+              className="w-full rounded-lg border border-cream-dark bg-white px-2 py-2 text-sm outline-none focus:border-forest"
+            >
+              {allProducts
+                .filter((p) => p.id !== product?.id)
+                .map((p) => (
+                  <option key={p.id} value={p.id} className="px-1 py-0.5">
+                    {p.name}
+                  </option>
+                ))}
+            </select>
+          </div>
         </div>
 
         {/* Pravý sloupec — postranní panel */}

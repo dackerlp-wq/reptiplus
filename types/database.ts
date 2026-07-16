@@ -745,6 +745,27 @@ export type Database = {
           },
         ]
       }
+      product_upsell: {
+        Row: {
+          id: string
+          product_id: string
+          sort_order: number
+          upsell_product_id: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          sort_order?: number
+          upsell_product_id: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          sort_order?: number
+          upsell_product_id?: string
+        }
+        Relationships: []
+      }
       product_variant: {
         Row: {
           id: string

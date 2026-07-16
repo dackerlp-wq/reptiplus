@@ -43,6 +43,8 @@
     "securePayment": "Sichere Zahlung",
     "securePaymentText": "Karte, Überweisung oder Nachnahme.",
     "manufacturer": "Über den Hersteller",
+    "upsell": "Das könnte Ihnen auch gefallen",
+    "related": "Ähnliche Produkte",
     "backToCatalog": "Zurück zu den Produkten"
   },
   "Reviews": {

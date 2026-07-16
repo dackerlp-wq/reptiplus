@@ -89,9 +89,32 @@ export async function saveProductAction(formData: FormData) {
   if (productId && formData.has("variants")) {
     await syncProductVariants(svc, productId, str(formData, "variants"));
   }
+  // Upsell (product_upsell) — nahradit dle výběru
+  if (productId && formData.has("upsell_present")) {
+    const ids = formData.getAll("upsell").map((v) => String(v));
+    await syncUpsell(svc, productId, ids);
+  }
 
   revalidatePath("/", "layout");
   redirect(`/${locale}/admin/products`);
+}
+
+async function syncUpsell(
+  svc: ReturnType<typeof createServiceClient>,
+  productId: string,
+  ids: string[],
+) {
+  const clean = [...new Set(ids.filter((id) => id && id !== productId))];
+  await svc.from("product_upsell").delete().eq("product_id", productId);
+  if (clean.length > 0) {
+    await svc.from("product_upsell").insert(
+      clean.map((id, i) => ({
+        product_id: productId,
+        upsell_product_id: id,
+        sort_order: i,
+      })),
+    );
+  }
 }
 
 async function syncProductVariants(
@@ -337,6 +360,70 @@ export async function setPrimaryImageAction(
       await svc.from("product_image").update({ sort_order: i }).eq("id", reordered[i].id);
     }
   }
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/* ── Logo značky ───────────────────────────────────────────────────────── */
+export async function uploadBrandLogoAction(
+  fd: FormData,
+): Promise<ImageActionResult> {
+  await assertAdmin();
+  const brandId = str(fd, "id");
+  if (!brandId) return { ok: false, error: "MISSING" };
+  const file = fd.get("file");
+  if (!(file instanceof File) || file.size === 0)
+    return { ok: false, error: "NO_FILES" };
+  if (!file.type.startsWith("image/")) return { ok: false, error: "NOT_IMAGE" };
+  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "TOO_LARGE" };
+
+  const svc = createServiceClient();
+  // Staré logo smazat z úložiště
+  const { data: brand } = await svc
+    .from("brand")
+    .select("logo_url")
+    .eq("id", brandId)
+    .maybeSingle();
+  if (brand?.logo_url) {
+    const p = storagePathFromUrl(brand.logo_url);
+    if (p) await svc.storage.from(STORAGE_BUCKET).remove([p]);
+  }
+
+  const ext = (file.name.split(".").pop() || "webp").toLowerCase();
+  const path = `brand-logos/${brandId}/${crypto.randomUUID()}.${ext}`;
+  const { error: upErr } = await svc.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (upErr) return { ok: false, error: "UPLOAD" };
+
+  const { data: pub } = svc.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  const { error } = await svc
+    .from("brand")
+    .update({ logo_url: pub.publicUrl })
+    .eq("id", brandId);
+  if (error) return { ok: false, error: "DB" };
+
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function removeBrandLogoAction(
+  fd: FormData,
+): Promise<ImageActionResult> {
+  await assertAdmin();
+  const brandId = str(fd, "id");
+  if (!brandId) return { ok: false, error: "MISSING" };
+  const svc = createServiceClient();
+  const { data: brand } = await svc
+    .from("brand")
+    .select("logo_url")
+    .eq("id", brandId)
+    .maybeSingle();
+  if (brand?.logo_url) {
+    const p = storagePathFromUrl(brand.logo_url);
+    if (p) await svc.storage.from(STORAGE_BUCKET).remove([p]);
+  }
+  await svc.from("brand").update({ logo_url: null }).eq("id", brandId);
   revalidatePath("/", "layout");
   return { ok: true };
 }

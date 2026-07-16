@@ -43,6 +43,8 @@
     "securePayment": "Secure payment",
     "securePaymentText": "Card, bank transfer or cash on delivery.",
     "manufacturer": "About the manufacturer",
+    "upsell": "You may also like",
+    "related": "Similar products",
     "backToCatalog": "Back to products"
   },
   "Reviews": {

@@ -44,7 +44,15 @@ export default async function EditProductPage({
     .eq("product_id", id)
     .order("sort_order");
 
+  const [{ data: allProds }, { data: upsellRows }] = await Promise.all([
+    svc.from("product").select("id, name").order("name"),
+    svc.from("product_upsell").select("upsell_product_id").eq("product_id", id),
+  ]);
+
   if (!product) notFound();
+
+  const allProducts = (allProds ?? []).map((p) => ({ id: p.id, name: p.name }));
+  const upsellIds = (upsellRows ?? []).map((r) => r.upsell_product_id);
 
   const i18nOf = (base: string, j: unknown) => {
     const v = (j ?? {}) as { cs?: string; en?: string; de?: string };
@@ -84,6 +92,8 @@ export default async function EditProductPage({
         attributes={attributes}
         specKeys={specKeys}
         variants={variants}
+        allProducts={allProducts}
+        upsellIds={upsellIds}
         imagesSlot={<ProductImages productId={product.id} images={images ?? []} />}
       />
     </div>
