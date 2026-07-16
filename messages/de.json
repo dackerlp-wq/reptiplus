@@ -159,7 +159,15 @@
     "about": "Über uns",
     "aboutText": "Reptiplus ist ein Shop von Haltern für Halter.",
     "contact": "Kontakt",
+    "terms": "AGB",
+    "privacy": "Datenschutz",
     "rights": "Alle Rechte vorbehalten."
+  },
+  "Legal": {
+    "termsTitle": "Allgemeine Geschäftsbedingungen",
+    "privacyTitle": "Datenschutz",
+    "draft": "Dieses Dokument wird gerade finalisiert. Bei Fragen kontaktieren Sie uns bitte über die untenstehenden Angaben.",
+    "seller": "Betreiber"
   },
   "Switcher": {
     "language": "Sprache",

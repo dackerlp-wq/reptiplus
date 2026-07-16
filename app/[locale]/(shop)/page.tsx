@@ -1,8 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
-import { ArrowRight } from "lucide-react";
-import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import {
   getNewProducts,
@@ -11,8 +9,13 @@ import {
   getSaleProducts,
 } from "@/lib/queries";
 import type { ProductListItem } from "@/lib/queries";
+import { formatPrice, pickI18n, priceForLocale } from "@/lib/i18n";
 import { ProductCard } from "@/components/reptiplus/product-card";
 import { CategoryCard } from "@/components/reptiplus/category-card";
+import {
+  HeroCarousel,
+  type HeroSlide,
+} from "@/components/reptiplus/hero-carousel";
 
 export default async function HomePage({
   params,
@@ -41,36 +44,20 @@ export default async function HomePage({
     </div>
   );
 
+  // Carousel — doporučené produkty (fallback na novinky), max 4
+  const carouselSource = (featured.length ? featured : latest).slice(0, 4);
+  const slides: HeroSlide[] = carouselSource.map((p) => ({
+    slug: p.slug,
+    name: pickI18n(p.name_i18n, locale, p.name),
+    brand: p.brand?.name ?? null,
+    imageUrl: p.image?.url ?? null,
+    priceLabel: formatPrice(priceForLocale(p, locale), locale),
+  }));
+
   return (
     <>
-      {/* Hero */}
-      <section className="bg-forest-deep text-cream">
-        <div className="mx-auto max-w-7xl px-4 py-20 md:py-28">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-gold-light">
-            {t("heroKicker")}
-          </p>
-          <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight text-white md:text-6xl">
-            {t("heroTitle")}
-          </h1>
-          <p className="mt-6 max-w-xl text-lg text-cream/80">
-            {t("heroSubtitle")}
-          </p>
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Link
-              href="/produkty"
-              className="inline-flex items-center gap-2 rounded-lg bg-gold px-6 py-3 font-semibold text-white transition-colors hover:bg-gold-light"
-            >
-              {t("heroCta")} <ArrowRight className="size-4" />
-            </Link>
-            <Link
-              href="/blog"
-              className="inline-flex items-center gap-2 rounded-lg border border-cream/30 px-6 py-3 font-semibold text-cream transition-colors hover:bg-white/10"
-            >
-              {t("heroCtaSecondary")}
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* Carousel */}
+      <HeroCarousel slides={slides} ctaLabel={t("heroCta")} />
 
       {/* Kategorie */}
       {categories.length > 0 && (

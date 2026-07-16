@@ -159,7 +159,15 @@
     "about": "About",
     "aboutText": "Reptiplus is a shop built by keepers, for keepers.",
     "contact": "Contact",
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy Policy",
     "rights": "All rights reserved."
+  },
+  "Legal": {
+    "termsTitle": "Terms & Conditions",
+    "privacyTitle": "Privacy Policy",
+    "draft": "This document is being finalized. For any questions, please contact us using the details below.",
+    "seller": "Operator"
   },
   "Switcher": {
     "language": "Language",

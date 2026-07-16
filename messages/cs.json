@@ -159,7 +159,15 @@
     "about": "O nás",
     "aboutText": "Reptiplus je obchod od chovatelů pro chovatele.",
     "contact": "Kontakt",
+    "terms": "Obchodní podmínky",
+    "privacy": "Zpracování osobních údajů",
     "rights": "Všechna práva vyhrazena."
+  },
+  "Legal": {
+    "termsTitle": "Obchodní podmínky",
+    "privacyTitle": "Zpracování osobních údajů",
+    "draft": "Znění tohoto dokumentu právě finalizujeme. S dotazy nás prosím kontaktujte na uvedených údajích.",
+    "seller": "Provozovatel"
   },
   "Switcher": {
     "language": "Jazyk",
