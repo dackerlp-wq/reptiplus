@@ -16,8 +16,11 @@ build/
 
 # OS
 .DS_Store
+._*
 .vercel
 
 # Next.js
 /.next/
 /next-env.d.ts
+
+.vercel
