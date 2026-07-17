@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Pencil,
@@ -18,6 +18,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { formatPrice, discountPercent } from "@/lib/i18n";
@@ -27,6 +29,8 @@ import {
   togglePublishAction,
   toggleFeaturedAction,
   bulkProductAction,
+  setProductStockAction,
+  setProductPriceAction,
 } from "@/lib/admin/actions";
 
 export type ProductRow = {
@@ -75,6 +79,125 @@ function TriCheckbox({
       className="size-4 cursor-pointer rounded border-cream-dark text-forest accent-forest"
     />
   );
+}
+
+/** Inline editovatelná číselná buňka (sklad = celé číslo, cena = Kč z haléřů). */
+function InlineEditCell({
+  initial,
+  kind,
+  onCommit,
+  className,
+}: {
+  initial: number; // uložená hodnota: qty nebo haléře
+  kind: "int" | "money";
+  onCommit: (raw: number) => void; // raw = qty nebo haléře
+  className?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [pending, start] = useTransition();
+
+  const display = kind === "money" ? czk(initial) : String(initial);
+  const toDraft = () =>
+    kind === "money" ? (initial / 100).toString().replace(".", ",") : String(initial);
+
+  const begin = () => {
+    setDraft(toDraft());
+    setEditing(true);
+    requestAnimationFrame(() => inputRef.current?.select());
+  };
+
+  const commit = () => {
+    setEditing(false);
+    const raw = draft.replace(",", ".").trim();
+    if (raw === "") return;
+    const n = kind === "money" ? Math.round(parseFloat(raw) * 100) : parseInt(raw, 10);
+    if (!Number.isFinite(n) || n < 0 || n === initial) return;
+    start(() => onCommit(n));
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={draft}
+        inputMode={kind === "money" ? "decimal" : "numeric"}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          else if (e.key === "Escape") setEditing(false);
+        }}
+        className="w-24 rounded-md border border-forest bg-white px-2 py-1 text-sm outline-none"
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={begin}
+      title="Kliknutím upravit"
+      className={cn(
+        "group/edit inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 font-mono font-medium transition-colors hover:bg-cream",
+        className,
+      )}
+    >
+      {display}
+      {pending ? (
+        <Loader2 className="size-3 animate-spin text-forest" />
+      ) : (
+        <Pencil className="size-3 text-gray-soft opacity-0 transition-opacity group-hover/edit:opacity-100" />
+      )}
+    </button>
+  );
+}
+
+/** Sestaví a stáhne CSV (oddělovač `;`, BOM pro Excel/diakritiku). */
+function downloadCsv(rows: ProductRow[]) {
+  const esc = (v: string | number) => {
+    const s = String(v);
+    return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const kc = (minor: number | null) =>
+    minor === null ? "" : (minor / 100).toFixed(2).replace(".", ",");
+  const header = [
+    "Název",
+    "Slug",
+    "Kategorie",
+    "Cena (Kč)",
+    "Původní cena (Kč)",
+    "Sklad",
+    "Prodáno",
+    "Publikováno",
+    "Doporučeno",
+  ];
+  const lines = rows.map((p) =>
+    [
+      p.name,
+      p.slug,
+      p.categoryName ?? "",
+      kc(p.priceCzk),
+      kc(p.compareCzk),
+      p.stock,
+      p.sold,
+      p.published ? "ano" : "ne",
+      p.featured ? "ano" : "ne",
+    ]
+      .map(esc)
+      .join(";"),
+  );
+  const csv = "﻿" + [header.join(";"), ...lines].join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `produkty-export-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export function ProductsTable({
@@ -344,6 +467,16 @@ export function ProductsTable({
         >
           <Star className="size-3.5" /> Doporučené
         </button>
+
+        <button
+          type="button"
+          onClick={() => downloadCsv(filtered)}
+          disabled={filtered.length === 0}
+          title="Exportovat filtrované produkty do CSV"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm font-medium text-charcoal transition-colors enabled:hover:border-forest enabled:hover:text-forest disabled:opacity-40"
+        >
+          <Download className="size-4" /> Export CSV
+        </button>
       </div>
 
       {/* Lišta hromadných akcí */}
@@ -475,9 +608,12 @@ export function ProductsTable({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-medium text-ink">
-                        {czk(p.priceCzk)}
-                      </span>
+                      <InlineEditCell
+                        initial={p.priceCzk}
+                        kind="money"
+                        onCommit={(raw) => setProductPriceAction(p.id, raw)}
+                        className="text-ink"
+                      />
                       {sale && (
                         <>
                           <span className="font-mono text-xs text-gray-soft line-through">
@@ -490,8 +626,13 @@ export function ProductsTable({
                       )}
                     </div>
                   </td>
-                  <td className={cn("px-4 py-3 font-mono font-medium", stockClass)}>
-                    {p.stock}
+                  <td className="px-4 py-3">
+                    <InlineEditCell
+                      initial={p.stock}
+                      kind="int"
+                      onCommit={(raw) => setProductStockAction(p.id, raw)}
+                      className={stockClass}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">

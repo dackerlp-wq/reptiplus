@@ -262,6 +262,27 @@ export async function deleteProductAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+/** Rychlá inline úprava skladu z tabulky. */
+export async function setProductStockAction(id: string, stock: number) {
+  await assertAdmin();
+  if (!id) return;
+  const v = Number.isFinite(stock) && stock >= 0 ? Math.floor(stock) : 0;
+  await createServiceClient().from("product").update({ stock_qty: v }).eq("id", id);
+  revalidatePath("/", "layout");
+}
+
+/** Rychlá inline úprava ceny (v haléřích) z tabulky. */
+export async function setProductPriceAction(id: string, priceCzkMinor: number) {
+  await assertAdmin();
+  if (!id) return;
+  const v =
+    Number.isFinite(priceCzkMinor) && priceCzkMinor >= 0
+      ? Math.round(priceCzkMinor)
+      : 0;
+  await createServiceClient().from("product").update({ price_czk: v }).eq("id", id);
+  revalidatePath("/", "layout");
+}
+
 /** Hromadné akce nad vybranými produkty. `ids` = čárkou oddělené UUID. */
 export async function bulkProductAction(formData: FormData) {
   await assertAdmin();
