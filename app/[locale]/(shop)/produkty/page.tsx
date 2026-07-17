@@ -5,6 +5,7 @@ import {
   getAllCategories,
   getBrands,
   getFilteredProducts,
+  getPriceRange,
 } from "@/lib/queries";
 import { ProductCard } from "@/components/reptiplus/product-card";
 import { CatalogFilters } from "@/components/reptiplus/catalog-filters";
@@ -21,6 +22,14 @@ export async function generateMetadata({
 
 const first = (v: string | string[] | undefined) =>
   Array.isArray(v) ? v[0] : v;
+
+/** Cena z URL (v jednotkách měny) → minor units (haléře/eurocenty). */
+const priceParam = (v: string | string[] | undefined): number | undefined => {
+  const raw = first(v);
+  if (!raw) return undefined;
+  const n = parseFloat(raw.replace(",", "."));
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : undefined;
+};
 
 export default async function ProductsPage({
   params,
@@ -40,12 +49,16 @@ export default async function ProductsPage({
     q: first(sp.q),
     sort: first(sp.sort),
     inStock: first(sp.sklad) === "1",
+    onSale: first(sp.akce) === "1",
+    priceMin: priceParam(sp.cena_od),
+    priceMax: priceParam(sp.cena_do),
   };
 
-  const [products, categories, brands] = await Promise.all([
+  const [products, categories, brands, priceRange] = await Promise.all([
     getFilteredProducts(locale, filters),
     getAllCategories(),
     getBrands(),
+    getPriceRange(locale, filters.category),
   ]);
 
   return (
@@ -58,9 +71,11 @@ export default async function ProductsPage({
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
-        <div className="lg:sticky lg:top-24 lg:self-start">
-          <CatalogFilters categories={categories} brands={brands} />
-        </div>
+        <CatalogFilters
+          categories={categories}
+          brands={brands}
+          priceRange={priceRange}
+        />
 
         <div>
           {products.length === 0 ? (

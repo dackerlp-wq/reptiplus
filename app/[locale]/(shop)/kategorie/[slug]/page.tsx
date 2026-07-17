@@ -6,11 +6,23 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import {
   getAllCategories,
+  getBrands,
   getCategoryBySlug,
   getFilteredProducts,
+  getPriceRange,
 } from "@/lib/queries";
 import { pickI18n } from "@/lib/i18n";
 import { ProductCard } from "@/components/reptiplus/product-card";
+import { CatalogFilters } from "@/components/reptiplus/catalog-filters";
+
+const first = (v: string | string[] | undefined) =>
+  Array.isArray(v) ? v[0] : v;
+const priceParam = (v: string | string[] | undefined): number | undefined => {
+  const raw = first(v);
+  if (!raw) return undefined;
+  const n = parseFloat(raw.replace(",", "."));
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : undefined;
+};
 
 export async function generateMetadata({
   params,
@@ -25,10 +37,13 @@ export async function generateMetadata({
 
 export default async function CategoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: Locale; slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, slug } = await params;
+  const sp = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations("Catalog");
   const nav = await getTranslations("Nav");
@@ -36,9 +51,22 @@ export default async function CategoryPage({
   const category = await getCategoryBySlug(slug);
   if (!category) notFound();
 
-  const [products, allCategories] = await Promise.all([
-    getFilteredProducts(locale, { category: slug }),
+  const filters = {
+    category: slug,
+    brand: first(sp.znacka),
+    q: first(sp.q),
+    sort: first(sp.sort),
+    inStock: first(sp.sklad) === "1",
+    onSale: first(sp.akce) === "1",
+    priceMin: priceParam(sp.cena_od),
+    priceMax: priceParam(sp.cena_do),
+  };
+
+  const [products, allCategories, brands, priceRange] = await Promise.all([
+    getFilteredProducts(locale, filters),
     getAllCategories(),
+    getBrands(),
+    getPriceRange(locale, slug),
   ]);
 
   const name = pickI18n(category.name_i18n, locale, category.name);
@@ -85,17 +113,28 @@ export default async function CategoryPage({
         </div>
       )}
 
-      {products.length === 0 ? (
-        <p className="rounded-xl border border-cream-dark bg-white p-10 text-center text-gray-soft">
-          {t("empty")}
-        </p>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} locale={locale} />
-          ))}
+      <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+        <CatalogFilters
+          categories={allCategories}
+          brands={brands}
+          priceRange={priceRange}
+          hideCategory
+        />
+
+        <div>
+          {products.length === 0 ? (
+            <p className="rounded-xl border border-cream-dark bg-white p-10 text-center text-gray-soft">
+              {t("empty")}
+            </p>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} locale={locale} />
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </section>
   );
 }

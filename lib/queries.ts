@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import {
+  compareForLocale,
+  discountPercent,
   formatPrice,
   localeCurrency,
   pickI18n,
@@ -111,7 +113,39 @@ export type ProductFilters = {
   q?: string;
   sort?: string;
   inStock?: boolean;
+  onSale?: boolean;
+  priceMin?: number; // v minor units (haléře/eurocenty)
+  priceMax?: number; // v minor units
 };
+
+/** Cenové rozpětí publikovaných produktů v dané kategorii (pro filtr). */
+export async function getPriceRange(
+  locale: Locale,
+  category?: string,
+): Promise<{ min: number; max: number }> {
+  const supabase = await createClient();
+  const priceCol = localeCurrency[locale] === "CZK" ? "price_czk" : "price_eur";
+  let query = supabase
+    .from("product")
+    .select(priceCol)
+    .eq("is_published", true)
+    .gt(priceCol, 0);
+  if (category) {
+    const ids = await categoryAndDescendantIds(category);
+    if (ids.length === 0) return { min: 0, max: 0 };
+    query = query.in("category_id", ids);
+  }
+  const { data } = await query;
+  const prices = ((data ?? []) as Record<string, number>[])
+    .map((r) => r[priceCol])
+    .filter((n) => typeof n === "number" && n > 0);
+  if (prices.length === 0) return { min: 0, max: 0 };
+  // Zaokrouhleno na celé jednotky měny (haléře → Kč), pro hezčí meze filtru
+  return {
+    min: Math.floor(Math.min(...prices) / 100) * 100,
+    max: Math.ceil(Math.max(...prices) / 100) * 100,
+  };
+}
 
 const LIST_COLS =
   "id,slug,name,name_i18n,short_description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), product_image(url,alt,sort_order), product_variant(price_czk,price_eur,stock_qty)";
@@ -408,18 +442,42 @@ export async function getFilteredProducts(
 
   if (filters.inStock) query = query.gt("stock_qty", 0);
 
+  const priceCol = localeCurrency[locale] === "CZK" ? "price_czk" : "price_eur";
+  if (typeof filters.priceMin === "number")
+    query = query.gte(priceCol, filters.priceMin);
+  if (typeof filters.priceMax === "number")
+    query = query.lte(priceCol, filters.priceMax);
+
   if (filters.q && filters.q.trim()) {
     const tsq = toTsQuery(filters.q);
     if (tsq) query = query.textSearch("search_vector", tsq, { config: "simple" });
   }
 
-  const priceCol = localeCurrency[locale] === "CZK" ? "price_czk" : "price_eur";
+  // Řazení v DB (kromě "discount", které dořešíme v JS podle efektivní ceny)
   if (filters.sort === "price-asc") query = query.order(priceCol, { ascending: true });
   else if (filters.sort === "price-desc") query = query.order(priceCol, { ascending: false });
+  else if (filters.sort === "name") query = query.order("name", { ascending: true });
   else query = query.order("created_at", { ascending: false });
 
   const { data } = await query;
-  return normalizeList(data);
+  let list = normalizeList(data);
+
+  // Jen v akci (compare > cena) — porovnání dvou sloupců řešíme v JS
+  if (filters.onSale) {
+    list = list.filter((p) => {
+      const cmp = compareForLocale(p, locale);
+      return cmp !== null && cmp > priceForLocale(p, locale);
+    });
+  }
+
+  // Řazení podle výše slevy
+  if (filters.sort === "discount") {
+    const off = (p: ProductListItem) =>
+      discountPercent(priceForLocale(p, locale), compareForLocale(p, locale)) ?? 0;
+    list.sort((a, b) => off(b) - off(a));
+  }
+
+  return list;
 }
 
 /** Podobné produkty — stejná kategorie, mimo aktuální produkt. */

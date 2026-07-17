@@ -83,6 +83,12 @@
     "sort": "Sort",
     "sortPriceAsc": "Price: low to high",
     "sortPriceDesc": "Price: high to low",
+    "sortName": "Name A–Z",
+    "sortDiscount": "Biggest discount",
+    "price": "Price",
+    "priceFrom": "From",
+    "priceTo": "To",
+    "onSaleOnly": "On sale only",
     "inStockOnly": "In stock only",
     "clear": "Clear filters",
     "searchPlaceholder": "Search products…"

@@ -83,6 +83,12 @@
     "sort": "Sortierung",
     "sortPriceAsc": "Preis: aufsteigend",
     "sortPriceDesc": "Preis: absteigend",
+    "sortName": "Name A–Z",
+    "sortDiscount": "Größter Rabatt",
+    "price": "Preis",
+    "priceFrom": "Von",
+    "priceTo": "Bis",
+    "onSaleOnly": "Nur im Angebot",
     "inStockOnly": "Nur auf Lager",
     "clear": "Filter zurücksetzen",
     "searchPlaceholder": "Produkte suchen…"

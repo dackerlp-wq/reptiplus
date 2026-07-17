@@ -83,6 +83,12 @@
     "sort": "Řazení",
     "sortPriceAsc": "Cena: od nejnižší",
     "sortPriceDesc": "Cena: od nejvyšší",
+    "sortName": "Název A–Z",
+    "sortDiscount": "Největší sleva",
+    "price": "Cena",
+    "priceFrom": "Od",
+    "priceTo": "Do",
+    "onSaleOnly": "Pouze v akci",
     "inStockOnly": "Pouze skladem",
     "clear": "Zrušit filtry",
     "searchPlaceholder": "Hledat produkty…"
