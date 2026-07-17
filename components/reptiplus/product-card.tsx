@@ -8,6 +8,7 @@ import {
   compareForLocale,
   discountPercent,
   formatPrice,
+  localeCurrency,
   pickI18n,
   priceForLocale,
 } from "@/lib/i18n";
@@ -22,24 +23,32 @@ export async function ProductCard({
 }) {
   const t = await getTranslations("Product");
   const name = pickI18n(product.name_i18n, locale, product.name);
-  const priceMinor = priceForLocale(product, locale);
-  const compareMinor = compareForLocale(product, locale);
-  const discount = discountPercent(priceMinor, compareMinor);
-  const price = formatPrice(priceMinor, locale);
   const href = `/produkt/${product.slug}`;
 
+  const priceMinor = priceForLocale(product, locale);
+  const compareMinor = compareForLocale(product, locale);
+
+  // Varianty — cenové rozpětí a společný sklad
+  const isCzk = localeCurrency[locale] === "CZK";
+  const variants = product.variants ?? [];
+  const hasVariants = variants.length > 0;
+  const variantPrices = variants.map(
+    (v) => (isCzk ? v.price_czk : v.price_eur) ?? priceMinor,
+  );
+  const minPrice = hasVariants ? Math.min(...variantPrices) : priceMinor;
+  const maxPrice = hasVariants ? Math.max(...variantPrices) : priceMinor;
+  const isRange = hasVariants && maxPrice !== minPrice;
+
+  const stock = hasVariants
+    ? variants.reduce((sum, v) => sum + Math.max(0, v.stock_qty), 0)
+    : product.stock_qty;
+
+  const discount = hasVariants ? null : discountPercent(priceMinor, compareMinor);
+
   const stockLabel =
-    product.stock_qty <= 0
-      ? t("outOfStock")
-      : product.stock_qty <= 5
-        ? t("lowStock")
-        : t("inStock");
+    stock <= 0 ? t("outOfStock") : stock <= 5 ? t("lowStock") : t("inStock");
   const stockClass =
-    product.stock_qty <= 0
-      ? "text-error"
-      : product.stock_qty <= 5
-        ? "text-amber"
-        : "text-success";
+    stock <= 0 ? "text-error" : stock <= 5 ? "text-amber" : "text-success";
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-xl border border-cream-dark bg-white transition-shadow hover:shadow-lg">
@@ -88,7 +97,12 @@ export async function ProductCard({
             <span
               className={`font-mono text-lg font-semibold ${discount ? "text-error" : "text-forest"}`}
             >
-              {price}
+              {isRange && (
+                <span className="font-sans text-xs font-normal text-gray-soft">
+                  {t("priceFrom")}{" "}
+                </span>
+              )}
+              {formatPrice(minPrice, locale)}
             </span>
             {discount && compareMinor !== null && (
               <span className="font-mono text-sm text-gray-soft line-through">
@@ -101,12 +115,27 @@ export async function ProductCard({
           </span>
         </div>
 
-        <AddToCartButton
-          productId={product.id}
-          label={t("addToCart")}
-          addedLabel={t("added")}
-          disabled={product.stock_qty <= 0}
-        />
+        {hasVariants ? (
+          stock > 0 ? (
+            <Link
+              href={href}
+              className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-forest-light"
+            >
+              {t("chooseVariant")}
+            </Link>
+          ) : (
+            <span className="mt-2 flex cursor-not-allowed items-center justify-center rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white opacity-40">
+              {t("outOfStock")}
+            </span>
+          )
+        ) : (
+          <AddToCartButton
+            productId={product.id}
+            label={t("addToCart")}
+            addedLabel={t("added")}
+            disabled={product.stock_qty <= 0}
+          />
+        )}
       </div>
     </div>
   );

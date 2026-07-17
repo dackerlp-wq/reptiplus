@@ -29,6 +29,8 @@
   },
   "Product": {
     "addToCart": "Do košíku",
+    "chooseVariant": "Vybrat variantu",
+    "priceFrom": "od",
     "inStock": "Skladem",
     "lowStock": "Poslední kusy",
     "outOfStock": "Vyprodáno",

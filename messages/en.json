@@ -29,6 +29,8 @@
   },
   "Product": {
     "addToCart": "Add to cart",
+    "chooseVariant": "Choose variant",
+    "priceFrom": "from",
     "inStock": "In stock",
     "lowStock": "Low stock",
     "outOfStock": "Sold out",

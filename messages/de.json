@@ -29,6 +29,8 @@
   },
   "Product": {
     "addToCart": "In den Warenkorb",
+    "chooseVariant": "Variante wählen",
+    "priceFrom": "ab",
     "inStock": "Auf Lager",
     "lowStock": "Wenige verfügbar",
     "outOfStock": "Ausverkauft",

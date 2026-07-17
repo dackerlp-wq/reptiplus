@@ -35,9 +35,14 @@ export type ProductListItem = {
   is_featured: boolean;
   brand: { name: string; slug: string } | null;
   image: { url: string; alt: string | null } | null; // primární obrázek
+  variants: {
+    price_czk: number | null;
+    price_eur: number | null;
+    stock_qty: number;
+  }[];
 };
 
-export type ProductDetail = Omit<ProductListItem, "brand"> & {
+export type ProductDetail = Omit<ProductListItem, "brand" | "variants"> & {
   brand: {
     name: string;
     slug: string;
@@ -71,16 +76,22 @@ function pickImage(
   return { url: first.url, alt: first.alt };
 }
 
-type RawListRow = Omit<ProductListItem, "image"> & {
+type RawListRow = Omit<ProductListItem, "image" | "variants"> & {
   product_image: ProductImage[] | null;
+  product_variant:
+    | { price_czk: number | null; price_eur: number | null; stock_qty: number }[]
+    | null;
 };
 
-/** Doplní `image` (primární) a odstraní surové pole product_image. */
+/** Doplní `image` (primární) + `variants` a odstraní surová pole. */
 function normalizeList(data: unknown): ProductListItem[] {
-  return ((data ?? []) as RawListRow[]).map(({ product_image, ...rest }) => ({
-    ...rest,
-    image: pickImage(product_image),
-  }));
+  return ((data ?? []) as RawListRow[]).map(
+    ({ product_image, product_variant, ...rest }) => ({
+      ...rest,
+      image: pickImage(product_image),
+      variants: product_variant ?? [],
+    }),
+  );
 }
 
 export type CategoryItem = {
@@ -103,7 +114,7 @@ export type ProductFilters = {
 };
 
 const LIST_COLS =
-  "id,slug,name,name_i18n,short_description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), product_image(url,alt,sort_order)";
+  "id,slug,name,name_i18n,short_description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), product_image(url,alt,sort_order), product_variant(price_czk,price_eur,stock_qty)";
 
 export async function getProducts(opts?: {
   featured?: boolean;
