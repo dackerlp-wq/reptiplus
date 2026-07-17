@@ -245,6 +245,15 @@ export async function togglePublishAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+export async function toggleFeaturedAction(formData: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const id = str(formData, "id");
+  const next = formData.get("featured") === "1";
+  await svc.from("product").update({ is_featured: next }).eq("id", id);
+  revalidatePath("/", "layout");
+}
+
 export async function deleteProductAction(formData: FormData) {
   await assertAdmin();
   const svc = createServiceClient();
