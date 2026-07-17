@@ -91,6 +91,7 @@
     "onSaleOnly": "On sale only",
     "inStockOnly": "In stock only",
     "parameters": "Parameters",
+    "advancedFilters": "Advanced filters",
     "chipInStock": "In stock",
     "chipOnSale": "On sale",
     "clear": "Clear filters",

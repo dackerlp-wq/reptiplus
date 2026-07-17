@@ -91,6 +91,7 @@
     "onSaleOnly": "Pouze v akci",
     "inStockOnly": "Pouze skladem",
     "parameters": "Parametry",
+    "advancedFilters": "Rozšířené filtry",
     "chipInStock": "Skladem",
     "chipOnSale": "V akci",
     "clear": "Zrušit filtry",

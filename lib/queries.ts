@@ -564,7 +564,7 @@ export async function getCatalog(
 
   const facets: AttrFacet[] = [];
   for (const [key, values] of allValues) {
-    if (values.size < 2) continue; // parametr s 1 hodnotou nemá smysl
+    if (values.size < 1) continue; // ukázat všechny parametry v kategorii
     const scope = base.filter((r) => matches(r, key)); // živé počty dle ostatních filtrů
     const counts = new Map<string, number>();
     for (const r of scope) {
@@ -589,7 +589,9 @@ export async function getCatalog(
 
   return {
     products,
-    facets: facets.slice(0, 8).map((f) => ({ ...f, values: f.values.slice(0, 12) })),
+    // Všechny parametry v kategorii (za tlačítkem Rozšířené filtry); hodnoty ale
+    // omezíme na rozumný počet, aby seznam nebyl nekonečný.
+    facets: facets.map((f) => ({ ...f, values: f.values.slice(0, 20) })),
   };
 }
 

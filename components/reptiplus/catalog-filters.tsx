@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Search, X, SlidersHorizontal } from "lucide-react";
+import { Search, X, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { AttrFacet, BrandItem, CategoryItem } from "@/lib/queries";
@@ -35,6 +35,9 @@ export function CatalogFilters({
   const params = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(
+    () => params.getAll("attr").length > 0,
+  );
 
   const currency = localeCurrency[locale];
   const priceMinUnit = Math.floor(priceRange.min / 100);
@@ -274,9 +277,34 @@ export function CatalogFilters({
           </label>
         </div>
 
-        {/* Parametry (product_attribute) */}
+        {/* Rozšířené filtry — parametry (product_attribute) */}
         {facets.length > 0 && (
-          <div className="flex flex-col gap-2 border-t border-cream pt-4">
+          <div className="border-t border-cream pt-4">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="flex w-full items-center justify-between text-sm font-semibold text-charcoal transition-colors hover:text-forest"
+            >
+              <span className="flex items-center gap-2">
+                <SlidersHorizontal className="size-4 text-forest" />
+                {t("advancedFilters")}
+                {activeAttrs.size > 0 && (
+                  <span className="rounded-full bg-forest px-2 py-0.5 text-xs text-white">
+                    {activeAttrs.size}
+                  </span>
+                )}
+              </span>
+              <ChevronDown
+                className={cn(
+                  "size-4 text-gray-soft transition-transform",
+                  showAdvanced && "rotate-180",
+                )}
+              />
+            </button>
+          </div>
+        )}
+        {facets.length > 0 && showAdvanced && (
+          <div className="flex flex-col gap-2">
             <span className={sectionLabel}>{t("parameters")}</span>
             {facets.map((facet) => {
               const activeInFacet = facet.values.some((v) =>
