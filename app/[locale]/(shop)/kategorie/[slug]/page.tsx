@@ -6,10 +6,9 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import {
   getAllCategories,
-  getAttributeFacets,
   getBrands,
+  getCatalog,
   getCategoryBySlug,
-  getFilteredProducts,
   getPriceRange,
 } from "@/lib/queries";
 import { pickI18n } from "@/lib/i18n";
@@ -76,15 +75,13 @@ export default async function CategoryPage({
     attrs: attrsParam(sp.attr),
   };
 
-  const [products, allCategories, brands, priceRange, facets] = await Promise.all(
-    [
-      getFilteredProducts(locale, filters),
+  const [{ products, facets }, allCategories, brands, priceRange] =
+    await Promise.all([
+      getCatalog(locale, filters),
       getAllCategories(),
       getBrands(),
       getPriceRange(locale, slug),
-      getAttributeFacets(locale, slug),
-    ],
-  );
+    ]);
 
   const name = pickI18n(category.name_i18n, locale, category.name);
   const description = pickI18n(category.description_i18n, locale, "");

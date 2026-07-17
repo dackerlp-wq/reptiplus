@@ -3,9 +3,8 @@ import type { Metadata } from "next";
 import type { Locale } from "@/i18n/routing";
 import {
   getAllCategories,
-  getAttributeFacets,
   getBrands,
-  getFilteredProducts,
+  getCatalog,
   getPriceRange,
 } from "@/lib/queries";
 import { ProductCard } from "@/components/reptiplus/product-card";
@@ -70,13 +69,13 @@ export default async function ProductsPage({
     attrs: attrsParam(sp.attr),
   };
 
-  const [products, categories, brands, priceRange, facets] = await Promise.all([
-    getFilteredProducts(locale, filters),
-    getAllCategories(),
-    getBrands(),
-    getPriceRange(locale, filters.category),
-    getAttributeFacets(locale, filters.category),
-  ]);
+  const [{ products, facets }, categories, brands, priceRange] =
+    await Promise.all([
+      getCatalog(locale, filters),
+      getAllCategories(),
+      getBrands(),
+      getPriceRange(locale, filters.category),
+    ]);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-14">

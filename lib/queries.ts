@@ -125,68 +125,6 @@ export type AttrFacet = {
   values: { value: string; label: string; count: number }[];
 };
 
-/**
- * Dostupné parametry (product_attribute) pro filtrování — volitelně v kategorii.
- * Vrací jen parametry s ≥2 hodnotami (jinak nemá filtr smysl).
- */
-export async function getAttributeFacets(
-  locale: Locale,
-  category?: string,
-): Promise<AttrFacet[]> {
-  const supabase = await createClient();
-
-  let productIds: string[] | null = null;
-  if (category) {
-    const ids = await categoryAndDescendantIds(category);
-    if (ids.length === 0) return [];
-    const { data: prods } = await supabase
-      .from("product")
-      .select("id")
-      .eq("is_published", true)
-      .in("category_id", ids);
-    productIds = (prods ?? []).map((p) => p.id);
-    if (productIds.length === 0) return [];
-  }
-
-  let q = supabase
-    .from("product_attribute")
-    .select("key,value,key_i18n,value_i18n");
-  if (productIds) q = q.in("product_id", productIds);
-  const { data } = await q;
-
-  type Row = {
-    key: string;
-    value: string;
-    key_i18n: I18n;
-    value_i18n: I18n;
-  };
-  const map = new Map<
-    string,
-    { label: string; values: Map<string, { value: string; label: string; count: number }> }
-  >();
-  for (const row of (data ?? []) as Row[]) {
-    if (!row.key || !row.value) continue;
-    const keyLabel = pickI18n(row.key_i18n, locale, row.key);
-    const valLabel = pickI18n(row.value_i18n, locale, row.value);
-    if (!map.has(row.key)) map.set(row.key, { label: keyLabel, values: new Map() });
-    const grp = map.get(row.key)!;
-    const v = grp.values.get(row.value) ?? { value: row.value, label: valLabel, count: 0 };
-    v.count++;
-    grp.values.set(row.value, v);
-  }
-
-  const facets: AttrFacet[] = [];
-  for (const [key, grp] of map) {
-    const values = [...grp.values.values()].sort(
-      (a, b) => b.count - a.count || a.label.localeCompare(b.label, locale),
-    );
-    if (values.length >= 2) facets.push({ key, label: grp.label, values });
-  }
-  facets.sort(
-    (a, b) => b.values.length - a.values.length || a.label.localeCompare(b.label, locale),
-  );
-  return facets.slice(0, 8).map((f) => ({ ...f, values: f.values.slice(0, 12) }));
-}
 
 /** Cenové rozpětí publikovaných produktů v dané kategorii (pro filtr). */
 export async function getPriceRange(
@@ -483,87 +421,166 @@ function toTsQuery(q: string): string {
     .join(" & ");
 }
 
-/** Filtrovaný katalog — kategorie, značka, hledání (FTS), skladem, řazení */
-export async function getFilteredProducts(
+type CatalogAttrRow = {
+  key: string;
+  value: string;
+  key_i18n: I18n;
+  value_i18n: I18n;
+};
+type CatalogRow = RawListRow & {
+  created_at: string | null;
+  product_attribute: CatalogAttrRow[] | null;
+};
+
+/**
+ * Filtrovaný katalog + živé facety parametrů.
+ *
+ * Facety se počítají z aktuálně vyfiltrované sady (kategorie + všechny ostatní
+ * filtry). Počet u každé hodnoty je „živý" — bere ostatní aktivní filtry i
+ * ostatní parametry, ale ne vlastní výběr daného parametru (aby šlo přepínat).
+ * Sémantika parametrů: OR uvnitř jednoho klíče, AND napříč klíči.
+ */
+export async function getCatalog(
   locale: Locale,
   filters: ProductFilters,
-): Promise<ProductListItem[]> {
+): Promise<{ products: ProductListItem[]; facets: AttrFacet[] }> {
   const supabase = await createClient();
+  const priceCol = localeCurrency[locale] === "CZK" ? "price_czk" : "price_eur";
+  const empty = { products: [], facets: [] };
+
   let query = supabase
     .from("product")
-    .select(LIST_COLS)
+    .select(
+      `${LIST_COLS},created_at, product_attribute(key,value,key_i18n,value_i18n)`,
+    )
     .eq("is_published", true);
 
   if (filters.category) {
     const ids = await categoryAndDescendantIds(filters.category);
-    if (ids.length === 0) return [];
+    if (ids.length === 0) return empty;
     query = query.in("category_id", ids);
   }
-
   if (filters.brand) {
     const { data: brand } = await supabase
       .from("brand")
       .select("id")
       .eq("slug", filters.brand)
       .maybeSingle();
-    if (!brand) return [];
+    if (!brand) return empty;
     query = query.eq("brand_id", brand.id);
   }
-
   if (filters.inStock) query = query.gt("stock_qty", 0);
-
-  // Filtr podle parametrů (product_attribute) — průnik id přes jednotlivé páry
-  if (filters.attrs && filters.attrs.length > 0) {
-    let ids: string[] | null = null;
-    for (const { key, value } of filters.attrs) {
-      const { data: rows } = await supabase
-        .from("product_attribute")
-        .select("product_id")
-        .eq("key", key)
-        .eq("value", value);
-      const set = new Set((rows ?? []).map((r) => r.product_id));
-      ids = ids === null ? [...set] : ids.filter((id) => set.has(id));
-      if (ids.length === 0) return [];
-    }
-    if (ids) query = query.in("id", ids);
-  }
-
-  const priceCol = localeCurrency[locale] === "CZK" ? "price_czk" : "price_eur";
   if (typeof filters.priceMin === "number")
     query = query.gte(priceCol, filters.priceMin);
   if (typeof filters.priceMax === "number")
     query = query.lte(priceCol, filters.priceMax);
-
   if (filters.q && filters.q.trim()) {
     const tsq = toTsQuery(filters.q);
     if (tsq) query = query.textSearch("search_vector", tsq, { config: "simple" });
   }
 
-  // Řazení v DB (kromě "discount", které dořešíme v JS podle efektivní ceny)
-  if (filters.sort === "price-asc") query = query.order(priceCol, { ascending: true });
-  else if (filters.sort === "price-desc") query = query.order(priceCol, { ascending: false });
-  else if (filters.sort === "name") query = query.order("name", { ascending: true });
-  else query = query.order("created_at", { ascending: false });
-
   const { data } = await query;
-  let list = normalizeList(data);
-
-  // Jen v akci (compare > cena) — porovnání dvou sloupců řešíme v JS
+  // Základní sada = vše kromě filtru parametrů (na ní stavíme facety)
+  let base = (data ?? []) as CatalogRow[];
   if (filters.onSale) {
-    list = list.filter((p) => {
-      const cmp = compareForLocale(p, locale);
-      return cmp !== null && cmp > priceForLocale(p, locale);
+    base = base.filter((r) => {
+      const cmp = compareForLocale(r, locale);
+      return cmp !== null && cmp > priceForLocale(r, locale);
     });
   }
 
-  // Řazení podle výše slevy
-  if (filters.sort === "discount") {
-    const off = (p: ProductListItem) =>
-      discountPercent(priceForLocale(p, locale), compareForLocale(p, locale)) ?? 0;
-    list.sort((a, b) => off(b) - off(a));
+  const attrMap = (r: CatalogRow) => {
+    const m = new Map<string, Set<string>>();
+    for (const a of r.product_attribute ?? []) {
+      if (!a.key || !a.value) continue;
+      if (!m.has(a.key)) m.set(a.key, new Set());
+      m.get(a.key)!.add(a.value);
+    }
+    return m;
+  };
+
+  // Vybrané parametry: key -> Set<value>
+  const selected = new Map<string, Set<string>>();
+  for (const { key, value } of filters.attrs ?? []) {
+    if (!selected.has(key)) selected.set(key, new Set());
+    selected.get(key)!.add(value);
   }
 
-  return list;
+  // Produkt odpovídá výběru (OR uvnitř klíče, AND napříč klíči), volitelně bez jednoho klíče
+  const matches = (r: CatalogRow, exceptKey: string | null) => {
+    const m = attrMap(r);
+    for (const [key, vals] of selected) {
+      if (key === exceptKey) continue;
+      const has = m.get(key);
+      if (!has || ![...vals].some((v) => has.has(v))) return false;
+    }
+    return true;
+  };
+
+  // ── Výsledné produkty ──
+  const finalRows = base.filter((r) => matches(r, null));
+  const off = (r: CatalogRow) =>
+    discountPercent(priceForLocale(r, locale), compareForLocale(r, locale)) ?? 0;
+  if (filters.sort === "price-asc")
+    finalRows.sort((a, b) => priceForLocale(a, locale) - priceForLocale(b, locale));
+  else if (filters.sort === "price-desc")
+    finalRows.sort((a, b) => priceForLocale(b, locale) - priceForLocale(a, locale));
+  else if (filters.sort === "name")
+    finalRows.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", locale));
+  else if (filters.sort === "discount") finalRows.sort((a, b) => off(b) - off(a));
+  else
+    finalRows.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
+
+  const products = normalizeList(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    finalRows.map(({ created_at, product_attribute, ...r }) => r),
+  );
+
+  // ── Živé facety ──
+  const keyLabel = new Map<string, string>();
+  const valLabel = new Map<string, string>(); // `${key} ${value}`
+  const allValues = new Map<string, Set<string>>();
+  for (const r of base) {
+    for (const a of r.product_attribute ?? []) {
+      if (!a.key || !a.value) continue;
+      if (!keyLabel.has(a.key))
+        keyLabel.set(a.key, pickI18n(a.key_i18n, locale, a.key));
+      const vk = `${a.key} ${a.value}`;
+      if (!valLabel.has(vk)) valLabel.set(vk, pickI18n(a.value_i18n, locale, a.value));
+      if (!allValues.has(a.key)) allValues.set(a.key, new Set());
+      allValues.get(a.key)!.add(a.value);
+    }
+  }
+
+  const facets: AttrFacet[] = [];
+  for (const [key, values] of allValues) {
+    if (values.size < 2) continue; // parametr s 1 hodnotou nemá smysl
+    const scope = base.filter((r) => matches(r, key)); // živé počty dle ostatních filtrů
+    const counts = new Map<string, number>();
+    for (const r of scope) {
+      const has = attrMap(r).get(key);
+      if (has) for (const v of has) counts.set(v, (counts.get(v) ?? 0) + 1);
+    }
+    const sel = selected.get(key) ?? new Set<string>();
+    const vals = [...values]
+      .map((value) => ({
+        value,
+        label: valLabel.get(`${key} ${value}`) ?? value,
+        count: counts.get(value) ?? 0,
+      }))
+      .filter((v) => v.count > 0 || sel.has(v.value))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, locale));
+    if (vals.length > 0)
+      facets.push({ key, label: keyLabel.get(key) ?? key, values: vals });
+  }
+  facets.sort(
+    (a, b) => b.values.length - a.values.length || a.label.localeCompare(b.label, locale),
+  );
+
+  return {
+    products,
+    facets: facets.slice(0, 8).map((f) => ({ ...f, values: f.values.slice(0, 12) })),
+  };
 }
 
 /** Podobné produkty — stejná kategorie, mimo aktuální produkt. */
