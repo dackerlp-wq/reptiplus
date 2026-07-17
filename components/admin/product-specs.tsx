@@ -177,7 +177,7 @@ export function ProductSpecs({
 
   return (
     <div className="rounded-xl border border-cream-dark bg-paper p-4">
-      <h2 className="font-display text-lg font-semibold">Specifikace</h2>
+      <h2 className="font-display text-lg font-semibold">Parametry</h2>
       <p className="mb-3 text-xs text-gray-soft">
         Parametry produktu (např. Příkon → 35 W). Jeden parametr může mít víc
         hodnot — piš je jako samostatné chipy (Enter nebo čárka přidá další),
@@ -240,7 +240,7 @@ export function ProductSpecs({
 
       {rows.length === 0 && (
         <p className="mb-3 rounded-lg border border-dashed border-cream-dark px-3 py-4 text-center text-sm text-gray-soft">
-          Zatím žádné specifikace.
+          Zatím žádné parametry.
         </p>
       )}
 
@@ -278,7 +278,7 @@ export function ProductSpecs({
         onClick={add}
         className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-forest/30 bg-forest/5 px-3 py-1.5 text-sm font-semibold text-forest transition-colors hover:bg-forest/10"
       >
-        <Plus className="size-4" /> Přidat specifikaci
+        <Plus className="size-4" /> Přidat parametr
       </button>
     </div>
   );
