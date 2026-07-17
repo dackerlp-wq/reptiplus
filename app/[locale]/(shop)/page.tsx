@@ -50,6 +50,11 @@ export default async function HomePage({
     slug: p.slug,
     name: pickI18n(p.name_i18n, locale, p.name),
     brand: p.brand?.name ?? null,
+    description:
+      pickI18n(p.short_description_i18n, locale, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim() || null,
     imageUrl: p.image?.url ?? null,
     priceLabel: formatPrice(priceForLocale(p, locale), locale),
   }));

@@ -9,6 +9,7 @@ export type HeroSlide = {
   slug: string;
   name: string;
   brand: string | null;
+  description: string | null;
   imageUrl: string | null;
   priceLabel: string;
 };
@@ -52,6 +53,11 @@ export function HeroCarousel({
             <h1 className="font-display text-3xl font-bold leading-tight text-white md:text-5xl">
               {s.name}
             </h1>
+            {s.description && (
+              <p className="mt-4 max-w-md text-base leading-relaxed text-cream/80 line-clamp-3">
+                {s.description}
+              </p>
+            )}
             <p className="mt-4 font-mono text-2xl font-semibold text-gold-light">
               {s.priceLabel}
             </p>

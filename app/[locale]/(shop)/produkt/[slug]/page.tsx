@@ -77,7 +77,10 @@ export default async function ProductPage({
     product.short_description_i18n,
     locale,
     product.short_description,
-  );
+  )
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   const description = pickI18n(
     product.description_i18n,
     locale,

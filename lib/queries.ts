@@ -21,6 +21,7 @@ export type ProductListItem = {
   slug: string;
   name: string;
   name_i18n: I18n;
+  short_description_i18n?: I18n;
   price_czk: number;
   price_eur: number | null;
   compare_at_czk: number | null;
@@ -97,7 +98,7 @@ export type ProductFilters = {
 };
 
 const LIST_COLS =
-  "id,slug,name,name_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), product_image(url,alt,sort_order)";
+  "id,slug,name,name_i18n,short_description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), product_image(url,alt,sort_order)";
 
 export async function getProducts(opts?: {
   featured?: boolean;
