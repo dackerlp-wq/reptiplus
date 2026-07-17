@@ -262,6 +262,39 @@ export async function deleteProductAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+/** Hromadné akce nad vybranými produkty. `ids` = čárkou oddělené UUID. */
+export async function bulkProductAction(formData: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const op = str(formData, "op");
+  const ids = str(formData, "ids")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (ids.length === 0) return;
+
+  switch (op) {
+    case "publish":
+      await svc.from("product").update({ is_published: true }).in("id", ids);
+      break;
+    case "hide":
+      await svc.from("product").update({ is_published: false }).in("id", ids);
+      break;
+    case "feature":
+      await svc.from("product").update({ is_featured: true }).in("id", ids);
+      break;
+    case "unfeature":
+      await svc.from("product").update({ is_featured: false }).in("id", ids);
+      break;
+    case "delete":
+      await svc.from("product").delete().in("id", ids);
+      break;
+    default:
+      return;
+  }
+  revalidatePath("/", "layout");
+}
+
 /* ── Obrázky produktu (Supabase Storage bucket „products") ─────────────── */
 const STORAGE_BUCKET = "products";
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024; // 6 MB (po kompresi v prohlížeči bývá výrazně méně)

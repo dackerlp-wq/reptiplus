@@ -929,7 +929,13 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      product_sales: {
+        Row: {
+          product_id: string | null
+          sold: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       place_order: {

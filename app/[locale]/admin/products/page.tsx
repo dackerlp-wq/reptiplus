@@ -6,30 +6,20 @@ import { ProductsTable, type ProductRow } from "@/components/admin/products-tabl
 export default async function AdminProductsPage() {
   const svc = createServiceClient();
 
-  const [{ data: productsData }, { data: ordersData }, { data: itemsData }] =
-    await Promise.all([
-      svc
-        .from("product")
-        .select(
-          "id,name,slug,price_czk,compare_at_czk,stock_qty,is_published,is_featured,created_at,category:category_id(name)",
-        )
-        .order("created_at", { ascending: false }),
-      // Objednávky mimo zrušené/vrácené — pro výpočet oblíbenosti
-      svc.from("order").select("id,status"),
-      svc.from("order_item").select("product_id,qty,order_id"),
-    ]);
-
-  // Prodanost = suma qty z položek platných objednávek (bez cancelled/refunded)
-  const validOrders = new Set(
-    (ordersData ?? [])
-      .filter((o) => o.status !== "cancelled" && o.status !== "refunded")
-      .map((o) => o.id),
-  );
+  const [{ data: productsData }, { data: salesData }] = await Promise.all([
+    svc
+      .from("product")
+      .select(
+        "id,name,slug,price_czk,compare_at_czk,stock_qty,is_published,is_featured,created_at,category:category_id(name)",
+      )
+      .order("created_at", { ascending: false }),
+    // Prodanost (oblíbenost) předpočítaná v DB pohledu product_sales
+    svc.from("product_sales").select("product_id,sold"),
+  ]);
 
   const sold = new Map<string, number>();
-  for (const it of itemsData ?? []) {
-    if (!it.product_id || !validOrders.has(it.order_id)) continue;
-    sold.set(it.product_id, (sold.get(it.product_id) ?? 0) + (it.qty ?? 0));
+  for (const s of salesData ?? []) {
+    if (s.product_id) sold.set(s.product_id, s.sold ?? 0);
   }
 
   const rows: ProductRow[] = (productsData ?? []).map((p) => {
