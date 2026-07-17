@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
+import { getCnbEurRate } from "@/lib/exchange-rate";
 
 async function assertAdmin() {
   const supabase = await createClient();
@@ -271,15 +272,33 @@ export async function setProductStockAction(id: string, stock: number) {
   revalidatePath("/", "layout");
 }
 
-/** Rychlá inline úprava ceny (v haléřích) z tabulky. */
+/**
+ * Rychlá inline úprava ceny (v haléřích) z tabulky. Pokud produkt má nastavenou
+ * EUR cenu, přepočítá ji aktuálním kurzem ČNB, aby ceny nezůstaly rozejité.
+ */
 export async function setProductPriceAction(id: string, priceCzkMinor: number) {
   await assertAdmin();
   if (!id) return;
+  const svc = createServiceClient();
   const v =
     Number.isFinite(priceCzkMinor) && priceCzkMinor >= 0
       ? Math.round(priceCzkMinor)
       : 0;
-  await createServiceClient().from("product").update({ price_czk: v }).eq("id", id);
+
+  const update: { price_czk: number; price_eur?: number } = { price_czk: v };
+
+  // EUR přepočítat jen když ho produkt už má (null = neprodává se v EUR)
+  const { data: cur } = await svc
+    .from("product")
+    .select("price_eur")
+    .eq("id", id)
+    .maybeSingle();
+  if (cur?.price_eur != null) {
+    const cnb = await getCnbEurRate();
+    if (cnb) update.price_eur = Math.max(0, Math.round(v / cnb.rate));
+  }
+
+  await svc.from("product").update(update).eq("id", id);
   revalidatePath("/", "layout");
 }
 
