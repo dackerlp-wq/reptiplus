@@ -24,6 +24,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { formatPrice, discountPercent } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { toast, ToastForm } from "./toast";
 import {
   deleteProductAction,
   togglePublishAction,
@@ -90,7 +91,7 @@ function InlineEditCell({
 }: {
   initial: number; // uložená hodnota: qty nebo haléře
   kind: "int" | "money";
-  onCommit: (raw: number) => void; // raw = qty nebo haléře
+  onCommit: (raw: number) => void | Promise<unknown>; // raw = qty nebo haléře
   className?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +115,14 @@ function InlineEditCell({
     if (raw === "") return;
     const n = kind === "money" ? Math.round(parseFloat(raw) * 100) : parseInt(raw, 10);
     if (!Number.isFinite(n) || n < 0 || n === initial) return;
-    start(() => onCommit(n));
+    start(async () => {
+      try {
+        await onCommit(n);
+        toast.success("Uloženo");
+      } catch {
+        toast.error("Uložení se nezdařilo");
+      }
+    });
   };
 
   if (editing) {
@@ -486,47 +494,55 @@ export function ProductsTable({
             {selectedInFilter.length} vybráno
           </span>
           <div className="mx-1 h-5 w-px bg-cream-dark" />
-          <form action={bulkProductAction} onSubmit={clearSelection}>
+          <ToastForm
+            action={bulkProductAction}
+            success="Publikováno"
+            onSuccess={clearSelection}
+          >
             <input type="hidden" name="op" value="publish" />
             <input type="hidden" name="ids" value={selectedIds} />
             <button type="submit" className={bulkBtn}>
               <Eye className="size-4" /> Publikovat
             </button>
-          </form>
-          <form action={bulkProductAction} onSubmit={clearSelection}>
+          </ToastForm>
+          <ToastForm
+            action={bulkProductAction}
+            success="Skryto"
+            onSuccess={clearSelection}
+          >
             <input type="hidden" name="op" value="hide" />
             <input type="hidden" name="ids" value={selectedIds} />
             <button type="submit" className={bulkBtn}>
               <EyeOff className="size-4" /> Skrýt
             </button>
-          </form>
-          <form action={bulkProductAction} onSubmit={clearSelection}>
+          </ToastForm>
+          <ToastForm
+            action={bulkProductAction}
+            success="Nastaveno jako doporučené"
+            onSuccess={clearSelection}
+          >
             <input type="hidden" name="op" value="feature" />
             <input type="hidden" name="ids" value={selectedIds} />
             <button type="submit" className={bulkBtn}>
               <Star className="size-4" /> Doporučit
             </button>
-          </form>
-          <form action={bulkProductAction} onSubmit={clearSelection}>
+          </ToastForm>
+          <ToastForm
+            action={bulkProductAction}
+            success="Doporučení zrušeno"
+            onSuccess={clearSelection}
+          >
             <input type="hidden" name="op" value="unfeature" />
             <input type="hidden" name="ids" value={selectedIds} />
             <button type="submit" className={bulkBtn}>
               <StarOff className="size-4" /> Zrušit doporučení
             </button>
-          </form>
-          <form
+          </ToastForm>
+          <ToastForm
             action={bulkProductAction}
-            onSubmit={(e) => {
-              if (
-                !confirm(
-                  `Opravdu smazat ${selectedInFilter.length} vybraných produktů? Tuto akci nelze vrátit.`,
-                )
-              ) {
-                e.preventDefault();
-                return;
-              }
-              clearSelection();
-            }}
+            success="Smazáno"
+            confirm={`Opravdu smazat ${selectedInFilter.length} vybraných produktů? Tuto akci nelze vrátit.`}
+            onSuccess={clearSelection}
           >
             <input type="hidden" name="op" value="delete" />
             <input type="hidden" name="ids" value={selectedIds} />
@@ -536,7 +552,7 @@ export function ProductsTable({
             >
               <Trash2 className="size-4" /> Smazat
             </button>
-          </form>
+          </ToastForm>
           <button
             type="button"
             onClick={clearSelection}
@@ -666,7 +682,10 @@ export function ProductsTable({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
-                      <form action={toggleFeaturedAction}>
+                      <ToastForm
+                        action={toggleFeaturedAction}
+                        success={p.featured ? "Doporučení zrušeno" : "Doporučeno"}
+                      >
                         <input type="hidden" name="id" value={p.id} />
                         <input
                           type="hidden"
@@ -688,8 +707,11 @@ export function ProductsTable({
                             fill={p.featured ? "currentColor" : "none"}
                           />
                         </button>
-                      </form>
-                      <form action={togglePublishAction}>
+                      </ToastForm>
+                      <ToastForm
+                        action={togglePublishAction}
+                        success={p.published ? "Skryto" : "Publikováno"}
+                      >
                         <input type="hidden" name="id" value={p.id} />
                         <input
                           type="hidden"
@@ -707,7 +729,7 @@ export function ProductsTable({
                             <Eye className="size-4" />
                           )}
                         </button>
-                      </form>
+                      </ToastForm>
                       <a
                         href={`/cs/produkt/${p.slug}`}
                         target="_blank"
@@ -724,12 +746,10 @@ export function ProductsTable({
                       >
                         <Pencil className="size-4" />
                       </Link>
-                      <form
+                      <ToastForm
                         action={deleteProductAction}
-                        onSubmit={(e) => {
-                          if (!confirm(`Smazat produkt „${p.name}"?`))
-                            e.preventDefault();
-                        }}
+                        success="Smazáno"
+                        confirm={`Smazat produkt „${p.name}"?`}
                       >
                         <input type="hidden" name="id" value={p.id} />
                         <button
@@ -739,7 +759,7 @@ export function ProductsTable({
                         >
                           <Trash2 className="size-4" />
                         </button>
-                      </form>
+                      </ToastForm>
                     </div>
                   </td>
                 </tr>

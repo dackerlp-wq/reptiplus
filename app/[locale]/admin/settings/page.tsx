@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { AdminTabs } from "@/components/admin/admin-tabs";
 import { LangFields } from "@/components/admin/lang-fields";
 import { Hint } from "@/components/admin/hint";
+import { ToastForm } from "@/components/admin/toast";
 import {
   saveGeneralAction,
   saveComgateAction,
@@ -50,7 +51,7 @@ export default async function AdminSettingsPage() {
 
       <AdminTabs tabs={["Obchod", "Integrace", "Doprava", "Platby", "Právní"]}>
         {/* ── Obchod ─────────────────────────────────────────────── */}
-        <form action={saveGeneralAction} className={`${card} space-y-4`}>
+        <ToastForm action={saveGeneralAction} className={`${card} space-y-4`}>
           <div>
             <h2 className="font-display text-lg font-semibold">Údaje obchodu</h2>
             <p className="text-sm text-gray-soft">
@@ -72,7 +73,7 @@ export default async function AdminSettingsPage() {
             </label>
           </div>
           <button className={saveBtn}>Uložit</button>
-        </form>
+        </ToastForm>
 
         {/* ── Integrace ──────────────────────────────────────────── */}
         <div className="space-y-6">
@@ -82,7 +83,7 @@ export default async function AdminSettingsPage() {
             mít smlouvu u jednotlivých poskytovatelů.
           </Hint>
 
-          <form action={saveComgateAction} className={`${card} space-y-3`}>
+          <ToastForm action={saveComgateAction} className={`${card} space-y-3`}>
             <div>
               <h2 className="font-display text-lg font-semibold">Comgate</h2>
               <p className="text-sm text-gray-soft">
@@ -105,9 +106,9 @@ export default async function AdminSettingsPage() {
               Testovací režim (platby se neúčtují)
             </label>
             <button className={saveBtn}>Uložit Comgate</button>
-          </form>
+          </ToastForm>
 
-          <form action={savePplAction} className={`${card} space-y-3`}>
+          <ToastForm action={savePplAction} className={`${card} space-y-3`}>
             <div>
               <h2 className="font-display text-lg font-semibold">PPL</h2>
               <p className="text-sm text-gray-soft">
@@ -126,9 +127,9 @@ export default async function AdminSettingsPage() {
               </label>
             </div>
             <button className={saveBtn}>Uložit PPL</button>
-          </form>
+          </ToastForm>
 
-          <form action={saveZasilkovnaAction} className={`${card} space-y-3`}>
+          <ToastForm action={saveZasilkovnaAction} className={`${card} space-y-3`}>
             <div>
               <h2 className="font-display text-lg font-semibold">Zásilkovna (Packeta)</h2>
               <p className="text-sm text-gray-soft">
@@ -151,9 +152,9 @@ export default async function AdminSettingsPage() {
               </label>
             </div>
             <button className={saveBtn}>Uložit Zásilkovnu</button>
-          </form>
+          </ToastForm>
 
-          <form action={saveAiAction} className={`${card} space-y-3`}>
+          <ToastForm action={saveAiAction} className={`${card} space-y-3`}>
             <div>
               <h2 className="font-display text-lg font-semibold">AI překlady</h2>
               <p className="text-sm text-gray-soft">
@@ -176,7 +177,7 @@ export default async function AdminSettingsPage() {
               />
             </label>
             <button className={saveBtn}>Uložit AI klíč</button>
-          </form>
+          </ToastForm>
         </div>
 
         {/* ── Doprava ────────────────────────────────────────────── */}
@@ -220,7 +221,7 @@ export default async function AdminSettingsPage() {
             připravujeme". EN/DE můžeš doplnit tlačítkem AI překladu.
           </Hint>
 
-          <form action={saveLegalAction} className={`${card} space-y-4`}>
+          <ToastForm action={saveLegalAction} className={`${card} space-y-4`}>
             <input type="hidden" name="doc" value="terms" />
             <h2 className="font-display text-lg font-semibold">
               Obchodní podmínky
@@ -231,9 +232,9 @@ export default async function AdminSettingsPage() {
               ]}
             />
             <button className={saveBtn}>Uložit obchodní podmínky</button>
-          </form>
+          </ToastForm>
 
-          <form action={saveLegalAction} className={`${card} space-y-4`}>
+          <ToastForm action={saveLegalAction} className={`${card} space-y-4`}>
             <input type="hidden" name="doc" value="privacy" />
             <h2 className="font-display text-lg font-semibold">
               Zpracování osobních údajů
@@ -244,7 +245,7 @@ export default async function AdminSettingsPage() {
               ]}
             />
             <button className={saveBtn}>Uložit GDPR</button>
-          </form>
+          </ToastForm>
         </div>
       </AdminTabs>
     </div>
@@ -265,7 +266,12 @@ function MethodShell({
     <div className="relative rounded-xl border border-cream-dark bg-white p-4">
       {children}
       {id && deleteAction && (
-        <form action={deleteAction} className="absolute right-3 top-3">
+        <ToastForm
+          action={deleteAction}
+          success="Smazáno"
+          confirm="Opravdu smazat tuto metodu?"
+          className="absolute right-3 top-3"
+        >
           <input type="hidden" name="id" value={id} />
           <button
             title="Smazat"
@@ -273,7 +279,7 @@ function MethodShell({
           >
             Smazat
           </button>
-        </form>
+        </ToastForm>
       )}
     </div>
   );
@@ -282,7 +288,7 @@ function MethodShell({
 function ShippingCard({ m }: { m?: any }) {
   return (
     <MethodShell id={m?.id} deleteAction={deleteShippingMethodAction}>
-      <form action={saveShippingMethodAction} className="space-y-3">
+      <ToastForm action={saveShippingMethodAction} className="space-y-3">
         {m && <input type="hidden" name="id" value={m.id} />}
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5">
@@ -316,7 +322,7 @@ function ShippingCard({ m }: { m?: any }) {
           </label>
         </div>
         <button className={saveBtn}>{m ? "Uložit" : "Přidat"}</button>
-      </form>
+      </ToastForm>
     </MethodShell>
   );
 }
@@ -324,7 +330,7 @@ function ShippingCard({ m }: { m?: any }) {
 function PaymentCard({ m }: { m?: any }) {
   return (
     <MethodShell id={m?.id} deleteAction={deletePaymentMethodAction}>
-      <form action={savePaymentMethodAction} className="space-y-3">
+      <ToastForm action={savePaymentMethodAction} className="space-y-3">
         {m && <input type="hidden" name="id" value={m.id} />}
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5">
@@ -356,7 +362,7 @@ function PaymentCard({ m }: { m?: any }) {
           </label>
         </div>
         <button className={saveBtn}>{m ? "Uložit" : "Přidat"}</button>
-      </form>
+      </ToastForm>
     </MethodShell>
   );
 }

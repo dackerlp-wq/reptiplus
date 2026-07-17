@@ -2,6 +2,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { deleteBrandAction } from "@/lib/admin/actions";
+import { ToastForm } from "@/components/admin/toast";
 
 export default async function AdminBrandsPage() {
   const svc = createServiceClient();
@@ -49,12 +50,16 @@ export default async function AdminBrandsPage() {
                     >
                       <Pencil className="size-4" />
                     </Link>
-                    <form action={deleteBrandAction}>
+                    <ToastForm
+                      action={deleteBrandAction}
+                      success="Smazáno"
+                      confirm={`Smazat značku „${b.name}"?`}
+                    >
                       <input type="hidden" name="id" value={b.id} />
                       <button className="rounded-md p-2 text-gray-soft hover:bg-error/10 hover:text-error">
                         <Trash2 className="size-4" />
                       </button>
-                    </form>
+                    </ToastForm>
                   </div>
                 </td>
               </tr>

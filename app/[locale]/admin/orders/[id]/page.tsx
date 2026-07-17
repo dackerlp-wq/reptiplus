@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { updateOrderAction } from "@/lib/admin/actions";
+import { ToastForm } from "@/components/admin/toast";
 
 const input =
   "w-full rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm outline-none focus:border-forest";
@@ -170,8 +171,9 @@ export default async function OrderDetailPage({
         </div>
 
         {/* Úpravy */}
-        <form
+        <ToastForm
           action={updateOrderAction}
+          success="Objednávka uložena"
           className="h-fit space-y-4 rounded-xl border border-cream-dark bg-white p-5"
         >
           <input type="hidden" name="id" value={order.id} />
@@ -253,7 +255,7 @@ export default async function OrderDetailPage({
           >
             Uložit změny
           </button>
-        </form>
+        </ToastForm>
       </div>
     </div>
   );

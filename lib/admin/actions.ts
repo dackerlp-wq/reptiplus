@@ -39,6 +39,17 @@ const i18n = (fd: FormData, base: string) => ({
   de: str(fd, `${base}_de`),
 });
 
+/** Přesměrování s flash zprávou pro toast (token `t` kvůli opakovaným uložením). */
+function flashRedirect(
+  path: string,
+  flash: "saved" | "error",
+  msg?: string,
+): never {
+  const p = new URLSearchParams({ flash, t: Date.now().toString() });
+  if (msg) p.set("msg", msg);
+  redirect(`${path}?${p.toString()}`);
+}
+
 export async function saveProductAction(formData: FormData) {
   await assertAdmin();
   const svc = createServiceClient();
@@ -72,14 +83,14 @@ export async function saveProductAction(formData: FormData) {
   let productId = id;
   if (id) {
     const { error } = await svc.from("product").update(payload).eq("id", id);
-    if (error) throw new Error(error.message);
+    if (error) flashRedirect(`/${locale}/admin/products/${id}`, "error", error.message);
   } else {
     const { data, error } = await svc
       .from("product")
       .insert(payload)
       .select("id")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) flashRedirect(`/${locale}/admin/products/new`, "error", error.message);
     productId = data.id;
   }
 
@@ -98,7 +109,7 @@ export async function saveProductAction(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect(`/${locale}/admin/products`);
+  flashRedirect(`/${locale}/admin/products`, "saved");
 }
 
 async function syncUpsell(
@@ -243,7 +254,11 @@ export async function togglePublishAction(formData: FormData) {
   const svc = createServiceClient();
   const id = str(formData, "id");
   const next = formData.get("publish") === "1";
-  await svc.from("product").update({ is_published: next }).eq("id", id);
+  const { error } = await svc
+    .from("product")
+    .update({ is_published: next })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -252,7 +267,11 @@ export async function toggleFeaturedAction(formData: FormData) {
   const svc = createServiceClient();
   const id = str(formData, "id");
   const next = formData.get("featured") === "1";
-  await svc.from("product").update({ is_featured: next }).eq("id", id);
+  const { error } = await svc
+    .from("product")
+    .update({ is_featured: next })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -260,7 +279,8 @@ export async function deleteProductAction(formData: FormData) {
   await assertAdmin();
   const svc = createServiceClient();
   const id = str(formData, "id");
-  await svc.from("product").delete().eq("id", id);
+  const { error } = await svc.from("product").delete().eq("id", id);
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -269,7 +289,11 @@ export async function setProductStockAction(id: string, stock: number) {
   await assertAdmin();
   if (!id) return;
   const v = Number.isFinite(stock) && stock >= 0 ? Math.floor(stock) : 0;
-  await createServiceClient().from("product").update({ stock_qty: v }).eq("id", id);
+  const { error } = await createServiceClient()
+    .from("product")
+    .update({ stock_qty: v })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -299,7 +323,8 @@ export async function setProductPriceAction(id: string, priceCzkMinor: number) {
     if (cnb) update.price_eur = Math.max(0, Math.round(v / cnb.rate));
   }
 
-  await svc.from("product").update(update).eq("id", id);
+  const { error } = await svc.from("product").update(update).eq("id", id);
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -314,24 +339,25 @@ export async function bulkProductAction(formData: FormData) {
     .filter(Boolean);
   if (ids.length === 0) return;
 
-  switch (op) {
-    case "publish":
-      await svc.from("product").update({ is_published: true }).in("id", ids);
-      break;
-    case "hide":
-      await svc.from("product").update({ is_published: false }).in("id", ids);
-      break;
-    case "feature":
-      await svc.from("product").update({ is_featured: true }).in("id", ids);
-      break;
-    case "unfeature":
-      await svc.from("product").update({ is_featured: false }).in("id", ids);
-      break;
-    case "delete":
-      await svc.from("product").delete().in("id", ids);
-      break;
-    default:
-      return;
+  const patch: { is_published?: boolean; is_featured?: boolean } | null =
+    op === "publish"
+      ? { is_published: true }
+      : op === "hide"
+        ? { is_published: false }
+        : op === "feature"
+          ? { is_featured: true }
+          : op === "unfeature"
+            ? { is_featured: false }
+            : null;
+
+  if (patch) {
+    const { error } = await svc.from("product").update(patch).in("id", ids);
+    if (error) throw new Error(error.message);
+  } else if (op === "delete") {
+    const { error } = await svc.from("product").delete().in("id", ids);
+    if (error) throw new Error(error.message);
+  } else {
+    return;
   }
   revalidatePath("/", "layout");
 }
@@ -532,14 +558,23 @@ export async function saveCategoryAction(formData: FormData) {
   const { error } = id
     ? await svc.from("category").update(payload).eq("id", id)
     : await svc.from("category").insert(payload);
-  if (error) throw new Error(error.message);
+  if (error)
+    flashRedirect(
+      `/${locale}/admin/categories/${id ?? "new"}`,
+      "error",
+      error.message,
+    );
   revalidatePath("/", "layout");
-  redirect(`/${locale}/admin/categories`);
+  flashRedirect(`/${locale}/admin/categories`, "saved");
 }
 
 export async function deleteCategoryAction(formData: FormData) {
   await assertAdmin();
-  await createServiceClient().from("category").delete().eq("id", str(formData, "id"));
+  const { error } = await createServiceClient()
+    .from("category")
+    .delete()
+    .eq("id", str(formData, "id"));
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -559,14 +594,19 @@ export async function saveBrandAction(formData: FormData) {
   const { error } = id
     ? await svc.from("brand").update(payload).eq("id", id)
     : await svc.from("brand").insert(payload);
-  if (error) throw new Error(error.message);
+  if (error)
+    flashRedirect(`/${locale}/admin/brands/${id ?? "new"}`, "error", error.message);
   revalidatePath("/", "layout");
-  redirect(`/${locale}/admin/brands`);
+  flashRedirect(`/${locale}/admin/brands`, "saved");
 }
 
 export async function deleteBrandAction(formData: FormData) {
   await assertAdmin();
-  await createServiceClient().from("brand").delete().eq("id", str(formData, "id"));
+  const { error } = await createServiceClient()
+    .from("brand")
+    .delete()
+    .eq("id", str(formData, "id"));
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -585,7 +625,7 @@ export async function updateOrderAction(formData: FormData) {
     .eq("id", id)
     .maybeSingle();
 
-  await svc
+  const { error } = await svc
     .from("order")
     .update({
       status: status as never,
@@ -595,6 +635,7 @@ export async function updateOrderAction(formData: FormData) {
       admin_note: str(formData, "admin_note") || null,
     })
     .eq("id", id);
+  if (error) throw new Error(error.message);
 
   // E-mail zákazníkovi jen když je zaškrtnuto a stav se skutečně změnil
   if (formData.get("notify") === "on" && prev && prev.status !== status) {
@@ -633,10 +674,11 @@ export async function setOrderStatusAction(id: string, status: string) {
     .select("number,email,currency,tracking_number,shipping_method,status")
     .eq("id", id)
     .maybeSingle();
-  await svc
+  const { error } = await svc
     .from("order")
     .update({ status: status as never })
     .eq("id", id);
+  if (error) throw new Error(error.message);
   if (prev && prev.status !== status) {
     await sendOrderStatusEmail(prev, status);
   }
@@ -647,10 +689,11 @@ export async function setOrderStatusAction(id: string, status: string) {
 export async function setOrderPaymentAction(id: string, payment: string) {
   await assertAdmin();
   if (!id || !PAYMENT_STATUSES.includes(payment)) return;
-  await createServiceClient()
+  const { error } = await createServiceClient()
     .from("order")
     .update({ payment_status: payment as never })
     .eq("id", id);
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -673,17 +716,19 @@ export async function bulkOrderAction(formData: FormData) {
       .from("order")
       .select("id,number,email,currency,tracking_number,shipping_method,status")
       .in("id", ids);
-    await svc
+    const { error } = await svc
       .from("order")
       .update({ status: value as never })
       .in("id", ids);
+    if (error) throw new Error(error.message);
     const changed = (rows ?? []).filter((r) => r.status !== value);
     await Promise.all(changed.map((r) => sendOrderStatusEmail(r, value)));
   } else if (kind === "payment" && PAYMENT_STATUSES.includes(value)) {
-    await svc
+    const { error } = await svc
       .from("order")
       .update({ payment_status: value as never })
       .in("id", ids);
+    if (error) throw new Error(error.message);
   } else {
     return;
   }
@@ -694,9 +739,10 @@ export async function bulkOrderAction(formData: FormData) {
 async function upsertSetting(key: string, value: Record<string, unknown>) {
   await assertAdmin();
   const svc = createServiceClient();
-  await svc
+  const { error } = await svc
     .from("app_setting")
     .upsert({ key, value: value as never }, { onConflict: "key" });
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -734,17 +780,21 @@ export async function saveAiAction(fd: FormData) {
 /* ── Recenze ───────────────────────────────────────────────────────────── */
 export async function approveReviewAction(fd: FormData) {
   await assertAdmin();
-  const svc = createServiceClient();
-  await svc
+  const { error } = await createServiceClient()
     .from("review")
     .update({ is_approved: fd.get("approved") === "1" })
     .eq("id", str(fd, "id"));
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
 export async function deleteReviewAction(fd: FormData) {
   await assertAdmin();
-  await createServiceClient().from("review").delete().eq("id", str(fd, "id"));
+  const { error } = await createServiceClient()
+    .from("review")
+    .delete()
+    .eq("id", str(fd, "id"));
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -754,9 +804,10 @@ export async function saveLegalAction(fd: FormData) {
   const svc = createServiceClient();
   const key = str(fd, "doc") === "privacy" ? "legal.privacy" : "legal.terms";
   const content = i18n(fd, "content");
-  await svc
+  const { error } = await svc
     .from("app_setting")
     .upsert({ key, value: content as never }, { onConflict: "key" });
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 
@@ -774,13 +825,19 @@ export async function saveShippingMethodAction(fd: FormData) {
     is_active: fd.get("is_active") === "on",
     sort_order: parseInt(str(fd, "sort_order") || "0", 10),
   };
-  if (id) await svc.from("shipping_method").update(payload).eq("id", id);
-  else await svc.from("shipping_method").insert(payload);
+  const { error } = id
+    ? await svc.from("shipping_method").update(payload).eq("id", id)
+    : await svc.from("shipping_method").insert(payload);
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 export async function deleteShippingMethodAction(fd: FormData) {
   await assertAdmin();
-  await createServiceClient().from("shipping_method").delete().eq("id", str(fd, "id"));
+  const { error } = await createServiceClient()
+    .from("shipping_method")
+    .delete()
+    .eq("id", str(fd, "id"));
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 export async function savePaymentMethodAction(fd: FormData) {
@@ -796,12 +853,18 @@ export async function savePaymentMethodAction(fd: FormData) {
     is_active: fd.get("is_active") === "on",
     sort_order: parseInt(str(fd, "sort_order") || "0", 10),
   };
-  if (id) await svc.from("payment_method").update(payload).eq("id", id);
-  else await svc.from("payment_method").insert(payload);
+  const { error } = id
+    ? await svc.from("payment_method").update(payload).eq("id", id)
+    : await svc.from("payment_method").insert(payload);
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 export async function deletePaymentMethodAction(fd: FormData) {
   await assertAdmin();
-  await createServiceClient().from("payment_method").delete().eq("id", str(fd, "id"));
+  const { error } = await createServiceClient()
+    .from("payment_method")
+    .delete()
+    .eq("id", str(fd, "id"));
+  if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }

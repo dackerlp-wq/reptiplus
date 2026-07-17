@@ -9,9 +9,11 @@ import {
   ExternalLink,
   LogOut,
 } from "lucide-react";
+import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
 import { requireAdmin } from "@/lib/admin/auth";
 import { signOutAction } from "@/lib/auth/actions";
+import { Toaster, FlashToast } from "@/components/admin/toast";
 
 const NAV = [
   { href: "/admin", label: "Přehled", icon: LayoutDashboard },
@@ -90,6 +92,11 @@ export default async function AdminLayout({
 
         <main className="min-w-0 flex-1 p-6 lg:p-8">{children}</main>
       </div>
+
+      <Toaster />
+      <Suspense fallback={null}>
+        <FlashToast />
+      </Suspense>
     </div>
   );
 }

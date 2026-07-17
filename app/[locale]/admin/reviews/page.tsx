@@ -4,6 +4,7 @@ import {
   approveReviewAction,
   deleteReviewAction,
 } from "@/lib/admin/actions";
+import { ToastForm } from "@/components/admin/toast";
 
 type ReviewRow = {
   id: string;
@@ -97,7 +98,10 @@ export default async function AdminReviewsPage() {
                 </div>
 
                 <div className="flex shrink-0 gap-2">
-                  <form action={approveReviewAction}>
+                  <ToastForm
+                    action={approveReviewAction}
+                    success={r.is_approved ? "Skryto" : "Schváleno"}
+                  >
                     <input type="hidden" name="id" value={r.id} />
                     <input
                       type="hidden"
@@ -119,8 +123,12 @@ export default async function AdminReviewsPage() {
                         <Check className="size-4" /> Schválit
                       </button>
                     )}
-                  </form>
-                  <form action={deleteReviewAction}>
+                  </ToastForm>
+                  <ToastForm
+                    action={deleteReviewAction}
+                    success="Smazáno"
+                    confirm="Smazat tuto recenzi?"
+                  >
                     <input type="hidden" name="id" value={r.id} />
                     <button
                       title="Smazat"
@@ -128,7 +136,7 @@ export default async function AdminReviewsPage() {
                     >
                       <Trash2 className="size-4" />
                     </button>
-                  </form>
+                  </ToastForm>
                 </div>
               </div>
             </li>

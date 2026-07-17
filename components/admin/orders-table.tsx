@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { toast, ToastForm } from "./toast";
 import {
   setOrderStatusAction,
   setOrderPaymentAction,
@@ -134,7 +135,7 @@ function InlineSelect({
   value: string;
   options: [string, string][];
   colorOf: (v: string) => string;
-  onCommit: (v: string) => void;
+  onCommit: (v: string) => void | Promise<unknown>;
   title?: string;
 }) {
   const [pending, start] = useTransition();
@@ -144,7 +145,17 @@ function InlineSelect({
         value={value}
         disabled={pending}
         title={title}
-        onChange={(e) => start(() => onCommit(e.target.value))}
+        onChange={(e) => {
+          const v = e.target.value;
+          start(async () => {
+            try {
+              await onCommit(v);
+              toast.success("Uloženo");
+            } catch {
+              toast.error("Uložení se nezdařilo");
+            }
+          });
+        }}
         className={cn(
           "cursor-pointer appearance-none rounded-md py-1 pl-2 pr-6 text-xs font-medium outline-none disabled:opacity-60",
           colorOf(value),
@@ -627,7 +638,12 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
               ["payment:paid", "Platba přijata", Banknote],
             ] as [string, string, typeof Cog][]
           ).map(([op, label, Icon]) => (
-            <form key={op} action={bulkOrderAction} onSubmit={clearSelection}>
+            <ToastForm
+              key={op}
+              action={bulkOrderAction}
+              success="Objednávky aktualizovány"
+              onSuccess={clearSelection}
+            >
               <input type="hidden" name="op" value={op} />
               <input type="hidden" name="ids" value={selectedIds} />
               <button
@@ -640,7 +656,7 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
               >
                 <Icon className="size-4" /> {label}
               </button>
-            </form>
+            </ToastForm>
           ))}
           <button
             type="button"

@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { createServiceClient } from "@/lib/supabase/service";
 import { deleteCategoryAction } from "@/lib/admin/actions";
+import { ToastForm } from "@/components/admin/toast";
 import { pickI18n } from "@/lib/i18n";
 
 export default async function AdminCategoriesPage({
@@ -61,12 +62,16 @@ export default async function AdminCategoriesPage({
                     >
                       <Pencil className="size-4" />
                     </Link>
-                    <form action={deleteCategoryAction}>
+                    <ToastForm
+                      action={deleteCategoryAction}
+                      success="Smazáno"
+                      confirm={`Smazat kategorii „${c.name}"?`}
+                    >
                       <input type="hidden" name="id" value={c.id} />
                       <button className="rounded-md p-2 text-gray-soft hover:bg-error/10 hover:text-error">
                         <Trash2 className="size-4" />
                       </button>
-                    </form>
+                    </ToastForm>
                   </div>
                 </td>
               </tr>
