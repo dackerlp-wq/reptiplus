@@ -41,29 +41,29 @@ export function HeroCarousel({
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="relative mx-auto max-w-7xl px-4 py-10 md:py-14">
-        <div className="grid items-center gap-8 md:grid-cols-2">
+      <div className="mx-auto max-w-7xl px-4 py-6 md:py-14">
+        <div className="grid items-center gap-6 md:grid-cols-2 md:gap-8">
           {/* Text */}
           <div className="order-2 md:order-1">
             {s.brand && (
-              <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-gold-light">
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-gold-light md:mb-2 md:text-sm">
                 {s.brand}
               </p>
             )}
-            <h1 className="font-display text-3xl font-bold leading-tight text-white md:text-5xl">
+            <h1 className="font-display text-2xl font-bold leading-tight text-white sm:text-3xl md:text-5xl">
               {s.name}
             </h1>
             {s.description && (
-              <p className="mt-4 max-w-md text-base leading-relaxed text-cream/80 line-clamp-3">
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-cream/80 line-clamp-2 md:mt-4 md:text-base md:line-clamp-3">
                 {s.description}
               </p>
             )}
-            <p className="mt-4 font-mono text-2xl font-semibold text-gold-light">
+            <p className="mt-3 font-mono text-xl font-semibold text-gold-light md:mt-4 md:text-2xl">
               {s.priceLabel}
             </p>
             <Link
               href={`/produkt/${s.slug}`}
-              className="mt-7 inline-flex items-center gap-2 rounded-lg bg-gold px-6 py-3 font-semibold text-white transition-colors hover:bg-gold-light"
+              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gold-light md:mt-7 md:px-6 md:py-3 md:text-base"
             >
               {ctaLabel} <ArrowRight className="size-4" />
             </Link>
@@ -75,44 +75,36 @@ export function HeroCarousel({
             className="order-1 md:order-2"
             aria-label={s.name}
           >
-            <div className="relative mx-auto flex aspect-square w-full max-w-md items-center justify-center overflow-hidden rounded-2xl bg-white">
+            <div className="relative mx-auto flex aspect-square w-full max-w-[13rem] items-center justify-center overflow-hidden rounded-2xl bg-white sm:max-w-xs md:max-w-md">
               {s.imageUrl ? (
                 <Image
                   key={s.slug}
                   src={s.imageUrl}
                   alt={s.name}
                   fill
-                  sizes="(max-width: 768px) 90vw, 40vw"
-                  className="object-contain p-6"
+                  sizes="(max-width: 768px) 60vw, 40vw"
+                  className="object-contain p-4 md:p-6"
                   priority
                 />
               ) : (
-                <Leaf className="size-24 text-forest-light/30" />
+                <Leaf className="size-16 text-forest-light/30 md:size-24" />
               )}
             </div>
           </Link>
         </div>
 
-        {/* Ovládání */}
+        {/* Ovládání — šipky u teček (nepřekrývají text) */}
         {count > 1 && (
-          <>
+          <div className="mt-6 flex items-center justify-center gap-3 md:mt-8">
             <button
               type="button"
               aria-label="Předchozí"
               onClick={() => go(i - 1)}
-              className="absolute left-1 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20 md:block"
+              className="rounded-full bg-white/10 p-1.5 text-white transition-colors hover:bg-white/20"
             >
               <ChevronLeft className="size-5" />
             </button>
-            <button
-              type="button"
-              aria-label="Další"
-              onClick={() => go(i + 1)}
-              className="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20 md:block"
-            >
-              <ChevronRight className="size-5" />
-            </button>
-            <div className="mt-8 flex justify-center gap-2">
+            <div className="flex gap-2">
               {slides.map((_, idx) => (
                 <button
                   key={idx}
@@ -125,7 +117,15 @@ export function HeroCarousel({
                 />
               ))}
             </div>
-          </>
+            <button
+              type="button"
+              aria-label="Další"
+              onClick={() => go(i + 1)}
+              className="rounded-full bg-white/10 p-1.5 text-white transition-colors hover:bg-white/20"
+            >
+              <ChevronRight className="size-5" />
+            </button>
+          </div>
         )}
       </div>
     </section>

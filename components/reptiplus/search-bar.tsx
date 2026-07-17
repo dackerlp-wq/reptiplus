@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 type Product = {
   slug: string;
   name: string;
+  category: string | null;
   imageUrl: string | null;
   priceLabel: string;
 };
@@ -223,8 +224,15 @@ export function SearchBar({
                         <Leaf className="size-5 text-forest-light/40" />
                       )}
                     </span>
-                    <span className="line-clamp-1 flex-1 text-sm text-ink">
-                      <Highlight text={it.name} q={q} />
+                    <span className="min-w-0 flex-1">
+                      <span className="line-clamp-1 text-sm text-ink">
+                        <Highlight text={it.name} q={q} />
+                      </span>
+                      {it.category && (
+                        <span className="line-clamp-1 text-xs text-gray-soft">
+                          {it.category}
+                        </span>
+                      )}
                     </span>
                     <span className="shrink-0 font-mono text-sm text-forest">
                       {it.priceLabel}

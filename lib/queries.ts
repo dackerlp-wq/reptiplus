@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { localeCurrency, pickI18n, priceForLocale } from "@/lib/i18n";
+import {
+  formatPrice,
+  localeCurrency,
+  pickI18n,
+  priceForLocale,
+} from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 
 export type I18n = Record<string, string> | null;
@@ -253,6 +258,88 @@ export async function getBrands(): Promise<BrandItem[]> {
   return (data ?? []) as unknown as BrandItem[];
 }
 
+export type MenuCategory = {
+  slug: string;
+  name: string;
+  subcategories: { slug: string; name: string }[];
+  product: {
+    slug: string;
+    name: string;
+    imageUrl: string | null;
+    priceLabel: string;
+  } | null;
+};
+
+/** Data pro megamenu: kořenové kategorie + podkategorie + náhodný produkt z kategorie. */
+export async function getMenuData(locale: Locale): Promise<MenuCategory[]> {
+  const supabase = await createClient();
+  const [{ data: cats }, { data: prods }] = await Promise.all([
+    supabase
+      .from("category")
+      .select("id,slug,name,name_i18n,parent_id,sort_order")
+      .eq("is_published", true)
+      .order("sort_order"),
+    supabase
+      .from("product")
+      .select(
+        "id,slug,name,name_i18n,price_czk,price_eur,category_id, product_image(url,sort_order)",
+      )
+      .eq("is_published", true),
+  ]);
+
+  const categories = (cats ?? []) as {
+    id: string;
+    slug: string;
+    name: string;
+    name_i18n: I18n;
+    parent_id: string | null;
+  }[];
+  type ProdRow = {
+    slug: string;
+    name: string;
+    name_i18n: I18n;
+    price_czk: number;
+    price_eur: number | null;
+    category_id: string | null;
+    product_image: { url: string; sort_order: number }[] | null;
+  };
+  const products = (prods ?? []) as unknown as ProdRow[];
+
+  return categories
+    .filter((c) => !c.parent_id)
+    .map((root) => {
+      const subs = categories.filter((c) => c.parent_id === root.id);
+      const catIds = new Set([root.id, ...subs.map((s) => s.id)]);
+      const inCat = products.filter(
+        (p) => p.category_id && catIds.has(p.category_id),
+      );
+      const pick = inCat.length
+        ? inCat[Math.floor(Math.random() * inCat.length)]
+        : null;
+      const img = pick?.product_image?.length
+        ? [...pick.product_image].sort((a, b) => a.sort_order - b.sort_order)[0]
+            .url
+        : null;
+
+      return {
+        slug: root.slug,
+        name: pickI18n(root.name_i18n, locale, root.name),
+        subcategories: subs.map((s) => ({
+          slug: s.slug,
+          name: pickI18n(s.name_i18n, locale, s.name),
+        })),
+        product: pick
+          ? {
+              slug: pick.slug,
+              name: pickI18n(pick.name_i18n, locale, pick.name),
+              imageUrl: img,
+              priceLabel: formatPrice(priceForLocale(pick, locale), locale),
+            }
+          : null,
+      };
+    });
+}
+
 /** kategorie + její přímé podkategorie (pro filtrování produktů) */
 async function categoryAndDescendantIds(slug: string): Promise<string[]> {
   const supabase = await createClient();
@@ -364,11 +451,12 @@ export async function getUpsellProducts(
 export type SearchSuggestion = {
   slug: string;
   name: string;
+  category: string | null;
   imageUrl: string | null;
   price: number;
 };
 
-/** Lehké návrhy pro našeptávač — pár produktů dle FTS (prefix), s obrázkem a cenou. */
+/** Lehké návrhy pro našeptávač — pár produktů dle FTS (prefix), s obrázkem, kategorií a cenou. */
 export async function searchSuggestions(
   locale: Locale,
   q: string,
@@ -383,18 +471,31 @@ export async function searchSuggestions(
   let req = supabase
     .from("product")
     .select(
-      "slug,name,name_i18n,price_czk,price_eur, product_image(url,alt,sort_order)",
+      "slug,name,name_i18n,price_czk,price_eur, category:category_id(name,name_i18n), product_image(url,alt,sort_order)",
     )
     .eq("is_published", true)
     .limit(limit);
   if (tsq) req = req.textSearch("search_vector", tsq, { config: "simple" });
 
   const { data } = await req;
-  return normalizeList(data).map((p) => ({
-    slug: p.slug,
-    name: pickI18n(p.name_i18n, locale, p.name),
-    imageUrl: p.image?.url ?? null,
-    price: priceForLocale(p, locale),
+  const rows = (data ?? []) as unknown as {
+    slug: string;
+    name: string;
+    name_i18n: I18n;
+    price_czk: number;
+    price_eur: number | null;
+    category: { name: string; name_i18n: I18n } | null;
+    product_image: ProductImage[] | null;
+  }[];
+
+  return rows.map((r) => ({
+    slug: r.slug,
+    name: pickI18n(r.name_i18n, locale, r.name),
+    category: r.category
+      ? pickI18n(r.category.name_i18n, locale, r.category.name)
+      : null,
+    imageUrl: pickImage(r.product_image)?.url ?? null,
+    price: priceForLocale(r, locale),
   }));
 }
 

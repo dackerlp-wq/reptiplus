@@ -3,17 +3,17 @@ import { ShoppingCart, User, Mail, Phone } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { getCartCount } from "@/lib/cart/cart";
-import { getRootCategories } from "@/lib/queries";
+import { getMenuData } from "@/lib/queries";
 import { getShopContact } from "@/lib/settings";
-import { pickI18n } from "@/lib/i18n";
 import { LanguageSwitcher } from "./language-switcher";
 import { SearchBar } from "./search-bar";
+import { CategoryMenu } from "./category-menu";
 
 export async function Navbar({ locale }: { locale: Locale }) {
   const t = await getTranslations("Nav");
-  const [cartCount, categories, contact] = await Promise.all([
+  const [cartCount, menu, contact] = await Promise.all([
     getCartCount(),
-    getRootCategories(),
+    getMenuData(locale),
     getShopContact(),
   ]);
   const telHref = `tel:${contact.phone.replace(/\s+/g, "")}`;
@@ -86,22 +86,8 @@ export async function Navbar({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      {/* Menu kategorií */}
-      {categories.length > 0 && (
-        <nav className="border-b border-cream-dark bg-white">
-          <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-4 py-1">
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/kategorie/${cat.slug}`}
-                className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-charcoal transition-colors hover:bg-cream hover:text-forest"
-              >
-                {pickI18n(cat.name_i18n, locale, cat.name)}
-              </Link>
-            ))}
-          </div>
-        </nav>
-      )}
+      {/* Menu kategorií — megamenu */}
+      <CategoryMenu categories={menu} />
     </header>
   );
 }

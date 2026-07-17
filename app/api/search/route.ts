@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     items: suggestions.map((s) => ({
       slug: s.slug,
       name: s.name,
+      category: s.category,
       imageUrl: s.imageUrl,
       priceLabel: formatPrice(s.price, locale),
     })),

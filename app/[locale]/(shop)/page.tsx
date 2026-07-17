@@ -5,13 +5,11 @@ import { routing, type Locale } from "@/i18n/routing";
 import {
   getNewProducts,
   getProducts,
-  getRootCategories,
   getSaleProducts,
 } from "@/lib/queries";
 import type { ProductListItem } from "@/lib/queries";
 import { formatPrice, pickI18n, priceForLocale } from "@/lib/i18n";
 import { ProductCard } from "@/components/reptiplus/product-card";
-import { CategoryCard } from "@/components/reptiplus/category-card";
 import {
   HeroCarousel,
   type HeroSlide,
@@ -29,11 +27,10 @@ export default async function HomePage({
   setRequestLocale(locale);
   const t = await getTranslations("Home");
 
-  const [featured, latest, sale, categories] = await Promise.all([
+  const [featured, latest, sale] = await Promise.all([
     getProducts({ featured: true }),
     getNewProducts(4),
     getSaleProducts(4),
-    getRootCategories(),
   ]);
 
   const productGrid = (items: ProductListItem[]) => (
@@ -64,27 +61,9 @@ export default async function HomePage({
       {/* Carousel */}
       <HeroCarousel slides={slides} ctaLabel={t("heroCta")} />
 
-      {/* Kategorie */}
-      {categories.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-16">
-          <h2 className="mb-8 font-display text-3xl font-bold">
-            {t("categoriesTitle")}
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {categories.map((category) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                locale={locale}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Doporučujeme */}
       {featured.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-8">
+        <section className="mx-auto max-w-7xl px-4 py-12">
           <div className="mb-8">
             <h2 className="font-display text-3xl font-bold">
               {t("featuredTitle")}
