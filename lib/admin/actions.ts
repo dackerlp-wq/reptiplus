@@ -141,13 +141,23 @@ async function syncProductVariants(
   productId: string,
   raw: string,
 ) {
+  type I18nObj = { cs?: string; en?: string; de?: string };
+  type VAttr = {
+    key?: string;
+    value?: string;
+    key_i18n?: I18nObj;
+    value_i18n?: I18nObj;
+  };
   type V = {
     id?: string;
     name?: string;
+    name_i18n?: I18nObj;
     sku?: string;
     price_czk?: string;
     price_eur?: string;
     stock_qty?: string;
+    image_url?: string | null;
+    attributes?: VAttr[];
   };
   let variants: V[] = [];
   try {
@@ -181,13 +191,39 @@ async function syncProductVariants(
 
   for (let i = 0; i < variants.length; i++) {
     const v = variants[i];
+    const nameCs = (v.name ?? "").trim();
+    const nameI18n = {
+      cs: nameCs,
+      en: (v.name_i18n?.en ?? "").trim(),
+      de: (v.name_i18n?.de ?? "").trim(),
+    };
+    const attrs = Array.isArray(v.attributes)
+      ? v.attributes
+          .filter(
+            (a) =>
+              a &&
+              typeof a.key === "string" &&
+              typeof a.value === "string" &&
+              a.key.trim() &&
+              a.value.trim(),
+          )
+          .map((a) => ({
+            key: a.key!.trim(),
+            value: a.value!.trim(),
+            key_i18n: a.key_i18n ?? {},
+            value_i18n: a.value_i18n ?? {},
+          }))
+      : [];
     const payload = {
       product_id: productId,
-      name: (v.name ?? "").trim(),
+      name: nameCs,
+      name_i18n: nameI18n as never,
       sku: v.sku?.trim() || null,
       price_czk: toMinor(v.price_czk),
       price_eur: toMinor(v.price_eur),
       stock_qty: toStock(v.stock_qty),
+      image_url: typeof v.image_url === "string" && v.image_url ? v.image_url : null,
+      attributes: attrs as never,
       sort_order: i,
     };
     if (v.id && existingIds.has(v.id)) {
@@ -417,6 +453,29 @@ export async function uploadProductImagesAction(
 
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+/** Nahraje obrázek varianty a vrátí veřejnou URL (bez zápisu do DB). */
+export async function uploadVariantImageAction(
+  formData: FormData,
+): Promise<{ ok: boolean; url?: string; error?: string }> {
+  await assertAdmin();
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0)
+    return { ok: false, error: "NO_FILES" };
+  if (!file.type.startsWith("image/")) return { ok: false, error: "NOT_IMAGE" };
+  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "TOO_LARGE" };
+
+  const svc = createServiceClient();
+  const ext = (file.name.split(".").pop() || "webp").toLowerCase();
+  const path = `variants/${crypto.randomUUID()}.${ext}`;
+  const { error: upErr } = await svc.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (upErr) return { ok: false, error: "UPLOAD" };
+
+  const { data: pub } = svc.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  return { ok: true, url: pub.publicUrl };
 }
 
 /** Cesta v bucketu z veřejné URL (…/object/public/products/<path>). */

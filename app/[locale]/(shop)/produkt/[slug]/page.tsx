@@ -111,9 +111,14 @@ export default async function ProductPage({
   const isCzk = localeCurrency[locale] === "CZK";
   const buyVariants = product.variants.map((v) => ({
     id: v.id,
-    name: v.name,
+    name: pickI18n(v.name_i18n, locale, v.name),
     price: (isCzk ? v.price_czk : v.price_eur) ?? priceMinor,
     stock: v.stock_qty,
+    imageUrl: v.image_url,
+    attributes: (v.attributes ?? []).map((a) => ({
+      key: pickI18n(a.key_i18n, locale, a.key),
+      value: pickI18n(a.value_i18n, locale, a.value),
+    })),
   }));
 
   const brandName = product.brand?.name ?? "";

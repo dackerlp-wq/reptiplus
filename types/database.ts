@@ -768,8 +768,11 @@ export type Database = {
       }
       product_variant: {
         Row: {
+          attributes: Json
           id: string
+          image_url: string | null
           name: string
+          name_i18n: Json
           price_czk: number | null
           price_eur: number | null
           product_id: string
@@ -778,8 +781,11 @@ export type Database = {
           stock_qty: number
         }
         Insert: {
+          attributes?: Json
           id?: string
+          image_url?: string | null
           name: string
+          name_i18n?: Json
           price_czk?: number | null
           price_eur?: number | null
           product_id: string
@@ -788,8 +794,11 @@ export type Database = {
           stock_qty?: number
         }
         Update: {
+          attributes?: Json
           id?: string
+          image_url?: string | null
           name?: string
+          name_i18n?: Json
           price_czk?: number | null
           price_eur?: number | null
           product_id?: string

@@ -40,7 +40,9 @@ export default async function EditProductPage({
 
   const { data: variantRows } = await svc
     .from("product_variant")
-    .select("id, name, sku, price_czk, price_eur, stock_qty, sort_order")
+    .select(
+      "id, name, name_i18n, sku, price_czk, price_eur, stock_qty, image_url, attributes, sort_order",
+    )
     .eq("product_id", id)
     .order("sort_order");
 
@@ -72,13 +74,26 @@ export default async function EditProductPage({
   }
   const specKeys = Object.keys(keyValues).sort();
   const money = (v: number | null) => (v == null ? "" : String(v / 100));
+  type VAttr = {
+    key: string;
+    value: string;
+    key_i18n?: unknown;
+    value_i18n?: unknown;
+  };
   const variants = (variantRows ?? []).map((v) => ({
     id: v.id,
-    name: v.name,
+    name: i18nOf(v.name, v.name_i18n),
     sku: v.sku ?? "",
     price_czk: money(v.price_czk),
     price_eur: money(v.price_eur),
     stock_qty: String(v.stock_qty ?? 0),
+    image_url: v.image_url ?? "",
+    attributes: (Array.isArray(v.attributes) ? (v.attributes as VAttr[]) : []).map(
+      (a) => ({
+        key: i18nOf(a.key, a.key_i18n),
+        value: i18nOf(a.value, a.value_i18n),
+      }),
+    ),
   }));
 
   return (

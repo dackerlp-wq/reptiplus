@@ -13,13 +13,23 @@ export type I18n = Record<string, string> | null;
 
 export type ProductImage = { url: string; alt: string | null; sort_order: number };
 
+export type VariantAttr = {
+  key: string;
+  value: string;
+  key_i18n: I18n;
+  value_i18n: I18n;
+};
+
 export type ProductVariant = {
   id: string;
   name: string;
+  name_i18n: I18n;
   sku: string | null;
   price_czk: number | null;
   price_eur: number | null;
   stock_qty: number;
+  image_url: string | null;
+  attributes: VariantAttr[] | null;
   sort_order: number;
 };
 
@@ -204,7 +214,7 @@ export async function getProductBySlug(
   const { data } = await supabase
     .from("product")
     .select(
-      "id,slug,name,name_i18n,sku,short_description,short_description_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured,category_id, brand:brand_id(name,slug,logo_url,description_i18n), category:category_id(slug,name_i18n), product_attribute(key,value,key_i18n,value_i18n,sort_order), product_image(url,alt,sort_order), product_variant(id,name,sku,price_czk,price_eur,stock_qty,sort_order)",
+      "id,slug,name,name_i18n,sku,short_description,short_description_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured,category_id, brand:brand_id(name,slug,logo_url,description_i18n), category:category_id(slug,name_i18n), product_attribute(key,value,key_i18n,value_i18n,sort_order), product_image(url,alt,sort_order), product_variant(id,name,name_i18n,sku,price_czk,price_eur,stock_qty,image_url,attributes,sort_order)",
     )
     .eq("slug", slug)
     .eq("is_published", true)

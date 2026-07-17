@@ -1,7 +1,12 @@
+"use client";
+
+import { useState } from "react";
+import { Box, Layers } from "lucide-react";
 import { saveProductAction } from "@/lib/admin/actions";
 import { pickI18n } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 import type { BrandItem, CategoryItem } from "@/lib/queries";
+import { cn } from "@/lib/utils";
 import { LangFields } from "@/components/admin/lang-fields";
 import { Hint } from "@/components/admin/hint";
 import { EurFromCzk } from "@/components/admin/eur-from-czk";
@@ -69,15 +74,69 @@ export function ProductForm({
   const sd = product?.short_description_i18n ?? {};
   const d = product?.description_i18n ?? {};
 
+  const [mode, setMode] = useState<"simple" | "variants">(
+    variants.length > 0 ? "variants" : "simple",
+  );
+  const hasVariants = mode === "variants";
+
+  const typeBtn = (active: boolean) =>
+    cn(
+      "flex flex-1 items-center gap-3 rounded-xl border-2 p-4 text-left transition-colors",
+      active
+        ? "border-forest bg-forest/5"
+        : "border-cream-dark bg-white hover:border-forest/40",
+    );
+
   return (
     <form action={saveProductAction} className="max-w-6xl">
       {product && <input type="hidden" name="id" value={product.id} />}
       <input type="hidden" name="locale" value={locale} />
 
+      {/* Typ produktu */}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+        <button
+          type="button"
+          onClick={() => setMode("simple")}
+          className={typeBtn(!hasVariants)}
+        >
+          <Box
+            className={cn(
+              "size-6 shrink-0",
+              !hasVariants ? "text-forest" : "text-gray-soft",
+            )}
+          />
+          <span>
+            <span className="block font-semibold text-ink">Jednoduchý produkt</span>
+            <span className="block text-xs text-gray-soft">
+              Jedna cena a sklad.
+            </span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("variants")}
+          className={typeBtn(hasVariants)}
+        >
+          <Layers
+            className={cn(
+              "size-6 shrink-0",
+              hasVariants ? "text-forest" : "text-gray-soft",
+            )}
+          />
+          <span>
+            <span className="block font-semibold text-ink">
+              Produkt s variantami
+            </span>
+            <span className="block text-xs text-gray-soft">
+              Např. výkon, velikost — vlastní cena, sklad, obrázek i parametry.
+            </span>
+          </span>
+        </button>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Levý sloupec — obsah */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Název + popis s přepínačem jazyků */}
           <div className="rounded-xl border border-cream-dark bg-paper p-4">
             <Hint>
               Přepni jazyk a vyplň překlad. Čeština je základ, EN/DE se zobrazí
@@ -114,7 +173,12 @@ export function ProductForm({
             keyValues={keyValues}
           />
 
-          <ProductVariants initial={variants} />
+          {/* Varianty — jen v režimu „s variantami"; jinak vyčistíme */}
+          {hasVariants ? (
+            <ProductVariants initial={variants} />
+          ) : (
+            <input type="hidden" name="variants" value="[]" />
+          )}
 
           <UpsellPicker
             allProducts={allProducts}
@@ -128,34 +192,51 @@ export function ProductForm({
           {/* Ceny */}
           <div className={card}>
             <p className={cardTitle}>Ceny</p>
-            <p className="text-xs text-gray-soft">
-              U produktu s variantami nech cenu prázdnou nebo zadej výchozí —
-              ceny variant mají přednost.
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className={label}>
-                <span className={legend}>Cena Kč</span>
-                <input name="price_czk" inputMode="decimal" defaultValue={minor(product?.price_czk)} className={input} />
-              </label>
-              <label className={label}>
-                <span className={legend}>Cena €</span>
-                <input name="price_eur" inputMode="decimal" defaultValue={minor(product?.price_eur)} className={input} />
-              </label>
-              <label className={label}>
-                <span className={legend}>Původní Kč (sleva)</span>
-                <input name="compare_at_czk" inputMode="decimal" defaultValue={minor(product?.compare_at_czk)} className={input} />
-              </label>
-              <label className={label}>
-                <span className={legend}>Původní € (sleva)</span>
-                <input name="compare_at_eur" inputMode="decimal" defaultValue={minor(product?.compare_at_eur)} className={input} />
-              </label>
-            </div>
-            <EurFromCzk
-              pairs={[
-                ["price_czk", "price_eur"],
-                ["compare_at_czk", "compare_at_eur"],
-              ]}
-            />
+            {hasVariants ? (
+              <div className="space-y-3">
+                <p className="text-xs text-gray-soft">
+                  Ceny a sklad se zadávají u jednotlivých variant níže. Zde
+                  můžeš nechat volitelně původní cenu (pro zobrazení slevy).
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className={label}>
+                    <span className={legend}>Původní Kč (sleva)</span>
+                    <input name="compare_at_czk" inputMode="decimal" defaultValue={minor(product?.compare_at_czk)} className={input} />
+                  </label>
+                  <label className={label}>
+                    <span className={legend}>Původní € (sleva)</span>
+                    <input name="compare_at_eur" inputMode="decimal" defaultValue={minor(product?.compare_at_eur)} className={input} />
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className={label}>
+                    <span className={legend}>Cena Kč</span>
+                    <input name="price_czk" inputMode="decimal" defaultValue={minor(product?.price_czk)} className={input} />
+                  </label>
+                  <label className={label}>
+                    <span className={legend}>Cena €</span>
+                    <input name="price_eur" inputMode="decimal" defaultValue={minor(product?.price_eur)} className={input} />
+                  </label>
+                  <label className={label}>
+                    <span className={legend}>Původní Kč (sleva)</span>
+                    <input name="compare_at_czk" inputMode="decimal" defaultValue={minor(product?.compare_at_czk)} className={input} />
+                  </label>
+                  <label className={label}>
+                    <span className={legend}>Původní € (sleva)</span>
+                    <input name="compare_at_eur" inputMode="decimal" defaultValue={minor(product?.compare_at_eur)} className={input} />
+                  </label>
+                </div>
+                <EurFromCzk
+                  pairs={[
+                    ["price_czk", "price_eur"],
+                    ["compare_at_czk", "compare_at_eur"],
+                  ]}
+                />
+              </>
+            )}
           </div>
 
           {/* Zařazení */}
@@ -193,11 +274,18 @@ export function ProductForm({
                   ))}
                 </select>
               </label>
-              <label className={label}>
-                <span className={legend}>Skladem (ks)</span>
-                <input name="stock_qty" type="number" min={0} defaultValue={product?.stock_qty ?? 0} className={input} />
-              </label>
+              {!hasVariants && (
+                <label className={label}>
+                  <span className={legend}>Skladem (ks)</span>
+                  <input name="stock_qty" type="number" min={0} defaultValue={product?.stock_qty ?? 0} className={input} />
+                </label>
+              )}
             </div>
+            {hasVariants && (
+              <p className="text-xs text-gray-soft">
+                Sklad se řídí variantami (součet jejich skladů).
+              </p>
+            )}
           </div>
 
           {/* Stav */}

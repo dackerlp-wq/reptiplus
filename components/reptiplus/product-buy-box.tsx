@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import { Check, Loader2, ShoppingCart } from "lucide-react";
 import { formatPrice, discountPercent } from "@/lib/i18n";
 import { addToCartAction } from "@/lib/cart/actions";
@@ -12,6 +13,8 @@ export type BuyVariant = {
   name: string;
   price: number; // minor units, měna dle locale
   stock: number;
+  imageUrl?: string | null;
+  attributes?: { key: string; value: string }[];
 };
 
 export function ProductBuyBox({
@@ -106,6 +109,33 @@ export function ProductBuyBox({
               );
             })}
           </div>
+
+          {/* Obrázek + parametry vybrané varianty */}
+          {sel && (sel.imageUrl || (sel.attributes?.length ?? 0) > 0) && (
+            <div className="mt-4 flex gap-3 rounded-xl border border-cream-dark bg-paper p-3">
+              {sel.imageUrl && (
+                <span className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-white">
+                  <Image
+                    src={sel.imageUrl}
+                    alt={sel.name}
+                    fill
+                    sizes="80px"
+                    className="object-contain p-1"
+                  />
+                </span>
+              )}
+              {sel.attributes && sel.attributes.length > 0 && (
+                <dl className="flex-1 self-center text-sm">
+                  {sel.attributes.map((a, i) => (
+                    <div key={i} className="flex justify-between gap-3 py-0.5">
+                      <dt className="text-gray-soft">{a.key}</dt>
+                      <dd className="font-medium text-ink">{a.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </div>
+          )}
         </div>
       )}
 
