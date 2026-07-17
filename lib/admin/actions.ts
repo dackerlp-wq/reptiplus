@@ -587,6 +587,39 @@ export async function updateOrderAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+const ORDER_STATUSES = [
+  "new",
+  "paid",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
+  "refunded",
+];
+const PAYMENT_STATUSES = ["pending", "paid", "failed", "refunded"];
+
+/** Rychlá inline změna stavu objednávky z výpisu. */
+export async function setOrderStatusAction(id: string, status: string) {
+  await assertAdmin();
+  if (!id || !ORDER_STATUSES.includes(status)) return;
+  await createServiceClient()
+    .from("order")
+    .update({ status: status as never })
+    .eq("id", id);
+  revalidatePath("/", "layout");
+}
+
+/** Rychlá inline změna stavu platby z výpisu. */
+export async function setOrderPaymentAction(id: string, payment: string) {
+  await assertAdmin();
+  if (!id || !PAYMENT_STATUSES.includes(payment)) return;
+  await createServiceClient()
+    .from("order")
+    .update({ payment_status: payment as never })
+    .eq("id", id);
+  revalidatePath("/", "layout");
+}
+
 /* ── Nastavení / integrace ─────────────────────────────────────────────── */
 async function upsertSetting(key: string, value: Record<string, unknown>) {
   await assertAdmin();
