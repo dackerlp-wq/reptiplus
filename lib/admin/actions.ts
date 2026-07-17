@@ -109,15 +109,13 @@ export async function saveProductAction(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  // Po vytvoření zůstaň v editaci (ať jde hned nahrát fotky / varianty)
-  if (!id && productId) {
-    flashRedirect(
-      `/${locale}/admin/products/${productId}`,
-      "saved",
-      "Produkt vytvořen — teď můžeš přidat fotky a varianty",
-    );
-  }
-  flashRedirect(`/${locale}/admin/products`, "saved");
+  // Zůstaň v editaci produktu (u nového ať jde hned nahrát fotky/varianty,
+  // u úpravy ať můžeš plynule pokračovat). Zpět na seznam je přes odkaz nahoře.
+  flashRedirect(
+    `/${locale}/admin/products/${productId}`,
+    "saved",
+    id ? "Uloženo" : "Produkt vytvořen — teď můžeš přidat fotky a varianty",
+  );
 }
 
 async function syncUpsell(
