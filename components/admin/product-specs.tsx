@@ -105,10 +105,12 @@ export function ProductSpecs({
   initial,
   keys,
   keyValues = {},
+  variantMode = false,
 }: {
   initial: SpecRow[];
   keys: string[];
   keyValues?: Record<string, string[]>;
+  variantMode?: boolean;
 }) {
   const [rows, setRows] = useState<SpecRow[]>(initial);
 
@@ -177,12 +179,22 @@ export function ProductSpecs({
 
   return (
     <div className="rounded-xl border border-cream-dark bg-paper p-4">
-      <h2 className="font-display text-lg font-semibold">Parametry</h2>
+      <h2 className="font-display text-lg font-semibold">
+        {variantMode ? "Společné parametry" : "Parametry"}
+      </h2>
       <p className="mb-3 text-xs text-gray-soft">
-        Parametry produktu (např. Příkon → 35 W). Jeden parametr může mít víc
-        hodnot — piš je jako samostatné chipy (Enter nebo čárka přidá další),
-        např. Obsah vitamínů → hořčík, vápník. Vyplň česky a přelož do EN/DE
-        tlačítkem.
+        {variantMode ? (
+          <>
+            Parametry <strong>společné pro všechny varianty</strong> (např.
+            značka, materiál). To, čím se varianty liší (výkon, velikost…), přidej
+            u jednotlivých variant níže.
+          </>
+        ) : (
+          <>Parametry produktu (např. Příkon → 35 W).</>
+        )}{" "}
+        Jeden parametr může mít víc hodnot — piš je jako samostatné chipy (Enter
+        nebo čárka přidá další), např. Obsah vitamínů → hořčík, vápník. Vyplň
+        česky a přelož do EN/DE tlačítkem.
       </p>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">

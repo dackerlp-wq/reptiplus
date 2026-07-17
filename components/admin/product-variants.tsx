@@ -216,8 +216,10 @@ export function ProductVariants({ initial }: { initial: VariantRow[] }) {
         )}
       </div>
       <p className="mb-3 mt-1 text-xs text-gray-soft">
-        Každá varianta má vlastní cenu, sklad, obrázek i parametry. Prázdná cena
-        = použije se cena produktu. Přelož názvy i parametry do EN/DE tlačítkem.
+        Každá varianta má vlastní cenu, sklad, obrázek a <strong>specifické
+        parametry</strong> (to, čím se liší od ostatních). Parametry společné pro
+        všechny varianty patří nahoru do „Společných parametrů". Prázdná cena =
+        použije se cena produktu. Přelož názvy i parametry do EN/DE tlačítkem.
       </p>
 
       {/* Nástroje: jazyk, překlad, EUR přepočet */}
@@ -385,7 +387,7 @@ export function ProductVariants({ initial }: { initial: VariantRow[] }) {
 
             {/* Parametry varianty */}
             <div className="mt-3 border-t border-cream pt-3">
-              <span className={legend}>Parametry varianty</span>
+              <span className={legend}>Parametry specifické pro tuto variantu</span>
               <div className="mt-1.5 space-y-1.5">
                 {row.attributes.map((a, ai) => (
                   <div key={ai} className="flex items-center gap-2">

@@ -167,22 +167,19 @@ export function ProductForm({
 
           {imagesSlot}
 
-          {/* Parametry — u jednoduchého produktu na úrovni produktu, u variant
-              se zadávají u jednotlivých variant (žádná duplicita). */}
+          {/* Parametry společné pro celý produkt (u variant platí pro všechny). */}
+          <ProductSpecs
+            initial={attributes}
+            keys={specKeys}
+            keyValues={keyValues}
+            variantMode={hasVariants}
+          />
+
+          {/* Varianty — jen v režimu „s variantami"; jinak je vyčistíme. */}
           {hasVariants ? (
-            <>
-              <input type="hidden" name="attributes" value="[]" />
-              <ProductVariants initial={variants} />
-            </>
+            <ProductVariants initial={variants} />
           ) : (
-            <>
-              <ProductSpecs
-                initial={attributes}
-                keys={specKeys}
-                keyValues={keyValues}
-              />
-              <input type="hidden" name="variants" value="[]" />
-            </>
+            <input type="hidden" name="variants" value="[]" />
           )}
 
           <UpsellPicker
