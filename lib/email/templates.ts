@@ -198,6 +198,142 @@ ${a ? `<p style="font-size:14px;">${escapeHtml(a.full_name ?? "")}, ${escapeHtml
   };
 }
 
+/* ── E-mail o změně stavu objednávky ───────────────────────────────────── */
+
+type NotifiableStatus = "processing" | "shipped" | "delivered" | "cancelled";
+const NOTIFIABLE: NotifiableStatus[] = [
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
+];
+
+const STATUS_COPY = {
+  cs: {
+    orderNo: "Číslo objednávky",
+    trackingLabel: "Sledovací číslo",
+    carrierLabel: "Doprava",
+    viewOrder: "Zobrazit objednávku",
+    footer: "Reptiplus — specializovaná teraristika",
+    s: {
+      processing: {
+        subject: (n: string) => `Objednávka ${n} se zpracovává — Reptiplus`,
+        title: "Vaše objednávka se zpracovává",
+        body: "Pustili jsme se do přípravy vaší objednávky. Jakmile ji předáme dopravci, dáme vám vědět.",
+      },
+      shipped: {
+        subject: (n: string) => `Objednávka ${n} byla odeslána — Reptiplus`,
+        title: "Zásilka je na cestě",
+        body: "Vaši objednávku jsme právě předali dopravci.",
+      },
+      delivered: {
+        subject: (n: string) => `Objednávka ${n} byla doručena — Reptiplus`,
+        title: "Objednávka doručena",
+        body: "Vaše zásilka byla doručena. Doufáme, že je vše v pořádku a vaši svěřenci budou spokojení!",
+      },
+      cancelled: {
+        subject: (n: string) => `Objednávka ${n} byla stornována — Reptiplus`,
+        title: "Objednávka stornována",
+        body: "Vaši objednávku jsme stornovali. Pokud jste již platili, ozveme se vám ohledně vrácení platby.",
+      },
+    },
+  },
+  en: {
+    orderNo: "Order number",
+    trackingLabel: "Tracking number",
+    carrierLabel: "Carrier",
+    viewOrder: "View order",
+    footer: "Reptiplus — specialist terrarium shop",
+    s: {
+      processing: {
+        subject: (n: string) => `Order ${n} is being processed — Reptiplus`,
+        title: "Your order is being processed",
+        body: "We've started preparing your order. We'll let you know as soon as it's handed to the carrier.",
+      },
+      shipped: {
+        subject: (n: string) => `Order ${n} has shipped — Reptiplus`,
+        title: "Your parcel is on its way",
+        body: "We've just handed your order to the carrier.",
+      },
+      delivered: {
+        subject: (n: string) => `Order ${n} has been delivered — Reptiplus`,
+        title: "Order delivered",
+        body: "Your parcel has been delivered. We hope everything arrived in perfect condition!",
+      },
+      cancelled: {
+        subject: (n: string) => `Order ${n} has been cancelled — Reptiplus`,
+        title: "Order cancelled",
+        body: "Your order has been cancelled. If you already paid, we'll contact you about a refund.",
+      },
+    },
+  },
+  de: {
+    orderNo: "Bestellnummer",
+    trackingLabel: "Sendungsnummer",
+    carrierLabel: "Versand",
+    viewOrder: "Bestellung ansehen",
+    footer: "Reptiplus — Fachgeschäft für Terraristik",
+    s: {
+      processing: {
+        subject: (n: string) => `Bestellung ${n} wird bearbeitet — Reptiplus`,
+        title: "Ihre Bestellung wird bearbeitet",
+        body: "Wir haben mit der Vorbereitung Ihrer Bestellung begonnen. Sobald sie an den Versanddienstleister übergeben wird, informieren wir Sie.",
+      },
+      shipped: {
+        subject: (n: string) => `Bestellung ${n} wurde versandt — Reptiplus`,
+        title: "Ihr Paket ist unterwegs",
+        body: "Wir haben Ihre Bestellung soeben an den Versanddienstleister übergeben.",
+      },
+      delivered: {
+        subject: (n: string) => `Bestellung ${n} wurde zugestellt — Reptiplus`,
+        title: "Bestellung zugestellt",
+        body: "Ihr Paket wurde zugestellt. Wir hoffen, alles ist einwandfrei angekommen!",
+      },
+      cancelled: {
+        subject: (n: string) => `Bestellung ${n} wurde storniert — Reptiplus`,
+        title: "Bestellung storniert",
+        body: "Ihre Bestellung wurde storniert. Falls Sie bereits bezahlt haben, melden wir uns wegen der Rückerstattung.",
+      },
+    },
+  },
+} as const;
+
+/** E-mail zákazníkovi o změně stavu. Vrací null, pokud stav není notifikovatelný. */
+export function orderStatusEmail(d: {
+  number: string;
+  status: string;
+  trackingNumber?: string | null;
+  shippingMethod?: string | null;
+  orderUrl: string;
+  locale: Locale;
+}): { subject: string; html: string; text: string } | null {
+  if (!NOTIFIABLE.includes(d.status as NotifiableStatus)) return null;
+  const t = STATUS_COPY[d.locale] ?? STATUS_COPY.cs;
+  const c = t.s[d.status as NotifiableStatus];
+
+  const trackRows =
+    d.status === "shipped" && (d.trackingNumber || d.shippingMethod)
+      ? `<div style="margin-top:18px;background:${CREAM};border:1px solid ${BORDER};border-radius:10px;padding:12px 16px;font-size:14px;line-height:1.6;">
+${d.shippingMethod ? `${t.carrierLabel}: <strong>${escapeHtml(d.shippingMethod)}</strong><br>` : ""}${d.trackingNumber ? `${t.trackingLabel}: <strong style="font-family:monospace;">${escapeHtml(d.trackingNumber)}</strong>` : ""}</div>`
+      : "";
+
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 8px;font-size:22px;color:${INK};">${c.title}</h1>
+<p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:${INK};">${c.body}</p>
+<p style="margin:0;font-size:14px;">${t.orderNo}: <strong style="font-family:monospace;">${escapeHtml(d.number)}</strong></p>
+${trackRows}
+<div style="margin-top:26px;">
+<a href="${d.orderUrl}" style="display:inline-block;background:${BRAND};color:#ffffff;text-decoration:none;font-weight:bold;font-size:14px;padding:12px 22px;border-radius:8px;">${t.viewOrder}</a>
+</div>
+</td></tr>
+<tr><td style="padding:18px 28px;background:${CREAM};border-top:1px solid ${BORDER};color:${MUTED};font-size:12px;">${t.footer} · reptiplus.cz</td></tr>`;
+
+  const text = `${c.title}\n${t.orderNo}: ${d.number}${d.trackingNumber ? `\n${t.trackingLabel}: ${d.trackingNumber}` : ""}\n${t.viewOrder}: ${d.orderUrl}`;
+
+  return { subject: c.subject(d.number), html: layout(inner, c.title), text };
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

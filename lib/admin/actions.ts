@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import { getCnbEurRate } from "@/lib/exchange-rate";
+import { sendOrderStatusEmail } from "@/lib/orders/notify";
 
 async function assertAdmin() {
   const supabase = await createClient();
@@ -574,16 +575,40 @@ export async function updateOrderAction(formData: FormData) {
   await assertAdmin();
   const svc = createServiceClient();
   const id = str(formData, "id");
+  const status = str(formData, "status");
+  const shippingMethod = str(formData, "shipping_method") || null;
+  const trackingNumber = str(formData, "tracking_number") || null;
+
+  const { data: prev } = await svc
+    .from("order")
+    .select("status,number,email,currency")
+    .eq("id", id)
+    .maybeSingle();
+
   await svc
     .from("order")
     .update({
-      status: str(formData, "status") as never,
+      status: status as never,
       payment_status: str(formData, "payment_status") as never,
-      shipping_method: str(formData, "shipping_method") || null,
-      tracking_number: str(formData, "tracking_number") || null,
+      shipping_method: shippingMethod,
+      tracking_number: trackingNumber,
       admin_note: str(formData, "admin_note") || null,
     })
     .eq("id", id);
+
+  // E-mail zákazníkovi jen když je zaškrtnuto a stav se skutečně změnil
+  if (formData.get("notify") === "on" && prev && prev.status !== status) {
+    await sendOrderStatusEmail(
+      {
+        number: prev.number,
+        email: prev.email,
+        currency: prev.currency,
+        tracking_number: trackingNumber,
+        shipping_method: shippingMethod,
+      },
+      status,
+    );
+  }
   revalidatePath("/", "layout");
 }
 
@@ -598,14 +623,23 @@ const ORDER_STATUSES = [
 ];
 const PAYMENT_STATUSES = ["pending", "paid", "failed", "refunded"];
 
-/** Rychlá inline změna stavu objednávky z výpisu. */
+/** Rychlá inline změna stavu objednávky z výpisu (+ e-mail zákazníkovi). */
 export async function setOrderStatusAction(id: string, status: string) {
   await assertAdmin();
   if (!id || !ORDER_STATUSES.includes(status)) return;
-  await createServiceClient()
+  const svc = createServiceClient();
+  const { data: prev } = await svc
+    .from("order")
+    .select("number,email,currency,tracking_number,shipping_method,status")
+    .eq("id", id)
+    .maybeSingle();
+  await svc
     .from("order")
     .update({ status: status as never })
     .eq("id", id);
+  if (prev && prev.status !== status) {
+    await sendOrderStatusEmail(prev, status);
+  }
   revalidatePath("/", "layout");
 }
 
@@ -617,6 +651,42 @@ export async function setOrderPaymentAction(id: string, payment: string) {
     .from("order")
     .update({ payment_status: payment as never })
     .eq("id", id);
+  revalidatePath("/", "layout");
+}
+
+/**
+ * Hromadná akce nad objednávkami. `op` = "status:<hodnota>" nebo "payment:<hodnota>".
+ * U změny stavu pošle e-mail jen těm, kterým se stav reálně změnil.
+ */
+export async function bulkOrderAction(formData: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const [kind, value] = str(formData, "op").split(":");
+  const ids = str(formData, "ids")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (ids.length === 0 || !kind || !value) return;
+
+  if (kind === "status" && ORDER_STATUSES.includes(value)) {
+    const { data: rows } = await svc
+      .from("order")
+      .select("id,number,email,currency,tracking_number,shipping_method,status")
+      .in("id", ids);
+    await svc
+      .from("order")
+      .update({ status: value as never })
+      .in("id", ids);
+    const changed = (rows ?? []).filter((r) => r.status !== value);
+    await Promise.all(changed.map((r) => sendOrderStatusEmail(r, value)));
+  } else if (kind === "payment" && PAYMENT_STATUSES.includes(value)) {
+    await svc
+      .from("order")
+      .update({ payment_status: value as never })
+      .in("id", ids);
+  } else {
+    return;
+  }
   revalidatePath("/", "layout");
 }
 

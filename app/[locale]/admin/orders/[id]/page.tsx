@@ -231,6 +231,22 @@ export default async function OrderDetailPage({
             />
           </label>
 
+          <label className="flex items-start gap-2 rounded-lg bg-cream px-3 py-2.5 text-sm">
+            <input
+              type="checkbox"
+              name="notify"
+              defaultChecked
+              className="mt-0.5 size-4 accent-forest"
+            />
+            <span className="text-charcoal">
+              Poslat zákazníkovi e-mail o změně stavu
+              <span className="mt-0.5 block text-xs text-gray-soft">
+                Odešle se jen při změně na: zpracovává se, odesláno, doručeno,
+                stornováno.
+              </span>
+            </span>
+          </label>
+
           <button
             type="submit"
             className="w-full rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest-light"

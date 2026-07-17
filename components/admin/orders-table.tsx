@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Search,
@@ -17,12 +17,18 @@ import {
   Banknote,
   Clock,
   AlertCircle,
+  X,
+  Cog,
+  Truck,
+  PackageCheck,
+  Ban,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
   setOrderStatusAction,
   setOrderPaymentAction,
+  bulkOrderAction,
 } from "@/lib/admin/actions";
 
 export type OrderRow = {
@@ -89,6 +95,33 @@ const dateFmt = new Intl.DateTimeFormat("cs-CZ", {
   dateStyle: "short",
   timeStyle: "short",
 });
+
+function TriCheckbox({
+  checked,
+  indeterminate,
+  onChange,
+  title,
+}: {
+  checked: boolean;
+  indeterminate?: boolean;
+  onChange: () => void;
+  title?: string;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = !!indeterminate && !checked;
+  }, [indeterminate, checked]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      title={title}
+      className="size-4 cursor-pointer rounded border-cream-dark accent-forest"
+    />
+  );
+}
 
 /** Barevný inline select pro rychlou změnu stavu/platby. */
 function InlineSelect({
@@ -211,6 +244,9 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
   const [status, setStatus] = useState(() => searchParams.get("st") ?? "all");
   const [payment, setPayment] = useState(() => searchParams.get("pay") ?? "all");
   const [unpaid, setUnpaid] = useState(() => searchParams.get("unpaid") === "1");
+  const [dateFrom, setDateFrom] = useState(() => searchParams.get("from") ?? "");
+  const [dateTo, setDateTo] = useState(() => searchParams.get("to") ?? "");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>(
     () => (searchParams.get("sort") as SortKey) || "date",
   );
@@ -227,6 +263,8 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
     if (status !== "all") params.set("st", status);
     if (payment !== "all") params.set("pay", payment);
     if (unpaid) params.set("unpaid", "1");
+    if (dateFrom) params.set("from", dateFrom);
+    if (dateTo) params.set("to", dateTo);
     if (sortKey !== "date") params.set("sort", sortKey);
     if (sortDir !== "desc") params.set("dir", sortDir);
     if (page > 1) params.set("page", String(page));
@@ -239,7 +277,7 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
       );
     }, 250);
     return () => clearTimeout(t);
-  }, [q, status, payment, unpaid, sortKey, sortDir, page]);
+  }, [q, status, payment, unpaid, dateFrom, dateTo, sortKey, sortDir, page]);
 
   const resetPage = () => setPage(1);
   const toggleSort = (key: SortKey) => {
@@ -274,6 +312,25 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
     return { revenueStr, newCount, awaiting };
   }, [orders]);
 
+  // Datové meze (od 00:00 do 23:59:59.999)
+  const fromMs = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null;
+  const toMs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null;
+
+  const setPreset = (days: number) => {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - days);
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    setDateFrom(days === 0 ? iso(to) : iso(from));
+    setDateTo(iso(to));
+    resetPage();
+  };
+  const clearDates = () => {
+    setDateFrom("");
+    setDateTo("");
+    resetPage();
+  };
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     const list = orders.filter((o) => {
@@ -294,6 +351,9 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
         )
       )
         return false;
+      const ts = new Date(o.createdAt).getTime();
+      if (fromMs !== null && ts < fromMs) return false;
+      if (toMs !== null && ts > toMs) return false;
       return true;
     });
 
@@ -314,7 +374,7 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
       }
     });
     return list;
-  }, [orders, q, status, payment, unpaid, sortKey, sortDir]);
+  }, [orders, q, status, payment, unpaid, fromMs, toMs, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   useEffect(() => {
@@ -322,6 +382,29 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
   }, [page, totalPages]);
   const safePage = Math.min(page, totalPages);
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // Výběr napříč filtrem
+  const filteredIds = useMemo(() => filtered.map((o) => o.id), [filtered]);
+  const selectedInFilter = filteredIds.filter((id) => selected.has(id));
+  const allSelected =
+    filteredIds.length > 0 && selectedInFilter.length === filteredIds.length;
+  const someSelected = selectedInFilter.length > 0;
+  const toggleSelectAll = () =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allSelected) filteredIds.forEach((id) => next.delete(id));
+      else filteredIds.forEach((id) => next.add(id));
+      return next;
+    });
+  const toggleRow = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const clearSelection = () => setSelected(new Set());
+  const selectedIds = [...selected].join(",");
 
   const SortIcon = ({ col }: { col: SortKey }) => {
     if (sortKey !== col) return <ArrowUpDown className="size-3.5 opacity-40" />;
@@ -469,10 +552,118 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
         </button>
       </div>
 
+      {/* Datový filtr */}
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-gray-soft">Období:</span>
+        <button
+          type="button"
+          onClick={() => setPreset(0)}
+          className="rounded-full border border-cream-dark bg-white px-3 py-1.5 font-medium text-charcoal transition-colors hover:border-forest hover:text-forest"
+        >
+          Dnes
+        </button>
+        <button
+          type="button"
+          onClick={() => setPreset(7)}
+          className="rounded-full border border-cream-dark bg-white px-3 py-1.5 font-medium text-charcoal transition-colors hover:border-forest hover:text-forest"
+        >
+          7 dní
+        </button>
+        <button
+          type="button"
+          onClick={() => setPreset(30)}
+          className="rounded-full border border-cream-dark bg-white px-3 py-1.5 font-medium text-charcoal transition-colors hover:border-forest hover:text-forest"
+        >
+          30 dní
+        </button>
+        <input
+          type="date"
+          value={dateFrom}
+          max={dateTo || undefined}
+          onChange={(e) => {
+            setDateFrom(e.target.value);
+            resetPage();
+          }}
+          className="rounded-lg border border-cream-dark bg-white px-2.5 py-1.5 text-charcoal outline-none focus:border-forest"
+        />
+        <span className="text-gray-soft">–</span>
+        <input
+          type="date"
+          value={dateTo}
+          min={dateFrom || undefined}
+          onChange={(e) => {
+            setDateTo(e.target.value);
+            resetPage();
+          }}
+          className="rounded-lg border border-cream-dark bg-white px-2.5 py-1.5 text-charcoal outline-none focus:border-forest"
+        />
+        {(dateFrom || dateTo) && (
+          <button
+            type="button"
+            onClick={clearDates}
+            className="inline-flex items-center gap-1 text-gray-soft hover:text-charcoal"
+          >
+            <X className="size-4" /> Zrušit
+          </button>
+        )}
+      </div>
+
+      {/* Lišta hromadných akcí */}
+      {someSelected && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-forest/30 bg-forest/5 px-4 py-2.5">
+          <span className="text-sm font-semibold text-forest">
+            {selectedInFilter.length} vybráno
+          </span>
+          <span className="text-xs text-gray-soft">
+            (změna stavu odešle zákazníkovi e-mail)
+          </span>
+          <div className="mx-1 h-5 w-px bg-cream-dark" />
+          {(
+            [
+              ["status:processing", "Zpracovává se", Cog],
+              ["status:shipped", "Odeslané", Truck],
+              ["status:delivered", "Doručené", PackageCheck],
+              ["status:cancelled", "Storno", Ban],
+              ["payment:paid", "Platba přijata", Banknote],
+            ] as [string, string, typeof Cog][]
+          ).map(([op, label, Icon]) => (
+            <form key={op} action={bulkOrderAction} onSubmit={clearSelection}>
+              <input type="hidden" name="op" value={op} />
+              <input type="hidden" name="ids" value={selectedIds} />
+              <button
+                type="submit"
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-lg border border-cream-dark bg-white px-3 py-1.5 text-sm font-medium text-charcoal transition-colors hover:border-forest hover:text-forest",
+                  op === "status:cancelled" &&
+                    "hover:border-error hover:text-error",
+                )}
+              >
+                <Icon className="size-4" /> {label}
+              </button>
+            </form>
+          ))}
+          <button
+            type="button"
+            onClick={clearSelection}
+            className="ml-auto inline-flex items-center gap-1 text-sm text-gray-soft hover:text-charcoal"
+          >
+            <X className="size-4" /> Zrušit výběr
+          </button>
+        </div>
+      )}
+
       <div className="overflow-x-auto rounded-xl border border-cream-dark bg-white">
         <table className="w-full text-sm">
           <thead className="border-b border-cream-dark text-left text-xs uppercase tracking-wide text-gray-soft">
             <tr>
+              <th className="w-10 px-4 py-3">
+                <TriCheckbox
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onChange={toggleSelectAll}
+                  title="Vybrat vše"
+                />
+              </th>
               <Th col="number">Číslo</Th>
               <Th col="date">Datum</Th>
               <th className="px-4 py-3">E-mail</th>
@@ -485,7 +676,20 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
           </thead>
           <tbody>
             {pageItems.map((o) => (
-              <tr key={o.id} className="border-b border-cream last:border-0">
+              <tr
+                key={o.id}
+                className={cn(
+                  "border-b border-cream last:border-0",
+                  selected.has(o.id) && "bg-forest/5",
+                )}
+              >
+                <td className="px-4 py-3">
+                  <TriCheckbox
+                    checked={selected.has(o.id)}
+                    onChange={() => toggleRow(o.id)}
+                    title="Vybrat"
+                  />
+                </td>
                 <td className="px-4 py-3 font-mono">
                   <Link
                     href={`/admin/orders/${o.id}`}
@@ -537,7 +741,7 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-gray-soft">
+                <td colSpan={9} className="px-4 py-10 text-center text-gray-soft">
                   Žádné objednávky neodpovídají filtru.
                 </td>
               </tr>
