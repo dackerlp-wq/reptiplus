@@ -32,11 +32,21 @@ const emptyRow = (): SpecRow => ({
 export function ProductSpecs({
   initial,
   keys,
+  keyValues = {},
 }: {
   initial: SpecRow[];
   keys: string[];
+  keyValues?: Record<string, string[]>;
 }) {
   const [rows, setRows] = useState<SpecRow[]>(initial);
+
+  // Datalisty hodnot pro každý známý klíč (našeptávání už zaznamenaných hodnot)
+  const valueLists = Object.entries(keyValues).map(([key, values], i) => ({
+    key,
+    values,
+    id: `spec-val-${i}`,
+  }));
+  const valueListIdByKey = new Map(valueLists.map((v) => [v.key, v.id]));
   const [lang, setLang] = useState<Lang>("cs");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -146,6 +156,13 @@ export function ProductSpecs({
           <option key={k} value={k} />
         ))}
       </datalist>
+      {valueLists.map((vl) => (
+        <datalist key={vl.id} id={vl.id}>
+          {vl.values.map((v) => (
+            <option key={v} value={v} />
+          ))}
+        </datalist>
+      ))}
 
       {rows.length === 0 && (
         <p className="mb-3 rounded-lg border border-dashed border-cream-dark px-3 py-4 text-center text-sm text-gray-soft">
@@ -164,6 +181,11 @@ export function ProductSpecs({
               className={input}
             />
             <input
+              list={
+                lang === "cs"
+                  ? valueListIdByKey.get(row.key.cs.trim())
+                  : undefined
+              }
               placeholder="Hodnota (např. 35 W)"
               value={row.value[lang]}
               onChange={(e) => setField(i, "value", e.target.value)}

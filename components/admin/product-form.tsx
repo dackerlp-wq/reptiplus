@@ -10,6 +10,7 @@ import {
   ProductVariants,
   type VariantRow,
 } from "@/components/admin/product-variants";
+import { UpsellPicker } from "@/components/admin/upsell-picker";
 
 const input =
   "w-full rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm outline-none focus:border-forest";
@@ -46,6 +47,7 @@ export function ProductForm({
   locale,
   attributes = [],
   specKeys = [],
+  keyValues = {},
   variants = [],
   imagesSlot,
   allProducts = [],
@@ -57,6 +59,7 @@ export function ProductForm({
   locale: Locale;
   attributes?: SpecRow[];
   specKeys?: string[];
+  keyValues?: Record<string, string[]>;
   variants?: VariantRow[];
   imagesSlot?: React.ReactNode;
   allProducts?: { id: string; name: string }[];
@@ -105,36 +108,19 @@ export function ProductForm({
 
           {imagesSlot}
 
-          <ProductSpecs initial={attributes} keys={specKeys} />
+          <ProductSpecs
+            initial={attributes}
+            keys={specKeys}
+            keyValues={keyValues}
+          />
 
           <ProductVariants initial={variants} />
 
-          {/* Upsell — doporučené produkty */}
-          <div className="rounded-xl border border-cream-dark bg-paper p-4">
-            <h2 className="font-display text-lg font-semibold">
-              Doporučené produkty (upsell)
-            </h2>
-            <p className="mb-3 text-xs text-gray-soft">
-              Zobrazí se na detailu v sekci „Doporučujeme k tomuto". Držte Ctrl
-              (Cmd) pro výběr více.
-            </p>
-            <input type="hidden" name="upsell_present" value="1" />
-            <select
-              name="upsell"
-              multiple
-              size={8}
-              defaultValue={upsellIds}
-              className="w-full rounded-lg border border-cream-dark bg-white px-2 py-2 text-sm outline-none focus:border-forest"
-            >
-              {allProducts
-                .filter((p) => p.id !== product?.id)
-                .map((p) => (
-                  <option key={p.id} value={p.id} className="px-1 py-0.5">
-                    {p.name}
-                  </option>
-                ))}
-            </select>
-          </div>
+          <UpsellPicker
+            allProducts={allProducts}
+            selected={upsellIds}
+            currentId={product?.id}
+          />
         </div>
 
         {/* Pravý sloupec — postranní panel */}
@@ -142,10 +128,14 @@ export function ProductForm({
           {/* Ceny */}
           <div className={card}>
             <p className={cardTitle}>Ceny</p>
+            <p className="text-xs text-gray-soft">
+              U produktu s variantami nech cenu prázdnou nebo zadej výchozí —
+              ceny variant mají přednost.
+            </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className={label}>
                 <span className={legend}>Cena Kč</span>
-                <input name="price_czk" required inputMode="decimal" defaultValue={minor(product?.price_czk)} className={input} />
+                <input name="price_czk" inputMode="decimal" defaultValue={minor(product?.price_czk)} className={input} />
               </label>
               <label className={label}>
                 <span className={legend}>Cena €</span>

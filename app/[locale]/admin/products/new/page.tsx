@@ -12,14 +12,20 @@ export default async function NewProductPage({
 }) {
   const { locale } = await params;
   const svc = createServiceClient();
-  const [categories, brands, { data: allKeys }, { data: allProds }] =
+  const [categories, brands, { data: allAttrs }, { data: allProds }] =
     await Promise.all([
       getAllCategories(),
       getBrands(),
-      svc.from("product_attribute").select("key"),
+      svc.from("product_attribute").select("key, value"),
       svc.from("product").select("id, name").order("name"),
     ]);
-  const specKeys = [...new Set((allKeys ?? []).map((k) => k.key))].sort();
+  const keyValues: Record<string, string[]> = {};
+  for (const a of allAttrs ?? []) {
+    if (!a.key || !a.value) continue;
+    (keyValues[a.key] ??= []);
+    if (!keyValues[a.key].includes(a.value)) keyValues[a.key].push(a.value);
+  }
+  const specKeys = Object.keys(keyValues).sort();
   const allProducts = (allProds ?? []).map((p) => ({ id: p.id, name: p.name }));
 
   return (
@@ -36,6 +42,7 @@ export default async function NewProductPage({
         brands={brands}
         locale={locale}
         specKeys={specKeys}
+        keyValues={keyValues}
         allProducts={allProducts}
       />
     </div>

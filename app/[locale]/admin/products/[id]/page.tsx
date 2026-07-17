@@ -33,7 +33,7 @@ export default async function EditProductPage({
       .select("key, value, key_i18n, value_i18n, sort_order")
       .eq("product_id", id)
       .order("sort_order"),
-    svc.from("product_attribute").select("key"),
+    svc.from("product_attribute").select("key, value"),
     getAllCategories(),
     getBrands(),
   ]);
@@ -62,7 +62,13 @@ export default async function EditProductPage({
     key: i18nOf(a.key, a.key_i18n),
     value: i18nOf(a.value, a.value_i18n),
   }));
-  const specKeys = [...new Set((allKeys ?? []).map((k) => k.key))].sort();
+  const keyValues: Record<string, string[]> = {};
+  for (const a of allKeys ?? []) {
+    if (!a.key || !a.value) continue;
+    (keyValues[a.key] ??= []);
+    if (!keyValues[a.key].includes(a.value)) keyValues[a.key].push(a.value);
+  }
+  const specKeys = Object.keys(keyValues).sort();
   const money = (v: number | null) => (v == null ? "" : String(v / 100));
   const variants = (variantRows ?? []).map((v) => ({
     id: v.id,
@@ -91,6 +97,7 @@ export default async function EditProductPage({
         locale={locale}
         attributes={attributes}
         specKeys={specKeys}
+        keyValues={keyValues}
         variants={variants}
         allProducts={allProducts}
         upsellIds={upsellIds}

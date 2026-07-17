@@ -33,14 +33,27 @@ export function ProductVariants({ initial }: { initial: VariantRow[] }) {
   const update = (i: number, field: keyof VariantRow, val: string) =>
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, [field]: val } : row)));
 
-  const serialized = JSON.stringify(rows.filter((r) => r.name.trim()));
+  const named = rows.filter((r) => r.name.trim());
+  const serialized = JSON.stringify(named);
+  const totalStock = named.reduce((sum, r) => {
+    const n = parseInt(r.stock_qty || "0", 10);
+    return sum + (Number.isFinite(n) && n > 0 ? n : 0);
+  }, 0);
 
   return (
     <div className="rounded-xl border border-cream-dark bg-paper p-4">
-      <h2 className="font-display text-lg font-semibold">Varianty</h2>
-      <p className="mb-3 text-xs text-gray-soft">
-        Např. výkon (54 W / 24 W), velikost, %UVB. Prázdná cena = použije se cena
-        produktu. Sklad se sleduje pro každou variantu zvlášť.
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-lg font-semibold">Varianty</h2>
+        {named.length > 0 && (
+          <span className="rounded-full bg-forest/10 px-2.5 py-0.5 text-xs font-medium text-forest">
+            {named.length} variant · sklad {totalStock} ks
+          </span>
+        )}
+      </div>
+      <p className="mb-3 mt-1 text-xs text-gray-soft">
+        Např. výkon (54 W / 24 W), velikost, %UVB. <strong>Prázdná cena</strong> =
+        použije se cena produktu (nahoře). Sklad se sleduje pro každou variantu
+        zvlášť; celkový sklad produktu se pak řídí variantami.
       </p>
 
       <input type="hidden" name="variants" value={serialized} />

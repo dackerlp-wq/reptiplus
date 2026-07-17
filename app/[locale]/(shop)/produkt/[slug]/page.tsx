@@ -7,6 +7,7 @@ import { ProductGallery } from "@/components/reptiplus/product-gallery";
 import { ProductBuyBox } from "@/components/reptiplus/product-buy-box";
 import { ProductReviews } from "@/components/reptiplus/product-reviews";
 import { ProductCard } from "@/components/reptiplus/product-card";
+import { UpsellList } from "@/components/reptiplus/upsell-list";
 import type { Locale } from "@/i18n/routing";
 import type { ProductListItem } from "@/lib/queries";
 import {
@@ -210,8 +211,8 @@ export default async function ProductPage({
         </div>
       )}
 
-      {/* Doporučujeme také (upsell) */}
-      {productSection(t("upsell"), upsell)}
+      {/* Doporučujeme k tomuto (upsell) — kompaktně, jen jako doplněk */}
+      <UpsellList title={t("upsell")} items={upsell} locale={locale} />
 
       {/* Výrobce */}
       {product.brand && (
