@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import {
   getAllCategories,
+  getAttributeFacets,
   getBrands,
   getCategoryBySlug,
   getFilteredProducts,
@@ -14,6 +15,7 @@ import {
 import { pickI18n } from "@/lib/i18n";
 import { ProductCard } from "@/components/reptiplus/product-card";
 import { CatalogFilters } from "@/components/reptiplus/catalog-filters";
+import { ActiveFilters } from "@/components/reptiplus/active-filters";
 
 const first = (v: string | string[] | undefined) =>
   Array.isArray(v) ? v[0] : v;
@@ -22,6 +24,17 @@ const priceParam = (v: string | string[] | undefined): number | undefined => {
   if (!raw) return undefined;
   const n = parseFloat(raw.replace(",", "."));
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : undefined;
+};
+const attrsParam = (
+  v: string | string[] | undefined,
+): { key: string; value: string }[] => {
+  const raw = v === undefined ? [] : Array.isArray(v) ? v : [v];
+  return raw
+    .map((s) => {
+      const i = s.indexOf("|");
+      return i > 0 ? { key: s.slice(0, i), value: s.slice(i + 1) } : null;
+    })
+    .filter((x): x is { key: string; value: string } => x !== null);
 };
 
 export async function generateMetadata({
@@ -60,14 +73,18 @@ export default async function CategoryPage({
     onSale: first(sp.akce) === "1",
     priceMin: priceParam(sp.cena_od),
     priceMax: priceParam(sp.cena_do),
+    attrs: attrsParam(sp.attr),
   };
 
-  const [products, allCategories, brands, priceRange] = await Promise.all([
-    getFilteredProducts(locale, filters),
-    getAllCategories(),
-    getBrands(),
-    getPriceRange(locale, slug),
-  ]);
+  const [products, allCategories, brands, priceRange, facets] = await Promise.all(
+    [
+      getFilteredProducts(locale, filters),
+      getAllCategories(),
+      getBrands(),
+      getPriceRange(locale, slug),
+      getAttributeFacets(locale, slug),
+    ],
+  );
 
   const name = pickI18n(category.name_i18n, locale, category.name);
   const description = pickI18n(category.description_i18n, locale, "");
@@ -118,10 +135,17 @@ export default async function CategoryPage({
           categories={allCategories}
           brands={brands}
           priceRange={priceRange}
+          facets={facets}
           hideCategory
         />
 
         <div>
+          <ActiveFilters
+            categories={allCategories}
+            brands={brands}
+            facets={facets}
+            hideCategory
+          />
           {products.length === 0 ? (
             <p className="rounded-xl border border-cream-dark bg-white p-10 text-center text-gray-soft">
               {t("empty")}

@@ -116,7 +116,77 @@ export type ProductFilters = {
   onSale?: boolean;
   priceMin?: number; // v minor units (haléře/eurocenty)
   priceMax?: number; // v minor units
+  attrs?: { key: string; value: string }[]; // filtr podle parametrů (product_attribute)
 };
+
+export type AttrFacet = {
+  key: string;
+  label: string;
+  values: { value: string; label: string; count: number }[];
+};
+
+/**
+ * Dostupné parametry (product_attribute) pro filtrování — volitelně v kategorii.
+ * Vrací jen parametry s ≥2 hodnotami (jinak nemá filtr smysl).
+ */
+export async function getAttributeFacets(
+  locale: Locale,
+  category?: string,
+): Promise<AttrFacet[]> {
+  const supabase = await createClient();
+
+  let productIds: string[] | null = null;
+  if (category) {
+    const ids = await categoryAndDescendantIds(category);
+    if (ids.length === 0) return [];
+    const { data: prods } = await supabase
+      .from("product")
+      .select("id")
+      .eq("is_published", true)
+      .in("category_id", ids);
+    productIds = (prods ?? []).map((p) => p.id);
+    if (productIds.length === 0) return [];
+  }
+
+  let q = supabase
+    .from("product_attribute")
+    .select("key,value,key_i18n,value_i18n");
+  if (productIds) q = q.in("product_id", productIds);
+  const { data } = await q;
+
+  type Row = {
+    key: string;
+    value: string;
+    key_i18n: I18n;
+    value_i18n: I18n;
+  };
+  const map = new Map<
+    string,
+    { label: string; values: Map<string, { value: string; label: string; count: number }> }
+  >();
+  for (const row of (data ?? []) as Row[]) {
+    if (!row.key || !row.value) continue;
+    const keyLabel = pickI18n(row.key_i18n, locale, row.key);
+    const valLabel = pickI18n(row.value_i18n, locale, row.value);
+    if (!map.has(row.key)) map.set(row.key, { label: keyLabel, values: new Map() });
+    const grp = map.get(row.key)!;
+    const v = grp.values.get(row.value) ?? { value: row.value, label: valLabel, count: 0 };
+    v.count++;
+    grp.values.set(row.value, v);
+  }
+
+  const facets: AttrFacet[] = [];
+  for (const [key, grp] of map) {
+    const values = [...grp.values.values()].sort(
+      (a, b) => b.count - a.count || a.label.localeCompare(b.label, locale),
+    );
+    if (values.length >= 2) facets.push({ key, label: grp.label, values });
+  }
+  facets.sort(
+    (a, b) => b.values.length - a.values.length || a.label.localeCompare(b.label, locale),
+  );
+  return facets.slice(0, 8).map((f) => ({ ...f, values: f.values.slice(0, 12) }));
+}
 
 /** Cenové rozpětí publikovaných produktů v dané kategorii (pro filtr). */
 export async function getPriceRange(
@@ -441,6 +511,22 @@ export async function getFilteredProducts(
   }
 
   if (filters.inStock) query = query.gt("stock_qty", 0);
+
+  // Filtr podle parametrů (product_attribute) — průnik id přes jednotlivé páry
+  if (filters.attrs && filters.attrs.length > 0) {
+    let ids: string[] | null = null;
+    for (const { key, value } of filters.attrs) {
+      const { data: rows } = await supabase
+        .from("product_attribute")
+        .select("product_id")
+        .eq("key", key)
+        .eq("value", value);
+      const set = new Set((rows ?? []).map((r) => r.product_id));
+      ids = ids === null ? [...set] : ids.filter((id) => set.has(id));
+      if (ids.length === 0) return [];
+    }
+    if (ids) query = query.in("id", ids);
+  }
 
   const priceCol = localeCurrency[locale] === "CZK" ? "price_czk" : "price_eur";
   if (typeof filters.priceMin === "number")

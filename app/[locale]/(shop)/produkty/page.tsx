@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import type { Locale } from "@/i18n/routing";
 import {
   getAllCategories,
+  getAttributeFacets,
   getBrands,
   getFilteredProducts,
   getPriceRange,
 } from "@/lib/queries";
 import { ProductCard } from "@/components/reptiplus/product-card";
 import { CatalogFilters } from "@/components/reptiplus/catalog-filters";
+import { ActiveFilters } from "@/components/reptiplus/active-filters";
 
 export async function generateMetadata({
   params,
@@ -29,6 +31,19 @@ const priceParam = (v: string | string[] | undefined): number | undefined => {
   if (!raw) return undefined;
   const n = parseFloat(raw.replace(",", "."));
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : undefined;
+};
+
+/** Parametry z URL ("key|value") → [{ key, value }]. */
+const attrsParam = (
+  v: string | string[] | undefined,
+): { key: string; value: string }[] => {
+  const raw = v === undefined ? [] : Array.isArray(v) ? v : [v];
+  return raw
+    .map((s) => {
+      const i = s.indexOf("|");
+      return i > 0 ? { key: s.slice(0, i), value: s.slice(i + 1) } : null;
+    })
+    .filter((x): x is { key: string; value: string } => x !== null);
 };
 
 export default async function ProductsPage({
@@ -52,13 +67,15 @@ export default async function ProductsPage({
     onSale: first(sp.akce) === "1",
     priceMin: priceParam(sp.cena_od),
     priceMax: priceParam(sp.cena_do),
+    attrs: attrsParam(sp.attr),
   };
 
-  const [products, categories, brands, priceRange] = await Promise.all([
+  const [products, categories, brands, priceRange, facets] = await Promise.all([
     getFilteredProducts(locale, filters),
     getAllCategories(),
     getBrands(),
     getPriceRange(locale, filters.category),
+    getAttributeFacets(locale, filters.category),
   ]);
 
   return (
@@ -75,9 +92,15 @@ export default async function ProductsPage({
           categories={categories}
           brands={brands}
           priceRange={priceRange}
+          facets={facets}
         />
 
         <div>
+          <ActiveFilters
+            categories={categories}
+            brands={brands}
+            facets={facets}
+          />
           {products.length === 0 ? (
             <p className="rounded-xl border border-cream-dark bg-white p-10 text-center text-gray-soft">
               {t("empty")}

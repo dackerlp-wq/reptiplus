@@ -90,6 +90,9 @@
     "priceTo": "Do",
     "onSaleOnly": "Pouze v akci",
     "inStockOnly": "Pouze skladem",
+    "parameters": "Parametry",
+    "chipInStock": "Skladem",
+    "chipOnSale": "V akci",
     "clear": "Zrušit filtry",
     "searchPlaceholder": "Hledat produkty…"
   },

@@ -90,6 +90,9 @@
     "priceTo": "Bis",
     "onSaleOnly": "Nur im Angebot",
     "inStockOnly": "Nur auf Lager",
+    "parameters": "Parameter",
+    "chipInStock": "Auf Lager",
+    "chipOnSale": "Im Angebot",
     "clear": "Filter zurücksetzen",
     "searchPlaceholder": "Produkte suchen…"
   },

@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import { Search, X, SlidersHorizontal } from "lucide-react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import type { BrandItem, CategoryItem } from "@/lib/queries";
+import type { AttrFacet, BrandItem, CategoryItem } from "@/lib/queries";
 import { localeCurrency, pickI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -19,11 +19,13 @@ export function CatalogFilters({
   categories,
   brands,
   priceRange,
+  facets = [],
   hideCategory = false,
 }: {
   categories: CategoryItem[];
   brands: BrandItem[];
   priceRange: { min: number; max: number };
+  facets?: AttrFacet[];
   hideCategory?: boolean;
 }) {
   const t = useTranslations("Catalog");
@@ -61,10 +63,24 @@ export function CatalogFilters({
     startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname));
   };
 
+  const toggleAttr = (key: string, value: string, checked: boolean) => {
+    const token = `${key}|${value}`;
+    const next = new URLSearchParams(params.toString());
+    const existing = new Set(next.getAll("attr"));
+    next.delete("attr");
+    if (checked) existing.add(token);
+    else existing.delete(token);
+    existing.forEach((v) => next.append("attr", v));
+    const qs = next.toString();
+    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname));
+  };
+  const activeAttrs = new Set(params.getAll("attr"));
+
   const parents = categories.filter((c) => !c.parent_id);
   const filterKeys = ["znacka", "sort", "sklad", "akce", "q", "cena_od", "cena_do"];
   if (!hideCategory) filterKeys.push("kategorie");
-  const activeCount = filterKeys.filter((k) => params.get(k)).length;
+  const activeCount =
+    filterKeys.filter((k) => params.get(k)).length + activeAttrs.size;
 
   const clearAll = () => {
     setFrom("");
@@ -257,6 +273,54 @@ export function CatalogFilters({
             {t("onSaleOnly")}
           </label>
         </div>
+
+        {/* Parametry (product_attribute) */}
+        {facets.length > 0 && (
+          <div className="flex flex-col gap-2 border-t border-cream pt-4">
+            <span className={sectionLabel}>{t("parameters")}</span>
+            {facets.map((facet) => {
+              const activeInFacet = facet.values.some((v) =>
+                activeAttrs.has(`${facet.key}|${v.value}`),
+              );
+              return (
+                <details
+                  key={facet.key}
+                  open={activeInFacet || undefined}
+                  className="group rounded-lg border border-cream-dark"
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-medium">
+                    {facet.label}
+                    <span className="text-gray-soft transition-transform group-open:rotate-180">
+                      ⌄
+                    </span>
+                  </summary>
+                  <div className="flex max-h-52 flex-col gap-1 overflow-y-auto border-t border-cream px-3 py-2">
+                    {facet.values.map((v) => {
+                      const checked = activeAttrs.has(`${facet.key}|${v.value}`);
+                      return (
+                        <label
+                          key={v.value}
+                          className="flex cursor-pointer items-center gap-2 py-0.5 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) =>
+                              toggleAttr(facet.key, v.value, e.target.checked)
+                            }
+                            className="size-4 accent-forest"
+                          />
+                          <span className="flex-1">{v.label}</span>
+                          <span className="text-xs text-gray-soft">{v.count}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+        )}
       </div>
     </aside>
   );

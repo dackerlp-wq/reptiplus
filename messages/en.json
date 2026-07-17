@@ -90,6 +90,9 @@
     "priceTo": "To",
     "onSaleOnly": "On sale only",
     "inStockOnly": "In stock only",
+    "parameters": "Parameters",
+    "chipInStock": "In stock",
+    "chipOnSale": "On sale",
     "clear": "Clear filters",
     "searchPlaceholder": "Search products…"
   },
