@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Trash2, Sparkles, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { translateFromCs } from "@/lib/admin/translate-client";
 
@@ -24,6 +24,78 @@ const emptyRow = (): SpecRow => ({
   key: { cs: "", en: "", de: "" },
   value: { cs: "", en: "", de: "" },
 });
+
+const splitVals = (s: string) =>
+  s
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+/**
+ * Chip vstup pro více hodnot jednoho parametru. Interně uloženo jako řetězec
+ * oddělený čárkou (kompatibilní s product_attribute.value), na frontendu se
+ * zobrazí jako „hodnota1, hodnota2".
+ */
+function ValueChips({
+  value,
+  onChange,
+  listId,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  listId?: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const items = splitVals(value);
+
+  const commit = (raw: string) => {
+    const v = raw.trim();
+    if (v && !items.includes(v)) onChange([...items, v].join(", "));
+    setDraft("");
+  };
+  const removeAt = (i: number) =>
+    onChange(items.filter((_, idx) => idx !== i).join(", "));
+
+  return (
+    <div className="flex w-full flex-1 flex-wrap items-center gap-1.5 rounded-lg border border-cream-dark bg-white px-2 py-1.5 focus-within:border-forest">
+      {items.map((it, i) => (
+        <span
+          key={i}
+          className="inline-flex items-center gap-1 rounded-full bg-cream px-2 py-0.5 text-xs text-ink"
+        >
+          {it}
+          <button
+            type="button"
+            onClick={() => removeAt(i)}
+            className="text-gray-soft hover:text-error"
+          >
+            <X className="size-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        list={listId}
+        value={draft}
+        onChange={(e) => {
+          const val = e.target.value;
+          if (val.endsWith(",")) commit(val.slice(0, -1));
+          else setDraft(val);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit(draft);
+          } else if (e.key === "Backspace" && !draft && items.length) {
+            removeAt(items.length - 1);
+          }
+        }}
+        onBlur={() => draft && commit(draft)}
+        placeholder={items.length ? "" : "Hodnota (Enter přidá další)"}
+        className="min-w-[7rem] flex-1 bg-transparent text-sm outline-none"
+      />
+    </div>
+  );
+}
 
 /**
  * Editor specifikací (název/hodnota) s i18n a AI překladem z češtiny.
@@ -107,8 +179,10 @@ export function ProductSpecs({
     <div className="rounded-xl border border-cream-dark bg-paper p-4">
       <h2 className="font-display text-lg font-semibold">Specifikace</h2>
       <p className="mb-3 text-xs text-gray-soft">
-        Parametry produktu (např. Příkon → 35 W). Vyplň česky a přelož do EN/DE
-        tlačítkem. Číselné hodnoty a jednotky se překladem nemění.
+        Parametry produktu (např. Příkon → 35 W). Jeden parametr může mít víc
+        hodnot — piš je jako samostatné chipy (Enter nebo čárka přidá další),
+        např. Obsah vitamínů → hořčík, vápník. Vyplň česky a přelož do EN/DE
+        tlačítkem.
       </p>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -172,30 +246,26 @@ export function ProductSpecs({
 
       <div className="space-y-2">
         {rows.map((row, i) => (
-          <div key={i} className="flex items-center gap-2">
+          <div key={i} className="flex items-start gap-2">
             <input
               list={lang === "cs" ? "spec-key-list" : undefined}
-              placeholder="Název (např. Příkon)"
+              placeholder="Název (např. Obsah vitamínů)"
               value={row.key[lang]}
               onChange={(e) => setField(i, "key", e.target.value)}
-              className={input}
+              className={cn(input, "mt-0.5 max-w-[40%]")}
             />
-            <input
-              list={
-                lang === "cs"
-                  ? valueListIdByKey.get(row.key.cs.trim())
-                  : undefined
-              }
-              placeholder="Hodnota (např. 35 W)"
+            <ValueChips
               value={row.value[lang]}
-              onChange={(e) => setField(i, "value", e.target.value)}
-              className={input}
+              onChange={(v) => setField(i, "value", v)}
+              listId={
+                lang === "cs" ? valueListIdByKey.get(row.key.cs.trim()) : undefined
+              }
             />
             <button
               type="button"
               onClick={() => remove(i)}
               title="Odebrat"
-              className="shrink-0 rounded-md p-2 text-gray-soft transition-colors hover:bg-white hover:text-error"
+              className="mt-1 shrink-0 rounded-md p-2 text-gray-soft transition-colors hover:bg-white hover:text-error"
             >
               <Trash2 className="size-4" />
             </button>

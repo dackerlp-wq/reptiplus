@@ -66,7 +66,9 @@ export default async function EditProductPage({
   for (const a of allKeys ?? []) {
     if (!a.key || !a.value) continue;
     (keyValues[a.key] ??= []);
-    if (!keyValues[a.key].includes(a.value)) keyValues[a.key].push(a.value);
+    for (const v of a.value.split(",").map((s) => s.trim()).filter(Boolean)) {
+      if (!keyValues[a.key].includes(v)) keyValues[a.key].push(v);
+    }
   }
   const specKeys = Object.keys(keyValues).sort();
   const money = (v: number | null) => (v == null ? "" : String(v / 100));

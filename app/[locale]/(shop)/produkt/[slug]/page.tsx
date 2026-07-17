@@ -89,9 +89,24 @@ export default async function ProductPage({
   );
   const priceMinor = priceForLocale(product, locale);
   const compareMinor = compareForLocale(product, locale);
-  const attributes = [...(product.product_attribute ?? [])].sort(
-    (a, b) => a.sort_order - b.sort_order,
-  );
+  // Parametry seskupené podle názvu — víc hodnot pod jedním parametrem se
+  // zobrazí jako jeden řádek (např. „Obsah vitamínů: hořčík, vápník").
+  const attrGroups: { key: string; label: string; value: string }[] = [];
+  const attrIndex = new Map<string, number>();
+  for (const a of [...(product.product_attribute ?? [])].sort(
+    (x, y) => x.sort_order - y.sort_order,
+  )) {
+    const label = pickI18n(a.key_i18n, locale, a.key);
+    const val = pickI18n(a.value_i18n, locale, a.value);
+    const idx = attrIndex.get(a.key);
+    if (idx === undefined) {
+      attrIndex.set(a.key, attrGroups.length);
+      attrGroups.push({ key: a.key, label, value: val });
+    } else {
+      const g = attrGroups[idx];
+      if (!g.value.split(/\s*,\s*/).includes(val)) g.value = `${g.value}, ${val}`;
+    }
+  }
 
   const isCzk = localeCurrency[locale] === "CZK";
   const buyVariants = product.variants.map((v) => ({
@@ -170,7 +185,7 @@ export default async function ProductPage({
       </div>
 
       {/* Popis + parametry */}
-      {(description || attributes.length > 0) && (
+      {(description || attrGroups.length > 0) && (
         <div className="mt-14 grid gap-10 lg:grid-cols-[1fr_20rem]">
           <div>
             {description && (
@@ -186,22 +201,20 @@ export default async function ProductPage({
             )}
           </div>
 
-          {attributes.length > 0 && (
+          {attrGroups.length > 0 && (
             <aside>
               <h2 className="mb-4 font-display text-2xl font-bold">
                 {t("parameters")}
               </h2>
               <dl className="divide-y divide-cream-dark rounded-xl border border-cream-dark bg-white">
-                {attributes.map((attr) => (
+                {attrGroups.map((attr) => (
                   <div
                     key={attr.key}
-                    className="flex justify-between px-4 py-3 text-sm"
+                    className="flex justify-between gap-4 px-4 py-3 text-sm"
                   >
-                    <dt className="text-gray-soft">
-                      {pickI18n(attr.key_i18n, locale, attr.key)}
-                    </dt>
-                    <dd className="font-medium text-ink">
-                      {pickI18n(attr.value_i18n, locale, attr.value)}
+                    <dt className="shrink-0 text-gray-soft">{attr.label}</dt>
+                    <dd className="text-right font-medium text-ink">
+                      {attr.value}
                     </dd>
                   </div>
                 ))}
