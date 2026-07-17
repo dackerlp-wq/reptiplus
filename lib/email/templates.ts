@@ -88,7 +88,6 @@ const COPY = {
 } as const;
 
 const BRAND = "#3f6a2e";
-const DARK = "#1e3a14";
 const INK = "#26231d";
 const MUTED = "#8a897f";
 const BORDER = "#e7e3d8";
@@ -102,7 +101,7 @@ function layout(inner: string, preheader: string): string {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};padding:24px 0;">
 <tr><td align="center">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid ${BORDER};border-radius:12px;overflow:hidden;">
-<tr><td style="background:${DARK};padding:18px 28px;">
+<tr><td style="background:#ffffff;padding:18px 28px;border-bottom:1px solid ${BORDER};">
 <img src="${LOGO_URL}" alt="Reptiplus" width="180" height="59" style="display:block;width:180px;max-width:180px;height:auto;border:0;outline:none;text-decoration:none;" />
 </td></tr>
 ${inner}
