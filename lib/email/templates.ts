@@ -93,6 +93,8 @@ const INK = "#26231d";
 const MUTED = "#8a897f";
 const BORDER = "#e7e3d8";
 const CREAM = "#f7f5ef";
+// Bílá varianta loga (PNG kvůli kompatibilitě e-mailových klientů) na canonical doméně.
+const LOGO_URL = "https://reptiplus.cz/logo-email.png";
 
 function layout(inner: string, preheader: string): string {
   return `<!doctype html><html><body style="margin:0;background:${CREAM};font-family:Arial,Helvetica,sans-serif;color:${INK};">
@@ -100,8 +102,8 @@ function layout(inner: string, preheader: string): string {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};padding:24px 0;">
 <tr><td align="center">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid ${BORDER};border-radius:12px;overflow:hidden;">
-<tr><td style="background:${DARK};padding:20px 28px;">
-<span style="color:#ffffff;font-size:20px;font-weight:bold;letter-spacing:.5px;">REPTIPLUS</span>
+<tr><td style="background:${DARK};padding:18px 28px;">
+<img src="${LOGO_URL}" alt="Reptiplus" width="180" height="59" style="display:block;width:180px;max-width:180px;height:auto;border:0;outline:none;text-decoration:none;" />
 </td></tr>
 ${inner}
 </table>
