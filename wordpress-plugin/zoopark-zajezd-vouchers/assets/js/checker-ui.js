@@ -380,7 +380,19 @@
     function initGate(cb){
         const code=(ZVC.gateCode||'').trim();
         if(!code){cb();return;}
-        try{if(localStorage.getItem('zvc_gate_ok')==='1'){cb();return;}}catch(_){}
+        const ttl=(parseFloat(ZVC.gateHours)||12)*3600*1000;   // platnost přihlášení (výchozí 12 h)
+
+        // Po vypršení platnosti vynutit nové přihlášení i bez ručního obnovení
+        function scheduleExpiry(){
+            setInterval(function(){
+                try{const t=parseInt(localStorage.getItem('zvc_gate_ts')||'0',10);
+                    if(!t||(Date.now()-t)>=ttl){localStorage.removeItem('zvc_gate_ts');location.reload();}}catch(_){}
+            },60000);
+        }
+        function grant(){scheduleExpiry();cb();}
+
+        try{const ts=parseInt(localStorage.getItem('zvc_gate_ts')||'0',10);if(ts&&(Date.now()-ts)<ttl){grant();return;}}catch(_){}
+
         const ov=document.createElement('div');ov.className='zvc-gate';
         ov.innerHTML='<div class="zvc-gate-card"><div class="zvc-gate-icon">🔒</div><h2>Přístup k pokladně</h2>'
             +'<p>Zadejte přístupový kód.</p>'
@@ -390,7 +402,7 @@
         document.body.appendChild(ov);
         const inp=ov.querySelector('#zvc-gate-input'),btn=ov.querySelector('#zvc-gate-btn'),err=ov.querySelector('#zvc-gate-err');
         function tryOpen(){
-            if(inp.value===code){try{localStorage.setItem('zvc_gate_ok','1');}catch(_){}ov.parentNode&&ov.parentNode.removeChild(ov);cb();}
+            if(inp.value===code){try{localStorage.setItem('zvc_gate_ts',String(Date.now()));}catch(_){}ov.parentNode&&ov.parentNode.removeChild(ov);grant();}
             else{err.textContent='Nesprávný kód.';inp.value='';inp.focus();}
         }
         btn.addEventListener('click',tryOpen);

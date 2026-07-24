@@ -21,6 +21,13 @@ class Zoo_Vouchers_Validator {
         add_action( 'wp_enqueue_scripts',       array( __CLASS__, 'register_assets' ) );
     }
 
+    // Verze podle času změny souboru → každá úprava obejde cache prohlížeče
+    private static function asset_ver( $rel ) {
+        $path = ZOO_VOUCHERS_PATH . $rel;
+        $mt   = @filemtime( $path );
+        return $mt ? (string) $mt : ZOO_VOUCHERS_VERSION;
+    }
+
     public static function register_assets() {
         // Knihovna skeneru je přibalená v pluginu (žádné CDN — na mobilech
         // ho často blokuje CSP/síť/doplněk, což hlásilo „kamera nepodporována").
@@ -32,12 +39,12 @@ class Zoo_Vouchers_Validator {
         wp_register_script(
             'zoo-vouchers-checker-ui',
             ZOO_VOUCHERS_URL . 'assets/js/checker-ui.js',
-            array( 'html5-qrcode' ), ZOO_VOUCHERS_VERSION, true
+            array( 'html5-qrcode' ), self::asset_ver( 'assets/js/checker-ui.js' ), true
         );
         wp_register_style(
             'zoo-vouchers-checker',
             ZOO_VOUCHERS_URL . 'assets/css/checker.css',
-            array(), ZOO_VOUCHERS_VERSION
+            array(), self::asset_ver( 'assets/css/checker.css' )
         );
     }
 
@@ -51,7 +58,9 @@ class Zoo_Vouchers_Validator {
             'restBase' => esc_url_raw( rest_url( 'zoo/v1' ) ),
             'nonce'    => wp_create_nonce( 'wp_rest' ),
             // Vestavěný zámek stránky (nezávislý na WP cookies). Prázdné = vypnuto.
-            'gateCode' => (string) apply_filters( 'zoo_vouchers_gate_code', 'Chameleon' ),
+            'gateCode'  => (string) apply_filters( 'zoo_vouchers_gate_code', 'Chameleon' ),
+            // Po kolika hodinách zámek vyprší a je nutné se znovu přihlásit.
+            'gateHours' => (float) apply_filters( 'zoo_vouchers_gate_hours', 12 ),
         ) );
     }
 
