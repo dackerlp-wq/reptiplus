@@ -8,6 +8,9 @@
   --color-forest-deep: #1a2d12;
   --color-moss: #3a6b2a;
 
+  /* Barva loga (pevná, nezávislá na barevné variantě webu) */
+  --color-logo: #77ad2e;
+
   /* Akcent — earth / gold */
   --color-earth: #6b4226;
   --color-gold: #c08a20;
@@ -38,6 +41,49 @@
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-2xl: 1rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Barevné varianty webu (přepínatelné v adminu → Nastavení → Vzhled).
+   Přepisují tokeny z @theme podle atributu data-theme na <html>.
+   Varianta "les" = výchozí hodnoty z @theme, žádný přepis netřeba.
+   Registr variant a náhledy: lib/themes.ts
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Logo – zelená sladěná s logem (#77ad2e), primární ztmavená kvůli kontrastu
+   bílého textu na tlačítkách. */
+html[data-theme="logo"] {
+  --color-forest: #4f8121;
+  --color-forest-light: #77ad2e;
+  --color-forest-dark: #3d6419;
+  --color-forest-deep: #2a4413;
+  --color-moss: #6a9a35;
+}
+
+/* Logo výrazná – zelená i v akcentech + lehce zelené pozadí (monochrom). */
+html[data-theme="logo-plus"] {
+  --color-forest: #4f8121;
+  --color-forest-light: #77ad2e;
+  --color-forest-dark: #3d6419;
+  --color-forest-deep: #24380f;
+  --color-moss: #6a9a35;
+  --color-gold: #7aa33a;
+  --color-gold-light: #93bb52;
+  --color-amber: #8cbf45;
+  --color-paper: #eef3e6;
+}
+
+/* Logo teplá – zelená z loga s teplejšími krémy a zlatými akcenty. */
+html[data-theme="logo-tepla"] {
+  --color-forest: #56831f;
+  --color-forest-light: #77ad2e;
+  --color-forest-dark: #40631a;
+  --color-forest-deep: #2c4114;
+  --color-moss: #6f9a38;
+  --color-cream: #f8f4ea;
+  --color-cream-dark: #ece4d4;
+  --color-gold: #b9831d;
+  --color-amber: #e0982f;
 }
 
 @layer base {

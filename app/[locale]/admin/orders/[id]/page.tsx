@@ -1,8 +1,13 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer, Truck, ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { updateOrderAction } from "@/lib/admin/actions";
+import {
+  createShipmentAction,
+  resetShipmentAction,
+} from "@/lib/admin/shipping-actions";
+import { carrierForOrder } from "@/lib/shipping";
 import { ToastForm } from "@/components/admin/toast";
 
 const input =
@@ -24,6 +29,16 @@ const PAYMENTS = [
   ["failed", "Selhalo"],
   ["refunded", "Vráceno"],
 ];
+const PAY_BADGE: Record<string, { label: string; cls: string }> = {
+  paid: { label: "Zaplaceno", cls: "bg-success/15 text-success" },
+  pending: { label: "Čeká na platbu", cls: "bg-amber/15 text-amber" },
+  failed: { label: "Platba selhala", cls: "bg-error/15 text-error" },
+  refunded: { label: "Vráceno", cls: "bg-gray-soft/20 text-gray-soft" },
+};
+const CARRIER_LABEL: Record<string, string> = {
+  zasilkovna: "Zásilkovna",
+  ppl: "PPL",
+};
 
 const money = (minor: number, currency: string) =>
   new Intl.NumberFormat(currency === "CZK" ? "cs-CZ" : "de-DE", {
@@ -81,6 +96,9 @@ export default async function OrderDetailPage({
     qty: number;
     line_total: number;
   }[];
+
+  const carrier = await carrierForOrder(order.shipping_method);
+  const payBadge = PAY_BADGE[order.payment_status] ?? PAY_BADGE.pending;
 
   return (
     <div>
@@ -170,11 +188,106 @@ export default async function OrderDetailPage({
           </div>
         </div>
 
+        {/* Pravý sloupec: doprava & platba + správa */}
+        <div className="h-fit space-y-6">
+        {/* ── Doprava & platba ─────────────────────────────────── */}
+        <div className="space-y-4 rounded-xl border border-cream-dark bg-white p-5">
+          <p className="font-display text-lg font-semibold">Doprava & platba</p>
+
+          {/* Platba */}
+          <div className="space-y-1.5">
+            <p className={legend}>Platba</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${payBadge.cls}`}>
+                {payBadge.label}
+              </span>
+              <span className="text-sm text-ink">{order.payment_method ?? "—"}</span>
+            </div>
+            {order.comgate_ref && (
+              <p className="font-mono text-xs text-gray-soft">Comgate: {order.comgate_ref}</p>
+            )}
+          </div>
+
+          {/* Doprava */}
+          <div className="space-y-2 border-t border-cream pt-4">
+            <p className={legend}>Doprava</p>
+            <p className="flex flex-wrap items-center gap-2 text-sm text-ink">
+              <Truck className="size-4 text-forest" />
+              {order.shipping_method ?? "—"}
+              {carrier && (
+                <span className="text-xs text-gray-soft">({CARRIER_LABEL[carrier]})</span>
+              )}
+            </p>
+
+            {order.carrier_shipment_id ? (
+              <div className="space-y-2.5">
+                {order.tracking_number && (
+                  <p className="text-sm">
+                    <span className="text-gray-soft">Sledovací číslo: </span>
+                    {order.tracking_url ? (
+                      <a
+                        href={order.tracking_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-mono text-forest hover:underline"
+                      >
+                        {order.tracking_number} <ExternalLink className="size-3" />
+                      </a>
+                    ) : (
+                      <span className="font-mono">{order.tracking_number}</span>
+                    )}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={`/api/admin/orders/${order.id}/label`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-forest px-3 py-2 text-sm font-semibold text-white hover:bg-forest-light"
+                  >
+                    <Printer className="size-4" /> Tisk štítku
+                  </a>
+                  <form action={resetShipmentAction}>
+                    <input type="hidden" name="id" value={order.id} />
+                    <button className="rounded-lg border border-cream-dark px-3 py-2 text-sm text-gray-soft hover:border-error hover:text-error">
+                      Zrušit zásilku
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ) : carrier ? (
+              <form action={createShipmentAction}>
+                <input type="hidden" name="id" value={order.id} />
+                <button className="inline-flex items-center gap-1.5 rounded-lg bg-forest px-3 py-2 text-sm font-semibold text-white hover:bg-forest-light">
+                  <Truck className="size-4" /> Vytvořit zásilku u dopravce
+                </button>
+              </form>
+            ) : (
+              <p className="text-xs text-gray-soft">
+                Tento způsob dopravy nemá API napojení (jen Zásilkovna a PPL).
+                Sledovací číslo můžeš zadat ručně níže.
+              </p>
+            )}
+
+            {order.tracking_status && (
+              <p
+                className={`text-xs ${
+                  order.tracking_status.startsWith("Chyba")
+                    ? "text-error"
+                    : "text-gray-soft"
+                }`}
+              >
+                {order.tracking_status}
+              </p>
+            )}
+          </div>
+        </div>
+
         {/* Úpravy */}
         <ToastForm
           action={updateOrderAction}
           success="Objednávka uložena"
-          className="h-fit space-y-4 rounded-xl border border-cream-dark bg-white p-5"
+          className="space-y-4 rounded-xl border border-cream-dark bg-white p-5"
         >
           <input type="hidden" name="id" value={order.id} />
           <p className="font-display text-lg font-semibold">Správa</p>
@@ -256,6 +369,7 @@ export default async function OrderDetailPage({
             Uložit změny
           </button>
         </ToastForm>
+        </div>
       </div>
     </div>
   );

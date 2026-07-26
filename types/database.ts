@@ -422,6 +422,10 @@ export type Database = {
           subtotal: number
           total: number
           tracking_number: string | null
+          carrier_shipment_id: string | null
+          tracking_url: string | null
+          tracking_status: string | null
+          label_printed_at: string | null
           updated_at: string
         }
         Insert: {
@@ -447,6 +451,10 @@ export type Database = {
           subtotal?: number
           total?: number
           tracking_number?: string | null
+          carrier_shipment_id?: string | null
+          tracking_url?: string | null
+          tracking_status?: string | null
+          label_printed_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -472,6 +480,10 @@ export type Database = {
           subtotal?: number
           total?: number
           tracking_number?: string | null
+          carrier_shipment_id?: string | null
+          tracking_url?: string | null
+          tracking_status?: string | null
+          label_printed_at?: string | null
           updated_at?: string
         }
         Relationships: [

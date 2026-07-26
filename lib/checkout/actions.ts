@@ -9,6 +9,7 @@ import { getCart, getCartId } from "@/lib/cart/cart";
 import { localeCurrency } from "@/lib/i18n";
 import { validateDiscount, type DiscountError } from "@/lib/checkout/discount";
 import { sendMail } from "@/lib/email/client";
+import { createComgatePayment } from "@/lib/comgate/client";
 import {
   orderConfirmationEmail,
   newOrderNotificationEmail,
@@ -153,13 +154,16 @@ export async function createOrderAction(
 
   const { data: payRow } = await svc
     .from("payment_method")
-    .select(`code, ${feeCol}`)
+    .select(`code, provider, ${feeCol}`)
     .eq("code", paymentCode)
     .eq("is_active", true)
     .maybeSingle();
   if (!payRow) return { error: "PAYMENT" };
   const paymentFee =
     (payRow as unknown as Record<string, number | null>)[feeCol] ?? 0;
+  const paymentProvider = String(
+    (payRow as unknown as Record<string, unknown>).provider ?? "",
+  );
 
   // 4) Sleva (znovu ověřená na serveru)
   let discountId: string | null = null;
@@ -221,17 +225,18 @@ export async function createOrderAction(
     if (!error) {
       const orderNumber = data ?? number;
 
+      // Absolutní URL webu (doména, kde zákazník objednal — .cz / .eu / .shop;
+      // env je jen fallback pro kontext bez requestu). Použije se pro e-maily
+      // i pro návratové URL platební brány.
+      const h = await headers();
+      const host = h.get("host");
+      const proto = h.get("x-forwarded-proto") ?? "https";
+      const siteUrl = host
+        ? `${proto}://${host}`
+        : process.env.NEXT_PUBLIC_SITE_URL || "https://reptiplus.cz";
+
       // Potvrzovací e-maily — selhání nesmí shodit objednávku.
       try {
-        const h = await headers();
-        const host = h.get("host");
-        const proto = h.get("x-forwarded-proto") ?? "https";
-        // Odkaz míří na doménu, kde zákazník objednal (.cz / .eu / .shop);
-        // env je jen fallback pro kontext bez requestu.
-        const siteUrl = host
-          ? `${proto}://${host}`
-          : process.env.NEXT_PUBLIC_SITE_URL || "https://reptiplus.cz";
-
         const emailData: OrderEmailData = {
           number: orderNumber,
           email,
@@ -273,6 +278,36 @@ export async function createOrderAction(
       }
 
       revalidatePath("/", "layout");
+
+      // Online platba přes Comgate → přesměruj zákazníka na platební bránu.
+      // redirect() musí být MIMO try/catch — vyhazuje interní NEXT_REDIRECT,
+      // který by se jinak chytil do catch a přesměrování by se zrušilo.
+      if (paymentProvider === "comgate" && total > 0) {
+        let gatewayUrl: string | null = null;
+        try {
+          const pay = await createComgatePayment({
+            price: total,
+            curr: currency,
+            refId: orderNumber,
+            label: orderNumber,
+            email,
+            fullName: ship.full_name,
+            lang: locale,
+            urlPaid: `${siteUrl}/${locale}/objednavka/${orderNumber}?platba=uspech`,
+            urlPending: `${siteUrl}/${locale}/objednavka/${orderNumber}?platba=probiha`,
+            urlCancelled: `${siteUrl}/${locale}/objednavka/${orderNumber}?platba=zruseno`,
+          });
+          await svc
+            .from("order")
+            .update({ comgate_ref: pay.transId })
+            .eq("number", orderNumber);
+          gatewayUrl = pay.redirect;
+        } catch (e) {
+          console.error("[checkout] Comgate se nepodařilo založit platbu:", e);
+        }
+        redirect(gatewayUrl ?? `/${locale}/objednavka/${orderNumber}?platba=chyba`);
+      }
+
       redirect(`/${locale}/objednavka/${orderNumber}`);
     }
 

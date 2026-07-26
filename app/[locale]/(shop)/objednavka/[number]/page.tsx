@@ -28,10 +28,13 @@ type OrderItem = {
 
 export default async function OrderConfirmPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: Locale; number: string }>;
+  searchParams: Promise<{ platba?: string }>;
 }) {
   const { locale, number } = await params;
+  const { platba } = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations("OrderConfirm");
 
@@ -39,12 +42,41 @@ export default async function OrderConfirmPage({
   const { data: order } = await svc
     .from("order")
     .select(
-      "number, email, status, payment_status, subtotal, shipping, discount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, order_item(id,name,sku,unit_price,qty,line_total)",
+      "number, email, status, payment_status, comgate_ref, subtotal, shipping, discount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, order_item(id,name,sku,unit_price,qty,line_total)",
     )
     .eq("number", number)
     .maybeSingle();
 
   if (!order) notFound();
+
+  // Stav platby → hláška a barva banneru.
+  const online = Boolean(order.comgate_ref);
+  const payTone: "ok" | "warn" | "err" | "info" =
+    order.payment_status === "paid"
+      ? "ok"
+      : order.payment_status === "failed" || platba === "zruseno" || platba === "chyba"
+        ? "err"
+        : online || platba === "probiha"
+          ? "warn"
+          : "info";
+  const payMsg =
+    payTone === "ok"
+      ? t("payStatusPaid")
+      : payTone === "err"
+        ? t("payStatusFailed")
+        : payTone === "warn"
+          ? t("payStatusPending")
+          : order.payment_method === "cod"
+            ? t("payCod")
+            : order.payment_method === "bank_transfer"
+              ? t("payBank")
+              : t("payOther");
+  const payToneCls: Record<typeof payTone, string> = {
+    ok: "border-success/30 bg-success/10",
+    warn: "border-amber/40 bg-amber/10",
+    err: "border-error/30 bg-error/10",
+    info: "border-forest/20 bg-forest/5",
+  };
 
   const items = (order.order_item ?? []) as OrderItem[];
   const fmt = (m: number) => formatPrice(m, order.currency === "CZK" ? "cs" : locale);
@@ -69,13 +101,9 @@ export default async function OrderConfirmPage({
         </p>
       </div>
 
-      {/* Instrukce k platbě */}
-      <div className="mb-6 rounded-xl border border-forest/20 bg-forest/5 p-5 text-sm text-charcoal">
-        {order.payment_method === "cod"
-          ? t("payCod")
-          : order.payment_method === "bank_transfer"
-            ? t("payBank")
-            : t("payOther")}
+      {/* Stav / instrukce k platbě */}
+      <div className={`mb-6 rounded-xl border p-5 text-sm text-charcoal ${payToneCls[payTone]}`}>
+        {payMsg}
       </div>
 
       {/* Položky */}

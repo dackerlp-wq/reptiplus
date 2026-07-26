@@ -8,6 +8,7 @@ import {
   getSaleProducts,
 } from "@/lib/queries";
 import type { ProductListItem } from "@/lib/queries";
+import { getHeroStyle } from "@/lib/settings";
 import { formatPrice, pickI18n, priceForLocale } from "@/lib/i18n";
 import { ProductCard } from "@/components/reptiplus/product-card";
 import {
@@ -27,10 +28,11 @@ export default async function HomePage({
   setRequestLocale(locale);
   const t = await getTranslations("Home");
 
-  const [featured, latest, sale] = await Promise.all([
+  const [featured, latest, sale, heroStyle] = await Promise.all([
     getProducts({ featured: true }),
     getNewProducts(4),
     getSaleProducts(4),
+    getHeroStyle(),
   ]);
 
   const productGrid = (items: ProductListItem[]) => (
@@ -59,7 +61,7 @@ export default async function HomePage({
   return (
     <>
       {/* Carousel */}
-      <HeroCarousel slides={slides} ctaLabel={t("heroCta")} />
+      <HeroCarousel slides={slides} ctaLabel={t("heroCta")} variant={heroStyle} />
 
       {/* Doporučujeme */}
       {featured.length > 0 && (

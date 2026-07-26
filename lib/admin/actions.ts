@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import { getCnbEurRate } from "@/lib/exchange-rate";
 import { sendOrderStatusEmail } from "@/lib/orders/notify";
+import { DEFAULT_THEME, isThemeKey } from "@/lib/themes";
 
 async function assertAdmin() {
   const supabase = await createClient();
@@ -818,6 +819,20 @@ export async function saveGeneralAction(fd: FormData) {
     phone: str(fd, "phone"),
   });
 }
+
+export async function saveThemeAction(fd: FormData) {
+  const theme = str(fd, "theme");
+  await upsertSetting("appearance.theme", {
+    theme: isThemeKey(theme) ? theme : DEFAULT_THEME,
+  });
+}
+
+export async function saveHeroStyleAction(fd: FormData) {
+  const style = str(fd, "hero");
+  await upsertSetting("appearance.hero", {
+    style: style === "logo" || style === "logo-dark" ? style : "light",
+  });
+}
 export async function saveComgateAction(fd: FormData) {
   await upsertSetting("integrations.comgate", {
     merchant: str(fd, "merchant"),
@@ -829,6 +844,11 @@ export async function savePplAction(fd: FormData) {
   await upsertSetting("integrations.ppl", {
     clientId: str(fd, "clientId"),
     clientSecret: str(fd, "clientSecret"),
+    productType: str(fd, "productType"),
+    senderName: str(fd, "senderName"),
+    senderStreet: str(fd, "senderStreet"),
+    senderCity: str(fd, "senderCity"),
+    senderZip: str(fd, "senderZip"),
   });
 }
 export async function saveZasilkovnaAction(fd: FormData) {
@@ -836,6 +856,7 @@ export async function saveZasilkovnaAction(fd: FormData) {
     apiKey: str(fd, "apiKey"),
     apiPassword: str(fd, "apiPassword"),
     eshopId: str(fd, "eshopId"),
+    homeCarrierId: str(fd, "homeCarrierId"),
   });
 }
 export async function saveAiAction(fd: FormData) {
