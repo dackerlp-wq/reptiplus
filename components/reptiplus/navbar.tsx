@@ -37,7 +37,7 @@ export async function Navbar({ locale }: { locale: Locale }) {
 
       {/* Hlavní lišta — logo, vyhledávání, účet/košík */}
       <div className="border-b border-cream-dark">
-        <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-5 md:py-6">
           <Link href="/" aria-label="Reptiplus" className="shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.svg" alt="Reptiplus" className="h-16 w-auto md:h-28" />
@@ -46,28 +46,32 @@ export async function Navbar({ locale }: { locale: Locale }) {
           <SearchBar
             placeholder={t("search")}
             locale={locale}
-            className="hidden flex-1 sm:block"
+            className="mx-auto hidden w-full max-w-2xl sm:block"
           />
 
-          <div className="ml-auto flex items-center gap-2 sm:ml-0">
+          <div className="ml-auto flex items-center gap-1 sm:ml-0 sm:gap-2">
             <Link
               href="/ucet"
               aria-label={t("account")}
-              className="rounded-md p-2 text-charcoal transition-colors hover:bg-white hover:text-forest"
+              className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-[11px] font-medium text-charcoal transition-colors hover:bg-white hover:text-forest"
             >
-              <User className="size-6" />
+              <User className="size-7" />
+              <span className="hidden lg:block">{t("account")}</span>
             </Link>
             <Link
               href="/kosik"
               aria-label={t("cart")}
-              className="relative rounded-md p-2 text-charcoal transition-colors hover:bg-white hover:text-forest"
+              className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-[11px] font-medium text-charcoal transition-colors hover:bg-white hover:text-forest"
             >
-              <ShoppingCart className="size-6" />
-              {cartCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex min-w-5 items-center justify-center rounded-full bg-forest px-1.5 text-xs font-semibold leading-5 text-white">
-                  {cartCount > 99 ? "99+" : cartCount}
-                </span>
-              )}
+              <span className="relative">
+                <ShoppingCart className="size-7" />
+                {cartCount > 0 && (
+                  <span className="absolute -right-2 -top-2 flex min-w-5 items-center justify-center rounded-full bg-forest px-1.5 text-xs font-semibold leading-5 text-white">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                )}
+              </span>
+              <span className="hidden lg:block">{t("cart")}</span>
             </Link>
           </div>
         </div>

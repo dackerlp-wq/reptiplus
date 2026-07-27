@@ -156,7 +156,7 @@ export function SearchBar({
         }}
       >
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-gray-soft" />
+          <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-gray-soft" />
           <input
             type="search"
             value={q}
@@ -166,7 +166,7 @@ export function SearchBar({
             placeholder={placeholder}
             aria-label={placeholder}
             autoComplete="off"
-            className="w-full rounded-full border border-cream-dark bg-white py-2.5 pl-10 pr-9 text-sm text-ink outline-none transition-colors focus:border-forest"
+            className="w-full rounded-full border border-cream-dark bg-white py-3.5 pl-12 pr-10 text-[15px] text-ink shadow-sm outline-none transition-colors focus:border-forest"
           />
           {loading && (
             <Loader2 className="absolute right-3.5 top-1/2 size-4 -translate-y-1/2 animate-spin text-gray-soft" />
