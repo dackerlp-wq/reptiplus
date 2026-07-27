@@ -1,6 +1,5 @@
 import { setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
-import { Leaf } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
 import { pickI18n } from "@/lib/i18n";
 import { getContentI18n } from "@/lib/settings";
@@ -18,9 +17,8 @@ export default async function AboutPage({
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-14">
-      <span className="inline-flex items-center gap-2 rounded-full bg-forest/10 px-3 py-1 text-sm font-semibold text-forest">
-        <Leaf className="size-4" /> Reptiplus
-      </span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo-mark.png" alt="Reptiplus" className="h-14 w-auto" />
 
       {content ? (
         <div
