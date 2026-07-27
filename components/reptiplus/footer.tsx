@@ -12,9 +12,10 @@ export async function Footer() {
   return (
     <footer className="mt-20 border-t border-cream-dark bg-forest-deep text-cream">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 md:grid-cols-3">
-        <div>
+        <div className="max-w-xs">
           <p className="font-display text-2xl font-bold text-white">Reptiplus</p>
-          <p className="mt-3 max-w-xs font-display text-base font-semibold italic leading-snug text-cream">
+          <span className="mt-3 block h-0.5 w-12 rounded-full bg-gold-light/80" />
+          <p className="mt-3 font-display text-base font-semibold italic leading-relaxed text-cream">
             „{nav("slogan")}"
           </p>
         </div>
