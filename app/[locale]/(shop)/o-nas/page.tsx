@@ -21,11 +21,10 @@ export default async function AboutPage({
       <span className="inline-flex items-center gap-2 rounded-full bg-forest/10 px-3 py-1 text-sm font-semibold text-forest">
         <Leaf className="size-4" /> Reptiplus
       </span>
-      <h1 className="mt-4 font-display text-4xl font-bold">O nás</h1>
 
       {content ? (
         <div
-          className="rich-content mt-8 text-[15px] leading-relaxed text-charcoal/90"
+          className="rich-content mt-6 text-[15px] leading-relaxed text-charcoal/90"
           dangerouslySetInnerHTML={{ __html: content }}
         />
       ) : (
