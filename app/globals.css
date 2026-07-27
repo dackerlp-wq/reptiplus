@@ -73,6 +73,22 @@ html[data-theme="logo-plus"] {
   --color-paper: #eef3e6;
 }
 
+/* Světlá & veselá – svěží zelená z loga, světlá vzdušná pozadí, teplé zlaté
+   akcenty a světlejší horní lišta (méně tmavá, veselejší dojem). */
+html[data-theme="svetla"] {
+  --color-forest: #4f8121;
+  --color-forest-light: #77ad2e;
+  --color-forest-dark: #3d6419;
+  --color-forest-deep: #3c6220;
+  --color-moss: #6a9a35;
+  --color-cream: #fcfbf6;
+  --color-cream-dark: #ece8dd;
+  --color-paper: #f1f7e8;
+  --color-gold: #e0982f;
+  --color-gold-light: #f2b756;
+  --color-amber: #f2a93d;
+}
+
 /* Logo teplá – zelená z loga s teplejšími krémy a zlatými akcenty. */
 html[data-theme="logo-tepla"] {
   --color-forest: #56831f;

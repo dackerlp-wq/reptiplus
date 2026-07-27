@@ -9,7 +9,7 @@
  * ⚠️ Klíče a swatche drž v souladu s přepisy v globals.css.
  */
 
-export type ThemeKey = "les" | "logo" | "logo-plus" | "logo-tepla";
+export type ThemeKey = "les" | "logo" | "logo-plus" | "logo-tepla" | "svetla";
 
 export type ThemeDef = {
   key: ThemeKey;
@@ -20,6 +20,12 @@ export type ThemeDef = {
 };
 
 export const THEMES: readonly ThemeDef[] = [
+  {
+    key: "svetla",
+    name: "Světlá & veselá",
+    description: "Svěží zelená, světlá vzdušná pozadí a teplé zlaté akcenty.",
+    swatch: { primary: "#4f8121", light: "#77ad2e", accent: "#e0982f", bg: "#fcfbf6" },
+  },
   {
     key: "les",
     name: "Výchozí (les)",

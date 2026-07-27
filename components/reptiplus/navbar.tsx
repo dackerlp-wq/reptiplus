@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { ShoppingCart, User, Mail, Phone } from "lucide-react";
+import { ShoppingCart, User, Mail } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { getCartCount } from "@/lib/cart/cart";
@@ -16,39 +16,31 @@ export async function Navbar({ locale }: { locale: Locale }) {
     getMenuData(locale),
     getShopContact(),
   ]);
-  const telHref = `tel:${contact.phone.replace(/\s+/g, "")}`;
 
   return (
     <header className="sticky top-0 z-40 bg-cream/95 backdrop-blur">
-      {/* Kontaktní lišta */}
+      {/* Horní lišta — e-mail, slogan, jazyk */}
       <div className="bg-forest-deep text-cream">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-1.5 text-xs">
-          <div className="flex items-center gap-5">
-            <a
-              href={`mailto:${contact.email}`}
-              className="flex items-center gap-1.5 text-cream/80 transition-colors hover:text-white"
-            >
-              <Mail className="size-3.5" /> {contact.email}
-            </a>
-            {contact.phone && (
-              <a
-                href={telHref}
-                className="flex items-center gap-1.5 text-cream/80 transition-colors hover:text-white"
-              >
-                <Phone className="size-3.5" /> {contact.phone}
-              </a>
-            )}
-          </div>
+          <a
+            href={`mailto:${contact.email}`}
+            className="flex items-center gap-1.5 text-cream/80 transition-colors hover:text-white"
+          >
+            <Mail className="size-3.5" /> {contact.email}
+          </a>
+          <span className="hidden flex-1 text-center font-medium italic text-cream/90 md:block">
+            {t("slogan")}
+          </span>
           <LanguageSwitcher />
         </div>
       </div>
 
       {/* Hlavní lišta — logo, vyhledávání, účet/košík */}
       <div className="border-b border-cream-dark">
-        <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-4">
+        <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-3">
           <Link href="/" aria-label="Reptiplus" className="shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.svg" alt="Reptiplus" className="h-11 w-auto md:h-14" />
+            <img src="/logo.svg" alt="Reptiplus" className="h-16 w-auto md:h-28" />
           </Link>
 
           <SearchBar
