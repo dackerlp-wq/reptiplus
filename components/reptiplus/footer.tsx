@@ -67,10 +67,9 @@ export async function Footer() {
         </div>
 
         <div>
-          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-gold-light">
-            {t("about")}
+          <p className="font-display text-lg font-semibold italic leading-snug text-gold-light">
+            „{nav("slogan")}"
           </p>
-          <p className="text-sm text-cream/80">{t("aboutText")}</p>
         </div>
       </div>
 
