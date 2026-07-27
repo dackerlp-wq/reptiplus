@@ -34,8 +34,14 @@ export async function LegalPage({
           {sellerLabel}
         </p>
         <p className="font-medium text-ink">{contact.name}</p>
+        {contact.address && <p className="text-charcoal">{contact.address}</p>}
+        {contact.ico && <p className="text-charcoal">IČO: {contact.ico}</p>}
+        {contact.dic && <p className="text-charcoal">DIČ: {contact.dic}</p>}
         <p className="text-charcoal">{contact.email}</p>
         {contact.phone && <p className="text-charcoal">{contact.phone}</p>}
+        {contact.registration && (
+          <p className="mt-2 text-xs text-gray-soft">{contact.registration}</p>
+        )}
       </div>
     </section>
   );

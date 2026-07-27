@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Mail, Phone, Info } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { getShopContact } from "@/lib/settings";
+import { CookieSettingsLink } from "./cookie-settings-link";
 
 export async function Footer() {
   const t = await getTranslations("Footer");
@@ -86,9 +87,13 @@ export async function Footer() {
             <Link href="/obchodni-podminky" className="hover:text-white">
               {t("terms")}
             </Link>
+            <Link href="/reklamacni-rad" className="hover:text-white">
+              {t("claims")}
+            </Link>
             <Link href="/ochrana-osobnich-udaju" className="hover:text-white">
               {t("privacy")}
             </Link>
+            <CookieSettingsLink className="hover:text-white" />
           </div>
         </div>
       </div>

@@ -13,6 +13,25 @@
     "viewAll": "Alle ansehen",
     "slogan": "Was wir selbst verwenden, empfehlen wir mit gutem Gewissen!"
   },
+  "Cookies": {
+    "title": "Cookies",
+    "text": "Wir verwenden für den Betrieb notwendige Cookies. Mit Ihrer Zustimmung auch Cookies für Analyse und Marketing. Die Einwilligung können Sie jederzeit im Footer ändern.",
+    "acceptAll": "Alle akzeptieren",
+    "rejectAll": "Alle ablehnen",
+    "settings": "Einstellungen",
+    "settingsTitle": "Cookie-Einstellungen",
+    "save": "Auswahl speichern",
+    "close": "Schließen",
+    "manage": "Cookie-Einstellungen",
+    "necessary": "Notwendig",
+    "necessaryDesc": "Erforderlich für grundlegende Funktionen (Warenkorb, Anmeldung). Nicht abschaltbar.",
+    "functional": "Funktional",
+    "functionalDesc": "Merken sich Ihre Einstellungen (z. B. Sprache) für mehr Komfort.",
+    "analytics": "Analyse",
+    "analyticsDesc": "Anonyme Statistiken, die uns helfen, die Website zu verbessern.",
+    "marketing": "Marketing",
+    "marketingDesc": "Ermöglichen gezielte Werbung und die Messung ihrer Wirksamkeit."
+  },
   "Home": {
     "heroKicker": "Spezialisierter Terraristik-Bedarf",
     "heroTitle": "Eine Welt der Terrarien für Ihre Reptilien",
@@ -209,12 +228,14 @@
     "aboutText": "Reptiplus ist ein Shop von Haltern für Halter.",
     "contact": "Kontakt",
     "terms": "AGB",
+    "claims": "Reklamationsordnung",
     "privacy": "Datenschutz",
     "rights": "Alle Rechte vorbehalten."
   },
   "Legal": {
     "termsTitle": "Allgemeine Geschäftsbedingungen",
     "privacyTitle": "Datenschutz",
+    "claimsTitle": "Reklamationsordnung",
     "draft": "Dieses Dokument wird gerade finalisiert. Bei Fragen kontaktieren Sie uns bitte über die untenstehenden Angaben.",
     "seller": "Betreiber"
   },

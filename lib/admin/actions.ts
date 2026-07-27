@@ -840,6 +840,10 @@ export async function saveGeneralAction(fd: FormData) {
     name: str(fd, "name"),
     email: str(fd, "email"),
     phone: str(fd, "phone"),
+    ico: str(fd, "ico"),
+    dic: str(fd, "dic"),
+    address: str(fd, "address"),
+    registration: str(fd, "registration"),
   });
 }
 
@@ -911,7 +915,13 @@ export async function deleteReviewAction(fd: FormData) {
 export async function saveLegalAction(fd: FormData) {
   await assertAdmin();
   const svc = createServiceClient();
-  const key = str(fd, "doc") === "privacy" ? "legal.privacy" : "legal.terms";
+  const doc = str(fd, "doc");
+  const key =
+    doc === "privacy"
+      ? "legal.privacy"
+      : doc === "claims"
+        ? "legal.claims"
+        : "legal.terms";
   const content = i18n(fd, "content");
   const { error } = await svc
     .from("app_setting")

@@ -13,6 +13,25 @@
     "viewAll": "Zobrazit vše",
     "slogan": "Co sami používáme, to s čistým svědomím doporučujeme!"
   },
+  "Cookies": {
+    "title": "Cookies",
+    "text": "Používáme cookies nezbytné pro fungování webu. Se souhlasem i cookies pro analýzu návštěvnosti a marketing. Souhlas můžete kdykoli změnit v patičce.",
+    "acceptAll": "Přijmout vše",
+    "rejectAll": "Odmítnout vše",
+    "settings": "Nastavení",
+    "settingsTitle": "Nastavení cookies",
+    "save": "Uložit volbu",
+    "close": "Zavřít",
+    "manage": "Nastavení cookies",
+    "necessary": "Nezbytné",
+    "necessaryDesc": "Nutné pro základní funkce webu (košík, přihlášení). Nelze vypnout.",
+    "functional": "Funkční",
+    "functionalDesc": "Zapamatují si vaše volby (např. jazyk) pro větší pohodlí.",
+    "analytics": "Analytické",
+    "analyticsDesc": "Anonymní statistiky návštěvnosti, které nám pomáhají web zlepšovat.",
+    "marketing": "Marketingové",
+    "marketingDesc": "Umožňují cílenou reklamu a měření její účinnosti."
+  },
   "Home": {
     "heroKicker": "Specializovaná teraristika",
     "heroTitle": "Svět terárií pro vaše plazy",
@@ -209,12 +228,14 @@
     "aboutText": "Reptiplus je obchod od chovatelů pro chovatele.",
     "contact": "Kontakt",
     "terms": "Obchodní podmínky",
+    "claims": "Reklamační řád",
     "privacy": "Zpracování osobních údajů",
     "rights": "Všechna práva vyhrazena."
   },
   "Legal": {
     "termsTitle": "Obchodní podmínky",
     "privacyTitle": "Zpracování osobních údajů",
+    "claimsTitle": "Reklamační řád",
     "draft": "Znění tohoto dokumentu právě finalizujeme. S dotazy nás prosím kontaktujte na uvedených údajích.",
     "seller": "Provozovatel"
   },

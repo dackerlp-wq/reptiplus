@@ -13,6 +13,25 @@
     "viewAll": "View all",
     "slogan": "What we use ourselves, we recommend with a clear conscience!"
   },
+  "Cookies": {
+    "title": "Cookies",
+    "text": "We use cookies necessary for the site to work. With your consent also cookies for analytics and marketing. You can change your consent anytime in the footer.",
+    "acceptAll": "Accept all",
+    "rejectAll": "Reject all",
+    "settings": "Settings",
+    "settingsTitle": "Cookie settings",
+    "save": "Save choice",
+    "close": "Close",
+    "manage": "Cookie settings",
+    "necessary": "Necessary",
+    "necessaryDesc": "Required for basic site functions (cart, sign-in). Cannot be turned off.",
+    "functional": "Functional",
+    "functionalDesc": "Remember your choices (e.g. language) for greater convenience.",
+    "analytics": "Analytics",
+    "analyticsDesc": "Anonymous traffic statistics that help us improve the site.",
+    "marketing": "Marketing",
+    "marketingDesc": "Enable targeted advertising and measuring its effectiveness."
+  },
   "Home": {
     "heroKicker": "Specialist reptile supplies",
     "heroTitle": "A world of terrariums for your reptiles",
@@ -209,12 +228,14 @@
     "aboutText": "Reptiplus is a shop built by keepers, for keepers.",
     "contact": "Contact",
     "terms": "Terms & Conditions",
+    "claims": "Complaints Procedure",
     "privacy": "Privacy Policy",
     "rights": "All rights reserved."
   },
   "Legal": {
     "termsTitle": "Terms & Conditions",
     "privacyTitle": "Privacy Policy",
+    "claimsTitle": "Complaints Procedure",
     "draft": "This document is being finalized. For any questions, please contact us using the details below.",
     "seller": "Operator"
   },

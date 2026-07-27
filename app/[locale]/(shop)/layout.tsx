@@ -1,6 +1,7 @@
 import type { Locale } from "@/i18n/routing";
 import { Navbar } from "@/components/reptiplus/navbar";
 import { Footer } from "@/components/reptiplus/footer";
+import { CookieConsent } from "@/components/reptiplus/cookie-consent";
 
 export default async function ShopLayout({
   children,
@@ -15,6 +16,7 @@ export default async function ShopLayout({
       <Navbar locale={locale as Locale} />
       <main className="flex-1">{children}</main>
       <Footer />
+      <CookieConsent />
     </div>
   );
 }

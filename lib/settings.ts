@@ -2,9 +2,17 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { DEFAULT_THEME, isThemeKey, type ThemeKey } from "@/lib/themes";
 
-export type ShopContact = { name: string; email: string; phone: string };
+export type ShopContact = {
+  name: string;
+  email: string;
+  phone: string;
+  ico: string;
+  dic: string;
+  address: string;
+  registration: string;
+};
 
-/** Obecné nastavení obchodu (název, e-mail, telefon) z app_setting. */
+/** Obecné nastavení obchodu (identifikace prodejce) z app_setting. */
 export async function getShopContact(): Promise<ShopContact> {
   const svc = createServiceClient();
   const { data } = await svc
@@ -12,15 +20,15 @@ export async function getShopContact(): Promise<ShopContact> {
     .select("value")
     .eq("key", "shop.general")
     .maybeSingle();
-  const v = (data?.value ?? {}) as {
-    name?: string;
-    email?: string;
-    phone?: string;
-  };
+  const v = (data?.value ?? {}) as Record<string, string | undefined>;
   return {
     name: v.name ?? "Reptiplus",
     email: v.email ?? "info@reptiplus.cz",
     phone: v.phone ?? "",
+    ico: v.ico ?? "",
+    dic: v.dic ?? "",
+    address: v.address ?? "",
+    registration: v.registration ?? "",
   };
 }
 
@@ -58,7 +66,7 @@ export async function getHeroStyle(): Promise<HeroStyle> {
   }
 }
 
-export type LegalKey = "legal.terms" | "legal.privacy";
+export type LegalKey = "legal.terms" | "legal.privacy" | "legal.claims";
 
 /** i18n obsah právní stránky z app_setting (editovatelné v adminu). */
 export async function getLegalContent(

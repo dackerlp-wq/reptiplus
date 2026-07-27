@@ -48,6 +48,7 @@ export default async function AdminSettingsPage() {
   const ai = get("integrations.ai");
   const terms = get("legal.terms") as I18nText;
   const privacy = get("legal.privacy") as I18nText;
+  const claims = get("legal.claims") as I18nText;
   const about = get("content.about") as I18nText;
   const appearance = get("appearance.theme") as { theme?: string };
   const activeTheme = isThemeKey(appearance.theme)
@@ -199,6 +200,31 @@ export default async function AdminSettingsPage() {
             <label className="flex flex-col gap-1.5">
               <span className={legend}>Telefon</span>
               <input name="phone" defaultValue={String(general.phone ?? "")} className={input} />
+            </label>
+          </div>
+
+          <p className="text-sm text-gray-soft">
+            Identifikace prodejce (povinné údaje na webu) — zobrazí se na
+            právních stránkách a v patičce.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>IČO</span>
+              <input name="ico" defaultValue={String(general.ico ?? "")} className={input} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>DIČ (je-li plátce DPH)</span>
+              <input name="dic" defaultValue={String(general.dic ?? "")} className={input} />
+            </label>
+            <label className="flex flex-col gap-1.5 sm:col-span-2">
+              <span className={legend}>Sídlo / adresa</span>
+              <input name="address" defaultValue={String(general.address ?? "")} className={input} />
+            </label>
+            <label className="flex flex-col gap-1.5 sm:col-span-2">
+              <span className={legend}>
+                Zápis v rejstříku (např. živnostenský rejstřík — město)
+              </span>
+              <input name="registration" defaultValue={String(general.registration ?? "")} className={input} />
             </label>
           </div>
           <button className={saveBtn}>Uložit</button>
@@ -409,6 +435,19 @@ export default async function AdminSettingsPage() {
               ]}
             />
             <button className={saveBtn}>Uložit GDPR</button>
+          </ToastForm>
+
+          <ToastForm action={saveLegalAction} className={`${card} space-y-4`}>
+            <input type="hidden" name="doc" value="claims" />
+            <h2 className="font-display text-lg font-semibold">
+              Reklamační řád
+            </h2>
+            <LangFields
+              fields={[
+                { name: "content", label: "Obsah", type: "rich", values: claims },
+              ]}
+            />
+            <button className={saveBtn}>Uložit reklamační řád</button>
           </ToastForm>
         </div>
 
