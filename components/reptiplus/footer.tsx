@@ -18,7 +18,7 @@ export async function Footer() {
         </div>
 
         <div>
-          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-gold-light">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
             {t("shop")}
           </p>
           <ul className="space-y-2 text-sm text-cream/80">
@@ -41,7 +41,7 @@ export async function Footer() {
         </div>
 
         <div>
-          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-gold-light">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-white">
             {t("contact")}
           </p>
           <ul className="space-y-2 text-sm text-cream/80">
@@ -67,7 +67,7 @@ export async function Footer() {
         </div>
 
         <div>
-          <p className="font-display text-lg font-semibold italic leading-snug text-gold-light">
+          <p className="font-display text-lg font-semibold italic leading-snug text-white">
             „{nav("slogan")}"
           </p>
         </div>
