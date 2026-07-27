@@ -98,34 +98,36 @@ export default async function CategoryPage({
         <span className="text-ink">{name}</span>
       </nav>
 
-      <div className="mb-4 flex items-end justify-between">
-        <h1 className="font-display text-4xl font-bold">{name}</h1>
-        <span className="text-sm text-gray-soft">
-          {t("count", { count: products.length })}
-        </span>
-      </div>
-
-      {description && (
-        <div
-          className="rich-content mb-8 max-w-3xl text-charcoal/80"
-          dangerouslySetInnerHTML={{ __html: description }}
-        />
-      )}
-
-      {/* Podkategorie */}
-      {subcategories.length > 0 && (
-        <div className="mb-8 flex flex-wrap gap-2">
-          {subcategories.map((sub) => (
-            <Link
-              key={sub.id}
-              href={`/kategorie/${sub.slug}`}
-              className="rounded-full border border-cream-dark bg-white px-4 py-1.5 text-sm font-medium transition-colors hover:border-forest hover:text-forest"
-            >
-              {pickI18n(sub.name_i18n, locale, sub.name)}
-            </Link>
-          ))}
+      {/* Hlavička kategorie — název, charakteristika a podkategorie */}
+      <div className="mb-8 rounded-2xl border border-cream-dark bg-paper p-6 sm:p-8">
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+          <h1 className="font-display text-3xl font-bold sm:text-4xl">{name}</h1>
+          <span className="text-sm font-medium text-gray-soft">
+            {t("count", { count: products.length })}
+          </span>
         </div>
-      )}
+
+        {description && (
+          <div
+            className="rich-content mt-3 max-w-3xl text-[15px] leading-relaxed text-charcoal/80"
+            dangerouslySetInnerHTML={{ __html: description }}
+          />
+        )}
+
+        {subcategories.length > 0 && (
+          <div className="mt-5 flex flex-wrap gap-2">
+            {subcategories.map((sub) => (
+              <Link
+                key={sub.id}
+                href={`/kategorie/${sub.slug}`}
+                className="rounded-full border border-cream-dark bg-white px-4 py-1.5 text-sm font-medium transition-colors hover:border-forest hover:text-forest"
+              >
+                {pickI18n(sub.name_i18n, locale, sub.name)}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
         <CatalogFilters

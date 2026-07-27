@@ -4,12 +4,15 @@ import { useState, type ComponentType } from "react";
 import Image from "next/image";
 import {
   ChevronRight,
+  ChevronDown,
   Leaf,
   Lightbulb,
   Box,
   Utensils,
   Pill,
   Info,
+  Menu as MenuIcon,
+  X,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -27,32 +30,29 @@ const iconFor = (slug: string) => ICONS[slug] ?? Leaf;
 
 export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
   const t = useTranslations("Nav");
-  const [active, setActive] = useState<string | null>(null);
+  const [active, setActive] = useState<string | null>(null); // desktop hover
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null); // mobile accordion
+
   const activeCat = categories.find((c) => c.slug === active) ?? null;
   const hasPanel =
     !!activeCat && (activeCat.subcategories.length > 0 || !!activeCat.product);
 
   if (categories.length === 0) return null;
 
-  const aboutLink = (className: string) => (
-    <Link
-      href="/o-nas"
-      onClick={() => setActive(null)}
-      className={className}
-      onMouseEnter={() => setActive(null)}
-    >
-      <Info className="size-[18px]" />
-      {t("about")}
-    </Link>
-  );
+  const closeMobile = () => {
+    setMobileOpen(false);
+    setExpanded(null);
+  };
 
   return (
     <nav
       className="relative border-b border-cream-dark bg-white shadow-sm"
       onMouseLeave={() => setActive(null)}
     >
-      <div className="relative mx-auto flex max-w-7xl items-center px-4">
-        <div className="flex flex-1 items-center justify-center gap-1 overflow-x-auto">
+      {/* ── Desktop ── */}
+      <div className="relative mx-auto hidden max-w-7xl items-center px-4 md:flex">
+        <div className="flex flex-1 items-center justify-center gap-1">
           {categories.map((cat) => {
             const Icon = iconFor(cat.slug);
             return (
@@ -73,23 +73,95 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
               </div>
             );
           })}
-          {/* O nás — na mobilu součástí posuvného menu */}
-          {aboutLink(
-            "flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-3.5 text-base font-semibold text-charcoal transition-colors hover:bg-forest/5 hover:text-forest md:hidden",
-          )}
         </div>
-
-        {/* O nás — na desktopu oddělené vpravo */}
-        {aboutLink(
-          "ml-3 hidden items-center gap-2 whitespace-nowrap border-l border-cream-dark py-3.5 pl-5 text-base font-semibold text-charcoal transition-colors hover:text-forest md:flex",
-        )}
+        <Link
+          href="/o-nas"
+          onClick={() => setActive(null)}
+          onMouseEnter={() => setActive(null)}
+          className="ml-3 flex items-center gap-2 whitespace-nowrap border-l border-cream-dark py-3.5 pl-5 text-base font-semibold text-charcoal transition-colors hover:text-forest"
+        >
+          <Info className="size-[18px]" /> {t("about")}
+        </Link>
       </div>
 
-      {/* Megamenu panel */}
+      {/* ── Mobil: hamburger ── */}
+      <div className="mx-auto flex max-w-7xl items-center px-4 md:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileOpen((o) => !o)}
+          aria-expanded={mobileOpen}
+          className="flex items-center gap-2 py-3 text-base font-semibold text-charcoal"
+        >
+          {mobileOpen ? <X className="size-5" /> : <MenuIcon className="size-5" />}
+          {t("menu")}
+        </button>
+      </div>
+
+      {/* ── Mobil: rozbalené menu (kategorie + podkategorie) ── */}
+      {mobileOpen && (
+        <div className="border-t border-cream-dark bg-white md:hidden">
+          {categories.map((cat) => {
+            const Icon = iconFor(cat.slug);
+            const hasSubs = cat.subcategories.length > 0;
+            const open = expanded === cat.slug;
+            return (
+              <div key={cat.slug} className="border-b border-cream">
+                <div className="flex items-center">
+                  <Link
+                    href={`/kategorie/${cat.slug}`}
+                    onClick={closeMobile}
+                    className="flex flex-1 items-center gap-3 px-4 py-3.5 font-semibold text-charcoal"
+                  >
+                    <Icon className="size-5 shrink-0 text-forest" />
+                    {cat.name}
+                  </Link>
+                  {hasSubs && (
+                    <button
+                      type="button"
+                      onClick={() => setExpanded(open ? null : cat.slug)}
+                      aria-label="Podkategorie"
+                      className="px-4 py-3.5 text-gray-soft"
+                    >
+                      <ChevronDown
+                        className={cn(
+                          "size-5 transition-transform",
+                          open && "rotate-180",
+                        )}
+                      />
+                    </button>
+                  )}
+                </div>
+                {hasSubs && open && (
+                  <div className="bg-paper pb-1">
+                    {cat.subcategories.map((s) => (
+                      <Link
+                        key={s.slug}
+                        href={`/kategorie/${s.slug}`}
+                        onClick={closeMobile}
+                        className="block py-2.5 pl-12 pr-4 text-sm text-charcoal"
+                      >
+                        {s.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <Link
+            href="/o-nas"
+            onClick={closeMobile}
+            className="flex items-center gap-3 px-4 py-3.5 font-semibold text-charcoal"
+          >
+            <Info className="size-5 shrink-0 text-forest" /> {t("about")}
+          </Link>
+        </div>
+      )}
+
+      {/* ── Desktop megamenu panel ── */}
       {hasPanel && activeCat && (
         <div className="absolute inset-x-0 top-full z-40 hidden border-b border-cream-dark bg-white shadow-lg md:block">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 py-6 md:grid-cols-[1fr_18rem]">
-            {/* Podkategorie */}
             <div>
               {activeCat.subcategories.length > 0 ? (
                 <ul className="grid grid-cols-2 gap-x-8 gap-y-1 lg:grid-cols-3">
@@ -117,7 +189,6 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
               </Link>
             </div>
 
-            {/* Náhodný produkt z kategorie */}
             {activeCat.product && (
               <Link
                 href={`/produkt/${activeCat.product.slug}`}
