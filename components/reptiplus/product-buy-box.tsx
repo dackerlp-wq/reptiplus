@@ -23,6 +23,7 @@ export function ProductBuyBox({
   basePrice,
   baseCompare,
   baseStock,
+  lowest30,
   variants,
   labels,
 }: {
@@ -31,12 +32,14 @@ export function ProductBuyBox({
   basePrice: number;
   baseCompare: number | null;
   baseStock: number;
+  lowest30?: number | null;
   variants: BuyVariant[];
   labels: {
     variant: string;
     addToCart: string;
     added: string;
     outOfStock: string;
+    lowest30: string;
   };
 }) {
   const [selId, setSelId] = useState<string | null>(variants[0]?.id ?? null);
@@ -80,6 +83,13 @@ export function ProductBuyBox({
           </>
         )}
       </div>
+
+      {/* Nejnižší cena za 30 dní (Omnibus) — jen u slevy */}
+      {off && typeof lowest30 === "number" && (
+        <p className="mt-1 text-xs text-gray-soft">
+          {labels.lowest30}: {formatPrice(lowest30, locale)}
+        </p>
+      )}
 
       {variants.length > 0 && (
         <div className="mt-6">

@@ -14,6 +14,7 @@ import {
   getProductBySlug,
   getRelatedProducts,
   getUpsellProducts,
+  getLowestPrice30d,
 } from "@/lib/queries";
 import { getProductReviews } from "@/lib/reviews/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -54,12 +55,14 @@ export default async function ProductPage({
   if (!product) notFound();
 
   const supabase = await createClient();
-  const [reviewsData, { data: authData }, related, upsell] = await Promise.all([
-    getProductReviews(product.id),
-    supabase.auth.getUser(),
-    getRelatedProducts(product.id, product.category_id, 4),
-    getUpsellProducts(product.id, 4),
-  ]);
+  const [reviewsData, { data: authData }, related, upsell, lowest30] =
+    await Promise.all([
+      getProductReviews(product.id),
+      supabase.auth.getUser(),
+      getRelatedProducts(product.id, product.category_id, 4),
+      getUpsellProducts(product.id, 4),
+      getLowestPrice30d(product.id),
+    ]);
 
   const productSection = (title: string, items: ProductListItem[]) =>
     items.length > 0 ? (
@@ -161,12 +164,14 @@ export default async function ProductPage({
               basePrice={priceMinor}
               baseCompare={compareMinor}
               baseStock={product.stock_qty}
+              lowest30={isCzk ? lowest30.czk : lowest30.eur}
               variants={buyVariants}
               labels={{
                 variant: t("variant"),
                 addToCart: t("addToCart"),
                 added: t("added"),
                 outOfStock: t("outOfStock"),
+                lowest30: t("lowest30d"),
               }}
             />
           </div>

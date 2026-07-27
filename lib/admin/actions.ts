@@ -40,6 +40,27 @@ const i18n = (fd: FormData, base: string) => ({
   de: str(fd, `${base}_de`),
 });
 
+/** Zaznamená cenu do historie, jen pokud se liší od poslední (pro „cena za 30 dní"). */
+async function recordPriceIfChanged(
+  svc: ReturnType<typeof createServiceClient>,
+  productId: string,
+  priceCzk: number,
+  priceEur: number | null,
+) {
+  const { data: last } = await svc
+    .from("product_price_history")
+    .select("price_czk")
+    .eq("product_id", productId)
+    .order("recorded_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!last || last.price_czk !== priceCzk) {
+    await svc
+      .from("product_price_history")
+      .insert({ product_id: productId, price_czk: priceCzk, price_eur: priceEur });
+  }
+}
+
 /** Přesměrování s flash zprávou pro toast (token `t` kvůli opakovaným uložením). */
 function flashRedirect(
   path: string,
@@ -93,6 +114,11 @@ export async function saveProductAction(formData: FormData) {
       .single();
     if (error) flashRedirect(`/${locale}/admin/products/new`, "error", error.message);
     productId = data.id;
+  }
+
+  // Historie ceny (pro „nejnižší cena za 30 dní")
+  if (productId) {
+    await recordPriceIfChanged(svc, productId, payload.price_czk, payload.price_eur);
   }
 
   // Specifikace (product_attribute) — nahradit dle formuláře
@@ -368,6 +394,7 @@ export async function setProductPriceAction(id: string, priceCzkMinor: number) {
 
   const { error } = await svc.from("product").update(update).eq("id", id);
   if (error) throw new Error(error.message);
+  await recordPriceIfChanged(svc, id, v, update.price_eur ?? null);
   revalidatePath("/", "layout");
 }
 

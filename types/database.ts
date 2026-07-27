@@ -828,6 +828,38 @@ export type Database = {
           },
         ]
       }
+      product_price_history: {
+        Row: {
+          id: string
+          product_id: string
+          price_czk: number
+          price_eur: number | null
+          recorded_at: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          price_czk: number
+          price_eur?: number | null
+          recorded_at?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          price_czk?: number
+          price_eur?: number | null
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review: {
         Row: {
           body: string | null

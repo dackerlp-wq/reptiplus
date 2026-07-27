@@ -235,6 +235,29 @@ export async function getProductBySlug(
   return { ...rest, image: pickImage(images), images, variants };
 }
 
+/**
+ * Nejnižší cena produktu za posledních 30 dní (pro zobrazení u slev dle Omnibus).
+ * Vrací minor units pro CZK i EUR; null pokud není historie.
+ */
+export async function getLowestPrice30d(
+  productId: string,
+): Promise<{ czk: number | null; eur: number | null }> {
+  const supabase = await createClient();
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from("product_price_history")
+    .select("price_czk, price_eur")
+    .eq("product_id", productId)
+    .gte("recorded_at", since);
+  const rows = data ?? [];
+  if (rows.length === 0) return { czk: null, eur: null };
+  const czk = Math.min(...rows.map((r) => r.price_czk));
+  const eurs = rows
+    .map((r) => r.price_eur)
+    .filter((n): n is number => typeof n === "number");
+  return { czk, eur: eurs.length ? Math.min(...eurs) : null };
+}
+
 export async function getRootCategories(): Promise<CategoryItem[]> {
   const supabase = await createClient();
   const { data } = await supabase

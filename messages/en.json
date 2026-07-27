@@ -54,6 +54,7 @@
     "addToCart": "Add to cart",
     "chooseVariant": "Choose variant",
     "priceFrom": "from",
+    "lowest30d": "Lowest price in the last 30 days",
     "inStock": "In stock",
     "lowStock": "Low stock",
     "outOfStock": "Sold out",
