@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
+import TextAlign from "@tiptap/extension-text-align";
 import {
   Bold,
+  AlignJustify,
   Italic,
   Strikethrough,
   Heading2,
@@ -14,10 +17,48 @@ import {
   ListOrdered,
   Link2,
   Link2Off,
+  ImagePlus,
+  Loader2,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
   Undo2,
   Redo2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { compressImage } from "@/lib/admin/image-compress";
+import { uploadEditorImageAction } from "@/lib/admin/actions";
+
+/** Obrázek s možností velikosti (width) a obtékání (float left/right/center). */
+const StyledImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).style.width || null,
+        renderHTML: (attrs) =>
+          attrs.width ? { style: `width: ${attrs.width}` } : {},
+      },
+      align: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).getAttribute("data-align") || null,
+        renderHTML: (attrs) => {
+          if (attrs.align === "left")
+            return { "data-align": "left", style: "float:left;margin:0 1rem .5rem 0" };
+          if (attrs.align === "right")
+            return { "data-align": "right", style: "float:right;margin:0 0 .5rem 1rem" };
+          if (attrs.align === "center")
+            return {
+              "data-align": "center",
+              style: "display:block;margin-left:auto;margin-right:auto",
+            };
+          return {};
+        },
+      },
+    };
+  },
+});
 
 /** Plnohodnotný WYSIWYG editor (Tiptap). Controlled — value je HTML. */
 export function RichEditor({
@@ -39,6 +80,8 @@ export function RichEditor({
         autolink: true,
         HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
       }),
+      StyledImage.configure({ HTMLAttributes: { class: "rounded-lg" } }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
     content: value || "",
     editorProps: {
@@ -73,12 +116,95 @@ export function RichEditor({
   return (
     <div>
       <Toolbar editor={editor} />
+      {editor.isActive("image") && <ImageControls editor={editor} />}
       <EditorContent editor={editor} />
     </div>
   );
 }
 
+/** Ovládání vybraného obrázku — velikost (zmenšit/zvětšit) a obtékání textem. */
+function ImageControls({ editor }: { editor: Editor }) {
+  const attrs = editor.getAttributes("image");
+  const curW = attrs.width as string | undefined;
+  const curA = attrs.align as string | undefined;
+  const setW = (w: string | null) =>
+    editor.chain().focus().updateAttributes("image", { width: w }).run();
+  const setA = (a: string | null) =>
+    editor.chain().focus().updateAttributes("image", { align: a }).run();
+
+  const pill = (active: boolean) =>
+    cn(
+      "rounded px-2 py-1 transition-colors",
+      active ? "bg-forest text-white" : "text-charcoal hover:bg-white",
+    );
+
+  return (
+    <div className="flex flex-wrap items-center gap-1 border-x border-cream-dark bg-cream px-2 py-1.5 text-xs">
+      <span className="mr-1 font-medium text-gray-soft">Velikost:</span>
+      {(["25%", "50%", "75%", "100%"] as const).map((w) => (
+        <button
+          key={w}
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setW(w)}
+          className={pill(curW === w)}
+        >
+          {w}
+        </button>
+      ))}
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setW(null)}
+        className={pill(!curW)}
+      >
+        auto
+      </button>
+      <Divider />
+      <span className="mr-1 font-medium text-gray-soft">Obtékání:</span>
+      <Btn onClick={() => setA("left")} active={curA === "left"} title="Vlevo, text vpravo">
+        <AlignLeft className="size-4" />
+      </Btn>
+      <Btn onClick={() => setA("center")} active={curA === "center"} title="Na střed">
+        <AlignCenter className="size-4" />
+      </Btn>
+      <Btn onClick={() => setA("right")} active={curA === "right"} title="Vpravo, text vlevo">
+        <AlignRight className="size-4" />
+      </Btn>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setA(null)}
+        className={pill(!curA)}
+      >
+        bez obtékání
+      </button>
+    </div>
+  );
+}
+
 function Toolbar({ editor }: { editor: Editor }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const addImage = async (file: File | null) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.set("file", await compressImage(file));
+      const res = await uploadEditorImageAction(fd);
+      if (res.ok && res.url) {
+        editor.chain().focus().setImage({ src: res.url }).run();
+      } else {
+        window.alert("Nahrání obrázku selhalo.");
+      }
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
   const setLink = () => {
     const prev = editor.getAttributes("link").href as string | undefined;
     const url = window.prompt("Odkaz (URL):", prev ?? "https://");
@@ -149,6 +275,35 @@ function Toolbar({ editor }: { editor: Editor }) {
         <ListOrdered className="size-4" />
       </Btn>
       <Divider />
+      <Btn
+        onClick={() => editor.chain().focus().setTextAlign("left").run()}
+        active={editor.isActive({ textAlign: "left" })}
+        title="Zarovnat vlevo"
+      >
+        <AlignLeft className="size-4" />
+      </Btn>
+      <Btn
+        onClick={() => editor.chain().focus().setTextAlign("center").run()}
+        active={editor.isActive({ textAlign: "center" })}
+        title="Na střed"
+      >
+        <AlignCenter className="size-4" />
+      </Btn>
+      <Btn
+        onClick={() => editor.chain().focus().setTextAlign("right").run()}
+        active={editor.isActive({ textAlign: "right" })}
+        title="Zarovnat vpravo"
+      >
+        <AlignRight className="size-4" />
+      </Btn>
+      <Btn
+        onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+        active={editor.isActive({ textAlign: "justify" })}
+        title="Do bloku"
+      >
+        <AlignJustify className="size-4" />
+      </Btn>
+      <Divider />
       <Btn onClick={setLink} active={editor.isActive("link")} title="Odkaz">
         <Link2 className="size-4" />
       </Btn>
@@ -159,6 +314,24 @@ function Toolbar({ editor }: { editor: Editor }) {
       >
         <Link2Off className="size-4" />
       </Btn>
+      <Btn
+        onClick={() => fileRef.current?.click()}
+        disabled={uploading}
+        title="Vložit obrázek"
+      >
+        {uploading ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <ImagePlus className="size-4" />
+        )}
+      </Btn>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => addImage(e.target.files?.[0] ?? null)}
+      />
       <Divider />
       <Btn
         onClick={() => editor.chain().focus().undo().run()}

@@ -143,6 +143,12 @@ html[data-theme="logo-tepla"] {
   .rich-content > :last-child {
     margin-bottom: 0;
   }
+  /* Ukončí obtékání plovoucích obrázků, aby nezasahovaly do dalšího obsahu. */
+  .rich-content::after {
+    content: "";
+    display: block;
+    clear: both;
+  }
   .rich-content p {
     margin: 0.75rem 0;
   }
@@ -181,6 +187,12 @@ html[data-theme="logo-tepla"] {
   }
   .rich-content s {
     text-decoration: line-through;
+  }
+  .rich-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-lg);
+    margin: 1rem 0;
   }
   .rich-content blockquote {
     border-left: 3px solid var(--color-cream-dark);

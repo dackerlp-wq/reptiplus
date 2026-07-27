@@ -456,6 +456,29 @@ export async function uploadProductImagesAction(
   return { ok: true };
 }
 
+/** Nahraje obrázek pro WYSIWYG editor (popisy, stránky) a vrátí veřejnou URL. */
+export async function uploadEditorImageAction(
+  formData: FormData,
+): Promise<{ ok: boolean; url?: string; error?: string }> {
+  await assertAdmin();
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0)
+    return { ok: false, error: "NO_FILES" };
+  if (!file.type.startsWith("image/")) return { ok: false, error: "NOT_IMAGE" };
+  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "TOO_LARGE" };
+
+  const svc = createServiceClient();
+  const ext = (file.name.split(".").pop() || "webp").toLowerCase();
+  const path = `content/${crypto.randomUUID()}.${ext}`;
+  const { error: upErr } = await svc.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (upErr) return { ok: false, error: "UPLOAD" };
+
+  const { data: pub } = svc.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  return { ok: true, url: pub.publicUrl };
+}
+
 /** Nahraje obrázek varianty a vrátí veřejnou URL (bez zápisu do DB). */
 export async function uploadVariantImageAction(
   formData: FormData,
@@ -893,6 +916,18 @@ export async function saveLegalAction(fd: FormData) {
   const { error } = await svc
     .from("app_setting")
     .upsert({ key, value: content as never }, { onConflict: "key" });
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+/** Obsah stránky „O nás" (i18n, HTML z WYSIWYG). */
+export async function saveAboutAction(fd: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const content = i18n(fd, "content");
+  const { error } = await svc
+    .from("app_setting")
+    .upsert({ key: "content.about", value: content as never }, { onConflict: "key" });
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }

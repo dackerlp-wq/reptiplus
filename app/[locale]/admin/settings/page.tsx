@@ -17,6 +17,7 @@ import {
   savePaymentMethodAction,
   deletePaymentMethodAction,
   saveLegalAction,
+  saveAboutAction,
 } from "@/lib/admin/actions";
 
 type I18nText = { cs?: string; en?: string; de?: string };
@@ -47,6 +48,7 @@ export default async function AdminSettingsPage() {
   const ai = get("integrations.ai");
   const terms = get("legal.terms") as I18nText;
   const privacy = get("legal.privacy") as I18nText;
+  const about = get("content.about") as I18nText;
   const appearance = get("appearance.theme") as { theme?: string };
   const activeTheme = isThemeKey(appearance.theme)
     ? appearance.theme
@@ -60,7 +62,7 @@ export default async function AdminSettingsPage() {
       <h1 className="mb-6 font-display text-3xl font-bold">Nastavení</h1>
 
       <AdminTabs
-        tabs={["Vzhled", "Obchod", "Integrace", "Doprava", "Platby", "Právní"]}
+        tabs={["Vzhled", "Obchod", "Integrace", "Doprava", "Platby", "Právní", "O nás"]}
       >
         {/* ── Vzhled ─────────────────────────────────────────────── */}
         <div className="space-y-6">
@@ -407,6 +409,26 @@ export default async function AdminSettingsPage() {
               ]}
             />
             <button className={saveBtn}>Uložit GDPR</button>
+          </ToastForm>
+        </div>
+
+        {/* ── O nás ──────────────────────────────────────────────── */}
+        <div className="space-y-6">
+          <Hint>
+            Text stránky „O nás" (zobrazí se na /o-nas). Můžeš přidávat nadpisy,
+            odkazy i <strong>obrázky</strong> (ikona obrázku v liště editoru).
+            EN/DE doplníš tlačítkem AI překladu.
+          </Hint>
+          <ToastForm action={saveAboutAction} className={`${card} space-y-4`}>
+            <h2 className="font-display text-lg font-semibold">
+              Stránka „O nás"
+            </h2>
+            <LangFields
+              fields={[
+                { name: "content", label: "Obsah", type: "rich", values: about },
+              ]}
+            />
+            <button className={saveBtn}>Uložit stránku O nás</button>
           </ToastForm>
         </div>
       </AdminTabs>

@@ -64,6 +64,13 @@ export type LegalKey = "legal.terms" | "legal.privacy";
 export async function getLegalContent(
   key: LegalKey,
 ): Promise<Record<string, string>> {
+  return getContentI18n(key);
+}
+
+/** Obecné i18n textové nastavení z app_setting (např. content.about). */
+export async function getContentI18n(
+  key: string,
+): Promise<Record<string, string>> {
   const svc = createServiceClient();
   const { data } = await svc
     .from("app_setting")
