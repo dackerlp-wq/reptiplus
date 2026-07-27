@@ -17,8 +17,10 @@ export default async function AboutPage({
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-14">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo-mark.png" alt="Reptiplus" className="h-14 w-auto" />
+      <span className="inline-flex items-center gap-2 rounded-full bg-forest/10 px-3 py-1 text-sm font-semibold text-forest">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-mark.png" alt="" className="size-4" /> Reptiplus
+      </span>
 
       {content ? (
         <div
