@@ -11,10 +11,12 @@ export async function Footer() {
 
   return (
     <footer className="mt-20 border-t border-cream-dark bg-forest-deep text-cream">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 md:grid-cols-4">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:grid-cols-2 md:grid-cols-3">
         <div>
           <p className="font-display text-2xl font-bold text-white">Reptiplus</p>
-          <p className="mt-3 max-w-xs text-sm text-cream/70">{t("tagline")}</p>
+          <p className="mt-3 max-w-xs font-display text-base font-semibold italic leading-snug text-cream">
+            „{nav("slogan")}"
+          </p>
         </div>
 
         <div>
@@ -66,11 +68,6 @@ export async function Footer() {
           </ul>
         </div>
 
-        <div>
-          <p className="font-display text-lg font-semibold italic leading-snug text-white">
-            „{nav("slogan")}"
-          </p>
-        </div>
       </div>
 
       <div className="border-t border-white/10">

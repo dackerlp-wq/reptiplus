@@ -48,7 +48,7 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
 
   return (
     <nav
-      className="relative border-b border-cream-dark bg-paper"
+      className="relative border-b border-cream-dark bg-white shadow-sm"
       onMouseLeave={() => setActive(null)}
     >
       <div className="relative mx-auto flex max-w-7xl items-center px-4">
