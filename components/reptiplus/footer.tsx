@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { Mail, Phone } from "lucide-react";
+import { Mail, Phone, Info } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { getShopContact } from "@/lib/settings";
 
@@ -66,6 +66,14 @@ export async function Footer() {
                 </a>
               </li>
             )}
+            <li>
+              <Link
+                href="/o-nas"
+                className="flex items-center gap-2 hover:text-white"
+              >
+                <Info className="size-4" /> {nav("about")}
+              </Link>
+            </li>
           </ul>
         </div>
 
