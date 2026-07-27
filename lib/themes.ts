@@ -23,8 +23,8 @@ export const THEMES: readonly ThemeDef[] = [
   {
     key: "svetla",
     name: "Světlá & veselá",
-    description: "Svěží zelená, světlá vzdušná pozadí a teplé zlaté akcenty.",
-    swatch: { primary: "#4f8121", light: "#77ad2e", accent: "#e0982f", bg: "#fcfbf6" },
+    description: "Zelená z loga, světlá vzdušná pozadí a svěží zelená lišta.",
+    swatch: { primary: "#4f8121", light: "#77ad2e", accent: "#d99a2b", bg: "#eef7e2" },
   },
   {
     key: "les",

@@ -76,17 +76,24 @@ html[data-theme="logo-plus"] {
 /* Světlá & veselá – svěží zelená z loga, světlá vzdušná pozadí, teplé zlaté
    akcenty a světlejší horní lišta (méně tmavá, veselejší dojem). */
 html[data-theme="svetla"] {
+  /* Zelená z loga (#77ad2e) jako hlavní akcent; primární o něco tmavší kvůli
+     čitelnosti bílého textu na tlačítkách. */
   --color-forest: #4f8121;
   --color-forest-light: #77ad2e;
   --color-forest-dark: #3d6419;
-  --color-forest-deep: #3c6220;
-  --color-moss: #6a9a35;
-  --color-cream: #fcfbf6;
-  --color-cream-dark: #ece8dd;
-  --color-paper: #f1f7e8;
-  --color-gold: #e0982f;
-  --color-gold-light: #f2b756;
+  /* Svěží zelená horní lišta i footer (místo skoro černé → světlejší, veselejší). */
+  --color-forest-deep: #4a7d23;
+  --color-moss: #77ad2e;
+  /* Vzdušná světlá pozadí s jemným zeleným nádechem. */
+  --color-cream: #fbfdf7;
+  --color-cream-dark: #e7ecdd;
+  --color-paper: #eef7e2;
+  /* Teplý zlatý akcent — ladí se zelenou, dodává veselost. */
+  --color-gold: #d99a2b;
+  --color-gold-light: #f0bd57;
   --color-amber: #f2a93d;
+  /* Nadpisy — lehce zelenočerná pro sladění. */
+  --color-ink: #1b2413;
 }
 
 /* Logo teplá – zelená z loga s teplejšími krémy a zlatými akcenty. */
