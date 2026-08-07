@@ -19,7 +19,7 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 - [x] **6. SEO základ** — `sitemap.xml` (i18n hreflang), `robots.txt`, JSON-LD (Product/Offer/AggregateOffer/AggregateRating, BreadcrumbList, Organization, WebSite+SearchAction), canonical + hreflang alternates, meta descriptions, OG obrázky (produkt = jeho foto, jinak brandovaný default). Pozn.: na Vercelu nastavit `NEXT_PUBLIC_SITE_URL` na hlavní doménu.
 - [x] **7. Analytika** — GA4 / Sklik / Meta Pixel přes `<AnalyticsGate/>`, načítané jen po souhlasu (GA4=analytické, Sklik+Pixel=marketingové), reaguje na změnu souhlasu + SPA pageview. IDs se zadávají v adminu (Nastavení → Integrace → Analytika & marketing). Ověřeno: bez souhlasu se nenačte nic, po souhlasu se GA4 načte.
 - [x] **7b. E-commerce události + Consent Mode v2** — view_item, add_to_cart, begin_checkout, purchase (GA4 + Meta Pixel ekvivalenty), purchase s dedupe. Consent Mode v2 signály (analytics/ad_storage/ad_user_data/ad_personalization) dle kategorií souhlasu. Vše ověřeno v prohlížeči.
-- [ ] **8. XML feed** — Heureka / Zboží.cz / Google Merchant.
+- [x] **8. XML feed** — `/feed/heureka.xml`, `/feed/zbozi.xml`, `/feed/google.xml` (RSS+g:). Varianty jako samostatné položky s ITEMGROUP_ID/item_group_id, kategorie jako cesta, ceny CZK vč. DPH, dostupnost dle skladu, EAN/SKU když jsou. Cache 1 h. Ověřeno well-formed + obsah.
 - [ ] **9. Newsletter** — napojení Ecomail + jednorázová sleva 100 Kč za přihlášení + admin odběratelů.
 
 ## Fáze 4 — Sklad & dashboard
