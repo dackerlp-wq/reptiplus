@@ -16,7 +16,7 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 - [x] **5d. Štítky dopravce + hromadné podání zásilek** — hromadné vytvoření zásilek + sloučené PDF štítků pro vybrané objednávky.
 
 ## Fáze 3 — SEO & marketing
-- [ ] **6. SEO základ** — `sitemap.xml`, `robots.txt`, JSON-LD (Product/Offer/BreadcrumbList), meta description + OG obrázky.
+- [x] **6. SEO základ** — `sitemap.xml` (i18n hreflang), `robots.txt`, JSON-LD (Product/Offer/AggregateOffer/AggregateRating, BreadcrumbList, Organization, WebSite+SearchAction), canonical + hreflang alternates, meta descriptions, OG obrázky (produkt = jeho foto, jinak brandovaný default). Pozn.: na Vercelu nastavit `NEXT_PUBLIC_SITE_URL` na hlavní doménu.
 - [ ] **7. Analytika** — GA4 / Sklik / Meta Pixel, načítané jen se souhlasem cookies (napojit na `getConsent`).
 - [ ] **8. XML feed** — Heureka / Zboží.cz / Google Merchant.
 - [ ] **9. Newsletter** — napojení Ecomail + jednorázová sleva 100 Kč za přihlášení + admin odběratelů.

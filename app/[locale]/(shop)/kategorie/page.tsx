@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { getAllCategories } from "@/lib/queries";
 import { pickI18n } from "@/lib/i18n";
+import { localizedAlternates } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -12,7 +13,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Nav" });
-  return { title: t("categories") };
+  return {
+    title: t("categories"),
+    alternates: localizedAlternates(locale, "kategorie"),
+  };
 }
 
 export default async function CategoriesPage({

@@ -5,6 +5,7 @@ import { setRequestLocale } from "next-intl/server";
 import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { getActiveTheme } from "@/lib/settings";
+import { siteUrl } from "@/lib/seo";
 import "../globals.css";
 
 const fraunces = Fraunces({
@@ -24,12 +25,32 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
   title: {
     default: "Reptiplus — Teraristický obchod",
     template: "%s — Reptiplus",
   },
   description:
     "Specializovaný obchod s teraristickým vybavením pro chovatele plazů a exotických zvířat.",
+  applicationName: "Reptiplus",
+  openGraph: {
+    type: "website",
+    siteName: "Reptiplus",
+    title: "Reptiplus — Teraristický obchod",
+    description:
+      "Specializovaný obchod s teraristickým vybavením pro chovatele plazů a exotických zvířat.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Reptiplus — Teraristický obchod",
+    description:
+      "Specializovaný obchod s teraristickým vybavením pro chovatele plazů a exotických zvířat.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
 };
 
 export function generateStaticParams() {

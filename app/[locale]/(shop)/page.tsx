@@ -8,13 +8,24 @@ import {
   getSaleProducts,
 } from "@/lib/queries";
 import type { ProductListItem } from "@/lib/queries";
-import { getHeroStyle } from "@/lib/settings";
+import { getHeroStyle, getShopContact } from "@/lib/settings";
 import { formatPrice, pickI18n, priceForLocale } from "@/lib/i18n";
+import { absoluteUrl, localizedAlternates } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 import { ProductCard } from "@/components/reptiplus/product-card";
 import {
   HeroCarousel,
   type HeroSlide,
 } from "@/components/reptiplus/hero-carousel";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}) {
+  const { locale } = await params;
+  return { alternates: localizedAlternates(locale, "") };
+}
 
 export default async function HomePage({
   params,
@@ -28,12 +39,37 @@ export default async function HomePage({
   setRequestLocale(locale);
   const t = await getTranslations("Home");
 
-  const [featured, latest, sale, heroStyle] = await Promise.all([
+  const [featured, latest, sale, heroStyle, contact] = await Promise.all([
     getProducts({ featured: true }),
     getNewProducts(4),
     getSaleProducts(4),
     getHeroStyle(),
+    getShopContact(),
   ]);
+
+  const orgLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Reptiplus",
+    url: absoluteUrl(`/${locale}`),
+    logo: absoluteUrl("/logo-mark.png"),
+    ...(contact.email ? { email: contact.email } : {}),
+    ...(contact.phone ? { telephone: contact.phone } : {}),
+  };
+  const websiteLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Reptiplus",
+    url: absoluteUrl(`/${locale}`),
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: absoluteUrl(`/${locale}/produkty?q={search_term_string}`),
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
 
   const productGrid = (items: ProductListItem[]) => (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -60,6 +96,7 @@ export default async function HomePage({
 
   return (
     <>
+      <JsonLd data={[orgLd, websiteLd]} />
       {/* Carousel */}
       <HeroCarousel slides={slides} ctaLabel={t("heroCta")} variant={heroStyle} />
 

@@ -24,6 +24,11 @@ import {
   pickI18n,
   priceForLocale,
 } from "@/lib/i18n";
+import { absoluteUrl, localizedAlternates } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
+
+const plain = (html: string) =>
+  html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
 export async function generateMetadata({
   params,
@@ -34,12 +39,27 @@ export async function generateMetadata({
   const product = await getProductBySlug(slug);
   if (!product) return {};
   const name = pickI18n(product.name_i18n, locale, product.name);
-  const description = pickI18n(
-    product.short_description_i18n,
-    locale,
-    product.short_description,
-  );
-  return { title: name, description };
+  const description = plain(
+    pickI18n(product.short_description_i18n, locale, product.short_description) ||
+      pickI18n(product.description_i18n, locale, product.description),
+  ).slice(0, 300);
+  const images = product.images.slice(0, 4).map((i) => i.url);
+  const alternates = localizedAlternates(locale, `produkt/${slug}`);
+  return {
+    title: name,
+    description,
+    alternates,
+    openGraph: {
+      type: "website",
+      title: name,
+      description,
+      url: alternates.canonical,
+      ...(images.length ? { images } : {}),
+    },
+    ...(images.length
+      ? { twitter: { card: "summary_large_image", images } }
+      : {}),
+  };
 }
 
 export default async function ProductPage({
@@ -130,8 +150,87 @@ export default async function ProductPage({
     : "";
   const brandLogo = product.brand?.logo_url ?? null;
 
+  // ── Structured data (schema.org) ───────────────────────────────────
+  const currency = localeCurrency[locale];
+  const canonical = absoluteUrl(`/${locale}/produkt/${slug}`);
+  const inStock =
+    product.stock_qty > 0 || product.variants.some((v) => v.stock_qty > 0);
+  const availability = inStock
+    ? "https://schema.org/InStock"
+    : "https://schema.org/OutOfStock";
+  const ldImages = product.images.map((i) => i.url);
+  const offer =
+    buyVariants.length > 0
+      ? {
+          "@type": "AggregateOffer",
+          priceCurrency: currency,
+          lowPrice: (
+            Math.min(...buyVariants.map((v) => v.price)) / 100
+          ).toFixed(2),
+          highPrice: (
+            Math.max(...buyVariants.map((v) => v.price)) / 100
+          ).toFixed(2),
+          offerCount: buyVariants.length,
+          availability,
+          url: canonical,
+        }
+      : {
+          "@type": "Offer",
+          priceCurrency: currency,
+          price: (priceMinor / 100).toFixed(2),
+          availability,
+          itemCondition: "https://schema.org/NewCondition",
+          url: canonical,
+        };
+  const ldDesc = plain(description).slice(0, 500);
+  const productLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name,
+    ...(ldDesc ? { description: ldDesc } : {}),
+    ...(ldImages.length ? { image: ldImages } : {}),
+    ...(product.sku ? { sku: product.sku } : {}),
+    ...(brandName ? { brand: { "@type": "Brand", name: brandName } } : {}),
+    offers: offer,
+    ...(reviewsData.count > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: reviewsData.average.toFixed(1),
+            reviewCount: reviewsData.count,
+          },
+        }
+      : {}),
+  };
+  const catalogName =
+    { cs: "Produkty", en: "Products", de: "Produkte" }[locale] ?? "Produkty";
+  const crumbs = [
+    { name: "Reptiplus", item: absoluteUrl(`/${locale}`) },
+    { name: catalogName, item: absoluteUrl(`/${locale}/produkty`) },
+    ...(product.category
+      ? [
+          {
+            name: pickI18n(product.category.name_i18n, locale),
+            item: absoluteUrl(`/${locale}/kategorie/${product.category.slug}`),
+          },
+        ]
+      : []),
+    { name, item: canonical },
+  ];
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: c.name,
+      item: c.item,
+    })),
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
+      <JsonLd data={[productLd, breadcrumbLd]} />
       <Link
         href="/produkty"
         className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-gray-soft transition-colors hover:text-forest"

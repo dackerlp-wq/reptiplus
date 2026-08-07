@@ -7,6 +7,7 @@ import {
   getCatalog,
   getPriceRange,
 } from "@/lib/queries";
+import { localizedAlternates } from "@/lib/seo";
 import { ProductCard } from "@/components/reptiplus/product-card";
 import { CatalogFilters } from "@/components/reptiplus/catalog-filters";
 import { ActiveFilters } from "@/components/reptiplus/active-filters";
@@ -18,7 +19,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Catalog" });
-  return { title: t("title") };
+  return { title: t("title"), alternates: localizedAlternates(locale, "produkty") };
 }
 
 const first = (v: string | string[] | undefined) =>

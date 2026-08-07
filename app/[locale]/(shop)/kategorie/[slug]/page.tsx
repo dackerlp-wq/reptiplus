@@ -12,9 +12,14 @@ import {
   getPriceRange,
 } from "@/lib/queries";
 import { pickI18n } from "@/lib/i18n";
+import { absoluteUrl, localizedAlternates } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 import { ProductCard } from "@/components/reptiplus/product-card";
 import { CatalogFilters } from "@/components/reptiplus/catalog-filters";
 import { ActiveFilters } from "@/components/reptiplus/active-filters";
+
+const plainText = (html: string) =>
+  html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
 const first = (v: string | string[] | undefined) =>
   Array.isArray(v) ? v[0] : v;
@@ -44,7 +49,22 @@ export async function generateMetadata({
   const { locale, slug } = await params;
   const category = await getCategoryBySlug(slug);
   if (!category) return {};
-  return { title: pickI18n(category.name_i18n, locale, category.name) };
+  const title = pickI18n(category.name_i18n, locale, category.name);
+  const description =
+    plainText(pickI18n(category.description_i18n, locale, "")).slice(0, 300) ||
+    undefined;
+  const alternates = localizedAlternates(locale, `kategorie/${slug}`);
+  return {
+    title,
+    description,
+    alternates,
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: alternates.canonical,
+    },
+  };
 }
 
 export default async function CategoryPage({
@@ -87,8 +107,24 @@ export default async function CategoryPage({
   const description = pickI18n(category.description_i18n, locale, "");
   const subcategories = allCategories.filter((c) => c.parent_id === category.id);
 
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { name: "Reptiplus", item: absoluteUrl(`/${locale}`) },
+      { name: nav("categories"), item: absoluteUrl(`/${locale}/kategorie`) },
+      { name, item: absoluteUrl(`/${locale}/kategorie/${slug}`) },
+    ].map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: c.name,
+      item: c.item,
+    })),
+  };
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-10">
+      <JsonLd data={breadcrumbLd} />
       {/* Breadcrumb */}
       <nav className="mb-6 flex items-center gap-1.5 text-sm text-gray-soft">
         <Link href="/kategorie" className="hover:text-forest">
