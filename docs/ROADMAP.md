@@ -5,7 +5,7 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 
 ## Fáze 1 — Administrace (základ provozu)
 - [x] **1. Slevové kódy — admin CRUD** — hotovo: sekce /admin/discounts (seznam, vytvořit/upravit, %/pevná, platnost, limit, min. objednávka, aktivace/deaktivace, smazání).
-- [ ] **2. Faktury / daňový doklad** — generování PDF a odeslání (ideálně napojení Fakturoid/iDoklad).
+- [x] **2. Faktury / daňový doklad** — tisknutelný doklad (/faktura/[id], admin-only) → Tisk/Uložit PDF; identifikace dodavatele, odběratel, položky, DPH (pokud plátce). TODO později: automatická PDF příloha do e-mailu + doklad pro zákazníka v účtu.
 - [ ] **3. Zákazníci — admin** — seznam + hledání, detail (objednávky, útrata, role), export.
 
 ## Fáze 2 — Objednávky & pokladna (konverze)

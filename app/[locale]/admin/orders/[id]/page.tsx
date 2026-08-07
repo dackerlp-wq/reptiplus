@@ -1,4 +1,4 @@
-import { ArrowLeft, Printer, Truck, ExternalLink } from "lucide-react";
+import { ArrowLeft, Printer, Truck, ExternalLink, FileText } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -77,9 +77,9 @@ function Address({ title, a }: { title: string; a: Addr }) {
 export default async function OrderDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; locale: string }>;
 }) {
-  const { id } = await params;
+  const { id, locale } = await params;
   const svc = createServiceClient();
   const { data: order } = await svc
     .from("order")
@@ -108,10 +108,22 @@ export default async function OrderDetailPage({
       >
         <ArrowLeft className="size-4" /> Objednávky
       </Link>
-      <h1 className="mb-1 font-display text-3xl font-bold">
-        Objednávka {order.number}
-      </h1>
-      <p className="mb-8 text-sm text-gray-soft">{order.email}</p>
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="mb-1 font-display text-3xl font-bold">
+            Objednávka {order.number}
+          </h1>
+          <p className="text-sm text-gray-soft">{order.email}</p>
+        </div>
+        <a
+          href={`/${locale}/faktura/${order.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-lg border border-forest px-4 py-2 text-sm font-semibold text-forest transition-colors hover:bg-forest hover:text-white"
+        >
+          <FileText className="size-4" /> Faktura / doklad
+        </a>
+      </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
         {/* Položky + adresy */}

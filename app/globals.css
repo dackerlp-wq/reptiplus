@@ -133,6 +133,20 @@ html[data-theme="logo-tepla"] {
 }
 
 /* Formátovaný obsah z WYSIWYG editoru (popisy, právní stránky) */
+/* Tisk dokladu — skrýt ovládací prvky, bílé pozadí. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  .invoice {
+    max-width: none;
+    padding: 0;
+  }
+}
+
 @layer components {
   .rich-content {
     line-height: 1.7;
