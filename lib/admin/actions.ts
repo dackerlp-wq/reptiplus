@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCnbEurRate } from "@/lib/exchange-rate";
 import { sendOrderStatusEmail } from "@/lib/orders/notify";
 import { refundComgatePayment } from "@/lib/comgate/client";
+import { pickI18n } from "@/lib/i18n";
 import { DEFAULT_THEME, isThemeKey } from "@/lib/themes";
 
 async function assertAdmin() {
@@ -811,6 +812,123 @@ export async function setOrderPaymentAction(id: string, payment: string) {
     .update({ payment_status: payment as never })
     .eq("id", id);
   if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+export type OrderProductOption = {
+  productId: string;
+  variantId: string | null;
+  name: string;
+  sku: string | null;
+  unitPrice: number;
+  stock: number;
+};
+
+type VariantLite = {
+  id: string;
+  name_i18n: unknown;
+  sku: string | null;
+  price_czk: number | null;
+  price_eur: number | null;
+  stock_qty: number;
+};
+
+/** Vyhledá produkty/varianty pro ruční přidání do objednávky (admin). */
+export async function searchProductsForOrderAction(
+  query: string,
+  currency: string,
+): Promise<OrderProductOption[]> {
+  await assertAdmin();
+  // Očisti dotaz od znaků, které rozbíjejí PostgREST `or` filtr.
+  const q = query.replace(/[,()*%]/g, "").trim();
+  if (q.length < 2) return [];
+
+  const svc = createServiceClient();
+  const { data } = await svc
+    .from("product")
+    .select(
+      "id, name_i18n, sku, price_czk, price_eur, stock_qty, product_variant(id, name_i18n, sku, price_czk, price_eur, stock_qty)",
+    )
+    .eq("is_published", true)
+    .or(`name_i18n->>cs.ilike.*${q}*,sku.ilike.*${q}*`)
+    .limit(25);
+
+  const eur = currency !== "CZK";
+  const price = (czk: number | null, e: number | null) =>
+    (eur ? (e ?? czk) : czk) ?? 0;
+
+  const out: OrderProductOption[] = [];
+  for (const p of data ?? []) {
+    const variants = (p.product_variant as VariantLite[] | null) ?? [];
+    const baseName = pickI18n(p.name_i18n as never, "cs") || p.sku || "Produkt";
+    if (variants.length > 0) {
+      for (const v of variants) {
+        const vName = pickI18n(v.name_i18n as never, "cs");
+        out.push({
+          productId: p.id,
+          variantId: v.id,
+          name: vName ? `${baseName} — ${vName}` : baseName,
+          sku: v.sku ?? p.sku,
+          unitPrice: price(v.price_czk ?? p.price_czk, v.price_eur ?? p.price_eur),
+          stock: v.stock_qty,
+        });
+      }
+    } else {
+      out.push({
+        productId: p.id,
+        variantId: null,
+        name: baseName,
+        sku: p.sku,
+        unitPrice: price(p.price_czk, p.price_eur),
+        stock: p.stock_qty,
+      });
+    }
+  }
+  return out;
+}
+
+type EditItem = {
+  product_id: string;
+  variant_id: string | null;
+  name: string;
+  sku: string | null;
+  unit_price: number;
+  qty: number;
+};
+
+/** Uloží upravené položky objednávky (atomicky přes RPC, s korekcí skladu). */
+export async function editOrderItemsAction(fd: FormData) {
+  await assertAdmin();
+  const id = str(fd, "id");
+  if (!id) throw new Error("Chybí objednávka.");
+
+  let items: EditItem[];
+  try {
+    items = JSON.parse(str(fd, "items")) as EditItem[];
+  } catch {
+    throw new Error("Neplatná data položek.");
+  }
+  if (!Array.isArray(items) || items.length === 0)
+    throw new Error("Objednávka musí mít alespoň jednu položku.");
+
+  for (const it of items) {
+    if (!it.product_id) throw new Error("Položka bez produktu.");
+    if (!Number.isInteger(it.qty) || it.qty <= 0)
+      throw new Error("Neplatné množství.");
+    if (!Number.isInteger(it.unit_price) || it.unit_price < 0)
+      throw new Error("Neplatná cena.");
+  }
+
+  const svc = createServiceClient();
+  const { error } = await svc.rpc("admin_edit_order_items", {
+    p_order_id: id,
+    p_items: items as never,
+  });
+  if (error) {
+    if (error.message?.includes("INSUFFICIENT_STOCK"))
+      throw new Error("Nedostatek skladu u některé položky.");
+    throw new Error(error.message);
+  }
   revalidatePath("/", "layout");
 }
 

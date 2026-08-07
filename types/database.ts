@@ -1004,6 +1004,10 @@ export type Database = {
         Args: { payload: Json }
         Returns: string
       }
+      admin_edit_order_items: {
+        Args: { p_order_id: string; p_items: Json }
+        Returns: undefined
+      }
       cleanup_abandoned_carts: {
         Args: { p_days?: number }
         Returns: number

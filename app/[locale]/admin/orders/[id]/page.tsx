@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin/shipping-actions";
 import { carrierForOrder } from "@/lib/shipping";
 import { ToastForm } from "@/components/admin/toast";
+import { OrderItemsEditor } from "@/components/admin/order-items-editor";
 
 const input =
   "w-full rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm outline-none focus:border-forest";
@@ -90,12 +91,22 @@ export default async function OrderDetailPage({
 
   const items = (order.order_item ?? []) as {
     id: string;
+    product_id: string | null;
+    variant_id: string | null;
     name: string;
     sku: string | null;
     unit_price: number;
     qty: number;
     line_total: number;
   }[];
+  const editableItems = items.map((it) => ({
+    product_id: it.product_id ?? "",
+    variant_id: it.variant_id,
+    name: it.name,
+    sku: it.sku,
+    unit_price: it.unit_price,
+    qty: it.qty,
+  }));
 
   const carrier = await carrierForOrder(order.shipping_method);
   const payBadge = PAY_BADGE[order.payment_status] ?? PAY_BADGE.pending;
@@ -131,35 +142,14 @@ export default async function OrderDetailPage({
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
         {/* Položky + adresy */}
         <div className="space-y-8">
+          <OrderItemsEditor
+            orderId={order.id}
+            currency={order.currency}
+            initialItems={editableItems}
+          />
+
           <div className="overflow-hidden rounded-xl border border-cream-dark bg-white">
-            <table className="w-full text-sm">
-              <thead className="border-b border-cream-dark text-left text-xs uppercase tracking-wide text-gray-soft">
-                <tr>
-                  <th className="px-4 py-3">Produkt</th>
-                  <th className="px-4 py-3">Ks</th>
-                  <th className="px-4 py-3 text-right">Cena</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((it) => (
-                  <tr key={it.id} className="border-b border-cream last:border-0">
-                    <td className="px-4 py-3">
-                      {it.name}
-                      {it.sku && (
-                        <span className="ml-2 font-mono text-xs text-gray-soft">
-                          {it.sku}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 font-mono">{it.qty}</td>
-                    <td className="px-4 py-3 text-right font-mono">
-                      {money(it.line_total, order.currency)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="space-y-1 border-t border-cream-dark px-4 py-3 text-sm">
+            <div className="space-y-1 px-4 py-3 text-sm">
               <div className="flex justify-between text-gray-soft">
                 <span>Doprava</span>
                 <span className="font-mono">
