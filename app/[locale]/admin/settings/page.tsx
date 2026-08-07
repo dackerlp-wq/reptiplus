@@ -544,6 +544,10 @@ function ShippingCard({ m }: { m?: any }) {
             Aktivní
           </label>
         </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="pickup_point" defaultChecked={m?.pickup_point ?? false} className="size-4 accent-forest" />
+          Výdejní místo (spustí Zásilkovna widget v pokladně)
+        </label>
         <button className={saveBtn}>{m ? "Uložit" : "Přidat"}</button>
       </ToastForm>
     </MethodShell>

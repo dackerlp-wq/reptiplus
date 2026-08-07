@@ -159,6 +159,9 @@
     "placeOrder": "Place order",
     "placing": "Placing…",
     "terms": "By placing the order you agree to the terms and conditions.",
+    "pickupSelect": "Select a pickup point",
+    "pickupChange": "Change pickup point",
+    "pickupRequired": "Please select a pickup point.",
     "errors": {
       "EMAIL": "Please enter a valid email.",
       "ADDRESS": "Please fill in the full shipping address.",
@@ -168,6 +171,7 @@
       "EMPTY": "Your cart is empty.",
       "STOCK": "Some item is no longer in stock in the requested quantity.",
       "DISCOUNT": "The discount code is no longer valid, please remove it.",
+      "PICKUP": "Please select a pickup point.",
       "SERVER": "We couldn't complete the order. Please try again."
     },
     "discountErrors": {

@@ -75,6 +75,15 @@ export async function getLegalContent(
   return getContentI18n(key);
 }
 
+/** Veřejný API klíč Zásilkovny (Packeta) pro widget výdejních míst. */
+export async function getPacketaApiKey(): Promise<string> {
+  const v = (await getContentI18n("integrations.zasilkovna")) as Record<
+    string,
+    string
+  >;
+  return v.apiKey ?? "";
+}
+
 /** Obecné i18n textové nastavení z app_setting (např. content.about). */
 export async function getContentI18n(
   key: string,

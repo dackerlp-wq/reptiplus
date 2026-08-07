@@ -5,6 +5,7 @@ import type { Locale } from "@/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
 import { getCart } from "@/lib/cart/cart";
 import { getShippingMethods, getPaymentMethods } from "@/lib/queries";
+import { getPacketaApiKey } from "@/lib/settings";
 import { localeCurrency, pickI18n } from "@/lib/i18n";
 import { CheckoutForm } from "@/components/reptiplus/checkout-form";
 
@@ -31,9 +32,10 @@ export default async function CheckoutPage({
   // Prázdný košík → zpět do košíku (nedává smysl objednávat nic)
   if (cart.lines.length === 0) redirect(`/${locale}/kosik`);
 
-  const [shipping, payment, supabase] = await Promise.all([
+  const [shipping, payment, packetaApiKey, supabase] = await Promise.all([
     getShippingMethods(),
     getPaymentMethods(),
+    getPacketaApiKey(),
     createClient(),
   ]);
   const {
@@ -45,6 +47,7 @@ export default async function CheckoutPage({
     code: m.code,
     name: pickI18n(m.name_i18n, locale),
     fee: (currency === "CZK" ? m.price_czk : m.price_eur) ?? 0,
+    pickup: m.pickup_point,
   }));
   const paymentOptions = payment.map((m) => ({
     code: m.code,
@@ -61,6 +64,7 @@ export default async function CheckoutPage({
         shippingOptions={shippingOptions}
         paymentOptions={paymentOptions}
         defaultEmail={user?.email ?? ""}
+        packetaApiKey={packetaApiKey}
       />
     </section>
   );

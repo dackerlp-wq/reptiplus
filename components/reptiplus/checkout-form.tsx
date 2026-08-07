@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Loader2, Tag, Check } from "lucide-react";
+import { Loader2, Tag, Check, MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { formatPrice } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
@@ -12,7 +12,58 @@ import {
   type OrderState,
 } from "@/lib/checkout/actions";
 
-type Option = { code: string; name: string; fee: number };
+type Option = { code: string; name: string; fee: number; pickup?: boolean };
+
+type PickupPoint = { id: string; name: string; address: string };
+
+/** URL Packeta widgetu v6 (výdejní místa Zásilkovny). */
+const PACKETA_WIDGET_URL = "https://widget.packeta.com/v6/www/js/library.js";
+
+type PacketaPoint = {
+  id: number | string;
+  name?: string;
+  place?: string;
+  street?: string;
+  city?: string;
+  zip?: string;
+  formatedValue?: string;
+};
+
+declare global {
+  interface Window {
+    Packeta?: {
+      Widget: {
+        pick: (
+          apiKey: string,
+          callback: (point: PacketaPoint | null) => void,
+          opts?: Record<string, unknown>,
+        ) => void;
+      };
+    };
+  }
+}
+
+/** Načte Packeta widget skript (jen jednou) a vyřeší se, až je připraven. */
+function loadPacketaWidget(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") return reject();
+    if (window.Packeta?.Widget) return resolve();
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${PACKETA_WIDGET_URL}"]`,
+    );
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject());
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = PACKETA_WIDGET_URL;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject();
+    document.head.appendChild(s);
+  });
+}
 
 const input =
   "w-full rounded-lg border border-cream-dark bg-white px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-forest";
@@ -25,12 +76,14 @@ export function CheckoutForm({
   shippingOptions,
   paymentOptions,
   defaultEmail,
+  packetaApiKey,
 }: {
   locale: Locale;
   subtotal: number;
   shippingOptions: Option[];
   paymentOptions: Option[];
   defaultEmail: string;
+  packetaApiKey: string;
 }) {
   const t = useTranslations("Checkout");
 
@@ -38,6 +91,41 @@ export function CheckoutForm({
   const [payment, setPayment] = useState(paymentOptions[0]?.code ?? "");
   const [billingSame, setBillingSame] = useState(true);
   const [code, setCode] = useState("");
+  const [pickupPoint, setPickupPoint] = useState<PickupPoint | null>(null);
+  const [pickupOpening, setPickupOpening] = useState(false);
+
+  const selectedShipping = shippingOptions.find((o) => o.code === shipping);
+  const needsPickup = selectedShipping?.pickup === true;
+
+  const openPacketaWidget = async () => {
+    if (!packetaApiKey) return;
+    setPickupOpening(true);
+    try {
+      await loadPacketaWidget();
+      window.Packeta?.Widget.pick(
+        packetaApiKey,
+        (point) => {
+          if (point) {
+            const address =
+              point.formatedValue ??
+              [point.street, point.zip, point.city]
+                .filter(Boolean)
+                .join(", ");
+            setPickupPoint({
+              id: String(point.id),
+              name: point.name ?? point.place ?? `#${point.id}`,
+              address,
+            });
+          }
+        },
+        { language: locale, country: "cz,sk" },
+      );
+    } catch {
+      /* skript se nenačetl — tlačítko zůstane k dispozici pro další pokus */
+    } finally {
+      setPickupOpening(false);
+    }
+  };
 
   const [discountState, applyDiscount, discountPending] = useActionState<
     DiscountState,
@@ -116,11 +204,64 @@ export function CheckoutForm({
               key={o.code}
               name="ship"
               checked={shipping === o.code}
-              onSelect={() => setShipping(o.code)}
+              onSelect={() => {
+                setShipping(o.code);
+                if (!o.pickup) setPickupPoint(null);
+              }}
               title={o.name}
               price={feeLabel(o.fee)}
             />
           ))}
+
+          {/* Výběr výdejního místa (Zásilkovna) */}
+          {needsPickup && (
+            <div className="rounded-lg border border-forest/30 bg-forest/5 p-4">
+              {pickupPoint ? (
+                <div className="flex items-start gap-3">
+                  <MapPin className="mt-0.5 size-5 shrink-0 text-forest" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-ink">{pickupPoint.name}</p>
+                    {pickupPoint.address && (
+                      <p className="text-xs text-gray-soft">{pickupPoint.address}</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={openPacketaWidget}
+                      className="mt-1.5 text-xs font-semibold text-forest underline underline-offset-2 hover:text-forest-light"
+                    >
+                      {t("pickupChange")}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={openPacketaWidget}
+                  disabled={pickupOpening || !packetaApiKey}
+                  className="flex items-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-forest-light disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {pickupOpening ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <MapPin className="size-4" />
+                  )}
+                  {t("pickupSelect")}
+                </button>
+              )}
+            </div>
+          )}
+
+          {needsPickup && pickupPoint && (
+            <>
+              <input type="hidden" name="pickup_point_id" value={pickupPoint.id} />
+              <input type="hidden" name="pickup_point_name" value={pickupPoint.name} />
+              <input
+                type="hidden"
+                name="pickup_point_address"
+                value={pickupPoint.address}
+              />
+            </>
+          )}
         </section>
 
         {/* Platba */}
@@ -212,7 +353,7 @@ export function CheckoutForm({
         <button
           type="submit"
           form="checkout-form"
-          disabled={orderPending}
+          disabled={orderPending || (needsPickup && !pickupPoint)}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-forest px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-forest-light disabled:cursor-not-allowed disabled:opacity-50"
         >
           {orderPending ? (
@@ -223,6 +364,9 @@ export function CheckoutForm({
             t("placeOrder")
           )}
         </button>
+        {needsPickup && !pickupPoint && (
+          <p className="text-center text-xs text-error">{t("pickupRequired")}</p>
+        )}
         <p className="text-center text-xs text-gray-soft">{t("terms")}</p>
       </aside>
     </div>

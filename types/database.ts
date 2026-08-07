@@ -918,6 +918,7 @@ export type Database = {
           name_i18n: Json
           price_czk: number
           price_eur: number | null
+          pickup_point: boolean
           sort_order: number
         }
         Insert: {
@@ -929,6 +930,7 @@ export type Database = {
           name_i18n?: Json
           price_czk?: number
           price_eur?: number | null
+          pickup_point?: boolean
           sort_order?: number
         }
         Update: {
@@ -940,6 +942,7 @@ export type Database = {
           name_i18n?: Json
           price_czk?: number
           price_eur?: number | null
+          pickup_point?: boolean
           sort_order?: number
         }
         Relationships: []

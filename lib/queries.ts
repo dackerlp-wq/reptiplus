@@ -300,6 +300,7 @@ export type ShippingMethodItem = {
   carrier: string;
   price_czk: number;
   price_eur: number | null;
+  pickup_point: boolean;
 };
 
 export type PaymentMethodItem = {
@@ -316,7 +317,7 @@ export async function getShippingMethods(): Promise<ShippingMethodItem[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("shipping_method")
-    .select("id,code,name_i18n,carrier,price_czk,price_eur,sort_order")
+    .select("id,code,name_i18n,carrier,price_czk,price_eur,pickup_point,sort_order")
     .eq("is_active", true)
     .order("sort_order");
   return (data ?? []) as unknown as ShippingMethodItem[];

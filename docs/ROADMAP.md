@@ -9,7 +9,7 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 - [x] **3. Zákazníci — admin** — hotovo: /admin/customers (seznam, hledání, řazení, počet objednávek + útrata), detail (objednávky, adresy, kontakt, změna role). TODO později: export CSV.
 
 ## Fáze 2 — Objednávky & pokladna (konverze)
-- [ ] **4. Výdejní místa v pokladně** — widget Zásilkovna/PPL pobočka.
+- [x] **4. Výdejní místa v pokladně** — widget Zásilkovna (Packeta) v pokladně; metoda dopravy s příznakem „výdejní místo“ v adminu spustí widget, výběr se uloží do objednávky.
 - [ ] **5a. Refundace / dobropis** — vrácení peněz přes Comgate (částečné i plné).
 - [ ] **5b. Ruční vytvoření objednávky** z adminu (telefonická/na prodejně).
 - [ ] **5c. Editace položek objednávky** po vytvoření.

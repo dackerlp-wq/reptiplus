@@ -159,6 +159,9 @@
     "placeOrder": "Závazně objednat",
     "placing": "Odesílám…",
     "terms": "Odesláním objednávky souhlasíte s obchodními podmínkami.",
+    "pickupSelect": "Vybrat výdejní místo",
+    "pickupChange": "Změnit výdejní místo",
+    "pickupRequired": "Vyberte prosím výdejní místo.",
     "errors": {
       "EMAIL": "Zadejte platný e-mail.",
       "ADDRESS": "Vyplňte prosím celou dodací adresu.",
@@ -168,6 +171,7 @@
       "EMPTY": "Váš košík je prázdný.",
       "STOCK": "Některá položka již není skladem v požadovaném množství.",
       "DISCOUNT": "Slevový kód už není platný, odeberte ho prosím.",
+      "PICKUP": "Vyberte prosím výdejní místo.",
       "SERVER": "Objednávku se nepodařilo dokončit. Zkuste to prosím znovu."
     },
     "discountErrors": {

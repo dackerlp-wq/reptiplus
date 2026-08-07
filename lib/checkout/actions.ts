@@ -144,13 +144,26 @@ export async function createOrderAction(
 
   const { data: shipRow } = await svc
     .from("shipping_method")
-    .select(`code, ${priceCol}`)
+    .select(`code, pickup_point, ${priceCol}`)
     .eq("code", shippingCode)
     .eq("is_active", true)
     .maybeSingle();
   if (!shipRow) return { error: "SHIPPING" };
   const shippingFee =
     (shipRow as unknown as Record<string, number | null>)[priceCol] ?? 0;
+
+  // Výdejní místo (Zásilkovna) — povinné, pokud metoda vyžaduje pickup.
+  const requiresPickup =
+    (shipRow as unknown as { pickup_point?: boolean }).pickup_point === true;
+  const pickupId = s(fd, "pickup_point_id");
+  if (requiresPickup && !pickupId) return { error: "PICKUP" };
+  if (requiresPickup) {
+    Object.assign(ship, {
+      pickup_point_id: pickupId,
+      pickup_point_name: s(fd, "pickup_point_name"),
+      pickup_point_address: s(fd, "pickup_point_address"),
+    });
+  }
 
   const { data: payRow } = await svc
     .from("payment_method")

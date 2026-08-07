@@ -11,12 +11,12 @@ const CSP = [
   "frame-ancestors 'none'",
   "form-action 'self' https://*.comgate.cz",
   // Next.js App Router používá inline skripty (hydratace) → 'unsafe-inline'.
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.packeta.com https://*.packetery.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
-  "frame-src 'self' https://*.comgate.cz",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.packeta.com https://*.packetery.com",
+  "frame-src 'self' https://*.comgate.cz https://*.packeta.com https://*.packetery.com",
 ].join("; ");
 
 const securityHeaders = [

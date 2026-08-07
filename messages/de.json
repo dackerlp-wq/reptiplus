@@ -159,6 +159,9 @@
     "placeOrder": "Zahlungspflichtig bestellen",
     "placing": "Wird gesendet…",
     "terms": "Mit der Bestellung stimmen Sie den AGB zu.",
+    "pickupSelect": "Abholstelle wählen",
+    "pickupChange": "Abholstelle ändern",
+    "pickupRequired": "Bitte wählen Sie eine Abholstelle.",
     "errors": {
       "EMAIL": "Bitte geben Sie eine gültige E-Mail an.",
       "ADDRESS": "Bitte füllen Sie die vollständige Lieferadresse aus.",
@@ -168,6 +171,7 @@
       "EMPTY": "Ihr Warenkorb ist leer.",
       "STOCK": "Ein Artikel ist nicht mehr in der gewünschten Menge verfügbar.",
       "DISCOUNT": "Der Rabattcode ist nicht mehr gültig, bitte entfernen Sie ihn.",
+      "PICKUP": "Bitte wählen Sie eine Abholstelle.",
       "SERVER": "Die Bestellung konnte nicht abgeschlossen werden. Bitte erneut versuchen."
     },
     "discountErrors": {

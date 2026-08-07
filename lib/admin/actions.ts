@@ -1067,6 +1067,7 @@ export async function saveShippingMethodAction(fd: FormData) {
     price_czk: money(fd, "price_czk") ?? 0,
     price_eur: money(fd, "price_eur"),
     is_active: fd.get("is_active") === "on",
+    pickup_point: fd.get("pickup_point") === "on",
     sort_order: parseInt(str(fd, "sort_order") || "0", 10),
   };
   const { error } = id
