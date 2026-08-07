@@ -112,6 +112,56 @@ export async function createComgatePayment(
   return { transId, redirect };
 }
 
+export type RefundResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+/**
+ * Vrátí (refunduje) část nebo celou částku platby přes Comgate /refund.
+ * `amount` je v minor units (haléře / eurocenty). `curr` musí odpovídat platbě.
+ */
+export async function refundComgatePayment(
+  transId: string,
+  amount: number,
+  curr: string,
+): Promise<RefundResult> {
+  const cfg = await getComgateConfig();
+  if (!cfg) return { ok: false, error: "Comgate není nakonfigurován." };
+  if (!transId) return { ok: false, error: "Chybí Comgate reference platby." };
+  if (!Number.isInteger(amount) || amount <= 0)
+    return { ok: false, error: "Neplatná částka refundace." };
+
+  const body = new URLSearchParams({
+    merchant: cfg.merchant,
+    secret: cfg.secret,
+    transId,
+    amount: String(amount),
+    curr,
+  });
+  if (cfg.test) body.set("test", "true");
+
+  let text = "";
+  try {
+    const res = await fetch(`${BASE}/refund`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      cache: "no-store",
+    });
+    text = await res.text();
+  } catch {
+    return { ok: false, error: "Comgate je nedostupný." };
+  }
+  const p = new URLSearchParams(text);
+  if (p.get("code") !== "0") {
+    return {
+      ok: false,
+      error: `Comgate refund selhal: code=${p.get("code")} ${p.get("message") ?? ""}`.trim(),
+    };
+  }
+  return { ok: true };
+}
+
 /** Ověří skutečný stav platby přes /status. Vrací PAID|CANCELLED|PENDING|AUTHORIZED nebo null. */
 export async function getComgateStatus(transId: string): Promise<string | null> {
   const cfg = await getComgateConfig();

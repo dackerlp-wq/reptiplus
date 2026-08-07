@@ -2,7 +2,7 @@ import { ArrowLeft, Printer, Truck, ExternalLink, FileText } from "lucide-react"
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
-import { updateOrderAction } from "@/lib/admin/actions";
+import { updateOrderAction, refundOrderAction } from "@/lib/admin/actions";
 import {
   createShipmentAction,
   resetShipmentAction,
@@ -99,6 +99,9 @@ export default async function OrderDetailPage({
 
   const carrier = await carrierForOrder(order.shipping_method);
   const payBadge = PAY_BADGE[order.payment_status] ?? PAY_BADGE.pending;
+  const refunded = order.refunded_amount ?? 0;
+  const refundable = (order.total ?? 0) - refunded;
+  const isOnlinePayment = Boolean(order.comgate_ref);
 
   return (
     <div>
@@ -293,6 +296,61 @@ export default async function OrderDetailPage({
               </p>
             )}
           </div>
+        </div>
+
+        {/* ── Refundace / dobropis ─────────────────────────────── */}
+        <div className="space-y-3 rounded-xl border border-cream-dark bg-white p-5">
+          <p className="font-display text-lg font-semibold">Refundace</p>
+          {refunded > 0 && (
+            <p className="text-sm text-gray-soft">
+              Již vráceno:{" "}
+              <span className="font-mono font-semibold text-ink">
+                {money(refunded, order.currency)}
+              </span>
+            </p>
+          )}
+          {refundable > 0 ? (
+            <ToastForm
+              action={refundOrderAction}
+              success="Vratka zpracována"
+              confirm="Opravdu vrátit tuto částku zákazníkovi?"
+              className="space-y-3"
+            >
+              <input type="hidden" name="id" value={order.id} />
+              <label className="flex flex-col gap-1.5">
+                <span className={legend}>
+                  Částka k vrácení ({order.currency})
+                </span>
+                <input
+                  name="amount"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max={(refundable / 100).toFixed(2)}
+                  defaultValue={(refundable / 100).toFixed(2)}
+                  className={input}
+                />
+                <span className="text-xs text-gray-soft">
+                  Max. {money(refundable, order.currency)}
+                </span>
+              </label>
+              <button
+                type="submit"
+                className="w-full rounded-lg border border-error px-4 py-2.5 text-sm font-semibold text-error transition-colors hover:bg-error hover:text-white"
+              >
+                Vrátit peníze
+              </button>
+              <p className="text-xs text-gray-soft">
+                {isOnlinePayment
+                  ? "Platba proběhla přes Comgate — částka se vrátí automaticky přes platební bránu."
+                  : "Dobírka/převod — vratku pošlete zákazníkovi ručně, zde ji jen zaevidujete."}
+              </p>
+            </ToastForm>
+          ) : (
+            <p className="text-sm text-gray-soft">
+              Celá částka objednávky již byla vrácena.
+            </p>
+          )}
         </div>
 
         {/* Úpravy */}

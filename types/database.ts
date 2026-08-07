@@ -426,6 +426,8 @@ export type Database = {
           tracking_url: string | null
           tracking_status: string | null
           label_printed_at: string | null
+          refunded_amount: number
+          refunded_at: string | null
           updated_at: string
         }
         Insert: {
@@ -455,6 +457,8 @@ export type Database = {
           tracking_url?: string | null
           tracking_status?: string | null
           label_printed_at?: string | null
+          refunded_amount?: number
+          refunded_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -484,6 +488,8 @@ export type Database = {
           tracking_url?: string | null
           tracking_status?: string | null
           label_printed_at?: string | null
+          refunded_amount?: number
+          refunded_at?: string | null
           updated_at?: string
         }
         Relationships: [

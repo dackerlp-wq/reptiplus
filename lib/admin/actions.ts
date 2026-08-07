@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import { getCnbEurRate } from "@/lib/exchange-rate";
 import { sendOrderStatusEmail } from "@/lib/orders/notify";
+import { refundComgatePayment } from "@/lib/comgate/client";
 import { DEFAULT_THEME, isThemeKey } from "@/lib/themes";
 
 async function assertAdmin() {
@@ -808,6 +809,61 @@ export async function setOrderPaymentAction(id: string, payment: string) {
   const { error } = await createServiceClient()
     .from("order")
     .update({ payment_status: payment as never })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+/**
+ * Refundace / dobropis. Částka v korunách/eurech (dle měny objednávky).
+ * U plateb přes Comgate zavolá refund API; u dobírky/převodu jen zaeviduje
+ * vratku (peníze vrací obchodník ručně). Při plné vratce nastaví stav
+ * „Vrácená" + platbu „Vráceno".
+ */
+export async function refundOrderAction(fd: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const id = str(fd, "id");
+  const amount = money(fd, "amount");
+  if (!id || !amount || amount <= 0) throw new Error("Zadejte částku k vrácení.");
+
+  const { data: order } = await svc
+    .from("order")
+    .select(
+      "id, total, currency, refunded_amount, comgate_ref, payment_status",
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (!order) throw new Error("Objednávka nenalezena.");
+
+  const already = order.refunded_amount ?? 0;
+  const remaining = (order.total ?? 0) - already;
+  if (amount > remaining) {
+    throw new Error(
+      `Nelze vrátit více než zbývá (${(remaining / 100).toFixed(2)} ${order.currency}).`,
+    );
+  }
+
+  // Online platba přes Comgate → skutečná refundace přes bránu.
+  if (order.comgate_ref) {
+    const res = await refundComgatePayment(
+      order.comgate_ref,
+      amount,
+      order.currency,
+    );
+    if (!res.ok) throw new Error(res.error);
+  }
+
+  const newRefunded = already + amount;
+  const fullyRefunded = newRefunded >= (order.total ?? 0);
+  const { error } = await svc
+    .from("order")
+    .update({
+      refunded_amount: newRefunded,
+      refunded_at: new Date().toISOString(),
+      payment_status: (fullyRefunded ? "refunded" : order.payment_status) as never,
+      ...(fullyRefunded ? { status: "refunded" as never } : {}),
+    })
     .eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
