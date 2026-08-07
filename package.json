@@ -24,6 +24,7 @@
     "next": "^16.2.10",
     "next-intl": "^4.13.2",
     "nodemailer": "^9.0.3",
+    "pdf-lib": "^1.17.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tailwind-merge": "^3.6.0"

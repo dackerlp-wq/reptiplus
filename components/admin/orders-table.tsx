@@ -22,6 +22,8 @@ import {
   Truck,
   PackageCheck,
   Ban,
+  PackagePlus,
+  Printer,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -31,6 +33,7 @@ import {
   setOrderPaymentAction,
   bulkOrderAction,
 } from "@/lib/admin/actions";
+import { bulkCreateShipmentsAction } from "@/lib/admin/shipping-actions";
 
 export type OrderRow = {
   id: string;
@@ -173,6 +176,49 @@ function InlineSelect({
         <ChevronDown className="pointer-events-none absolute right-1.5 size-3 opacity-60" />
       )}
     </span>
+  );
+}
+
+/** Hromadné podání zásilek u dopravce (přeskočí bez API / s existující zásilkou). */
+function BulkShipmentButton({
+  ids,
+  onDone,
+}: {
+  ids: string;
+  onDone: () => void;
+}) {
+  const [pending, start] = useTransition();
+  return (
+    <button
+      type="button"
+      disabled={pending}
+      onClick={() =>
+        start(async () => {
+          try {
+            const fd = new FormData();
+            fd.set("ids", ids);
+            const r = await bulkCreateShipmentsAction(fd);
+            const parts = [`vytvořeno ${r.created}`];
+            if (r.failed) parts.push(`selhalo ${r.failed}`);
+            if (r.skipped) parts.push(`přeskočeno ${r.skipped}`);
+            if (r.failed > 0)
+              toast.error(`Zásilky: ${parts.join(", ")}`);
+            else toast.success(`Zásilky: ${parts.join(", ")}`);
+            onDone();
+          } catch {
+            toast.error("Zásilky se nepodařilo vytvořit");
+          }
+        })
+      }
+      className="inline-flex items-center gap-1.5 rounded-lg border border-cream-dark bg-white px-3 py-1.5 text-sm font-medium text-charcoal transition-colors hover:border-forest hover:text-forest disabled:opacity-50"
+    >
+      {pending ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : (
+        <PackagePlus className="size-4" />
+      )}{" "}
+      Vytvořit zásilky
+    </button>
   );
 }
 
@@ -658,6 +704,16 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
               </button>
             </ToastForm>
           ))}
+          <div className="mx-1 h-5 w-px bg-cream-dark" />
+          <BulkShipmentButton ids={selectedIds} onDone={clearSelection} />
+          <a
+            href={`/api/admin/orders/labels?ids=${encodeURIComponent(selectedIds)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-cream-dark bg-white px-3 py-1.5 text-sm font-medium text-charcoal transition-colors hover:border-forest hover:text-forest"
+          >
+            <Printer className="size-4" /> Tisk štítků
+          </a>
           <button
             type="button"
             onClick={clearSelection}
