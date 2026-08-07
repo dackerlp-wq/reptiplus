@@ -1366,6 +1366,13 @@ export async function saveZasilkovnaAction(fd: FormData) {
 export async function saveAiAction(fd: FormData) {
   await upsertSetting("integrations.ai", { anthropicKey: str(fd, "anthropicKey") });
 }
+export async function saveAnalyticsAction(fd: FormData) {
+  await upsertSetting("integrations.analytics", {
+    ga4: str(fd, "ga4"),
+    sklik: str(fd, "sklik"),
+    metaPixel: str(fd, "metaPixel"),
+  });
+}
 
 /* ── Recenze ───────────────────────────────────────────────────────────── */
 export async function approveReviewAction(fd: FormData) {

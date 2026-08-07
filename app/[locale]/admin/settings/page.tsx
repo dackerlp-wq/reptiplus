@@ -12,6 +12,7 @@ import {
   savePplAction,
   saveZasilkovnaAction,
   saveAiAction,
+  saveAnalyticsAction,
   saveShippingMethodAction,
   deleteShippingMethodAction,
   savePaymentMethodAction,
@@ -46,6 +47,7 @@ export default async function AdminSettingsPage() {
   const ppl = get("integrations.ppl");
   const zas = get("integrations.zasilkovna");
   const ai = get("integrations.ai");
+  const analytics = get("integrations.analytics");
   const terms = get("legal.terms") as I18nText;
   const privacy = get("legal.privacy") as I18nText;
   const claims = get("legal.claims") as I18nText;
@@ -367,6 +369,47 @@ export default async function AdminSettingsPage() {
               />
             </label>
             <button className={saveBtn}>Uložit AI klíč</button>
+          </ToastForm>
+
+          <ToastForm action={saveAnalyticsAction} className={`${card} space-y-3`}>
+            <div>
+              <h2 className="font-display text-lg font-semibold">
+                Analytika & marketing
+              </h2>
+              <p className="text-sm text-gray-soft">
+                Měřicí kódy se načtou <strong>jen po souhlasu s cookies</strong>{" "}
+                (GA4 → analytické, Sklik a Meta Pixel → marketingové). Nech
+                prázdné pro vypnutí.
+              </p>
+            </div>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Google Analytics 4 — Measurement ID</span>
+              <input
+                name="ga4"
+                placeholder="G-XXXXXXXXXX"
+                defaultValue={String(analytics.ga4 ?? "")}
+                className={input}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Sklik — retargeting ID</span>
+              <input
+                name="sklik"
+                placeholder="např. 123456"
+                defaultValue={String(analytics.sklik ?? "")}
+                className={input}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Meta (Facebook) Pixel — ID</span>
+              <input
+                name="metaPixel"
+                placeholder="např. 1234567890"
+                defaultValue={String(analytics.metaPixel ?? "")}
+                className={input}
+              />
+            </label>
+            <button className={saveBtn}>Uložit analytiku</button>
           </ToastForm>
         </div>
 

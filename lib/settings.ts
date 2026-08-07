@@ -75,6 +75,25 @@ export async function getLegalContent(
   return getContentI18n(key);
 }
 
+export type AnalyticsConfig = {
+  ga4: string;
+  sklik: string;
+  metaPixel: string;
+};
+
+/** ID analytických/marketingových nástrojů z app_setting (integrations.analytics). */
+export async function getAnalyticsConfig(): Promise<AnalyticsConfig> {
+  const v = (await getContentI18n("integrations.analytics")) as Record<
+    string,
+    string
+  >;
+  return {
+    ga4: v.ga4 ?? "",
+    sklik: v.sklik ?? "",
+    metaPixel: v.metaPixel ?? "",
+  };
+}
+
 /** Veřejný API klíč Zásilkovny (Packeta) pro widget výdejních míst. */
 export async function getPacketaApiKey(): Promise<string> {
   const v = (await getContentI18n("integrations.zasilkovna")) as Record<
