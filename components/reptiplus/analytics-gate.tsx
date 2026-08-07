@@ -24,12 +24,32 @@ declare global {
   }
 }
 
-function loadGa4(id: string) {
+type Consent = { analytics: boolean; marketing: boolean };
+
+/** Google Consent Mode v2 signály z kategorií souhlasu. */
+function consentState(c: Consent) {
+  return {
+    analytics_storage: c.analytics ? "granted" : "denied",
+    ad_storage: c.marketing ? "granted" : "denied",
+    ad_user_data: c.marketing ? "granted" : "denied",
+    ad_personalization: c.marketing ? "granted" : "denied",
+  } as const;
+}
+
+function loadGa4(id: string, c: Consent) {
   window.dataLayer = window.dataLayer || [];
   const gtag: Gtag = (...args) => {
     window.dataLayer!.push(args);
   };
   window.gtag = gtag;
+  // Consent Mode v2: výchozí zamítnuto, hned aktualizováno dle souhlasu.
+  gtag("consent", "default", {
+    analytics_storage: "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+  });
+  gtag("consent", "update", consentState(c));
   gtag("js", new Date());
   // Vercel/Next samo neposílá page_view při SPA navigaci → řešíme ručně níže.
   gtag("config", id, { send_page_view: true });
@@ -92,8 +112,11 @@ export function AnalyticsGate({
       const c = getConsent();
       if (!c) return;
       if (c.analytics && ga4 && !loaded.current.ga4) {
-        loadGa4(ga4);
+        loadGa4(ga4, c);
         loaded.current.ga4 = true;
+      } else if (loaded.current.ga4 && window.gtag) {
+        // GA už běží → jen aktualizuj Consent Mode signály při změně souhlasu.
+        window.gtag("consent", "update", consentState(c));
       }
       if (c.marketing && metaPixel && !loaded.current.pixel) {
         loadMetaPixel(metaPixel);

@@ -8,6 +8,7 @@ import { getShippingMethods, getPaymentMethods } from "@/lib/queries";
 import { getPacketaApiKey } from "@/lib/settings";
 import { localeCurrency, pickI18n } from "@/lib/i18n";
 import { CheckoutForm } from "@/components/reptiplus/checkout-form";
+import { BeginCheckoutTracker } from "@/components/reptiplus/track";
 
 export async function generateMetadata({
   params,
@@ -57,6 +58,16 @@ export default async function CheckoutPage({
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-12">
+      <BeginCheckoutTracker
+        items={cart.lines.map((l) => ({
+          id: l.productId,
+          name: l.name,
+          price: l.unitPrice,
+          qty: l.qty,
+        }))}
+        value={cart.subtotal}
+        currency={currency}
+      />
       <h1 className="mb-8 font-display text-4xl font-bold">{t("title")}</h1>
       <CheckoutForm
         locale={locale}

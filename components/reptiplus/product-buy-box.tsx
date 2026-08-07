@@ -3,8 +3,9 @@
 import { useState, useTransition } from "react";
 import Image from "next/image";
 import { Check, Loader2, ShoppingCart } from "lucide-react";
-import { formatPrice, discountPercent } from "@/lib/i18n";
+import { formatPrice, discountPercent, localeCurrency } from "@/lib/i18n";
 import { addToCartAction } from "@/lib/cart/actions";
+import { trackAddToCart } from "@/lib/analytics/events";
 import type { Locale } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,9 @@ export type BuyVariant = {
 
 export function ProductBuyBox({
   productId,
+  productName,
+  brand,
+  category,
   locale,
   basePrice,
   baseCompare,
@@ -28,6 +32,9 @@ export function ProductBuyBox({
   labels,
 }: {
   productId: string;
+  productName: string;
+  brand?: string;
+  category?: string;
   locale: Locale;
   basePrice: number;
   baseCompare: number | null;
@@ -56,6 +63,18 @@ export function ProductBuyBox({
     start(async () => {
       const res = await addToCartAction(productId, 1, selId);
       if (res.ok) {
+        trackAddToCart(
+          {
+            id: productId,
+            name: productName,
+            price,
+            qty: 1,
+            brand,
+            category,
+            variant: sel?.name,
+          },
+          localeCurrency[locale],
+        );
         setAdded(true);
         setTimeout(() => setAdded(false), 1500);
       }

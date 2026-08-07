@@ -26,6 +26,7 @@ import {
 } from "@/lib/i18n";
 import { absoluteUrl, localizedAlternates } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import { ViewItemTracker } from "@/components/reptiplus/track";
 
 const plain = (html: string) =>
   html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
@@ -231,6 +232,18 @@ export default async function ProductPage({
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
       <JsonLd data={[productLd, breadcrumbLd]} />
+      <ViewItemTracker
+        item={{
+          id: product.id,
+          name,
+          price: priceMinor,
+          brand: brandName || undefined,
+          category: product.category
+            ? pickI18n(product.category.name_i18n, locale)
+            : undefined,
+        }}
+        currency={currency}
+      />
       <Link
         href="/produkty"
         className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-gray-soft transition-colors hover:text-forest"
@@ -259,6 +272,13 @@ export default async function ProductPage({
           <div className="mt-5">
             <ProductBuyBox
               productId={product.id}
+              productName={name}
+              brand={brandName || undefined}
+              category={
+                product.category
+                  ? pickI18n(product.category.name_i18n, locale)
+                  : undefined
+              }
               locale={locale}
               basePrice={priceMinor}
               baseCompare={compareMinor}

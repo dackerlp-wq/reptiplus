@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { createServiceClient } from "@/lib/supabase/service";
 import { formatPrice } from "@/lib/i18n";
+import { PurchaseTracker } from "@/components/reptiplus/track";
 
 export async function generateMetadata({
   params,
@@ -19,6 +20,7 @@ export async function generateMetadata({
 
 type OrderItem = {
   id: string;
+  product_id: string | null;
   name: string;
   sku: string | null;
   unit_price: number;
@@ -42,7 +44,7 @@ export default async function OrderConfirmPage({
   const { data: order } = await svc
     .from("order")
     .select(
-      "number, email, status, payment_status, comgate_ref, subtotal, shipping, discount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, order_item(id,name,sku,unit_price,qty,line_total)",
+      "number, email, status, payment_status, comgate_ref, subtotal, shipping, discount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, order_item(id,product_id,name,sku,unit_price,qty,line_total)",
     )
     .eq("number", number)
     .maybeSingle();
@@ -90,6 +92,20 @@ export default async function OrderConfirmPage({
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-14">
+      <PurchaseTracker
+        order={{
+          number: order.number,
+          total: order.total ?? 0,
+          shipping: (order.shipping ?? 0) + (order.payment_fee ?? 0),
+          currency: order.currency,
+          items: items.map((it) => ({
+            id: it.product_id ?? it.id,
+            name: it.name,
+            price: it.unit_price,
+            qty: it.qty,
+          })),
+        }}
+      />
       <div className="mb-8 text-center">
         <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-success/10">
           <CheckCircle2 className="size-8 text-success" />
