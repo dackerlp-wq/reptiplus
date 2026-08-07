@@ -851,6 +851,20 @@ export async function bulkOrderAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+/* ── Zákazníci ─────────────────────────────────────────────────────────── */
+export async function setCustomerRoleAction(formData: FormData) {
+  await assertAdmin();
+  const id = str(formData, "id");
+  const role = str(formData, "role");
+  if (!id || !["customer", "staff", "admin"].includes(role)) return;
+  const { error } = await createServiceClient()
+    .from("customer")
+    .update({ role: role as never })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
 /* ── Slevové kódy ──────────────────────────────────────────────────────── */
 export async function saveDiscountAction(formData: FormData) {
   await assertAdmin();
