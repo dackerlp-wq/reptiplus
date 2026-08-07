@@ -38,9 +38,13 @@ function consentState(c: Consent) {
 
 function loadGa4(id: string, c: Consent) {
   window.dataLayer = window.dataLayer || [];
-  const gtag: Gtag = (...args) => {
-    window.dataLayer!.push(args);
-  };
+  // DŮLEŽITÉ: gtag.js zpracuje jen položky typu `arguments`, nikoli obyčejné
+  // pole. Proto musí funkce pushovat `arguments` (kanonický snippet), jinak
+  // se příkazy config/consent/event ignorují a nic se neodesílá.
+  const gtag = function () {
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer!.push(arguments);
+  } as Gtag;
   window.gtag = gtag;
   // Consent Mode v2: výchozí zamítnuto, hned aktualizováno dle souhlasu.
   gtag("consent", "default", {
