@@ -851,6 +851,78 @@ export async function bulkOrderAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+/* ── Slevové kódy ──────────────────────────────────────────────────────── */
+export async function saveDiscountAction(formData: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const id = str(formData, "id") || null;
+  const locale = str(formData, "locale") || "cs";
+
+  const code = str(formData, "code").toUpperCase().replace(/\s+/g, "");
+  if (!code) {
+    flashRedirect(
+      `/${locale}/admin/discounts/${id ?? "new"}`,
+      "error",
+      "Zadej kód slevy.",
+    );
+  }
+
+  const type = str(formData, "type") === "fixed" ? "fixed" : "percent";
+  const value =
+    type === "percent"
+      ? Math.min(100, Math.max(1, parseInt(str(formData, "value") || "0", 10) || 0))
+      : (money(formData, "value") ?? 0);
+
+  const toDate = (s: string, endOfDay = false): string | null =>
+    s ? new Date(`${s}T${endOfDay ? "23:59:59" : "00:00:00"}`).toISOString() : null;
+  const usageLimit = parseInt(str(formData, "usage_limit"), 10);
+
+  const payload = {
+    code,
+    type: type as never,
+    value,
+    min_order: money(formData, "min_order"),
+    valid_from: toDate(str(formData, "valid_from")),
+    valid_to: toDate(str(formData, "valid_to"), true),
+    usage_limit:
+      Number.isFinite(usageLimit) && usageLimit > 0 ? usageLimit : null,
+    is_active: formData.get("is_active") === "on",
+  };
+
+  const { error } = id
+    ? await svc.from("discount_code").update(payload).eq("id", id)
+    : await svc.from("discount_code").insert(payload);
+  if (error)
+    flashRedirect(
+      `/${locale}/admin/discounts/${id ?? "new"}`,
+      "error",
+      error.message.includes("duplicate") ? "Tento kód už existuje." : error.message,
+    );
+
+  revalidatePath("/", "layout");
+  flashRedirect(`/${locale}/admin/discounts`, "saved");
+}
+
+export async function deleteDiscountAction(formData: FormData) {
+  await assertAdmin();
+  const { error } = await createServiceClient()
+    .from("discount_code")
+    .delete()
+    .eq("id", str(formData, "id"));
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+export async function toggleDiscountActiveAction(formData: FormData) {
+  await assertAdmin();
+  const { error } = await createServiceClient()
+    .from("discount_code")
+    .update({ is_active: formData.get("active") === "1" })
+    .eq("id", str(formData, "id"));
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
 /* ── Nastavení / integrace ─────────────────────────────────────────────── */
 async function upsertSetting(key: string, value: Record<string, unknown>) {
   await assertAdmin();

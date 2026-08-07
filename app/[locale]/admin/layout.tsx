@@ -6,6 +6,7 @@ import {
   ShoppingBag,
   Star,
   Settings,
+  Ticket,
   ExternalLink,
   LogOut,
 } from "lucide-react";
@@ -21,6 +22,7 @@ const NAV = [
   { href: "/admin/categories", label: "Kategorie", icon: FolderTree },
   { href: "/admin/brands", label: "Značky", icon: Tag },
   { href: "/admin/orders", label: "Objednávky", icon: ShoppingBag },
+  { href: "/admin/discounts", label: "Slevy", icon: Ticket },
   { href: "/admin/reviews", label: "Recenze", icon: Star },
   { href: "/admin/settings", label: "Nastavení", icon: Settings },
 ];
