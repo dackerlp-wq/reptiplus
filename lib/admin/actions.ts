@@ -8,6 +8,8 @@ import { getCnbEurRate } from "@/lib/exchange-rate";
 import { sendOrderStatusEmail } from "@/lib/orders/notify";
 import { refundComgatePayment } from "@/lib/comgate/client";
 import { pickI18n } from "@/lib/i18n";
+import { sendMail } from "@/lib/email/client";
+import { orderConfirmationEmail, type OrderEmailData } from "@/lib/email/templates";
 import { DEFAULT_THEME, isThemeKey } from "@/lib/themes";
 
 async function assertAdmin() {
@@ -930,6 +932,194 @@ export async function editOrderItemsAction(fd: FormData) {
     throw new Error(error.message);
   }
   revalidatePath("/", "layout");
+}
+
+/** Náhodné číslo objednávky RPyyMMdd-XXXX (shodné s pokladnou). */
+function genOrderNumber(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  const date = `${String(d.getFullYear()).slice(2)}${p(d.getMonth() + 1)}${p(d.getDate())}`;
+  const rnd = Array.from({ length: 4 }, () =>
+    "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)],
+  ).join("");
+  return `RP${date}-${rnd}`;
+}
+
+/**
+ * Ruční vytvoření objednávky z adminu (telefonická / na prodejně).
+ * Používá stejný atomický RPC place_order jako pokladna (odečte sklad).
+ * Dopravné/poplatek se dopočítají z ceníku metod, sleva se zadává ručně.
+ */
+export async function createManualOrderAction(fd: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const locale = str(fd, "locale") || "cs";
+  const currency = str(fd, "currency") === "EUR" ? "EUR" : "CZK";
+
+  const email = str(fd, "email");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    throw new Error("Zadejte platný e-mail.");
+
+  let items: EditItem[];
+  try {
+    items = JSON.parse(str(fd, "items")) as EditItem[];
+  } catch {
+    throw new Error("Neplatné položky.");
+  }
+  if (!Array.isArray(items) || items.length === 0)
+    throw new Error("Přidejte alespoň jednu položku.");
+  for (const it of items) {
+    if (
+      !it.product_id ||
+      !Number.isInteger(it.qty) ||
+      it.qty <= 0 ||
+      !Number.isInteger(it.unit_price) ||
+      it.unit_price < 0
+    )
+      throw new Error("Neplatná položka.");
+  }
+
+  const ship = {
+    full_name: str(fd, "shipping_full_name"),
+    street: str(fd, "shipping_street"),
+    city: str(fd, "shipping_city"),
+    postal_code: str(fd, "shipping_postal_code"),
+    country: str(fd, "shipping_country") || "CZ",
+    phone: str(fd, "shipping_phone"),
+  };
+  if (!ship.full_name || !ship.street || !ship.city || !ship.postal_code)
+    throw new Error("Vyplňte dodací adresu.");
+
+  const billingSame = fd.get("billing_same") !== "off";
+  const bill = billingSame
+    ? ship
+    : {
+        full_name: str(fd, "billing_full_name"),
+        street: str(fd, "billing_street"),
+        city: str(fd, "billing_city"),
+        postal_code: str(fd, "billing_postal_code"),
+        country: str(fd, "billing_country") || "CZ",
+        phone: str(fd, "billing_phone"),
+      };
+
+  // Ceny dopravy/platby z ceníku metod (dle měny).
+  const priceCol = currency === "CZK" ? "price_czk" : "price_eur";
+  const feeCol = currency === "CZK" ? "fee_czk" : "fee_eur";
+  const shippingCode = str(fd, "shipping_method");
+  const paymentCode = str(fd, "payment_method");
+
+  let shippingFee = 0;
+  if (shippingCode) {
+    const { data } = await svc
+      .from("shipping_method")
+      .select(priceCol)
+      .eq("code", shippingCode)
+      .maybeSingle();
+    shippingFee = (data as Record<string, number | null> | null)?.[priceCol] ?? 0;
+  }
+  let paymentFee = 0;
+  if (paymentCode) {
+    const { data } = await svc
+      .from("payment_method")
+      .select(feeCol)
+      .eq("code", paymentCode)
+      .maybeSingle();
+    paymentFee = (data as Record<string, number | null> | null)?.[feeCol] ?? 0;
+  }
+
+  const discount = money(fd, "discount") ?? 0;
+  const subtotal = items.reduce((s, it) => s + it.unit_price * it.qty, 0);
+  const total = Math.max(0, subtotal + shippingFee + paymentFee - discount);
+
+  const payloadItems = items.map((it) => ({
+    product_id: it.product_id,
+    variant_id: it.variant_id ?? "",
+    name: it.name,
+    sku: it.sku ?? "",
+    unit_price: it.unit_price,
+    qty: it.qty,
+    line_total: it.unit_price * it.qty,
+  }));
+
+  let number = "";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    number = genOrderNumber();
+    const { error } = await svc.rpc("place_order", {
+      payload: {
+        number,
+        customer_id: str(fd, "customer_id"),
+        email,
+        subtotal,
+        shipping: shippingFee,
+        discount,
+        total,
+        currency,
+        payment_fee: paymentFee,
+        discount_code_id: "",
+        shipping_method: shippingCode,
+        payment_method: paymentCode,
+        billing_address: bill,
+        shipping_address: ship,
+        note: str(fd, "note"),
+        cart_id: "",
+        items: payloadItems,
+      } as never,
+    });
+    if (!error) break;
+    if (error.message?.includes("INSUFFICIENT_STOCK"))
+      throw new Error("Nedostatek skladu u některé položky.");
+    if (!error.message?.includes("duplicate") && error.code !== "23505")
+      throw new Error(error.message);
+    number = "";
+  }
+  if (!number) throw new Error("Objednávku se nepodařilo vytvořit.");
+
+  const { data: ord } = await svc
+    .from("order")
+    .select("id")
+    .eq("number", number)
+    .maybeSingle();
+
+  // Volitelně rovnou označit jako zaplacenou (platba na prodejně / převodem).
+  if (fd.get("mark_paid") === "on" && ord) {
+    await svc
+      .from("order")
+      .update({ payment_status: "paid" as never, status: "paid" as never })
+      .eq("id", ord.id);
+  }
+
+  // Volitelně poslat zákazníkovi potvrzení.
+  if (fd.get("notify") === "on") {
+    try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://reptiplus.cz";
+      const emailData: OrderEmailData = {
+        number,
+        email,
+        items: items.map((it) => ({
+          name: it.name,
+          qty: it.qty,
+          lineTotal: it.unit_price * it.qty,
+        })),
+        subtotal,
+        shipping: shippingFee,
+        paymentFee,
+        discount,
+        total,
+        currency,
+        paymentMethod: paymentCode,
+        shippingAddress: ship,
+        orderUrl: `${siteUrl}/${locale}/objednavka/${number}`,
+        locale: locale as OrderEmailData["locale"],
+      };
+      const conf = orderConfirmationEmail(emailData);
+      await sendMail({ to: email, ...conf });
+    } catch (e) {
+      console.error("[admin] potvrzení ruční objednávky se nepodařilo odeslat:", e);
+    }
+  }
+
+  revalidatePath("/", "layout");
+  redirect(`/${locale}/admin/orders/${ord?.id ?? ""}`);
 }
 
 /**

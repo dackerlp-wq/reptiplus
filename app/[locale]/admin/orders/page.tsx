@@ -1,3 +1,5 @@
+import { Plus } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { OrdersTable, type OrderRow } from "@/components/admin/orders-table";
 
@@ -27,7 +29,15 @@ export default async function AdminOrdersPage() {
 
   return (
     <div>
-      <h1 className="mb-6 font-display text-3xl font-bold">Objednávky</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="font-display text-3xl font-bold">Objednávky</h1>
+        <Link
+          href="/admin/orders/new"
+          className="inline-flex items-center gap-2 rounded-lg bg-forest px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-forest-light"
+        >
+          <Plus className="size-4" /> Nová objednávka
+        </Link>
+      </div>
       <OrdersTable orders={rows} />
     </div>
   );

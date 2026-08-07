@@ -10,10 +10,10 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 
 ## Fáze 2 — Objednávky & pokladna (konverze)
 - [x] **4. Výdejní místa v pokladně** — widget Zásilkovna (Packeta) v pokladně; metoda dopravy s příznakem „výdejní místo“ v adminu spustí widget, výběr se uloží do objednávky.
-- [ ] **5a. Refundace / dobropis** — vrácení peněz přes Comgate (částečné i plné).
-- [ ] **5b. Ruční vytvoření objednávky** z adminu (telefonická/na prodejně).
-- [ ] **5c. Editace položek objednávky** po vytvoření.
-- [ ] **5d. Štítky dopravce + hromadné podání zásilek** (ověřit stávající label route).
+- [x] **5a. Refundace / dobropis** — částečné i plné vrácení; Comgate přes API, dobírka/převod ruční evidence; plná vratka přepne stav na „Vrácená".
+- [x] **5b. Ruční vytvoření objednávky** z adminu (/admin/orders/new) — výběr produktů, adresy, doprava/platba, sleva, volitelné „zaplaceno" + potvrzovací e-mail.
+- [x] **5c. Editace položek objednávky** po vytvoření — inline editor (množství, cena, přidat/odebrat) přes atomický RPC s korekcí skladu a přepočtem součtů.
+- [x] **5d. Štítky dopravce + hromadné podání zásilek** — hromadné vytvoření zásilek + sloučené PDF štítků pro vybrané objednávky.
 
 ## Fáze 3 — SEO & marketing
 - [ ] **6. SEO základ** — `sitemap.xml`, `robots.txt`, JSON-LD (Product/Offer/BreadcrumbList), meta description + OG obrázky.
