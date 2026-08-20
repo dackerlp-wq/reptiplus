@@ -477,10 +477,10 @@ type CatalogRow = RawListRow & {
 export async function getCatalog(
   locale: Locale,
   filters: ProductFilters,
-): Promise<{ products: ProductListItem[]; facets: AttrFacet[] }> {
+): Promise<{ products: ProductListItem[]; facets: AttrFacet[]; brands: BrandItem[] }> {
   const supabase = await createClient();
   const priceCol = localeCurrency[locale] === "CZK" ? "price_czk" : "price_eur";
-  const empty = { products: [], facets: [] };
+  const empty = { products: [], facets: [], brands: [] };
 
   let query = supabase
     .from("product")
@@ -489,10 +489,11 @@ export async function getCatalog(
     )
     .eq("is_published", true);
 
+  let catIds: string[] | null = null;
   if (filters.category) {
-    const ids = await categoryAndDescendantIds(filters.category);
-    if (ids.length === 0) return empty;
-    query = query.in("category_id", ids);
+    catIds = await categoryAndDescendantIds(filters.category);
+    if (catIds.length === 0) return empty;
+    query = query.in("category_id", catIds);
   }
   if (filters.brand) {
     const { data: brand } = await supabase
@@ -611,11 +612,28 @@ export async function getCatalog(
     (a, b) => b.values.length - a.values.length || a.label.localeCompare(b.label, locale),
   );
 
+  // ── Značky přítomné v této kategorii (filtr ukáže jen relevantní značky) ──
+  // Nezávislé na zvolené značce, aby šlo mezi značkami přepínat.
+  let brandQ = supabase
+    .from("product")
+    .select("brand:brand_id(id,slug,name)")
+    .eq("is_published", true)
+    .not("brand_id", "is", null);
+  if (catIds) brandQ = brandQ.in("category_id", catIds);
+  const { data: brandRows } = await brandQ;
+  const brandMap = new Map<string, BrandItem>();
+  for (const r of (brandRows ?? []) as unknown as { brand: BrandItem | null }[])
+    if (r.brand) brandMap.set(r.brand.id, r.brand);
+  const brands = [...brandMap.values()].sort((a, b) =>
+    a.name.localeCompare(b.name, locale),
+  );
+
   return {
     products,
     // Všechny parametry v kategorii (za tlačítkem Rozšířené filtry); hodnoty ale
     // omezíme na rozumný počet, aby seznam nebyl nekonečný.
     facets: facets.map((f) => ({ ...f, values: f.values.slice(0, 20) })),
+    brands,
   };
 }
 

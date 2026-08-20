@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import type { Locale } from "@/i18n/routing";
 import {
   getAllCategories,
-  getBrands,
   getCatalog,
   getPriceRange,
 } from "@/lib/queries";
@@ -70,11 +69,10 @@ export default async function ProductsPage({
     attrs: attrsParam(sp.attr),
   };
 
-  const [{ products, facets }, categories, brands, priceRange] =
+  const [{ products, facets, brands }, categories, priceRange] =
     await Promise.all([
       getCatalog(locale, filters),
       getAllCategories(),
-      getBrands(),
       getPriceRange(locale, filters.category),
     ]);
 

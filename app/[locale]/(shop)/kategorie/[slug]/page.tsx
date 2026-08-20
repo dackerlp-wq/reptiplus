@@ -6,7 +6,6 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import {
   getAllCategories,
-  getBrands,
   getCatalog,
   getCategoryBySlug,
   getPriceRange,
@@ -95,11 +94,10 @@ export default async function CategoryPage({
     attrs: attrsParam(sp.attr),
   };
 
-  const [{ products, facets }, allCategories, brands, priceRange] =
+  const [{ products, facets, brands }, allCategories, priceRange] =
     await Promise.all([
       getCatalog(locale, filters),
       getAllCategories(),
-      getBrands(),
       getPriceRange(locale, slug),
     ]);
 
