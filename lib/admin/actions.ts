@@ -1374,6 +1374,19 @@ export async function saveAnalyticsAction(fd: FormData) {
   });
 }
 
+/* ── Poptávky LEDX ─────────────────────────────────────────────────────── */
+export async function setInquiryHandledAction(fd: FormData) {
+  await assertAdmin();
+  const id = str(fd, "id");
+  const handled = fd.get("handled") === "1";
+  const { error } = await createServiceClient()
+    .from("ledx_inquiry")
+    .update({ handled })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
 /* ── Recenze ───────────────────────────────────────────────────────────── */
 export async function approveReviewAction(fd: FormData) {
   await assertAdmin();

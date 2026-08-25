@@ -8,6 +8,7 @@ import {
   Settings,
   Ticket,
   Users,
+  Lightbulb,
   ExternalLink,
   LogOut,
 } from "lucide-react";
@@ -23,6 +24,7 @@ const NAV = [
   { href: "/admin/categories", label: "Kategorie", icon: FolderTree },
   { href: "/admin/brands", label: "Značky", icon: Tag },
   { href: "/admin/orders", label: "Objednávky", icon: ShoppingBag },
+  { href: "/admin/inquiries", label: "Poptávky LEDX", icon: Lightbulb },
   { href: "/admin/customers", label: "Zákazníci", icon: Users },
   { href: "/admin/discounts", label: "Slevy", icon: Ticket },
   { href: "/admin/reviews", label: "Recenze", icon: Star },

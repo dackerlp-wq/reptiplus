@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      ledx_inquiry: {
+        Row: {
+          id: string
+          rada: string | null
+          model: string | null
+          cct: string | null
+          uhel: string | null
+          pocet: number | null
+          stmivani: string | null
+          poznamka: string | null
+          name: string
+          email: string
+          phone: string | null
+          handled: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          rada?: string | null
+          model?: string | null
+          cct?: string | null
+          uhel?: string | null
+          pocet?: number | null
+          stmivani?: string | null
+          poznamka?: string | null
+          name: string
+          email: string
+          phone?: string | null
+          handled?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          rada?: string | null
+          model?: string | null
+          cct?: string | null
+          uhel?: string | null
+          pocet?: number | null
+          stmivani?: string | null
+          poznamka?: string | null
+          name?: string
+          email?: string
+          phone?: string | null
+          handled?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       address: {
         Row: {
           city: string | null
