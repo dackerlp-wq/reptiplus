@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      ledx_line: {
+        Row: {
+          id: string
+          slug: string
+          sort_order: number
+          is_published: boolean
+          name: string
+          subtitle: string | null
+          tagline: string | null
+          landing_desc: string | null
+          landing_pills: Json
+          detail_lead: string | null
+          detail_pills: Json
+          models_note: string | null
+          models: Json
+          params: Json
+          uses_title: string | null
+          uses: Json
+          images: Json
+          form_models: Json
+          form_cct: Json
+          form_cct_fixed: string | null
+          form_uhel: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          sort_order?: number
+          is_published?: boolean
+          name: string
+          subtitle?: string | null
+          tagline?: string | null
+          landing_desc?: string | null
+          landing_pills?: Json
+          detail_lead?: string | null
+          detail_pills?: Json
+          models_note?: string | null
+          models?: Json
+          params?: Json
+          uses_title?: string | null
+          uses?: Json
+          images?: Json
+          form_models?: Json
+          form_cct?: Json
+          form_cct_fixed?: string | null
+          form_uhel?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          sort_order?: number
+          is_published?: boolean
+          name?: string
+          subtitle?: string | null
+          tagline?: string | null
+          landing_desc?: string | null
+          landing_pills?: Json
+          detail_lead?: string | null
+          detail_pills?: Json
+          models_note?: string | null
+          models?: Json
+          params?: Json
+          uses_title?: string | null
+          uses?: Json
+          images?: Json
+          form_models?: Json
+          form_cct?: Json
+          form_cct_fixed?: string | null
+          form_uhel?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
       ledx_inquiry: {
         Row: {
           id: string

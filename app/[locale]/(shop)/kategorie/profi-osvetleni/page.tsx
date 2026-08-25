@@ -2,6 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import type { Locale } from "@/i18n/routing";
 import { localizedAlternates } from "@/lib/seo";
+import { getLedxLines } from "@/lib/ledx/queries";
 import { LedxPage } from "@/components/reptiplus/ledx/ledx-page";
 
 export async function generateMetadata({
@@ -29,5 +30,6 @@ export default async function ProfiOsvetleniPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <LedxPage />;
+  const lines = await getLedxLines();
+  return <LedxPage lines={lines} />;
 }

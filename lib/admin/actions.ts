@@ -1374,6 +1374,89 @@ export async function saveAnalyticsAction(fd: FormData) {
   });
 }
 
+/* ── LEDX řady (Profi osvětlení) ───────────────────────────────────────── */
+const linesArr = (fd: FormData, k: string) =>
+  str(fd, k)
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+const tableArr = (fd: FormData, k: string) =>
+  str(fd, k)
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((row) => row.split("|").map((c) => c.trim()));
+
+export async function saveLedxLineAction(fd: FormData): Promise<void> {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const id = str(fd, "id");
+  const locale = str(fd, "locale") || "cs";
+  const slug = str(fd, "slug")
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const name = str(fd, "name");
+  if (!slug || !name) flashRedirect(`/${locale}/admin/ledx`, "error", "Vyplňte název a slug.");
+
+  let images: unknown = [];
+  try {
+    images = JSON.parse(str(fd, "images") || "[]");
+  } catch {
+    images = [];
+  }
+
+  const payload = {
+    slug,
+    sort_order: parseInt(str(fd, "sort_order") || "0", 10) || 0,
+    is_published: fd.get("is_published") === "on",
+    name,
+    subtitle: str(fd, "subtitle") || null,
+    tagline: str(fd, "tagline") || null,
+    landing_desc: str(fd, "landing_desc") || null,
+    landing_pills: linesArr(fd, "landing_pills") as never,
+    detail_lead: str(fd, "detail_lead") || null,
+    detail_pills: linesArr(fd, "detail_pills") as never,
+    models_note: str(fd, "models_note") || null,
+    models: tableArr(fd, "models") as never,
+    params: tableArr(fd, "params") as never,
+    uses_title: str(fd, "uses_title") || null,
+    uses: linesArr(fd, "uses") as never,
+    images: images as never,
+    form_models: linesArr(fd, "form_models") as never,
+    form_cct: linesArr(fd, "form_cct") as never,
+    form_cct_fixed: str(fd, "form_cct_fixed") || null,
+    form_uhel: linesArr(fd, "form_uhel") as never,
+  };
+
+  const { error } = id
+    ? await svc.from("ledx_line").update(payload).eq("id", id)
+    : await svc.from("ledx_line").insert(payload);
+  if (error) flashRedirect(`/${locale}/admin/ledx`, "error", error.message);
+  revalidatePath("/", "layout");
+  flashRedirect(`/${locale}/admin/ledx`, "saved", "Řada uložena");
+}
+
+export async function deleteLedxLineAction(fd: FormData) {
+  await assertAdmin();
+  const { error } = await createServiceClient()
+    .from("ledx_line")
+    .delete()
+    .eq("id", str(fd, "id"));
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+export async function toggleLedxLinePublishedAction(fd: FormData) {
+  await assertAdmin();
+  const { error } = await createServiceClient()
+    .from("ledx_line")
+    .update({ is_published: fd.get("published") === "1" })
+    .eq("id", str(fd, "id"));
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
 /* ── Poptávky LEDX ─────────────────────────────────────────────────────── */
 export async function setInquiryHandledAction(fd: FormData) {
   await assertAdmin();

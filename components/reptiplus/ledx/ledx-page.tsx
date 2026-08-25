@@ -3,40 +3,25 @@
 
 import { useEffect, useState } from "react";
 import { LedxInquiryForm, type RadaConfig } from "./inquiry-form";
+import type { LedxLine } from "@/lib/ledx/queries";
 
-const FLOOD: RadaConfig = {
-  id: "pop-flood",
-  rada: "Flood Light",
-  models: ["Flood Light 50 W", "Flood Light 100 W", "Flood Light 150 W", "Flood Light 200 W", "Flood Light Linear 100 W", "Flood Light Linear 150 W"],
-  cct: ["2700 K (teplá)", "3000 K", "5000 K", "6000 K", "6500 K (denní)"],
-  uhel: ["15°", "40°", "60°", "90°"],
-};
-const PH1: RadaConfig = {
-  id: "pop-phoenix1",
-  rada: "Phoenix 1",
-  models: ["Phoenix 1 · 120 W", "Phoenix 1 · 240 W", "Phoenix 1 · 360 W", "Phoenix 1 · 480 W", "Sestava 480+ W"],
-  cct: ["3000 K", "4000 K (neutrální)", "5000 K", "6500 K (denní)"],
-  uhel: ["20°", "40°", "60°", "90°", "asymetrický (H140×V100)"],
-};
-const GROW: RadaConfig = {
-  id: "pop-grow",
-  rada: "Phoenix Grow",
-  models: ["Phoenix Grow · 120 W", "Phoenix Grow · 240 W", "Phoenix Grow · 360 W", "Phoenix Grow · 480 W", "Sestava až 1440 W"],
-  cct: { fixed: "4200 K · Grow spektrum" },
-  uhel: ["20°", "40°", "60°", "90°", "asymetrický (H140×V100)"],
-};
+const cfg = (l: LedxLine): RadaConfig => ({
+  id: `pop-${l.slug}`,
+  rada: l.name,
+  models: l.formModels,
+  cct: l.formCctFixed ? { fixed: l.formCctFixed } : l.formCct,
+  uhel: l.formUhel,
+});
+const romanNo = (i: number) => `ŘADA ${String(i + 1).padStart(2, "0")}`;
 
-type View = "home" | "flood" | "phoenix1" | "grow";
-const DETAILS: View[] = ["flood", "phoenix1", "grow"];
-
-export function LedxPage() {
-  const [view, setView] = useState<View>("home");
+export function LedxPage({ lines }: { lines: LedxLine[] }) {
+  const [view, setView] = useState<string>("home");
 
   useEffect(() => {
     const apply = () => {
       const h = location.hash.replace("#", "");
-      if ((DETAILS as string[]).includes(h)) {
-        setView(h as View);
+      if (h && document.querySelector(`[data-line="${h}"]`)) {
+        setView(h);
         window.scrollTo(0, 0);
       } else {
         setView("home");
@@ -80,7 +65,7 @@ export function LedxPage() {
                 <a className="btn ghost dark" href="#reference">Kde už LEDX svítí</a>
               </div>
             </div>
-            <div className="hero2-visual"><div className="beam" /><img src="/ledx/phoenix1-1.webp" alt="LEDX svítidlo" /></div>
+            <div className="hero2-visual"><div className="beam" /><img src={lines.find((l) => l.images.length)?.images[0] ?? "/ledx/phoenix1-1.webp"} alt="LEDX svítidlo" /></div>
           </div>
         </div></header>
 
@@ -97,9 +82,11 @@ export function LedxPage() {
           <p><strong>Jsme výhradní dodavatel LEDX pro Českou republiku.</strong> Svítidla dodáváme na objednávku — poradíme s výběrem výkonu, barvy světla i úhlu vyzařování a připravíme nabídku přesně pro váš prostor.</p>
         </div></section>
 
-        <LineCard no="ŘADA 01" title="Flood Light" sub="Univerzální reflektory" tagline="Spolehlivý pracant s volbou barvy a úhlu." desc="Osvědčená svítidla ve výkonech 20–200 W (i lineární provedení), CRI 90, krytí IP66. Barvu světla i úhel zvolíte podle prostoru." pills={["CRI 90", "20–200 W", "IP66", ">115 lm/W"]} img="/ledx/flood-1.webp" href="#flood" />
-        <LineCard flip no="ŘADA 02" title="Phoenix 1" sub="Univerzální výkonová řada" tagline="Pro nejnáročnější použití a velké prostory." desc="Modulární svítidlo 120–480 W, CRI 85–95, IP65, pasivní chlazení. Jedna lampa pro pět typů nasazení — od expozic po vysoké prostory a stožáry." pills={["CRI 85–95", "120–480 W", "IP65", "~150 lm/W"]} img="/ledx/phoenix1-1.webp" href="#phoenix1" />
-        <LineCard no="ŘADA 03" title="Phoenix Grow" sub="Spektrum pro růst rostlin" tagline="Náročné osvětlení rostlin s CRI 95." desc="Grow řada 120–480 W (sestavy až 1440 W), spektrum 380–780 nm, CRI 95, teplota 4200 K. Pro skleníky, pavilony a pěstírny." pills={["CRI 95", "120–1440 W", "IP65", "380–780 nm"]} img="/ledx/grow-1.webp" href="#grow" />
+        {lines.map((l, i) => (
+          <LineCard key={l.id} flip={i % 2 === 1} no={romanNo(i)} title={l.name} sub={l.subtitle}
+            tagline={l.tagline} desc={l.landingDesc} pills={l.landingPills}
+            img={l.images[0] ?? ""} href={`#${l.slug}`} />
+        ))}
 
         <section className="apps" id="rady-anchor"><div className="shell">
           <p className="kicker gold">Kde LEDX nasvítí</p>
@@ -127,35 +114,14 @@ export function LedxPage() {
       </div>
 
       {/* ===== DETAILS ===== */}
-      <DetailView show={view === "flood"} no="ŘADA 01 · LEDX" title="Flood Light" sub="Univerzální reflektory"
-        lead="Vysoce kvalitní a spolehlivé reflektory, které se roky osvědčují v našich projektech. Volba barvy světla (2700–6500 K) a úhlu vyzařování (15–90°) umožňuje osvětlení přesně podle prostoru. Dostupné i v lineárním provedení."
-        pills={["CRI 85–90", "IP66", "IK08", "−40 až +50 °C"]} images={["/ledx/flood-1.webp", "/ledx/flood-2.webp", "/ledx/flood-3.webp", "/ledx/flood-4.webp"]} plinthTag="Flood Light"
-        onJump={() => jump("pop-flood")}
-        modelsNote="Každý model volitelně s barvou světla 2700 / 3000 / 5000 / 6000 / 6500 K a úhlem 15° / 40° / 60° / 90°."
-        rows={[["Flood Light 50 W", "50 W", "6 000 lm", "278 × 86 × 230 mm", "2,45 kg"], ["Flood Light 100 W", "100 W", "12 000 lm", "278 × 191 × 230 mm", "3,95 kg"], ["Flood Light 150 W", "150 W", "18 000 lm", "278 × 296 × 230 mm", "5,35 kg"], ["Flood Light 200 W", "200 W", "24 000 lm", "278 × 401 × 230 mm", "6,85 kg"], ["Flood Light Linear 100 W", "100 W", "12 000 lm", "556 × 86 × 230 mm", "3,95 kg"], ["Flood Light Linear 150 W", "150 W", "18 000 lm", "834 × 86 × 230 mm", "5,35 kg"]]}
-        params={[["Barevná teplota", "2700–6500 K"], ["Úhel vyzařování", "15/40/60/90°"], ["Podání barev", "CRI 85–90"], ["Účinnost", ">115 lm/W"], ["Krytí / třída", "IP66 · I · IK08"], ["Napájení", "90–305 V · 50/60 Hz"], ["Provozní teplota", "−40 až +50 °C"], ["Materiál", "hliník · PMMA · nerez"], ["Stmívání", "0–10V / DALI / Zigbee"], ["Energ. třída", "E"], ["Životnost", "L80/B20 · 50 000 h"], ["Certifikáty", "CE · RoHS"]]}
-        usesTitle="Kde se hodí" uses={["Terária & expozice", "Tropické pavilony", "Akvária", "Výběhy zvířat", "Zoo"]}
-        config={FLOOD} />
-
-      <DetailView show={view === "phoenix1"} no="ŘADA 02 · LEDX" title="Phoenix 1" sub="Univerzální výkonová řada"
-        lead="Jedna lampa pro pět typů nasazení — reflektorové, pouliční, tunelové, stožárové i high-bay osvětlení. Modulární konstrukce (120W moduly) s volbou úhlu pro každý modul zvlášť, CRI 85–95 a účinností ~150 lm/W."
-        pills={["CRI 85–95", "IP65", "pasivní chlazení", "−40 až +55 °C"]} images={["/ledx/phoenix1-1.webp", "/ledx/phoenix1-2.webp", "/ledx/phoenix1-3.webp", "/ledx/phoenix1-4.webp"]} plinthTag="Phoenix 1"
-        onJump={() => jump("pop-phoenix1")}
-        modelsNote="Barva světla 3000 / 4000 / 5000 / 6500 K, úhel 20 / 40 / 60 / 90° nebo asymetricky H140×V100. Sestavy vyšších výkonů na dotaz."
-        rows={[["Phoenix 1 · 120 W", "120 W", "18 500 lm", "278 × 191 × 230 mm", "3 kg"], ["Phoenix 1 · 240 W", "240 W", "37 000 lm", "358 × 343 × 132 mm", "5 kg"], ["Phoenix 1 · 360 W", "360 W", "55 500 lm", "358 × 476 × 132 mm", "7 kg"], ["Phoenix 1 · 480 W", "480 W", "74 000 lm", "650 × 343 × 132 mm", "9 kg"]]}
-        params={[["Barevná teplota", "3000–6500 K"], ["Úhel vyzařování", "20–90° / H140×V100"], ["Podání barev", "CRI 85–95"], ["Účinnost", "~150 lm/W"], ["Krytí / třída", "IP65 · I · IK08"], ["Chlazení", "pasivní"], ["Provozní teplota", "−40 až +55 °C"], ["Materiál", "hliník · PMMA · nerez"], ["Stmívání", "0–10V / DALI / Zigbee"], ["Energ. třída", "C"], ["Životnost", "L80/B10 · 50 000 h"], ["Certifikáty", "CE · RoHS"]]}
-        usesTitle="Jedna lampa, pět aplikací" uses={["Reflektorové (flood)", "Pouliční", "Tunelové", "Stožárové", "High-bay", "Expozice primátů", "Tropické pavilony"]}
-        config={PH1} />
-
-      <DetailView show={view === "grow"} no="ŘADA 03 · LEDX" title="Phoenix Grow" sub="Spektrum pro růst rostlin"
-        lead="Grow řada pro náročné osvětlení rostlin — spektrum 380–780 nm, CRI 95, TLCI >95 %, teplota 4200 K a vysoké PPFD. Standard 120–480 W, volitelně sestavy až 1440 W. Ideální do skleníků, pavilonů a pěstíren."
-        pills={["CRI 95", "380–780 nm", "IP65", "PPFD 1331"]} images={["/ledx/grow-1.webp", "/ledx/grow-2.webp", "/ledx/grow-3.webp", "/ledx/grow-4.webp"]} plinthTag="Phoenix Grow"
-        onJump={() => jump("pop-grow")}
-        modelsNote="Barevná teplota 4200 K, úhel 20 / 40 / 60 / 90° nebo H140×V100. Volitelně sestavy až 1440 W na dotaz."
-        rows={[["Phoenix Grow · 120 W", "120 W", "18 000 lm", "310 × 116 × 132 mm", "3 kg"], ["Phoenix Grow · 240 W", "240 W", "36 000 lm", "358 × 343 × 132 mm", "5 kg"], ["Phoenix Grow · 360 W", "360 W", "54 000 lm", "358 × 476 × 132 mm", "7 kg"], ["Phoenix Grow · 480 W", "480 W", "72 000 lm", "650 × 343 × 132 mm", "9 kg"]]}
-        params={[["Barevná teplota", "4200 K"], ["Spektrum", "380–780 nm"], ["Podání barev", "CRI 95 · TLCI >95 %"], ["Účinnost", ">135 lm/W"], ["Úhel vyzařování", "20–90° / H140×V100"], ["Krytí / třída", "IP65 · I · IK08"], ["Chlazení", "pasivní"], ["Provozní teplota", "−40 až +55 °C"], ["Stmívání", "0–10V / DALI / Zigbee"], ["Energ. třída", "C"], ["Životnost", "L70/B20 · 30 000 h"], ["Certifikáty", "CE · RoHS"]]}
-        usesTitle="Kde se hodí" uses={["Skleníky", "Tropické pavilony", "Pěstírny a množárny", "Vegetační ostrůvky", "Odchovny rostlin"]}
-        config={GROW} />
+      {lines.map((l, i) => (
+        <DetailView key={l.id} lineSlug={l.slug} show={view === l.slug}
+          no={`${romanNo(i)} · LEDX`} title={l.name} sub={l.subtitle}
+          lead={l.detailLead} pills={l.detailPills} images={l.images} plinthTag={l.name}
+          onJump={() => jump(`pop-${l.slug}`)}
+          modelsNote={l.modelsNote} rows={l.models} params={l.params}
+          usesTitle={l.usesTitle} uses={l.uses} config={cfg(l)} />
+      ))}
     </div>
   );
 }
@@ -207,12 +173,12 @@ function ProductGallery({ images, tag }: { images: string[]; tag: string }) {
 }
 
 function DetailView(props: {
-  show: boolean; no: string; title: string; sub: string; lead: string; pills: string[]; images: string[]; plinthTag: string;
+  show: boolean; lineSlug: string; no: string; title: string; sub: string; lead: string; pills: string[]; images: string[]; plinthTag: string;
   onJump: () => void; modelsNote: string; rows: string[][]; params: string[][]; usesTitle: string; uses: string[]; config: RadaConfig;
 }) {
-  const { show, no, title, sub, lead, pills, images, plinthTag, onJump, modelsNote, rows, params, usesTitle, uses, config } = props;
+  const { show, lineSlug, no, title, sub, lead, pills, images, plinthTag, onJump, modelsNote, rows, params, usesTitle, uses, config } = props;
   return (
-    <div hidden={!show}>
+    <div hidden={!show} data-line={lineSlug}>
       <div className="shell"><a className="backlink" href="#home">← Zpět na Profi osvětlení</a></div>
       <section className="dhero"><div className="shell"><div className="dhero-grid">
         <div>
