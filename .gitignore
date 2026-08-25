@@ -24,3 +24,4 @@ build/
 /next-env.d.ts
 
 .vercel
+/LEDX/
