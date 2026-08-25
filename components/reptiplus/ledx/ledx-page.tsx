@@ -68,20 +68,19 @@ export function LedxPage() {
 
       {/* ===== HOME ===== */}
       <div hidden={view !== "home"}>
-        <header className="hero"><div className="shell">
-          <div className="hero-card">
-            <img src="/ledx/hero.jpg" alt="LEDX profesionální osvětlení v expozici" />
-            <div className="hero-veil" />
-            <div className="hero-inner">
+        <header className="hero2"><div className="shell">
+          <div className="hero2-grid">
+            <div className="hero2-copy">
               <p className="kicker">LEDX · profesionální řada</p>
               <h1>Osvětlení pro ty, kdo světlo berou <em>vážně</em>.</h1>
               <p className="sub">Prémiová LED svítidla LEDX pro zoo, velkochovy, tropické pavilony, expozice a skleníky. Vysoké CRI, výkon až 480 W na modul, IP65/66. Dodáváme na objednávku.</p>
               <span className="pill-order">Výhradní dodavatel LEDX pro ČR</span>
               <div className="cta-row">
                 <a className="btn primary" href="#rady">Prohlédnout řady <Arrow /></a>
-                <a className="btn ghost" href="#rady">Vybrat řadu</a>
+                <a className="btn ghost dark" href="#reference">Kde už LEDX svítí</a>
               </div>
             </div>
+            <div className="hero2-visual"><div className="beam" /><img src="/ledx/phoenix1-1.webp" alt="LEDX svítidlo" /></div>
           </div>
         </div></header>
 
@@ -106,6 +105,17 @@ export function LedxPage() {
           <p className="kicker gold">Kde LEDX nasvítí</p>
           <h2>Od terária po tropický pavilon.</h2>
           <div className="tagcloud">{["Zoologické zahrady", "Terária & expozice", "Tropické pavilony", "Akvária", "Expozice primátů", "Skleníky", "Pěstírny a množárny", "Vegetační ostrůvky", "Velkochovy", "Sportoviště & průmysl"].map((t) => <span key={t}>{t}</span>)}</div>
+        </div></section>
+
+        <section className="refs" id="reference"><div className="shell">
+          <p className="kicker gold">Reference</p>
+          <h2 className="refs-h">Kde už LEDX svítí</h2>
+          <p className="sec-sub">Svítidla LEDX najdete v profesionálních chovech, zoologických expozicích a dalších náročných provozech.</p>
+          <div className="refgrid">
+            <figure className="refcard"><img src="/ledx/ref-1.jpg" alt="Teraristická expozice" loading="lazy" /><figcaption>Teraristická expozice</figcaption></figure>
+            <figure className="refcard"><img src="/ledx/ref-2.jpg" alt="Krokodýlí ZOO Protivín" loading="lazy" /><figcaption>Krokodýlí ZOO Protivín</figcaption></figure>
+            <figure className="refcard"><img src="/ledx/ref-3.jpg" alt="Krokodýlí ZOO Protivín" loading="lazy" /><figcaption>Krokodýlí ZOO Protivín</figcaption></figure>
+          </div>
         </div></section>
 
         <section className="cta"><div className="shell"><div className="box"><div className="in">
@@ -279,6 +289,28 @@ const CSS = `
 .ledx .hero h1 em{font-style:italic;color:var(--gold-light)}
 .ledx .hero .sub{font-size:clamp(15px,1.8vw,19px);color:rgba(255,255,255,.87);margin:16px 0 0;max-width:58ch}
 .ledx .hero .pill-order{margin-top:20px;background:rgba(216,169,74,.16);border-color:rgba(216,169,74,.5);color:#f0d79a}
+.ledx .btn.ghost.dark{border-color:var(--line);color:var(--forest);background:var(--paper)}
+.ledx .btn.ghost.dark:hover{border-color:var(--forest);background:var(--panel)}
+.ledx .hero2{padding:34px 0 6px}
+.ledx .hero2-grid{position:relative;overflow:hidden;display:grid;grid-template-columns:1.08fr .92fr;gap:40px;align-items:center;background:linear-gradient(135deg,var(--panel) 0%,var(--cream) 60%);border:1px solid var(--line);border-radius:var(--r-lg);padding:52px 48px;box-shadow:var(--sh)}
+.ledx .hero2-grid::before{content:"";position:absolute;right:-6%;top:-40%;width:64%;height:180%;background:radial-gradient(circle at 55% 45%,var(--glow),transparent 62%);pointer-events:none}
+@media(max-width:820px){.ledx .hero2-grid{grid-template-columns:1fr;padding:32px 24px;gap:22px}}
+.ledx .hero2-copy{position:relative;z-index:1}
+.ledx .hero2 h1{font-size:clamp(31px,4.8vw,54px);color:var(--ink);line-height:1.05;margin:16px 0 0;text-wrap:balance}
+.ledx .hero2 h1 em{font-style:italic;color:var(--gold)}
+.ledx .hero2 .sub{font-size:clamp(15px,1.7vw,18px);color:var(--charcoal);margin:16px 0 0;max-width:52ch}
+.ledx .hero2 .pill-order{margin-top:18px}
+.ledx .hero2-visual{position:relative;display:flex;align-items:center;justify-content:center;min-height:260px}
+.ledx .hero2-visual .beam{position:absolute;inset:-10%;background:radial-gradient(circle at 50% 46%,rgba(255,206,120,.55),rgba(255,206,120,.14) 34%,transparent 60%);filter:blur(6px)}
+.ledx .hero2-visual img{position:relative;max-height:340px;width:auto;object-fit:contain;filter:drop-shadow(0 26px 46px rgba(30,34,15,.3))}
+.ledx .refs{padding:70px 0;border-top:1px solid var(--line)}
+.ledx .refs-h{font-size:clamp(26px,3.4vw,38px);margin:14px 0 0}
+.ledx .refgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px}
+@media(max-width:760px){.ledx .refgrid{grid-template-columns:1fr}}
+.ledx .refcard{position:relative;margin:0;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);box-shadow:var(--sh);aspect-ratio:4/3}
+.ledx .refcard img{width:100%;height:100%;object-fit:cover;transition:transform .6s}
+.ledx .refcard:hover img{transform:scale(1.05)}
+.ledx .refcard figcaption{position:absolute;left:0;right:0;bottom:0;padding:14px 16px;background:linear-gradient(0deg,rgba(15,18,9,.82),transparent);color:#fff;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}
 .ledx .ticker{margin-top:14px}
 .ledx .trow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 @media(max-width:720px){.ledx .trow{grid-template-columns:1fr 1fr}}
