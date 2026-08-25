@@ -98,9 +98,9 @@ export function LedxPage() {
           <p><strong>Jsme výhradní dodavatel LEDX pro Českou republiku.</strong> Svítidla dodáváme na objednávku — poradíme s výběrem výkonu, barvy světla i úhlu vyzařování a připravíme nabídku přesně pro váš prostor.</p>
         </div></section>
 
-        <LineCard no="ŘADA 01" title="Flood Light" sub="Univerzální reflektory" tagline="Spolehlivý pracant s volbou barvy a úhlu." desc="Osvědčená svítidla ve výkonech 20–200 W (i lineární provedení), CRI 90, krytí IP66. Barvu světla i úhel zvolíte podle prostoru." pills={["CRI 90", "20–200 W", "IP66", ">115 lm/W"]} img="/ledx/flood.jpg" href="#flood" />
-        <LineCard flip no="ŘADA 02" title="Phoenix 1" sub="Univerzální výkonová řada" tagline="Pro nejnáročnější použití a velké prostory." desc="Modulární svítidlo 120–480 W, CRI 85–95, IP65, pasivní chlazení. Jedna lampa pro pět typů nasazení — od expozic po vysoké prostory a stožáry." pills={["CRI 85–95", "120–480 W", "IP65", "~150 lm/W"]} img="/ledx/phoenix1.jpg" href="#phoenix1" />
-        <LineCard no="ŘADA 03" title="Phoenix Grow" sub="Spektrum pro růst rostlin" tagline="Náročné osvětlení rostlin s CRI 95." desc="Grow řada 120–480 W (sestavy až 1440 W), spektrum 380–780 nm, CRI 95, teplota 4200 K. Pro skleníky, pavilony a pěstírny." pills={["CRI 95", "120–1440 W", "IP65", "380–780 nm"]} img="/ledx/grow.jpg" href="#grow" />
+        <LineCard no="ŘADA 01" title="Flood Light" sub="Univerzální reflektory" tagline="Spolehlivý pracant s volbou barvy a úhlu." desc="Osvědčená svítidla ve výkonech 20–200 W (i lineární provedení), CRI 90, krytí IP66. Barvu světla i úhel zvolíte podle prostoru." pills={["CRI 90", "20–200 W", "IP66", ">115 lm/W"]} img="/ledx/flood-1.webp" href="#flood" />
+        <LineCard flip no="ŘADA 02" title="Phoenix 1" sub="Univerzální výkonová řada" tagline="Pro nejnáročnější použití a velké prostory." desc="Modulární svítidlo 120–480 W, CRI 85–95, IP65, pasivní chlazení. Jedna lampa pro pět typů nasazení — od expozic po vysoké prostory a stožáry." pills={["CRI 85–95", "120–480 W", "IP65", "~150 lm/W"]} img="/ledx/phoenix1-1.webp" href="#phoenix1" />
+        <LineCard no="ŘADA 03" title="Phoenix Grow" sub="Spektrum pro růst rostlin" tagline="Náročné osvětlení rostlin s CRI 95." desc="Grow řada 120–480 W (sestavy až 1440 W), spektrum 380–780 nm, CRI 95, teplota 4200 K. Pro skleníky, pavilony a pěstírny." pills={["CRI 95", "120–1440 W", "IP65", "380–780 nm"]} img="/ledx/grow-1.webp" href="#grow" />
 
         <section className="apps" id="rady-anchor"><div className="shell">
           <p className="kicker gold">Kde LEDX nasvítí</p>
@@ -119,7 +119,7 @@ export function LedxPage() {
       {/* ===== DETAILS ===== */}
       <DetailView show={view === "flood"} no="ŘADA 01 · LEDX" title="Flood Light" sub="Univerzální reflektory"
         lead="Vysoce kvalitní a spolehlivé reflektory, které se roky osvědčují v našich projektech. Volba barvy světla (2700–6500 K) a úhlu vyzařování (15–90°) umožňuje osvětlení přesně podle prostoru. Dostupné i v lineárním provedení."
-        pills={["CRI 85–90", "IP66", "IK08", "−40 až +50 °C"]} img="/ledx/flood.jpg" plinthTag="Flood Light 100 W"
+        pills={["CRI 85–90", "IP66", "IK08", "−40 až +50 °C"]} images={["/ledx/flood-1.webp", "/ledx/flood-2.webp", "/ledx/flood-3.webp", "/ledx/flood-4.webp"]} plinthTag="Flood Light"
         onJump={() => jump("pop-flood")}
         modelsNote="Každý model volitelně s barvou světla 2700 / 3000 / 5000 / 6000 / 6500 K a úhlem 15° / 40° / 60° / 90°."
         rows={[["Flood Light 50 W", "50 W", "6 000 lm", "278 × 86 × 230 mm", "2,45 kg"], ["Flood Light 100 W", "100 W", "12 000 lm", "278 × 191 × 230 mm", "3,95 kg"], ["Flood Light 150 W", "150 W", "18 000 lm", "278 × 296 × 230 mm", "5,35 kg"], ["Flood Light 200 W", "200 W", "24 000 lm", "278 × 401 × 230 mm", "6,85 kg"], ["Flood Light Linear 100 W", "100 W", "12 000 lm", "556 × 86 × 230 mm", "3,95 kg"], ["Flood Light Linear 150 W", "150 W", "18 000 lm", "834 × 86 × 230 mm", "5,35 kg"]]}
@@ -129,7 +129,7 @@ export function LedxPage() {
 
       <DetailView show={view === "phoenix1"} no="ŘADA 02 · LEDX" title="Phoenix 1" sub="Univerzální výkonová řada"
         lead="Jedna lampa pro pět typů nasazení — reflektorové, pouliční, tunelové, stožárové i high-bay osvětlení. Modulární konstrukce (120W moduly) s volbou úhlu pro každý modul zvlášť, CRI 85–95 a účinností ~150 lm/W."
-        pills={["CRI 85–95", "IP65", "pasivní chlazení", "−40 až +55 °C"]} img="/ledx/phoenix1.jpg" plinthTag="Phoenix 1 · 120 W"
+        pills={["CRI 85–95", "IP65", "pasivní chlazení", "−40 až +55 °C"]} images={["/ledx/phoenix1-1.webp", "/ledx/phoenix1-2.webp", "/ledx/phoenix1-3.webp", "/ledx/phoenix1-4.webp"]} plinthTag="Phoenix 1"
         onJump={() => jump("pop-phoenix1")}
         modelsNote="Barva světla 3000 / 4000 / 5000 / 6500 K, úhel 20 / 40 / 60 / 90° nebo asymetricky H140×V100. Sestavy vyšších výkonů na dotaz."
         rows={[["Phoenix 1 · 120 W", "120 W", "18 500 lm", "278 × 191 × 230 mm", "3 kg"], ["Phoenix 1 · 240 W", "240 W", "37 000 lm", "358 × 343 × 132 mm", "5 kg"], ["Phoenix 1 · 360 W", "360 W", "55 500 lm", "358 × 476 × 132 mm", "7 kg"], ["Phoenix 1 · 480 W", "480 W", "74 000 lm", "650 × 343 × 132 mm", "9 kg"]]}
@@ -139,7 +139,7 @@ export function LedxPage() {
 
       <DetailView show={view === "grow"} no="ŘADA 03 · LEDX" title="Phoenix Grow" sub="Spektrum pro růst rostlin"
         lead="Grow řada pro náročné osvětlení rostlin — spektrum 380–780 nm, CRI 95, TLCI >95 %, teplota 4200 K a vysoké PPFD. Standard 120–480 W, volitelně sestavy až 1440 W. Ideální do skleníků, pavilonů a pěstíren."
-        pills={["CRI 95", "380–780 nm", "IP65", "PPFD 1331"]} img="/ledx/grow.jpg" plinthTag="Phoenix Grow · 240 W"
+        pills={["CRI 95", "380–780 nm", "IP65", "PPFD 1331"]} images={["/ledx/grow-1.webp", "/ledx/grow-2.webp", "/ledx/grow-3.webp", "/ledx/grow-4.webp"]} plinthTag="Phoenix Grow"
         onJump={() => jump("pop-grow")}
         modelsNote="Barevná teplota 4200 K, úhel 20 / 40 / 60 / 90° nebo H140×V100. Volitelně sestavy až 1440 W na dotaz."
         rows={[["Phoenix Grow · 120 W", "120 W", "18 000 lm", "310 × 116 × 132 mm", "3 kg"], ["Phoenix Grow · 240 W", "240 W", "36 000 lm", "358 × 343 × 132 mm", "5 kg"], ["Phoenix Grow · 360 W", "360 W", "54 000 lm", "358 × 476 × 132 mm", "7 kg"], ["Phoenix Grow · 480 W", "480 W", "72 000 lm", "650 × 343 × 132 mm", "9 kg"]]}
@@ -169,11 +169,38 @@ function LineCard({ no, title, sub, tagline, desc, pills, img, href, flip }: {
   );
 }
 
+function ProductGallery({ images, tag }: { images: string[]; tag: string }) {
+  const [active, setActive] = useState(0);
+  return (
+    <div className="gallery">
+      <div className="plinth">
+        <span className="tag">{tag}</span>
+        <img src={images[active]} alt={tag} />
+      </div>
+      {images.length > 1 && (
+        <div className="thumbs">
+          {images.map((im, i) => (
+            <button
+              key={im}
+              type="button"
+              className={`thumb${i === active ? " on" : ""}`}
+              onClick={() => setActive(i)}
+              aria-label={`Fotka ${i + 1}`}
+            >
+              <img src={im} alt="" loading="lazy" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DetailView(props: {
-  show: boolean; no: string; title: string; sub: string; lead: string; pills: string[]; img: string; plinthTag: string;
+  show: boolean; no: string; title: string; sub: string; lead: string; pills: string[]; images: string[]; plinthTag: string;
   onJump: () => void; modelsNote: string; rows: string[][]; params: string[][]; usesTitle: string; uses: string[]; config: RadaConfig;
 }) {
-  const { show, no, title, sub, lead, pills, img, plinthTag, onJump, modelsNote, rows, params, usesTitle, uses, config } = props;
+  const { show, no, title, sub, lead, pills, images, plinthTag, onJump, modelsNote, rows, params, usesTitle, uses, config } = props;
   return (
     <div hidden={!show}>
       <div className="shell"><a className="backlink" href="#home">← Zpět na Profi osvětlení</a></div>
@@ -187,7 +214,7 @@ function DetailView(props: {
           <div className="cta-row"><button type="button" className="btn primary" onClick={onJump}>Nezávazně poptat
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg></button></div>
         </div>
-        <div><div className="plinth"><span className="tag">{plinthTag}</span><img src={img} alt={`LEDX ${title}`} /></div></div>
+        <ProductGallery images={images} tag={plinthTag} />
       </div></div></section>
 
       <section className="dsection"><div className="shell">
@@ -279,6 +306,12 @@ const CSS = `
 .ledx .plinth img{max-height:100%;width:auto;object-fit:contain;filter:drop-shadow(0 18px 30px rgba(30,34,15,.22));position:relative}
 .ledx .plinth .tag{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--forest-deep);background:var(--paper);border:1px solid var(--line);padding:6px 11px;border-radius:999px}
 :root[data-theme="dark"] .ledx .plinth .tag{color:var(--forest)}
+.ledx .gallery{display:flex;flex-direction:column;gap:12px}
+.ledx .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ledx .thumb{border:1.5px solid var(--line);border-radius:12px;overflow:hidden;background:radial-gradient(80% 70% at 50% 42%,var(--glow-green),transparent 60%),var(--panel);aspect-ratio:1/1;padding:8px;cursor:pointer;transition:border-color .2s,transform .12s,box-shadow .2s}
+.ledx .thumb:hover{border-color:var(--forest);transform:translateY(-1px)}
+.ledx .thumb.on{border-color:var(--forest);box-shadow:0 0 0 2px color-mix(in srgb,var(--forest) 30%,transparent)}
+.ledx .thumb img{width:100%;height:100%;object-fit:contain}
 .ledx .apps{padding:66px 0;border-top:1px solid var(--line)}
 .ledx .apps h2{font-size:clamp(26px,3.4vw,38px);margin:14px 0 0}
 .ledx .tagcloud{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
