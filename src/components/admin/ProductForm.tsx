@@ -145,10 +145,9 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
     if (!form.nameCs) { toast('Nejdřív vyplňte český název', 'error'); return }
     setTranslating(true)
     try {
-      const paramJson = Object.keys(form.parameters).length > 0 ? JSON.stringify(form.parameters) : undefined
       const res = await fetch('/api/admin/translate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nameCs: form.nameCs, descriptionCs: form.descriptionCs, ...(paramJson ? { parametersCs: paramJson } : {}) }),
+        body: JSON.stringify({ nameCs: form.nameCs, descriptionCs: form.descriptionCs }),
       })
       const data = await res.json()
       if (!res.ok) { toast(data.error || 'Překlad selhal', 'error'); return }

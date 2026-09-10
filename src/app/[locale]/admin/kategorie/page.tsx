@@ -75,7 +75,7 @@ export default function AdminKategoriePage() {
     try {
       const res = await fetch('/api/admin/translate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nameCs: form.nameCs, descriptionCs: form.descriptionCs }),
+        body: JSON.stringify({ nameCs: form.nameCs }),
       })
       const data = await res.json()
       if (!res.ok) { toast(data.error || 'Překlad selhal', 'error'); return }
