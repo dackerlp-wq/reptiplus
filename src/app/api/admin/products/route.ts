@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { nameCs, nameEn, nameDe, descriptionCs, descriptionEn, descriptionDe,
     categoryId, price, vatRate, comparePrice, stock, lowStockThreshold,
-    images, parameters, isActive, isFeatured, isNew, isSale, weight, sku } = body
+    images, parameters, parametersEn, parametersDe, isActive, isFeatured, isNew, isSale, weight, sku } = body
 
   if (!nameCs || !price) {
     return NextResponse.json({ error: 'Název a cena jsou povinné.' }, { status: 400 })
@@ -63,6 +63,8 @@ export async function POST(req: NextRequest) {
     low_stock_threshold: parseInt(lowStockThreshold || '5'),
     images: JSON.stringify(images || []),
     parameters: JSON.stringify(parameters || {}),
+    parameters_en: JSON.stringify(parametersEn || {}),
+    parameters_de: JSON.stringify(parametersDe || {}),
     is_active: isActive ? 1 : 0,
     is_featured: isFeatured ? 1 : 0,
     is_new: 1,

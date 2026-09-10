@@ -78,7 +78,8 @@
     "out_of_stock": "Není skladem",
     "pieces_left": "zbývá {count} ks",
     "write_review": "Napsat recenzi",
-    "no_reviews": "Zatím žádné recenze"
+    "no_reviews": "Zatím žádné recenze",
+    "no_parameters": "Žádné parametry."
   },
   "cart": {
     "title": "Košík",

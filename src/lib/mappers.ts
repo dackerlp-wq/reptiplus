@@ -22,6 +22,8 @@ export function mapProduct(p: Record<string, any>) {
     lowStockThreshold: p.low_stock_threshold,
     images: p.images,
     parameters: p.parameters,
+    parametersEn: p.parameters_en,
+    parametersDe: p.parameters_de,
     isActive: p.is_active,
     isFeatured: p.is_featured,
     // isNew respects the 3-month auto-expiry window (new_until)

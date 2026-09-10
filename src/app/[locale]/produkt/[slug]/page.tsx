@@ -4,6 +4,7 @@ import { mapProduct, mapCategory, mapReview } from '@/lib/mappers'
 import type { Metadata } from 'next'
 import ProductDetailClient from './ProductDetailClient'
 import type { Product as ProductCardType } from '@/components/shop/ProductCard'
+import { parseParams } from '@/lib/params'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string; locale: string }> }): Promise<Metadata> {
   const { slug } = await params
@@ -94,7 +95,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     comparePrice: (v.compare_price ?? null) as number | null,
     stock: v.stock as number,
     attributes: (v.attributes || {}) as Record<string, string>,
-    parameters: (v.parameters || {}) as Record<string, string>,
+    parameters: parseParams(v.parameters),
+    parametersEn: parseParams(v.parameters_en),
+    parametersDe: parseParams(v.parameters_de),
     restockDate: (v.restock_date || null) as string | null,
     sortOrder: v.sort_order as number,
   }))

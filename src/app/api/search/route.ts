@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const [{ data: products }, { data: variants }] = await Promise.all([
     supabaseAdmin
       .from('products')
-      .select('id, slug, name_cs, name_en, name_de, price, images, parameters, category_id')
+      .select('id, slug, name_cs, name_en, name_de, price, images, parameters, parameters_en, parameters_de, category_id')
       .eq('is_active', 1)
       .or(
         `name_cs.ilike.%${term}%,name_en.ilike.%${term}%,name_de.ilike.%${term}%,` +
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       .limit(20),
     supabaseAdmin
       .from('product_variants')
-      .select('product_id, name_cs, name_en, name_de, attributes, parameters')
+      .select('product_id, name_cs, name_en, name_de, attributes, parameters, parameters_en, parameters_de')
       .or(`name_cs.ilike.%${term}%,name_en.ilike.%${term}%,name_de.ilike.%${term}%`)
       .limit(30),
   ])
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   if (variantMatchIds.size > 0) {
     const { data } = await supabaseAdmin
       .from('products')
-      .select('id, slug, name_cs, name_en, name_de, price, images, parameters, category_id')
+      .select('id, slug, name_cs, name_en, name_de, price, images, parameters, parameters_en, parameters_de, category_id')
       .eq('is_active', 1)
       .in('id', [...variantMatchIds])
       .limit(10)
@@ -54,10 +54,13 @@ export async function GET(req: NextRequest) {
   // Also check parameters JSON for matches
   const paramMatched = new Set<string>()
   for (const p of allProducts) {
-    if (p.parameters) {
-      const paramStr = JSON.stringify(p.parameters).toLowerCase()
-      if (paramStr.includes(term)) paramMatched.add(p.id)
-    }
+    // Klíče i hodnoty jsou přeložené, hledá se proto ve všech třech jazycích.
+    const paramStr = [p.parameters, p.parameters_en, p.parameters_de]
+      .filter(Boolean)
+      .map(v => JSON.stringify(v))
+      .join(' ')
+      .toLowerCase()
+    if (paramStr && paramStr.includes(term)) paramMatched.add(p.id)
   }
 
   // Deduplicate and build results

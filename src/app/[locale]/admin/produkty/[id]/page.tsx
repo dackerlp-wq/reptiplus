@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { mapProduct } from '@/lib/mappers'
 import { notFound } from 'next/navigation'
 import ProductForm from '@/components/admin/ProductForm'
+import { parseParams } from '@/lib/params'
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -32,7 +33,9 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     lowStockThreshold: product.lowStockThreshold ?? 5,
     categoryId: product.categoryId,
     images: JSON.parse(product.images || '[]'),
-    parameters: JSON.parse(product.parameters || '{}'),
+    parameters: parseParams(product.parameters),
+    parametersEn: parseParams(product.parametersEn),
+    parametersDe: parseParams(product.parametersDe),
     isActive: product.isActive,
     isFeatured: product.isFeatured ?? 0,
     isNew: product.isNew ?? 0,

@@ -33,7 +33,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     variants: {
       name_cs: string; name_en?: string; name_de?: string
       sku?: string; price?: number | null; compare_price?: number | null; stock?: number
-      attributes?: Record<string, string>; parameters?: Record<string, string>
+      attributes?: Record<string, string>
+      parameters?: Record<string, string>
+      parameters_en?: Record<string, string>
+      parameters_de?: Record<string, string>
       restock_date?: string | null; sort_order?: number
     }[]
   }
@@ -53,6 +56,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       stock: v.stock ?? 0,
       attributes: v.attributes ?? {},
       parameters: v.parameters ?? {},
+      parameters_en: v.parameters_en ?? {},
+      parameters_de: v.parameters_de ?? {},
       restock_date: v.restock_date || null,
       sort_order: v.sort_order ?? i,
     }))

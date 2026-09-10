@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/Toaster'
+import { EMPTY_PARAM_ROW, fromParamRows, parseParams, toParamRows, type ParamRow } from '@/lib/params'
 import {
   Upload, X, Wand2, Plus, Trash2, ChevronDown, ChevronUp,
   Package, Tag, Percent, Layers, Zap, GripVertical,
@@ -22,7 +23,7 @@ type Variant = {
   name_cs: string; name_en: string; name_de: string
   sku: string; price: string; compare_price: string; stock: string; restock_date: string
   attributes: Record<string, string>
-  parameters: Record<string, string>
+  paramRows: ParamRow[]
   expanded: boolean
   newParamKey: string; newParamVal: string
 }
@@ -32,7 +33,10 @@ interface ProductData {
   descriptionCs?: string; descriptionEn?: string; descriptionDe?: string
   sku?: string; price?: number; vatRate?: number; comparePrice?: number | null
   stock?: number; lowStockThreshold?: number; categoryId?: string | null
-  images?: string[]; parameters?: Record<string, string>
+  images?: string[]
+  parameters?: Record<string, string>
+  parametersEn?: Record<string, string>
+  parametersDe?: Record<string, string>
   isActive?: number; isFeatured?: number; isNew?: number; isSale?: number; weight?: number | null
 }
 
@@ -40,10 +44,16 @@ function makeVariant(attrs: Record<string, string> = {}, expanded = true): Varia
   return {
     name_cs: Object.values(attrs).join(' / '),
     name_en: '', name_de: '', sku: '', price: '', compare_price: '', stock: '0', restock_date: '',
-    attributes: attrs, parameters: {},
+    attributes: attrs, paramRows: [],
     expanded, newParamKey: '', newParamVal: '',
   }
 }
+
+const PARAM_LANGS = [
+  { code: 'cs', keyField: 'keyCs', valueField: 'valueCs' },
+  { code: 'en', keyField: 'keyEn', valueField: 'valueEn' },
+  { code: 'de', keyField: 'keyDe', valueField: 'valueDe' },
+] as const
 
 function cartesian<T>(arrays: T[][]): T[][] {
   if (arrays.length === 0) return [[]]
@@ -103,8 +113,15 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
     isNew: !!initialData?.isNew,
     isSale: !!initialData?.isSale,
     images: initialData?.images || [] as string[],
-    parameters: initialData?.parameters || {} as Record<string, string>,
   })
+
+  const [paramRows, setParamRows] = useState<ParamRow[]>(
+    toParamRows(
+      initialData?.parameters || {},
+      initialData?.parametersEn || {},
+      initialData?.parametersDe || {},
+    ),
+  )
 
   useEffect(() => {
     fetch('/api/admin/categories').then(r => r.json())
@@ -120,7 +137,8 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
             sku: v.sku || '', price: v.price !== null ? String(v.price) : '',
             compare_price: v.compare_price !== null && v.compare_price !== undefined ? String(v.compare_price) : '',
             stock: String(v.stock ?? 0), restock_date: v.restock_date || '',
-            attributes: v.attributes || {}, parameters: v.parameters || {},
+            attributes: v.attributes || {},
+            paramRows: toParamRows(parseParams(v.parameters), parseParams(v.parameters_en), parseParams(v.parameters_de)),
             expanded: idx === 0, newParamKey: '', newParamVal: '',
           }))
           if (loaded.length > 0) { setVariants(loaded); setShowMatrix(false) }
@@ -145,13 +163,36 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
     if (!form.nameCs) { toast('Nejdřív vyplňte český název', 'error'); return }
     setTranslating(true)
     try {
+      // Prázdné řádky se nepřekládají; indexy si držíme, ať jde odpověď
+      // spárovat zpátky na správné řádky.
+      const filledIdx = paramRows.map((r, i) => (r.keyCs.trim() ? i : -1)).filter(i => i >= 0)
+      const parametersCs: Record<string, string> = {}
+      for (const i of filledIdx) parametersCs[paramRows[i].keyCs.trim()] = paramRows[i].valueCs.trim()
+
       const res = await fetch('/api/admin/translate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nameCs: form.nameCs, descriptionCs: form.descriptionCs }),
+        body: JSON.stringify({
+          nameCs: form.nameCs,
+          descriptionCs: form.descriptionCs,
+          ...(filledIdx.length ? { parametersCs } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok) { toast(data.error || 'Překlad selhal', 'error'); return }
       setForm(f => ({ ...f, nameEn: data.nameEn || f.nameEn, nameDe: data.nameDe || f.nameDe, descriptionEn: data.descriptionEn || f.descriptionEn, descriptionDe: data.descriptionDe || f.descriptionDe }))
+      if (data.parametersEn || data.parametersDe) {
+        const en = Object.entries(data.parametersEn || {}) as [string, string][]
+        const de = Object.entries(data.parametersDe || {}) as [string, string][]
+        setParamRows(rows => rows.map((r, i) => {
+          const pos = filledIdx.indexOf(i)
+          if (pos < 0) return r
+          return {
+            ...r,
+            keyEn: en[pos]?.[0] ?? r.keyEn, valueEn: en[pos]?.[1] ?? r.valueEn,
+            keyDe: de[pos]?.[0] ?? r.keyDe, valueDe: de[pos]?.[1] ?? r.valueDe,
+          }
+        }))
+      }
       toast('Přeloženo ✓', 'success')
     } catch { toast('Překlad selhal', 'error') }
     setTranslating(false)
@@ -162,13 +203,31 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
     if (!v.name_cs) { toast('Vyplňte český název varianty', 'error'); return }
     setTranslating(true)
     try {
+      const filledIdx = v.paramRows.map((r, i) => (r.keyCs.trim() ? i : -1)).filter(i => i >= 0)
+      const parametersCs: Record<string, string> = {}
+      for (const i of filledIdx) parametersCs[v.paramRows[i].keyCs.trim()] = v.paramRows[i].valueCs.trim()
+
       const res = await fetch('/api/admin/translate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nameCs: v.name_cs }),
+        body: JSON.stringify({ nameCs: v.name_cs, ...(filledIdx.length ? { parametersCs } : {}) }),
       })
       const data = await res.json()
       if (!res.ok) { toast(data.error || 'Překlad selhal', 'error'); return }
-      setV(idx, { name_en: data.nameEn || v.name_en, name_de: data.nameDe || v.name_de })
+      const en = Object.entries(data.parametersEn || {}) as [string, string][]
+      const de = Object.entries(data.parametersDe || {}) as [string, string][]
+      setV(idx, {
+        name_en: data.nameEn || v.name_en,
+        name_de: data.nameDe || v.name_de,
+        paramRows: v.paramRows.map((r, i) => {
+          const pos = filledIdx.indexOf(i)
+          if (pos < 0) return r
+          return {
+            ...r,
+            keyEn: en[pos]?.[0] ?? r.keyEn, valueEn: en[pos]?.[1] ?? r.valueEn,
+            keyDe: de[pos]?.[0] ?? r.keyDe, valueDe: de[pos]?.[1] ?? r.valueDe,
+          }
+        }),
+      })
       toast('Přeloženo ✓', 'success')
     } catch { toast('Překlad selhal', 'error') }
     setTranslating(false)
@@ -176,12 +235,14 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
 
   // ── Product parameters ────────────────────────────────────
   const addParam = () => {
-    if (!paramKey || !paramValue) return
-    setForm(f => ({ ...f, parameters: { ...f.parameters, [paramKey]: paramValue } }))
+    if (!paramKey.trim() || !paramValue.trim()) return
+    setParamRows(rows => [...rows, { ...EMPTY_PARAM_ROW, keyCs: paramKey.trim(), valueCs: paramValue.trim() }])
     setParamKey(''); setParamValue('')
   }
-  const removeParam = (key: string) =>
-    setForm(f => { const p = { ...f.parameters }; delete p[key]; return { ...f, parameters: p } })
+  const removeParam = (idx: number) =>
+    setParamRows(rows => rows.filter((_, i) => i !== idx))
+  const patchParam = (idx: number, field: keyof ParamRow, value: string) =>
+    setParamRows(rows => rows.map((r, i) => (i === idx ? { ...r, [field]: value } : r)))
 
   // ── Images ────────────────────────────────────────────────
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -250,13 +311,16 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
 
   const addVariantParam = (i: number) => {
     const v = variants[i]
-    if (!v.newParamKey || !v.newParamVal) return
-    setV(i, { parameters: { ...v.parameters, [v.newParamKey]: v.newParamVal }, newParamKey: '', newParamVal: '' })
+    if (!v.newParamKey.trim() || !v.newParamVal.trim()) return
+    setV(i, {
+      paramRows: [...v.paramRows, { ...EMPTY_PARAM_ROW, keyCs: v.newParamKey.trim(), valueCs: v.newParamVal.trim() }],
+      newParamKey: '', newParamVal: '',
+    })
   }
-  const removeVariantParam = (i: number, key: string) => {
-    const params = { ...variants[i].parameters }; delete params[key]
-    setV(i, { parameters: params })
-  }
+  const removeVariantParam = (i: number, idx: number) =>
+    setV(i, { paramRows: variants[i].paramRows.filter((_, j) => j !== idx) })
+  const patchVariantParam = (i: number, idx: number, field: keyof ParamRow, value: string) =>
+    setV(i, { paramRows: variants[i].paramRows.map((r, j) => (j === idx ? { ...r, [field]: value } : r)) })
 
   // ── Bulk actions ──────────────────────────────────────────
   const toggleRow = (i: number) => {
@@ -291,8 +355,13 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
     if (variants.some(v => !v.name_cs)) { toast('Každá varianta musí mít český název', 'error'); return }
     setLoading(true)
 
+    const productParams = fromParamRows(paramRows)
+
     const body = {
       ...form,
+      parameters: productParams.cs,
+      parametersEn: productParams.en,
+      parametersDe: productParams.de,
       isActive: form.isActive ? 1 : 0, isFeatured: form.isFeatured ? 1 : 0,
       isNew: form.isNew ? 1 : 0, isSale: form.isSale ? 1 : 0,
       categoryId: form.categoryId || null, comparePrice: form.comparePrice || null, weight: form.weight || null,
@@ -306,13 +375,18 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
       await fetch(`/api/admin/products/${productId}/variants`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          variants: variants.map((v, i) => ({
-            name_cs: v.name_cs, name_en: v.name_en || v.name_cs, name_de: v.name_de || v.name_cs,
-            sku: v.sku || null, price: v.price ? parseFloat(v.price) : null,
-            compare_price: v.compare_price ? parseFloat(v.compare_price) : null,
-            stock: parseInt(v.stock || '0'), restock_date: v.restock_date || null,
-            attributes: v.attributes, parameters: v.parameters, sort_order: i,
-          })),
+          variants: variants.map((v, i) => {
+            const vp = fromParamRows(v.paramRows)
+            return {
+              name_cs: v.name_cs, name_en: v.name_en || v.name_cs, name_de: v.name_de || v.name_cs,
+              sku: v.sku || null, price: v.price ? parseFloat(v.price) : null,
+              compare_price: v.compare_price ? parseFloat(v.compare_price) : null,
+              stock: parseInt(v.stock || '0'), restock_date: v.restock_date || null,
+              attributes: v.attributes,
+              parameters: vp.cs, parameters_en: vp.en, parameters_de: vp.de,
+              sort_order: i,
+            }
+          }),
         }),
       }).catch(() => {})
       toast(initialData?.id ? 'Produkt uložen' : 'Produkt vytvořen', 'success')
@@ -427,7 +501,7 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
           {/* Parametry produktu */}
           <div className="bg-white rounded-xl border border-cream-dark p-5">
             <h2 className="font-bold mb-1">Parametry produktu</h2>
-            <p className="text-xs text-gray-soft mb-4">Společné pro všechny varianty. Odlišné parametry přidejte přímo ke každé variantě.</p>
+            <p className="text-xs text-gray-soft mb-4">Společné pro všechny varianty. Odlišné parametry přidejte přímo ke každé variantě. Anglickou a německou verzi doplní tlačítko „Přeložit AI“ u názvu produktu.</p>
             <div className="flex gap-2 mb-3">
               <input value={paramKey} onChange={e => setParamKey(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addParam())}
@@ -437,13 +511,25 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
                 placeholder="Hodnota (např. 35W)" className="flex-1 border border-cream-dark rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-forest" />
               <Button type="button" variant="outline" size="sm" onClick={addParam}><Plus className="w-4 h-4" /> Přidat</Button>
             </div>
-            {Object.keys(form.parameters).length > 0 ? (
-              <div className="rounded-lg border border-cream-dark overflow-hidden">
-                {Object.entries(form.parameters).map(([k, v], idx) => (
-                  <div key={k} className={`flex items-center gap-3 px-3 py-2 text-sm ${idx % 2 === 0 ? '' : 'bg-cream/50'}`}>
-                    <span className="font-medium w-36 shrink-0">{k}</span>
-                    <span className="flex-1 text-gray-soft">{v}</span>
-                    <button type="button" onClick={() => removeParam(k)} className="text-gray-soft hover:text-red-500 p-1"><X className="w-3.5 h-3.5" /></button>
+            {paramRows.length > 0 ? (
+              <div className="space-y-2">
+                {paramRows.map((row, idx) => (
+                  <div key={idx} className="rounded-lg border border-cream-dark p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-gray-soft">Parametr {idx + 1}</span>
+                      <button type="button" onClick={() => removeParam(idx)} className="text-gray-soft hover:text-red-500 p-1"><X className="w-3.5 h-3.5" /></button>
+                    </div>
+                    <div className="space-y-1.5">
+                      {PARAM_LANGS.map(lang => (
+                        <div key={lang.code} className="flex items-center gap-2">
+                          <span className="w-6 shrink-0 font-mono text-[10px] font-bold uppercase text-gray-soft">{lang.code}</span>
+                          <input value={row[lang.keyField]} onChange={e => patchParam(idx, lang.keyField, e.target.value)}
+                            placeholder="Název" className="w-36 shrink-0 border border-cream-dark rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-forest" />
+                          <input value={row[lang.valueField]} onChange={e => patchParam(idx, lang.valueField, e.target.value)}
+                            placeholder="Hodnota" className="flex-1 border border-cream-dark rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-forest" />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -773,13 +859,25 @@ export default function ProductForm({ initialData }: { initialData?: ProductData
                                 {/* Variant-specific params */}
                                 <div>
                                   <p className="text-[10px] font-bold uppercase tracking-wider text-gray-soft mb-2">Specifické parametry varianty</p>
-                                  {Object.keys(v.parameters).length > 0 && (
-                                    <div className="rounded-lg border border-cream-dark overflow-hidden mb-2">
-                                      {Object.entries(v.parameters).map(([k, val], idx) => (
-                                        <div key={k} className={`flex items-center gap-2 px-3 py-1.5 text-sm ${idx % 2 === 0 ? '' : 'bg-cream/50'}`}>
-                                          <span className="font-medium w-28 shrink-0">{k}</span>
-                                          <span className="flex-1 text-gray-soft">{val}</span>
-                                          <button type="button" onClick={() => removeVariantParam(i, k)} className="text-gray-soft hover:text-red-500 p-1"><X className="w-3 h-3" /></button>
+                                  {v.paramRows.length > 0 && (
+                                    <div className="space-y-1.5 mb-2">
+                                      {v.paramRows.map((row, idx) => (
+                                        <div key={idx} className="rounded-lg border border-cream-dark p-2">
+                                          <div className="flex items-center justify-between mb-1">
+                                            <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-gray-soft">Parametr {idx + 1}</span>
+                                            <button type="button" onClick={() => removeVariantParam(i, idx)} className="text-gray-soft hover:text-red-500 p-0.5"><X className="w-3 h-3" /></button>
+                                          </div>
+                                          <div className="space-y-1">
+                                            {PARAM_LANGS.map(lang => (
+                                              <div key={lang.code} className="flex items-center gap-1.5">
+                                                <span className="w-5 shrink-0 font-mono text-[9px] font-bold uppercase text-gray-soft">{lang.code}</span>
+                                                <input value={row[lang.keyField]} onChange={e => patchVariantParam(i, idx, lang.keyField, e.target.value)}
+                                                  placeholder="Parametr" className="w-28 shrink-0 border border-cream-dark rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-forest" />
+                                                <input value={row[lang.valueField]} onChange={e => patchVariantParam(i, idx, lang.valueField, e.target.value)}
+                                                  placeholder="Hodnota" className="flex-1 border border-cream-dark rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-forest" />
+                                              </div>
+                                            ))}
+                                          </div>
                                         </div>
                                       ))}
                                     </div>

@@ -78,7 +78,8 @@
     "out_of_stock": "Nicht vorrätig",
     "pieces_left": "Noch {count} Stk.",
     "write_review": "Bewertung schreiben",
-    "no_reviews": "Noch keine Bewertungen"
+    "no_reviews": "Noch keine Bewertungen",
+    "no_parameters": "Keine Parameter."
   },
   "cart": {
     "title": "Warenkorb",

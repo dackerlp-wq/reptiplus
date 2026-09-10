@@ -39,6 +39,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     low_stock_threshold: parseInt(body.lowStockThreshold || '5'),
     images: typeof body.images === 'string' ? body.images : JSON.stringify(body.images || []),
     parameters: typeof body.parameters === 'string' ? body.parameters : JSON.stringify(body.parameters || {}),
+    parameters_en: typeof body.parametersEn === 'string' ? body.parametersEn : JSON.stringify(body.parametersEn || {}),
+    parameters_de: typeof body.parametersDe === 'string' ? body.parametersDe : JSON.stringify(body.parametersDe || {}),
     is_active: body.isActive ? 1 : 0,
     is_featured: body.isFeatured ? 1 : 0,
     is_new: body.isNew ? 1 : 0,

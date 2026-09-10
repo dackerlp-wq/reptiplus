@@ -10,12 +10,14 @@ import { toast } from '@/components/ui/Toaster'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import ProductCard, { type Product as ProductCardType } from '@/components/shop/ProductCard'
+import { parseParams, pickParams, type ParamMap } from '@/lib/params'
 
 type Product = {
   id: string; slug: string; sku: string; nameCs: string; nameEn: string; nameDe: string
   descriptionCs?: string | null; descriptionEn?: string | null; descriptionDe?: string | null
   price: number; priceExcl: number; comparePrice?: number | null; vatRate: number
-  stock: number; lowStockThreshold?: number | null; images: string | null; parameters: string | null
+  stock: number; lowStockThreshold?: number | null; images: string | null
+  parameters: string | null; parametersEn?: string | null; parametersDe?: string | null
   isNew?: number | null; isSale?: number | null; isFeatured?: number | null
 }
 
@@ -29,7 +31,9 @@ type Variant = {
   comparePrice: number | null
   stock: number
   attributes: Record<string, string>
-  parameters: Record<string, string>
+  parameters: ParamMap
+  parametersEn: ParamMap
+  parametersDe: ParamMap
   restockDate: string | null
   sortOrder: number
 }
@@ -89,9 +93,16 @@ export default function ProductDetailClient({
   const name = getName(product, locale)
   const description = getDescription(product, locale)
   const catName = getCatName(category, locale)
-  const productParameters = JSON.parse(product.parameters || '{}') as Record<string, string>
+  // Klíč i hodnota jsou přeložené, takže se vybírá celá mapa podle locale
+  // a teprve pak se překryje parametry vybrané varianty.
+  const productParameters = pickParams(
+    parseParams(product.parameters), parseParams(product.parametersEn), parseParams(product.parametersDe), locale,
+  )
   const parameters = selectedVariant
-    ? { ...productParameters, ...selectedVariant.parameters }
+    ? {
+        ...productParameters,
+        ...pickParams(selectedVariant.parameters, selectedVariant.parametersEn, selectedVariant.parametersDe, locale),
+      }
     : productParameters
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
 
@@ -431,7 +442,7 @@ export default function ProductDetailClient({
                   <dd className="text-sm font-semibold mt-0.5">{v}</dd>
                 </div>
               ))}
-              {!Object.keys(parameters).length && <p className="text-gray-soft text-sm col-span-3">Žádné parametry.</p>}
+              {!Object.keys(parameters).length && <p className="text-gray-soft text-sm col-span-3">{t('no_parameters')}</p>}
             </div>
           )}
           {activeTab === 'reviews' && (

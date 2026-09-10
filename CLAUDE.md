@@ -168,7 +168,8 @@ src/
 
 ```sql
 users(id, email, password, first_name, last_name, role, created_at)
-products(id, slug, name_cs, name_en, name_de, description_cs/en/de, price, price_excl, compare_price, vat_rate, stock, low_stock_threshold, images jsonb, parameters jsonb, category_id, is_active, is_new, is_sale, is_featured)
+products(id, slug, name_cs, name_en, name_de, description_cs/en/de, price, price_excl, compare_price, vat_rate, stock, low_stock_threshold, images jsonb, parameters text, parameters_en text, parameters_de text, category_id, is_active, is_new, is_sale, is_featured)
+product_variants(id, product_id, name_cs/en/de, sku, price, compare_price, stock, attributes jsonb, parameters jsonb, parameters_en jsonb, parameters_de jsonb, restock_date, sort_order)
 categories(id, slug, name_cs, name_en, name_de, parent_id)
 orders(id, user_id, status, items jsonb, total, ...)
 blog_posts(id, slug, title_cs/en/de, content_cs/en/de, excerpt, image, author_id, blog_author_id, is_published, published_at, created_at)
@@ -186,6 +187,17 @@ The `blog_v2` migration (`supabase/migration_blog_v2.sql`) creates:
 `blog_authors`, `blog_comments`, `blog_post_products`, `blog_post_product_categories`, `blog_post_likes` and adds `blog_author_id` to `blog_posts`.
 
 **To run:** Supabase dashboard → SQL Editor → paste `supabase/migration_blog_v2.sql` → Run.
+
+The `parameters_i18n` migration (`supabase/migration_parameters_i18n.sql`) adds
+`parameters_en` / `parameters_de` to `products` (text, JSON string — stejně jako
+stávající `parameters`) and to `product_variants` (jsonb). Existující řádky se
+naplní českým zněním, aby EN/DE nezobrazovalo prázdnou tabulku.
+
+Sloupec `parameters` zůstal bez `_cs` sufixu schválně — přejmenování by shodilo
+nasazenou verzi, která ho čte pod původním názvem. Locale resolution řeší
+`pickParams()` z `@/lib/params`.
+
+**To run:** Supabase dashboard → SQL Editor → paste `supabase/migration_parameters_i18n.sql` → Run.
 
 ---
 

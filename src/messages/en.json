@@ -78,7 +78,8 @@
     "out_of_stock": "Out of Stock",
     "pieces_left": "{count} items left",
     "write_review": "Write a Review",
-    "no_reviews": "No reviews yet"
+    "no_reviews": "No reviews yet",
+    "no_parameters": "No parameters."
   },
   "cart": {
     "title": "Cart",
