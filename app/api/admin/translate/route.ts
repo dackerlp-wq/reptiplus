@@ -33,7 +33,8 @@ Přelož následující ČESKÉ texty do angličtiny (klíč "en") a němčiny (
 Pravidla:
 - Některé hodnoty obsahují HTML formátování (značky <p>, <strong>, <em>, <s>, <ul>, <ol>, <li>, <a>, <h2>, <h3>). VŠECHNY HTML značky i jejich atributy zachovej PŘESNĚ beze změny — překládej pouze viditelný text mezi značkami.
 - Názvy značek a modelů (Arcadia, Zoo Med, Exo Terra, Repashy, UVB, T5, LED, D3…) nech beze změny.
-- Čísla, jednotky a technické hodnoty (35 W, 12 %, 54W, 90 g…) nech beze změny.
+- Čísla, jednotky a technické hodnoty (35 W, 12 %, 54W, 90 g…) nech beze změny; jen desetinnou čárku a oddělovač tisíců převeď na zvyklost cílového jazyka (EN: 2.45 kg, 6,000 lm; DE: 2,45 kg, 6.000 lm).
+- Zachovej PŘESNĚ strukturu textu: zalomení řádků (\\n) i oddělovače sloupců „ | " — každý řádek přelož samostatně, nespojuj ani nepřidávej řádky.
 - Vrať POUZE validní JSON ve tvaru {"en":{...},"de":{...}} se stejnými klíči jako vstup, bez markdownu.
 
 Vstup (JSON):

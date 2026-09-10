@@ -342,3 +342,116 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+/* ── LEDX poptávka — potvrzení pro zákazníka ──────────────────────────── */
+
+const LEDX_COPY = {
+  cs: {
+    subject: (rada: string) => `Vaše poptávka LEDX${rada ? ` ${rada}` : ""} — Reptiplus`,
+    preheader: "Poptávku jsme přijali, ozveme se do dvou pracovních dnů.",
+    title: "Děkujeme za poptávku!",
+    hello: (name: string) => `Dobrý den ${name},`,
+    intro: "vaši poptávku profesionálního osvětlení LEDX jsme přijali. Ozveme se vám obvykle do dvou pracovních dnů s návrhem řešení a cenovou nabídkou.",
+    summary: "Shrnutí poptávky",
+    labels: { rada: "Řada", model: "Model / výkon", cct: "Barva světla", uhel: "Úhel vyzařování", pocet: "Počet kusů", stmivani: "Stmívání", phone: "Telefon", poznamka: "Poznámka" },
+    dimNone: "Bez",
+    reply: "Chcete něco doplnit? Stačí odpovědět na tento e-mail.",
+    footer: "Reptiplus — výhradní dodavatel LEDX pro ČR",
+  },
+  en: {
+    subject: (rada: string) => `Your LEDX inquiry${rada ? ` ${rada}` : ""} — Reptiplus`,
+    preheader: "We've received your inquiry and will reply within two business days.",
+    title: "Thank you for your inquiry!",
+    hello: (name: string) => `Hello ${name},`,
+    intro: "we've received your inquiry for LEDX professional lighting. We'll usually get back to you within two business days with a proposed solution and a quote.",
+    summary: "Inquiry summary",
+    labels: { rada: "Range", model: "Model / power", cct: "Colour temperature", uhel: "Beam angle", pocet: "Quantity", stmivani: "Dimming", phone: "Phone", poznamka: "Notes" },
+    dimNone: "None",
+    reply: "Want to add something? Just reply to this e-mail.",
+    footer: "Reptiplus — exclusive LEDX distributor for the Czech Republic",
+  },
+  de: {
+    subject: (rada: string) => `Ihre LEDX-Anfrage${rada ? ` ${rada}` : ""} — Reptiplus`,
+    preheader: "Wir haben Ihre Anfrage erhalten und melden uns innerhalb von zwei Werktagen.",
+    title: "Vielen Dank für Ihre Anfrage!",
+    hello: (name: string) => `Guten Tag ${name},`,
+    intro: "wir haben Ihre Anfrage zur LEDX Profi-Beleuchtung erhalten. Wir melden uns in der Regel innerhalb von zwei Werktagen mit einem Lösungsvorschlag und einem Angebot.",
+    summary: "Zusammenfassung der Anfrage",
+    labels: { rada: "Serie", model: "Modell / Leistung", cct: "Lichtfarbe", uhel: "Abstrahlwinkel", pocet: "Stückzahl", stmivani: "Dimmung", phone: "Telefon", poznamka: "Anmerkung" },
+    dimNone: "Ohne",
+    reply: "Möchten Sie etwas ergänzen? Antworten Sie einfach auf diese E-Mail.",
+    footer: "Reptiplus — exklusiver LEDX-Vertriebspartner für Tschechien",
+  },
+} as const;
+
+export type LedxInquiryEmailData = {
+  locale: Locale;
+  name: string;
+  rada: string | null;
+  model: string | null;
+  cct: string | null;
+  uhel: string | null;
+  pocet: number | null;
+  stmivani: string | null;
+  phone: string | null;
+  poznamka: string | null;
+};
+
+/** Potvrzení přijaté poptávky LEDX pro zákazníka (v jazyce webu). */
+export function ledxInquiryConfirmationEmail(d: LedxInquiryEmailData): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const c = LEDX_COPY[d.locale] ?? LEDX_COPY.cs;
+  const stmivani = d.stmivani === "Bez" ? c.dimNone : d.stmivani;
+  const rows: [string, string | number | null][] = [
+    [c.labels.rada, d.rada],
+    [c.labels.model, d.model],
+    [c.labels.cct, d.cct],
+    [c.labels.uhel, d.uhel],
+    [c.labels.pocet, d.pocet],
+    [c.labels.stmivani, stmivani],
+    [c.labels.phone, d.phone],
+  ];
+  const filled = rows.filter(([, v]) => v !== null && v !== "");
+  const trs = filled
+    .map(
+      ([k, v]) => `<tr>
+<td style="padding:7px 0;border-bottom:1px solid ${BORDER};font-size:14px;color:${MUTED};">${escapeHtml(k)}</td>
+<td style="padding:7px 0;border-bottom:1px solid ${BORDER};font-size:14px;text-align:right;"><strong>${escapeHtml(String(v))}</strong></td>
+</tr>`,
+    )
+    .join("");
+  const note = d.poznamka
+    ? `<p style="margin:18px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:${MUTED};">${c.labels.poznamka}</p>
+<div style="background:${CREAM};border:1px solid ${BORDER};border-radius:10px;padding:12px 16px;font-size:14px;line-height:1.5;white-space:pre-line;">${escapeHtml(d.poznamka)}</div>`
+    : "";
+
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 14px;font-size:22px;color:${INK};">${c.title}</h1>
+<p style="margin:0 0 6px;font-size:14px;line-height:1.55;">${escapeHtml(c.hello(d.name))}</p>
+<p style="margin:0 0 20px;font-size:14px;line-height:1.55;">${c.intro}</p>
+<p style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:${MUTED};">${c.summary}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${trs}</table>
+${note}
+<p style="margin:22px 0 0;font-size:14px;color:${MUTED};">${c.reply}</p>
+</td></tr>
+<tr><td style="padding:18px 28px;background:${CREAM};border-top:1px solid ${BORDER};color:${MUTED};font-size:12px;">${c.footer} · reptiplus.cz</td></tr>`;
+
+  const text = [
+    c.title,
+    "",
+    c.hello(d.name),
+    c.intro,
+    "",
+    `${c.summary}:`,
+    ...filled.map(([k, v]) => `${k}: ${v}`),
+    ...(d.poznamka ? [`${c.labels.poznamka}: ${d.poznamka}`] : []),
+    "",
+    c.reply,
+  ].join("\n");
+
+  return { subject: c.subject(d.rada ?? ""), html: layout(inner, c.preheader), text };
+}

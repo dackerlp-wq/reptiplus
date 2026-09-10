@@ -11,6 +11,7 @@ import { pickI18n } from "@/lib/i18n";
 import { sendMail } from "@/lib/email/client";
 import { orderConfirmationEmail, type OrderEmailData } from "@/lib/email/templates";
 import { DEFAULT_THEME, isThemeKey } from "@/lib/themes";
+import { LEDX_PAGE_SETTING, normalizeLedxPage } from "@/lib/ledx/content";
 
 async function assertAdmin() {
   const supabase = await createClient();
@@ -1387,6 +1388,33 @@ const tableArr = (fd: FormData, k: string) =>
     .filter(Boolean)
     .map((row) => row.split("|").map((c) => c.trim()));
 
+/** Pole řady, která mají EN/DE překlad (čeština = základní sloupce). */
+const LEDX_TR_TEXT = ["subtitle", "tagline", "landing_desc", "detail_lead", "models_note", "uses_title", "form_cct_fixed"] as const;
+const LEDX_TR_LIST = ["landing_pills", "detail_pills", "uses", "form_models", "form_cct", "form_uhel"] as const;
+const LEDX_TR_TABLE = ["models", "params"] as const;
+
+/** Sestaví {en:{…}, de:{…}} z polí `<sloupec>__en` / `<sloupec>__de` (prázdné vynechá → fallback na CS). */
+function ledxTranslations(fd: FormData) {
+  const out: Record<string, Record<string, unknown>> = {};
+  for (const loc of ["en", "de"]) {
+    const t: Record<string, unknown> = {};
+    for (const col of LEDX_TR_TEXT) {
+      const v = str(fd, `${col}__${loc}`);
+      if (v) t[col] = v;
+    }
+    for (const col of LEDX_TR_LIST) {
+      const v = linesArr(fd, `${col}__${loc}`);
+      if (v.length) t[col] = v;
+    }
+    for (const col of LEDX_TR_TABLE) {
+      const v = tableArr(fd, `${col}__${loc}`);
+      if (v.length) t[col] = v;
+    }
+    out[loc] = t;
+  }
+  return out;
+}
+
 export async function saveLedxLineAction(fd: FormData): Promise<void> {
   await assertAdmin();
   const svc = createServiceClient();
@@ -1427,6 +1455,7 @@ export async function saveLedxLineAction(fd: FormData): Promise<void> {
     form_cct: linesArr(fd, "form_cct") as never,
     form_cct_fixed: str(fd, "form_cct_fixed") || null,
     form_uhel: linesArr(fd, "form_uhel") as never,
+    translations: ledxTranslations(fd) as never,
   };
 
   const { error } = id
@@ -1455,6 +1484,25 @@ export async function toggleLedxLinePublishedAction(fd: FormData) {
     .eq("id", str(fd, "id"));
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
+}
+
+/** Statistiky + reference na stránce Profi osvětlení (app_setting ledx.page). */
+export async function saveLedxPageContentAction(fd: FormData): Promise<void> {
+  const locale = str(fd, "locale") || "cs";
+  let parsed: unknown = null;
+  try {
+    parsed = JSON.parse(str(fd, "payload") || "null");
+  } catch {
+    parsed = null;
+  }
+  const value = normalizeLedxPage(parsed);
+  if (!value) flashRedirect(`/${locale}/admin/ledx/content`, "error", "Neplatná data formuláře.");
+  try {
+    await upsertSetting(LEDX_PAGE_SETTING, value as unknown as Record<string, unknown>);
+  } catch (e) {
+    flashRedirect(`/${locale}/admin/ledx/content`, "error", e instanceof Error ? e.message : "Uložení selhalo");
+  }
+  flashRedirect(`/${locale}/admin/ledx/content`, "saved", "Obsah uložen");
 }
 
 /* ── Poptávky LEDX ─────────────────────────────────────────────────────── */

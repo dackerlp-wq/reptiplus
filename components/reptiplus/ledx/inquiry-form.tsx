@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { submitLedxInquiry, type InquiryState } from "@/lib/ledx/actions";
 
 export type RadaConfig = {
-  id: string; // pop-flood / pop-phoenix1 / pop-grow
-  rada: string; // Flood Light
+  rada: string; // např. Flood Light
   models: string[];
   /** Pole barev, nebo pevná barva (Grow). */
   cct: string[] | { fixed: string };
@@ -13,109 +14,132 @@ export type RadaConfig = {
 };
 
 const Arrow = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M5 12h14M13 6l6 6-6 6" />
   </svg>
 );
 
 export function LedxInquiryForm({ config }: { config: RadaConfig }) {
+  const t = useTranslations("LedxForm");
+  const locale = useLocale();
   const [state, action, pending] = useActionState<InquiryState, FormData>(
     submitLedxInquiry,
     { status: "idle" },
   );
+  // Čas vykreslení formuláře (antispam: boti odesílají okamžitě).
+  const [ts, setTs] = useState("");
+  useEffect(() => setTs(String(Date.now())), []);
 
   if (state.status === "ok") {
     return (
-      <div className="form-success on">
+      <div className="form-success on" role="status">
         <div className="ico">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
         </div>
-        <h3>Děkujeme, poptávka odeslána!</h3>
-        <p>Ozveme se vám obvykle do dvou pracovních dnů s návrhem a nabídkou.</p>
+        <h3>{t("successTitle")}</h3>
+        <p>
+          {t("successText")}
+          {state.mailed ? ` ${t("successMailed")}` : ""}
+        </p>
       </div>
     );
   }
 
   const fixed = !Array.isArray(config.cct);
+  const errorKey =
+    state.status === "error"
+      ? ({ GDPR: "errGdpr", FORM: "errForm", RATE: "errRate", SERVER: "errServer" } as const)[state.error]
+      : null;
 
   return (
     <form className="form" action={action}>
       <input type="hidden" name="rada" value={config.rada} />
+      <input type="hidden" name="locale" value={locale} />
+      <input type="hidden" name="ts" value={ts} />
+      {/* Honeypot — lidé pole nevidí, boti ho vyplní. */}
+      <div className="hp" aria-hidden="true">
+        <label>
+          Website
+          <input type="text" name="company_website" tabIndex={-1} autoComplete="off" defaultValue="" />
+        </label>
+      </div>
+
       <div className="fs">
         <div className="grid3">
           <div className="field">
-            <label>Model / výkon <span className="req">*</span></label>
-            <select name="model" required defaultValue="">
-              <option value="" disabled>— vyberte —</option>
+            <label htmlFor="lq-model">{t("model")} <span className="req">*</span></label>
+            <select id="lq-model" name="model" required defaultValue="">
+              <option value="" disabled>{t("choose")}</option>
               {config.models.map((m) => <option key={m}>{m}</option>)}
             </select>
           </div>
           <div className="field">
-            <label>Barva světla</label>
+            <label htmlFor="lq-cct">{t("cct")}</label>
             {fixed ? (
-              <input name="cct" value={(config.cct as { fixed: string }).fixed} readOnly />
+              <input id="lq-cct" name="cct" value={(config.cct as { fixed: string }).fixed} readOnly />
             ) : (
-              <select name="cct" defaultValue="">
-                <option value="">— poradíme —</option>
+              <select id="lq-cct" name="cct" defaultValue="">
+                <option value="">{t("advise")}</option>
                 {(config.cct as string[]).map((c) => <option key={c}>{c}</option>)}
               </select>
             )}
           </div>
           <div className="field">
-            <label>Úhel vyzařování</label>
-            <select name="uhel" defaultValue="">
-              <option value="">— poradíme —</option>
+            <label htmlFor="lq-uhel">{t("angle")}</label>
+            <select id="lq-uhel" name="uhel" defaultValue="">
+              <option value="">{t("advise")}</option>
               {config.uhel.map((u) => <option key={u}>{u}</option>)}
             </select>
           </div>
         </div>
         <div className="grid2" style={{ marginTop: 16 }}>
           <div className="field">
-            <label>Počet kusů</label>
-            <input type="number" name="pocet" min="1" placeholder="např. 4" />
+            <label htmlFor="lq-pocet">{t("qty")}</label>
+            <input id="lq-pocet" type="number" name="pocet" min="1" max="10000" placeholder={t("qtyPh")} />
           </div>
           <div className="field">
-            <label>Stmívání</label>
-            <select name="stmivani" defaultValue="">
-              <option value="">— nevím —</option>
-              <option>Bez</option><option>0–10V</option><option>DALI</option><option>Zigbee</option>
+            <label htmlFor="lq-stmivani">{t("dimming")}</label>
+            <select id="lq-stmivani" name="stmivani" defaultValue="">
+              <option value="">{t("dimUnknown")}</option>
+              <option value="Bez">{t("dimNone")}</option>
+              <option>0–10V</option><option>DALI</option><option>Zigbee</option>
             </select>
           </div>
         </div>
         <div className="grid3" style={{ marginTop: 16 }}>
           <div className="field">
-            <label>Jméno <span className="req">*</span></label>
-            <input name="jmeno" required placeholder="Jan Novák" />
+            <label htmlFor="lq-jmeno">{t("name")} <span className="req">*</span></label>
+            <input id="lq-jmeno" name="jmeno" required maxLength={120} autoComplete="name" placeholder={t("namePh")} />
           </div>
           <div className="field">
-            <label>E-mail <span className="req">*</span></label>
-            <input type="email" name="email" required placeholder="jan@firma.cz" />
+            <label htmlFor="lq-email">{t("email")} <span className="req">*</span></label>
+            <input id="lq-email" type="email" name="email" required maxLength={200} autoComplete="email" placeholder={t("emailPh")} />
           </div>
           <div className="field">
-            <label>Telefon</label>
-            <input type="tel" name="telefon" placeholder="+420…" />
+            <label htmlFor="lq-telefon">{t("phone")}</label>
+            <input id="lq-telefon" type="tel" name="telefon" maxLength={40} autoComplete="tel" placeholder={t("phonePh")} />
           </div>
         </div>
         <div className="field" style={{ marginTop: 16 }}>
-          <label>Poznámka (prostor, výška zavěšení, druhy…)</label>
-          <textarea name="poznamka" placeholder="Krátce popište, co chcete nasvítit…" />
+          <label htmlFor="lq-poznamka">{t("note")}</label>
+          <textarea id="lq-poznamka" name="poznamka" maxLength={3000} placeholder={t("notePh")} />
         </div>
         <label className="gdpr">
           <input type="checkbox" name="gdpr" required />
-          <span>Souhlasím se zpracováním údajů za účelem poptávky (GDPR).</span>
+          <span>
+            {t.rich("gdpr", {
+              link: (c) => (
+                <Link href="/ochrana-osobnich-udaju" target="_blank" rel="noopener">
+                  {c}
+                </Link>
+              ),
+            })}
+          </span>
         </label>
-        {state.status === "error" && (
-          <p className="form-err">
-            {state.error === "GDPR"
-              ? "Potvrďte prosím souhlas se zpracováním údajů."
-              : state.error === "FORM"
-                ? "Vyplňte prosím jméno a platný e-mail."
-                : "Poptávku se nepodařilo odeslat. Zkuste to prosím znovu."}
-          </p>
-        )}
+        {errorKey && <p className="form-err" role="alert">{t(errorKey)}</p>}
         <div className="form-actions">
           <button type="submit" className="btn primary" disabled={pending}>
-            {pending ? "Odesílám…" : "Odeslat poptávku"} <Arrow />
+            {pending ? t("sending") : t("submit")} <Arrow />
           </button>
         </div>
       </div>

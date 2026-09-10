@@ -16,6 +16,7 @@ import {
 import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
 import { requireAdmin } from "@/lib/admin/auth";
+import { createServiceClient } from "@/lib/supabase/service";
 import { signOutAction } from "@/lib/auth/actions";
 import { Toaster, FlashToast } from "@/components/admin/toast";
 
@@ -42,6 +43,19 @@ export default async function AdminLayout({
 }) {
   const { locale } = await params;
   await requireAdmin(locale);
+
+  // Počet nevyřízených poptávek LEDX → odznak v menu
+  const { count: openInquiries } = await createServiceClient()
+    .from("ledx_inquiry")
+    .select("id", { count: "exact", head: true })
+    .eq("handled", false);
+  const badges: Record<string, number> = { "/admin/inquiries": openInquiries ?? 0 };
+  const Badge = ({ href }: { href: string }) =>
+    badges[href] ? (
+      <span className="ml-auto rounded-full bg-amber px-1.5 py-0.5 font-mono text-[10px] font-bold leading-none text-white">
+        {badges[href]}
+      </span>
+    ) : null;
 
   return (
     <div className="min-h-dvh bg-cream">
@@ -78,7 +92,7 @@ export default async function AdminLayout({
               href={item.href}
               className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-charcoal hover:bg-cream"
             >
-              <item.icon className="size-4" /> {item.label}
+              <item.icon className="size-4" /> {item.label} <Badge href={item.href} />
             </Link>
           ))}
         </nav>
@@ -94,6 +108,7 @@ export default async function AdminLayout({
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-charcoal hover:bg-cream"
             >
               <item.icon className="size-4" /> {item.label}
+              <Badge href={item.href} />
             </Link>
           ))}
         </aside>

@@ -28,18 +28,21 @@ function entry(
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const svc = createServiceClient();
-  const [{ data: products }, { data: categories }] = await Promise.all([
-    svc
-      .from("product")
-      .select("slug, updated_at")
-      .eq("is_published", true),
-    svc.from("category").select("slug").eq("is_published", true),
-  ]);
+  const [{ data: products }, { data: categories }, { data: ledxLines }] =
+    await Promise.all([
+      svc
+        .from("product")
+        .select("slug, updated_at")
+        .eq("is_published", true),
+      svc.from("category").select("slug").eq("is_published", true),
+      svc.from("ledx_line").select("slug").eq("is_published", true),
+    ]);
 
   const staticPaths: [string, number, Entry["changeFrequency"]][] = [
     ["", 1.0, "daily"],
     ["produkty", 0.9, "daily"],
     ["kategorie", 0.8, "weekly"],
+    ["kategorie/profi-osvetleni", 0.7, "weekly"],
     ["o-nas", 0.4, "monthly"],
     ["obchodni-podminky", 0.3, "yearly"],
     ["reklamacni-rad", 0.3, "yearly"],
@@ -50,8 +53,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...staticPaths.flatMap(([p, priority, changeFrequency]) =>
       entry(p, { priority, changeFrequency }),
     ),
-    ...(categories ?? []).flatMap((c) =>
-      entry(`kategorie/${c.slug}`, { priority: 0.7, changeFrequency: "weekly" }),
+    // profi-osvetleni má vlastní stránku (výše), případnou stejnojmennou kategorii přeskočíme
+    ...(categories ?? [])
+      .filter((c) => c.slug !== "profi-osvetleni")
+      .flatMap((c) =>
+        entry(`kategorie/${c.slug}`, { priority: 0.7, changeFrequency: "weekly" }),
+      ),
+    ...(ledxLines ?? []).flatMap((l) =>
+      entry(`kategorie/profi-osvetleni/${l.slug}`, {
+        priority: 0.6,
+        changeFrequency: "monthly",
+      }),
     ),
     ...(products ?? []).flatMap((p) =>
       entry(`produkt/${p.slug}`, {

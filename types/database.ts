@@ -37,6 +37,7 @@ export type Database = {
           form_cct: Json
           form_cct_fixed: string | null
           form_uhel: Json
+          translations: Json
           created_at: string
         }
         Insert: {
@@ -61,6 +62,7 @@ export type Database = {
           form_cct?: Json
           form_cct_fixed?: string | null
           form_uhel?: Json
+          translations?: Json
           created_at?: string
         }
         Update: {
@@ -85,6 +87,7 @@ export type Database = {
           form_cct?: Json
           form_cct_fixed?: string | null
           form_uhel?: Json
+          translations?: Json
           created_at?: string
         }
         Relationships: []
@@ -103,6 +106,8 @@ export type Database = {
           email: string
           phone: string | null
           handled: boolean
+          locale: string
+          ip_hash: string | null
           created_at: string
         }
         Insert: {
@@ -118,6 +123,8 @@ export type Database = {
           email: string
           phone?: string | null
           handled?: boolean
+          locale?: string
+          ip_hash?: string | null
           created_at?: string
         }
         Update: {
@@ -133,6 +140,8 @@ export type Database = {
           email?: string
           phone?: string | null
           handled?: boolean
+          locale?: string
+          ip_hash?: string | null
           created_at?: string
         }
         Relationships: []

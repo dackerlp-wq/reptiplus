@@ -55,6 +55,11 @@ export default async function AdminInquiriesPage() {
                       <span className="rounded-md bg-forest/10 px-2 py-0.5 text-sm font-semibold text-forest">
                         {r.rada ?? "—"}
                       </span>
+                      {r.locale && r.locale !== "cs" && (
+                        <span title="Poptávka z cizojazyčné verze webu — odpovězte ve stejném jazyce" className="rounded-md bg-gold/15 px-2 py-0.5 font-mono text-xs font-semibold uppercase text-earth">
+                          {r.locale}
+                        </span>
+                      )}
                       {r.handled && (
                         <span className="rounded-md bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">
                           Vyřízeno

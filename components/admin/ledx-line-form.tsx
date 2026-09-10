@@ -1,9 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState, useTransition } from "react";
-import { Upload, X, Star, Loader2 } from "lucide-react";
+import { createContext, useContext, useState, useTransition } from "react";
+import { Upload, X, Star, Loader2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { saveLedxLineAction, uploadEditorImageAction } from "@/lib/admin/actions";
+import { translateFromCs } from "@/lib/admin/translate-client";
 
 export type LedxLineRow = {
   id: string;
@@ -27,6 +29,7 @@ export type LedxLineRow = {
   form_cct: unknown;
   form_cct_fixed: string | null;
   form_uhel: unknown;
+  translations?: unknown;
 };
 
 const arr = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
@@ -50,9 +53,79 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
+type Loc = "cs" | "en" | "de";
+const LOCS: Loc[] = ["cs", "en", "de"];
+
+/** Přeložitelná pole řady: sloupec → jak se převádí na text v textarea. */
+const TR_FIELDS = {
+  subtitle: "text",
+  tagline: "text",
+  landing_desc: "text",
+  landing_pills: "list",
+  detail_lead: "text",
+  detail_pills: "list",
+  models_note: "text",
+  models: "table",
+  params: "table",
+  uses_title: "text",
+  uses: "list",
+  form_models: "list",
+  form_cct: "list",
+  form_cct_fixed: "text",
+  form_uhel: "list",
+} as const;
+type TrCol = keyof typeof TR_FIELDS;
+type TrVals = Record<TrCol, Record<Loc, string>>;
+
+const toText = (kind: (typeof TR_FIELDS)[TrCol], v: unknown): string =>
+  kind === "list" ? joinLines(v) : kind === "table" ? joinTable(v) : typeof v === "string" ? v : "";
+
+function initVals(line?: LedxLineRow): TrVals {
+  const tr = (line?.translations ?? {}) as Record<string, Record<string, unknown>>;
+  const out = {} as TrVals;
+  for (const col of Object.keys(TR_FIELDS) as TrCol[]) {
+    const kind = TR_FIELDS[col];
+    out[col] = {
+      cs: toText(kind, line?.[col]) || (col === "uses_title" && !line ? "Kde se hodí" : ""),
+      en: toText(kind, tr.en?.[col]),
+      de: toText(kind, tr.de?.[col]),
+    };
+  }
+  return out;
+}
+
+type TrCtxValue = { vals: TrVals; setVals: React.Dispatch<React.SetStateAction<TrVals>>; lang: Loc };
+const TrCtx = createContext<TrCtxValue | null>(null);
+
+/** Pole s verzí pro každý jazyk (zobrazená jen aktivní; odesílají se všechny). */
+function Tr({ col, label, hint, rows, mono, placeholder }: {
+  col: TrCol; label: string; hint?: string; rows?: number; mono?: boolean; placeholder?: string;
+}) {
+  const { vals, setVals, lang } = useContext(TrCtx)!;
+  return (
+    <Field label={`${label}${lang !== "cs" ? ` · ${lang.toUpperCase()}` : ""}`} hint={lang !== "cs" ? "Prázdné = zobrazí se česká verze." : hint}>
+      {LOCS.map((loc) => {
+        const common = {
+          name: loc === "cs" ? col : `${col}__${loc}`,
+          value: vals[col][loc],
+          onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+            setVals((p) => ({ ...p, [col]: { ...p[col], [loc]: e.target.value } })),
+          placeholder: loc === "cs" ? placeholder : vals[col].cs.split("\n")[0] || placeholder,
+          className: cn(input, mono && "font-mono", TR_FIELDS[col] === "table" && "text-xs", loc !== lang && "hidden"),
+        };
+        return rows ? <textarea key={loc} rows={rows} {...common} /> : <input key={loc} {...common} />;
+      })}
+    </Field>
+  );
+}
+
 export function LedxLineForm({ line, locale }: { line?: LedxLineRow; locale: string }) {
   const [images, setImages] = useState<string[]>(arr(line?.images));
   const [uploading, startUpload] = useTransition();
+  const [lang, setLang] = useState<Loc>("cs");
+  const [vals, setVals] = useState<TrVals>(() => initVals(line));
+  const [busy, setBusy] = useState(false);
+  const [trError, setTrError] = useState<string | null>(null);
 
   const onFiles = (files: FileList | null) => {
     if (!files?.length) return;
@@ -74,96 +147,152 @@ export function LedxLineForm({ line, locale }: { line?: LedxLineRow; locale: str
       return next;
     });
 
+  const filled = (loc: Loc) =>
+    (Object.keys(TR_FIELDS) as TrCol[]).filter((c) => vals[c].cs.trim() && vals[c][loc].trim()).length;
+  const total = (Object.keys(TR_FIELDS) as TrCol[]).filter((c) => vals[c].cs.trim()).length;
+
+  async function translate() {
+    setBusy(true);
+    setTrError(null);
+    const texts: Record<string, string> = {};
+    for (const col of Object.keys(TR_FIELDS) as TrCol[]) if (vals[col].cs.trim()) texts[col] = vals[col].cs;
+    const res = await translateFromCs(texts);
+    setBusy(false);
+    if (!res.ok) {
+      setTrError("Překlad se nezdařil. Zkontroluj AI Gateway a zkus to znovu.");
+      return;
+    }
+    setVals((p) => {
+      const next = { ...p };
+      for (const col of Object.keys(texts) as TrCol[]) {
+        next[col] = { ...next[col], en: res.en[col] ?? next[col].en, de: res.de[col] ?? next[col].de };
+      }
+      return next;
+    });
+    setLang("en");
+  }
+
   return (
-    <form action={saveLedxLineAction} className="max-w-3xl space-y-5">
-      <input type="hidden" name="id" value={line?.id ?? ""} />
-      <input type="hidden" name="locale" value={locale} />
-      <input type="hidden" name="images" value={JSON.stringify(images)} />
+    <TrCtx.Provider value={{ vals, setVals, lang }}>
+      <form action={saveLedxLineAction} className="max-w-3xl space-y-5">
+        <input type="hidden" name="id" value={line?.id ?? ""} />
+        <input type="hidden" name="locale" value={locale} />
+        <input type="hidden" name="images" value={JSON.stringify(images)} />
 
-      {/* Základní */}
-      <div className={card}>
-        <p className="font-display text-lg font-semibold">Základní</p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Název *"><input name="name" required defaultValue={line?.name ?? ""} className={input} placeholder="Flood Light" /></Field>
-          <Field label="Slug *" hint="Krátký kód do URL (#slug), např. flood"><input name="slug" required defaultValue={line?.slug ?? ""} className={input} placeholder="flood" /></Field>
-          <Field label="Podtitul"><input name="subtitle" defaultValue={line?.subtitle ?? ""} className={input} placeholder="Univerzální reflektory" /></Field>
-          <Field label="Pořadí"><input name="sort_order" type="number" defaultValue={line?.sort_order ?? 0} className={input} /></Field>
-          <Field label="Tagline (kurzíva na detailu)"><input name="tagline" defaultValue={line?.tagline ?? ""} className={input} placeholder="Spolehlivý pracant…" /></Field>
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="is_published" defaultChecked={line?.is_published ?? true} className="size-4 accent-forest" />
-          Publikováno (zobrazit na webu)
-        </label>
-      </div>
-
-      {/* Fotky */}
-      <div className={card}>
-        <p className="font-display text-lg font-semibold">Fotky (galerie)</p>
-        <p className="text-sm text-gray-soft">První fotka je hlavní (zobrazí se na kartě řady i jako velká na detailu). Nejlépe průhledné PNG produktu.</p>
-        {images.length > 0 && (
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
-            {images.map((url, i) => (
-              <div key={url + i} className={`relative rounded-lg border p-2 ${i === 0 ? "border-forest" : "border-cream-dark"}`}>
-                <img src={url} alt="" className="aspect-square w-full object-contain" />
-                {i === 0 && <span className="absolute left-1 top-1 rounded bg-forest px-1.5 py-0.5 text-[10px] font-semibold text-white">Hlavní</span>}
-                <div className="mt-1 flex justify-between">
-                  <button type="button" onClick={() => makePrimary(i)} title="Nastavit jako hlavní" className="text-gray-soft hover:text-forest"><Star className="size-4" /></button>
-                  <button type="button" onClick={() => remove(i)} title="Odebrat" className="text-gray-soft hover:text-error"><X className="size-4" /></button>
-                </div>
-              </div>
+        {/* Jazyk obsahu */}
+        <div className="sticky top-[57px] z-10 flex flex-wrap items-center gap-2 rounded-xl border border-cream-dark bg-white/95 p-3 backdrop-blur">
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-soft">Jazyk textů</span>
+          <div className="inline-flex rounded-lg border border-cream-dark bg-white p-0.5 text-xs font-semibold">
+            {LOCS.map((code) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => setLang(code)}
+                className={cn("rounded-md px-3 py-1.5 uppercase transition-colors", lang === code ? "bg-forest text-white" : "text-gray-soft hover:bg-cream")}
+              >
+                {code}
+                {code !== "cs" && total > 0 && (
+                  <span className={cn("ml-1 font-mono text-[10px]", lang === code ? "text-white/80" : filled(code) === total ? "text-forest" : "text-amber")}>
+                    {filled(code)}/{total}
+                  </span>
+                )}
+              </button>
             ))}
           </div>
-        )}
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-cream-dark px-3 py-2 text-sm font-medium hover:border-forest hover:text-forest">
-          {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />} Nahrát fotky
-          <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => onFiles(e.target.files)} />
-        </label>
-      </div>
-
-      {/* Karta na úvodu */}
-      <div className={card}>
-        <p className="font-display text-lg font-semibold">Karta na úvodu</p>
-        <Field label="Krátký popis"><textarea name="landing_desc" rows={2} defaultValue={line?.landing_desc ?? ""} className={input} /></Field>
-        <Field label="Odznaky (parametry)" hint="Jeden na řádek, např. CRI 90"><textarea name="landing_pills" rows={4} defaultValue={joinLines(line?.landing_pills)} className={`${input} font-mono`} /></Field>
-      </div>
-
-      {/* Detail */}
-      <div className={card}>
-        <p className="font-display text-lg font-semibold">Detail řady</p>
-        <Field label="Úvodní text"><textarea name="detail_lead" rows={3} defaultValue={line?.detail_lead ?? ""} className={input} /></Field>
-        <Field label="Odznaky na detailu" hint="Jeden na řádek"><textarea name="detail_pills" rows={4} defaultValue={joinLines(line?.detail_pills)} className={`${input} font-mono`} /></Field>
-        <Field label="Poznámka nad tabulkou modelů"><textarea name="models_note" rows={2} defaultValue={line?.models_note ?? ""} className={input} /></Field>
-        <Field label="Modely" hint="Jeden model na řádek. Sloupce oddělené | :  Model | Výkon | Světelný tok | Rozměry | Hmotnost">
-          <textarea name="models" rows={7} defaultValue={joinTable(line?.models)} className={`${input} font-mono text-xs`} placeholder="Flood Light 50 W | 50 W | 6 000 lm | 278 × 86 × 230 mm | 2,45 kg" />
-        </Field>
-        <Field label="Společné parametry" hint="Jeden na řádek:  Klíč | Hodnota">
-          <textarea name="params" rows={7} defaultValue={joinTable(line?.params)} className={`${input} font-mono text-xs`} placeholder="Krytí / třída | IP66 · I · IK08" />
-        </Field>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nadpis sekce použití"><input name="uses_title" defaultValue={line?.uses_title ?? "Kde se hodí"} className={input} /></Field>
+          <button
+            type="button"
+            onClick={translate}
+            disabled={busy}
+            title="Přeloží všechna vyplněná česká pole do EN a DE (přepíše stávající překlady)"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-forest/30 bg-forest/5 px-3 py-1.5 text-xs font-semibold text-forest hover:bg-forest/10 disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+            Přeložit z ČJ (AI)
+          </button>
+          {trError && <span className="text-xs text-error">{trError}</span>}
         </div>
-        <Field label="Použití (štítky)" hint="Jeden na řádek"><textarea name="uses" rows={4} defaultValue={joinLines(line?.uses)} className={`${input} font-mono`} /></Field>
-      </div>
 
-      {/* Formulář poptávky */}
-      <div className={card}>
-        <p className="font-display text-lg font-semibold">Volby v poptávkovém formuláři</p>
-        <Field label="Modely / výkony" hint="Jeden na řádek — nabídne se v poli „Model / výkon"><textarea name="form_models" rows={5} defaultValue={joinLines(line?.form_models)} className={`${input} font-mono`} /></Field>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Barvy světla (výběr)" hint="Jedna na řádek. Nechte prázdné, pokud je barva pevná ↓"><textarea name="form_cct" rows={5} defaultValue={joinLines(line?.form_cct)} className={`${input} font-mono`} /></Field>
-          <Field label="Pevná barva světla" hint="Vyplňte jen u Grow (pak se výběr nezobrazí)"><input name="form_cct_fixed" defaultValue={line?.form_cct_fixed ?? ""} className={input} placeholder="4200 K · Grow spektrum" /></Field>
+        {/* Základní */}
+        <div className={card}>
+          <p className="font-display text-lg font-semibold">Základní</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Název *" hint="Stejný ve všech jazycích"><input name="name" required defaultValue={line?.name ?? ""} className={input} placeholder="Flood Light" /></Field>
+            <Field label="Slug *" hint="Adresa detailu: /kategorie/profi-osvetleni/slug"><input name="slug" required defaultValue={line?.slug ?? ""} className={input} placeholder="flood" /></Field>
+            <Tr col="subtitle" label="Podtitul" placeholder="Univerzální reflektory" />
+            <Field label="Pořadí"><input name="sort_order" type="number" defaultValue={line?.sort_order ?? 0} className={input} /></Field>
+            <Tr col="tagline" label="Tagline (kurzíva na kartě řady)" placeholder="Spolehlivý pracant…" />
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="is_published" defaultChecked={line?.is_published ?? true} className="size-4 accent-forest" />
+            Publikováno (zobrazit na webu)
+          </label>
         </div>
-        <Field label="Úhly vyzařování (výběr)" hint="Jeden na řádek"><textarea name="form_uhel" rows={5} defaultValue={joinLines(line?.form_uhel)} className={`${input} font-mono`} /></Field>
-      </div>
 
-      <div className="flex gap-3">
-        <button type="submit" className="rounded-lg bg-forest px-6 py-2.5 text-sm font-semibold text-white hover:bg-forest-light">
-          Uložit řadu
-        </button>
-        <a href={`/${locale}/admin/ledx`} className="rounded-lg border border-cream-dark px-6 py-2.5 text-sm font-medium text-charcoal hover:border-forest hover:text-forest">
-          Zrušit
-        </a>
-      </div>
-    </form>
+        {/* Fotky */}
+        <div className={card}>
+          <p className="font-display text-lg font-semibold">Fotky (galerie)</p>
+          <p className="text-sm text-gray-soft">První fotka je hlavní (zobrazí se na kartě řady i jako velká na detailu). Nejlépe průhledné PNG produktu.</p>
+          {images.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+              {images.map((url, i) => (
+                <div key={url + i} className={`relative rounded-lg border p-2 ${i === 0 ? "border-forest" : "border-cream-dark"}`}>
+                  <img src={url} alt="" className="aspect-square w-full object-contain" />
+                  {i === 0 && <span className="absolute left-1 top-1 rounded bg-forest px-1.5 py-0.5 text-[10px] font-semibold text-white">Hlavní</span>}
+                  <div className="mt-1 flex justify-between">
+                    <button type="button" onClick={() => makePrimary(i)} title="Nastavit jako hlavní" className="text-gray-soft hover:text-forest"><Star className="size-4" /></button>
+                    <button type="button" onClick={() => remove(i)} title="Odebrat" className="text-gray-soft hover:text-error"><X className="size-4" /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-cream-dark px-3 py-2 text-sm font-medium hover:border-forest hover:text-forest">
+            {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />} Nahrát fotky
+            <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => onFiles(e.target.files)} />
+          </label>
+        </div>
+
+        {/* Karta na úvodu */}
+        <div className={card}>
+          <p className="font-display text-lg font-semibold">Karta na úvodu</p>
+          <Tr col="landing_desc" label="Krátký popis" rows={2} />
+          <Tr col="landing_pills" label="Odznaky (parametry)" hint="Jeden na řádek, např. CRI 90" rows={4} mono />
+        </div>
+
+        {/* Detail */}
+        <div className={card}>
+          <p className="font-display text-lg font-semibold">Detail řady</p>
+          <Tr col="detail_lead" label="Úvodní text" rows={3} />
+          <Tr col="detail_pills" label="Odznaky na detailu" hint="Jeden na řádek" rows={4} mono />
+          <Tr col="models_note" label="Poznámka nad tabulkou modelů" rows={2} />
+          <Tr col="models" label="Modely" hint="Jeden model na řádek. Sloupce oddělené | :  Model | Výkon | Světelný tok | Rozměry | Hmotnost" rows={7} mono placeholder="Flood Light 50 W | 50 W | 6 000 lm | 278 × 86 × 230 mm | 2,45 kg" />
+          <Tr col="params" label="Společné parametry" hint="Jeden na řádek:  Klíč | Hodnota" rows={7} mono placeholder="Krytí / třída | IP66 · I · IK08" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Tr col="uses_title" label="Nadpis sekce použití" />
+          </div>
+          <Tr col="uses" label="Použití (štítky)" hint="Jeden na řádek" rows={4} mono />
+        </div>
+
+        {/* Formulář poptávky */}
+        <div className={card}>
+          <p className="font-display text-lg font-semibold">Volby v poptávkovém formuláři</p>
+          <Tr col="form_models" label="Modely / výkony" hint="Jeden na řádek — nabídne se v poli „Model / výkon“" rows={5} mono />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Tr col="form_cct" label="Barvy světla (výběr)" hint="Jedna na řádek. Nechte prázdné, pokud je barva pevná →" rows={5} mono />
+            <Tr col="form_cct_fixed" label="Pevná barva světla" hint="Vyplňte jen u Grow (pak se výběr nezobrazí)" placeholder="4200 K · Grow spektrum" />
+          </div>
+          <Tr col="form_uhel" label="Úhly vyzařování (výběr)" hint="Jeden na řádek" rows={5} mono />
+        </div>
+
+        <div className="flex gap-3">
+          <button type="submit" className="rounded-lg bg-forest px-6 py-2.5 text-sm font-semibold text-white hover:bg-forest-light">
+            Uložit řadu
+          </button>
+          <a href={`/${locale}/admin/ledx`} className="rounded-lg border border-cream-dark px-6 py-2.5 text-sm font-medium text-charcoal hover:border-forest hover:text-forest">
+            Zrušit
+          </a>
+        </div>
+      </form>
+    </TrCtx.Provider>
   );
 }

@@ -8,6 +8,7 @@ import { getShopContact } from "@/lib/settings";
 import { LanguageSwitcher } from "./language-switcher";
 import { SearchBar } from "./search-bar";
 import { CategoryMenu } from "./category-menu";
+import { HideOnScrollHeader } from "./hide-on-scroll-header";
 
 export async function Navbar({ locale }: { locale: Locale }) {
   const t = await getTranslations("Nav");
@@ -18,7 +19,7 @@ export async function Navbar({ locale }: { locale: Locale }) {
   ]);
 
   return (
-    <header className="sticky top-0 z-40 bg-cream/95 backdrop-blur">
+    <HideOnScrollHeader className="z-40 bg-cream/95 backdrop-blur">
       {/* Horní lišta — e-mail, slogan, jazyk */}
       <div className="bg-forest-deep text-cream">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-1.5 text-xs">
@@ -84,6 +85,6 @@ export async function Navbar({ locale }: { locale: Locale }) {
 
       {/* Menu kategorií — megamenu */}
       <CategoryMenu categories={menu} />
-    </header>
+    </HideOnScrollHeader>
   );
 }
