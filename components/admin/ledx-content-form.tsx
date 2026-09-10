@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, Loader2, Plus, RotateCcw, Sparkles, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { saveLedxPageContentAction, uploadEditorImageAction } from "@/lib/admin/actions";
-import { translateFromCs } from "@/lib/admin/translate-client";
+import { translateFromCs, translateErrorMessage } from "@/lib/admin/translate-client";
 import {
   LEDX_PAGE_DEFAULTS,
   LOCS,
@@ -65,7 +65,7 @@ export function LedxContentForm({ initial, locale }: { initial: LedxPageSetting;
     const res = await translateFromCs(texts);
     setBusy(false);
     if (!res.ok) {
-      setError("Překlad se nezdařil. Zkontroluj AI Gateway a zkus to znovu.");
+      setError(translateErrorMessage(res.error));
       return;
     }
     const fill = (t: I18nText, key: string): I18nText => ({

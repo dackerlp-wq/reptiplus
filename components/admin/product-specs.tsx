@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus, Trash2, Sparkles, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { translateFromCs } from "@/lib/admin/translate-client";
+import { translateFromCs, translateErrorMessage } from "@/lib/admin/translate-client";
 
 type Lang = "cs" | "en" | "de";
 export type SpecRow = {
@@ -155,7 +155,7 @@ export function ProductSpecs({
     });
     const res = await translateFromCs(texts);
     if (!res.ok) {
-      setError("Překlad se nezdařil. Zkontroluj AI Gateway a zkus to znovu.");
+      setError(translateErrorMessage(res.error));
       setBusy(false);
       return;
     }

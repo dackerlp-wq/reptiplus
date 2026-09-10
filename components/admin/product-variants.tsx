@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/lib/admin/image-compress";
 import { uploadVariantImageAction } from "@/lib/admin/actions";
-import { translateFromCs } from "@/lib/admin/translate-client";
+import { translateFromCs, translateErrorMessage } from "@/lib/admin/translate-client";
 
 type Lang = "cs" | "en" | "de";
 type I18n = Record<Lang, string>;
@@ -175,7 +175,7 @@ export function ProductVariants({ initial }: { initial: VariantRow[] }) {
     });
     const res = await translateFromCs(texts);
     if (!res.ok) {
-      setMsg("Překlad se nezdařil. Zkontroluj AI Gateway.");
+      setMsg(translateErrorMessage(res.error));
       setBusy(null);
       return;
     }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RichEditor } from "@/components/admin/rich-editor";
-import { translateFromCs } from "@/lib/admin/translate-client";
+import { translateFromCs, translateErrorMessage } from "@/lib/admin/translate-client";
 
 type Values = { cs?: string; en?: string; de?: string } | null | undefined;
 
@@ -65,7 +65,7 @@ export function LangFields({
     for (const f of fields) texts[f.name] = vals[f.name]?.cs ?? "";
     const res = await translateFromCs(texts);
     if (!res.ok) {
-      setError("Překlad se nezdařil. Zkontroluj AI Gateway a zkus to znovu.");
+      setError(translateErrorMessage(res.error));
       setBusy(false);
       return;
     }

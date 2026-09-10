@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useTransition } from "react";
 import { Upload, X, Star, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { saveLedxLineAction, uploadEditorImageAction } from "@/lib/admin/actions";
-import { translateFromCs } from "@/lib/admin/translate-client";
+import { translateFromCs, translateErrorMessage } from "@/lib/admin/translate-client";
 
 export type LedxLineRow = {
   id: string;
@@ -159,7 +159,7 @@ export function LedxLineForm({ line, locale }: { line?: LedxLineRow; locale: str
     const res = await translateFromCs(texts);
     setBusy(false);
     if (!res.ok) {
-      setTrError("Překlad se nezdařil. Zkontroluj AI Gateway a zkus to znovu.");
+      setTrError(translateErrorMessage(res.error));
       return;
     }
     setVals((p) => {
