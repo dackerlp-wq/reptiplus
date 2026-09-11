@@ -19,11 +19,12 @@ Infrastruktura:
 ```bash
 npm run dev      # next dev (port 3000)
 npm run build    # next build — spouštět před pushem, Vercel build je jediná „CI“
-npm run lint     # next lint
+npx tsc --noEmit # typecheck (nejrychlejší kontrola před pushem)
 npm start
 ```
 
-Testy v projektu nejsou (viz roadmapa, bod 19). Ověření změny = `npm run build` + ruční kontrola.
+`npm run lint` je rozbité (`next lint` v Next 16 neexistuje, ESLint config chybí). Testy v projektu nejsou (viz roadmapa, bod 19).
+Ověření změny = `npx tsc --noEmit` + `npm run build` + ruční kontrola. Build prerenderuje stránky proti Supabase, lokálně potřebuje `.env.local` s klíči.
 
 Databáze: migrace jsou ručně psané SQL soubory v `supabase/migrations/` pojmenované `YYYYMMDD_NNNN_popis.sql`,
 obalené `begin; … commit;`, idempotentní (`if not exists`, `create or replace`, `on conflict`).
@@ -80,7 +81,9 @@ Integrace (Comgate, PPL, Zásilkovna) berou přihlašovací údaje primárně z 
 
 ### AI překlad v adminu
 `POST /api/admin/translate` (jen admin/staff) překládá české texty do EN/DE přes Vercel AI SDK (`generateObject` + zod schéma sestavené z klíčů vstupu).
-Model jde přes Vercel AI Gateway (`AI_GATEWAY_MODEL`, výchozí `anthropic/claude-haiku-4.5`); klíč čte SDK implicitně z env `AI_GATEWAY_API_KEY` (v kódu se nikde neobjevuje).
+Výběr providera (`resolveModel()` v route): Anthropic API klíč z `app_setting` `integrations.ai.anthropicKey` (admin → Nastavení → AI překlady) nebo env `ANTHROPIC_API_KEY`
+→ přímé volání přes `@ai-sdk/anthropic` (model `ANTHROPIC_MODEL`, výchozí `claude-haiku-4-5`). Bez klíče fallback na Vercel AI Gateway
+(`AI_GATEWAY_MODEL`, výchozí `anthropic/claude-haiku-4.5`; klíč čte SDK implicitně z env `AI_GATEWAY_API_KEY`). Gateway ve free tieru modely Anthropic odmítá („Free tier users do not have access to this model“).
 Klientský wrapper `lib/admin/translate-client.ts`, používají ho `lang-fields.tsx`, `ledx-line-form.tsx`, `ledx-content-form.tsx`. Chyby ze serveru se propisují uživateli, nepolykat je.
 
 ### Analytika a souhlas
@@ -90,7 +93,7 @@ Klientský wrapper `lib/admin/translate-client.ts`, používají ho `lang-fields
 ## Env proměnné
 
 Kód čte: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL` (kanonická doména pro SEO/sitemap),
-`SMTP_HOST|PORT|USER|PASS`, `MAIL_FROM`, `SHOP_NOTIFY_EMAIL`, `CRON_SECRET`, `RATE_LIMIT_SALT`, `AI_GATEWAY_API_KEY` (implicitně), `AI_GATEWAY_MODEL`,
+`SMTP_HOST|PORT|USER|PASS`, `MAIL_FROM`, `SHOP_NOTIFY_EMAIL`, `CRON_SECRET`, `RATE_LIMIT_SALT`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `AI_GATEWAY_API_KEY` (implicitně), `AI_GATEWAY_MODEL`,
 fallbacky `COMGATE_MERCHANT|SECRET|TEST`, `PPL_CLIENT_ID|SECRET`, `PACKETA_API_PASSWORD|ESHOP_ID|HOME_CARRIER_ID`. Nastavují se ve Vercelu, lokálně `.env.local` (gitignored).
 
 ## Konvence

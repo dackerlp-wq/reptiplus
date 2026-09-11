@@ -350,12 +350,15 @@ export default async function AdminSettingsPage() {
             <div>
               <h2 className="font-display text-lg font-semibold">AI překlady</h2>
               <p className="text-sm text-gray-soft">
-                Překlady (tlačítko „Přeložit z ČJ") běží přes{" "}
-                <strong>Vercel AI Gateway</strong>. Nastav na Vercelu proměnnou{" "}
-                <code>AI_GATEWAY_API_KEY</code> (a volitelně model přes{" "}
+                Překlady (tlačítko „Přeložit z ČJ") běží přednostně{" "}
+                <strong>přímo přes Anthropic API</strong> s klíčem níže
+                (model <code>claude-haiku-4-5</code>, lze změnit env{" "}
+                <code>ANTHROPIC_MODEL</code>). Když klíč chybí, použije se{" "}
+                <strong>Vercel AI Gateway</strong> (env{" "}
+                <code>AI_GATEWAY_API_KEY</code>, model{" "}
                 <code>AI_GATEWAY_MODEL</code>, výchozí{" "}
-                <code>anthropic/claude-haiku-4.5</code>). Pole níže je zastaralé
-                (přímý Anthropic klíč) a už se nepoužívá.
+                <code>anthropic/claude-haiku-4.5</code>) — ta ale ve free tieru
+                modely Anthropic nepovolí, je potřeba dobít kredity.
               </p>
             </div>
             <label className="flex flex-col gap-1.5">

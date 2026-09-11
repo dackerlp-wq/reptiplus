@@ -1,10 +1,37 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { generateObject } from "ai";
+import { generateObject, type LanguageModel } from "ai";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { getContentI18n } from "@/lib/settings";
 
 // Model přes Vercel AI Gateway (creator/model). Lze změnit přes env.
-const MODEL = process.env.AI_GATEWAY_MODEL || "anthropic/claude-haiku-4.5";
+const GATEWAY_MODEL = process.env.AI_GATEWAY_MODEL || "anthropic/claude-haiku-4.5";
+// Model při přímém volání Anthropic API (bez gateway). Lze změnit přes env.
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5";
+
+type Provider = "anthropic" | "gateway";
+
+/**
+ * Vybere, kudy překlad poběží. Přímý Anthropic klíč (admin → Nastavení →
+ * AI překlady, nebo env ANTHROPIC_API_KEY) má přednost — AI Gateway ve free
+ * tieru k modelům Anthropic nepustí a překlad končil chybou.
+ */
+async function resolveModel(): Promise<{ model: LanguageModel; provider: Provider; id: string }> {
+  let key = process.env.ANTHROPIC_API_KEY?.trim() ?? "";
+  try {
+    const ai = await getContentI18n("integrations.ai");
+    const fromAdmin = (ai.anthropicKey ?? "").trim();
+    if (fromAdmin) key = fromAdmin;
+  } catch {
+    // app_setting nedostupné → zůstane env / gateway
+  }
+  if (key) {
+    const anthropic = createAnthropic({ apiKey: key });
+    return { model: anthropic(ANTHROPIC_MODEL), provider: "anthropic", id: ANTHROPIC_MODEL };
+  }
+  return { model: GATEWAY_MODEL, provider: "gateway", id: GATEWAY_MODEL };
+}
 
 // Delší popisy produktů se do výchozího limitu serverless funkce nevejdou.
 export const maxDuration = 60;
@@ -18,6 +45,31 @@ Pravidla:
 - Čísla, jednotky a technické hodnoty (35 W, 12 %, 54W, 90 g…) nech beze změny; jen desetinnou čárku a oddělovač tisíců převeď na zvyklost cílového jazyka (EN: 2.45 kg, 6,000 lm; DE: 2,45 kg, 6.000 lm).
 - Zachovej PŘESNĚ strukturu textu: zalomení řádků (\\n) i oddělovače sloupců „ | " — každý řádek přelož samostatně, nespojuj ani nepřidávej řádky.
 - Každý klíč vrať přeložený; nevynechávej ani nepřidávej klíče.`;
+
+/** Srozumitelná hláška pro admina podle toho, kudy překlad běžel a co selhalo. */
+function describeError(provider: Provider, modelId: string, detail: string): string {
+  const isAuth = /api key|unauthorized|authentication|oidc|forbidden|401|403/i.test(detail);
+  if (provider === "gateway") {
+    if (/free tier/i.test(detail)) {
+      return (
+        `Vercel AI Gateway je ve free tieru a model ${modelId} nepovolí. ` +
+        "Buď dobij kredity AI Gateway ve Vercelu (AI → Top up), nebo v adminu " +
+        "(Nastavení → AI překlady) vyplň Anthropic API klíč — překlad pak poběží přímo přes Anthropic."
+      );
+    }
+    if (isAuth) {
+      return "AI Gateway odmítl ověření. Zkontroluj AI_GATEWAY_API_KEY ve Vercel → Settings → Environment Variables, nebo v adminu vyplň Anthropic API klíč.";
+    }
+    return `Překlad přes AI Gateway (${modelId}) selhal: ${detail}`;
+  }
+  if (isAuth) {
+    return "Anthropic API odmítlo klíč. Zkontroluj Anthropic API klíč v adminu (Nastavení → AI překlady).";
+  }
+  if (/credit|billing|balance/i.test(detail)) {
+    return `Anthropic API hlásí problém s kreditem/účtováním: ${detail}`;
+  }
+  return `Překlad přes Anthropic (${modelId}) selhal: ${detail}`;
+}
 
 export async function POST(req: NextRequest) {
   // Autorizace — jen admin/staff
@@ -54,9 +106,11 @@ export async function POST(req: NextRequest) {
   // tiše usekly uprostřed a odpověď pak nešla rozparsovat.
   const maxOutputTokens = Math.min(32000, Math.max(4000, Math.ceil(source.length * 0.9)));
 
+  const { model, provider, id: modelId } = await resolveModel();
+
   try {
     const { object } = await generateObject({
-      model: MODEL,
+      model,
       schema,
       schemaName: "Translations",
       schemaDescription: "Anglické a německé překlady zadaných českých textů.",
@@ -67,16 +121,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ en: object.en ?? {}, de: object.de ?? {} });
   } catch (err: unknown) {
     // Bez tohohle logu nebylo z čeho poznat, co selhalo.
-    console.error("[translate]", err);
+    console.error(`[translate] provider=${provider} model=${modelId}`, err);
     const detail = err instanceof Error ? err.message : String(err);
-    const isAuth = /api key|unauthorized|authentication|oidc|forbidden|401|403/i.test(detail);
     return NextResponse.json(
-      {
-        error: isAuth
-          ? "AI Gateway odmítl ověření. Zkontroluj AI_GATEWAY_API_KEY ve Vercel → Settings → Environment Variables."
-          : `Překlad selhal: ${detail}`,
-      },
-      { status: isAuth ? 503 : 500 },
+      { error: describeError(provider, modelId, detail) },
+      { status: 500 },
     );
   }
 }
