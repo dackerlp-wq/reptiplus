@@ -86,6 +86,16 @@ Výběr providera (`resolveModel()` v route): Anthropic API klíč z `app_settin
 (`AI_GATEWAY_MODEL`, výchozí `anthropic/claude-haiku-4.5`; klíč čte SDK implicitně z env `AI_GATEWAY_API_KEY`). Gateway ve free tieru modely Anthropic odmítá („Free tier users do not have access to this model“).
 Klientský wrapper `lib/admin/translate-client.ts`, používají ho `lang-fields.tsx`, `ledx-line-form.tsx`, `ledx-content-form.tsx`. Chyby ze serveru se propisují uživateli, nepolykat je.
 
+### Poptávky LEDX (`ledx_inquiry`)
+Formulář `components/reptiplus/ledx/inquiry-form.tsx` → `lib/ledx/actions.ts` (antispam, uložení, potvrzení zákazníkovi + notifikace obchodu).
+Stavy `new → in_progress → quoted → won | lost | cancelled` (konstanty, štítky a pomocné funkce v `lib/ledx/inquiry-status.ts`, bez `server-only`);
+sloupec `handled` drží DB trigger jen kvůli zpětné kompatibilitě, kód ho nečte. Historie v `ledx_inquiry_event` (note/status/email/quote/follow_up/system).
+Admin: seznam `app/[locale]/admin/inquiries` (filtry přes GET searchParams), detail `[id]` (nabídka, follow-up, poznámky, historie, GDPR),
+akce v `lib/admin/inquiry-actions.ts` (každá loguje událost přes `logEvent`). E-maily z adminu: návrhy textu v jazyce zákazníka generuje
+`lib/ledx/inquiry-drafts.ts`, editor `components/admin/inquiry-email-composer.tsx`, odeslání `sendInquiryEmailAction` → `ledxInquiryMessageEmail()`
+(prostý text → HTML, odstavce oddělené prázdným řádkem, řádky „– “ jako odrážky). Bankovní spojení pro potvrzení objednání je v `shop.general` (`bankAccount`, `iban`, `bic`).
+Export CSV: `app/api/admin/inquiries/export/route.ts`.
+
 ### Analytika a souhlas
 `components/reptiplus/cookie-consent.tsx` ukládá volbu do cookie `rp_consent` a vysílá event `rp-consent-changed`; `AnalyticsGate` načte GA4 / Sklik / Meta Pixel až po souhlasu
 (GA4 = analytické, Sklik + Pixel = marketingové), Consent Mode v2. E-commerce události v `lib/analytics/events.ts`. IDs se zadávají v adminu, ne v env.

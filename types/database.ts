@@ -108,6 +108,14 @@ export type Database = {
           handled: boolean
           locale: string
           ip_hash: string | null
+          status: string
+          quote_amount: number | null
+          quote_currency: string | null
+          quote_valid_until: string | null
+          quote_number: string | null
+          follow_up_at: string | null
+          updated_at: string
+          anonymized_at: string | null
           created_at: string
         }
         Insert: {
@@ -125,6 +133,14 @@ export type Database = {
           handled?: boolean
           locale?: string
           ip_hash?: string | null
+          status?: string
+          quote_amount?: number | null
+          quote_currency?: string | null
+          quote_valid_until?: string | null
+          quote_number?: string | null
+          follow_up_at?: string | null
+          updated_at?: string
+          anonymized_at?: string | null
           created_at?: string
         }
         Update: {
@@ -142,9 +158,58 @@ export type Database = {
           handled?: boolean
           locale?: string
           ip_hash?: string | null
+          status?: string
+          quote_amount?: number | null
+          quote_currency?: string | null
+          quote_valid_until?: string | null
+          quote_number?: string | null
+          follow_up_at?: string | null
+          updated_at?: string
+          anonymized_at?: string | null
           created_at?: string
         }
         Relationships: []
+      }
+      ledx_inquiry_event: {
+        Row: {
+          id: string
+          inquiry_id: string
+          type: string
+          body: string | null
+          meta: Json
+          author_id: string | null
+          author_email: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          inquiry_id: string
+          type: string
+          body?: string | null
+          meta?: Json
+          author_id?: string | null
+          author_email?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          inquiry_id?: string
+          type?: string
+          body?: string | null
+          meta?: Json
+          author_id?: string | null
+          author_email?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledx_inquiry_event_inquiry_id_fkey"
+            columns: ["inquiry_id"]
+            isOneToOne: false
+            referencedRelation: "ledx_inquiry"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       address: {
         Row: {

@@ -229,6 +229,25 @@ export default async function AdminSettingsPage() {
               <input name="registration" defaultValue={String(general.registration ?? "")} className={input} />
             </label>
           </div>
+
+          <p className="text-sm text-gray-soft">
+            Bankovní spojení — doplní se do e-mailu „Potvrzení objednání" u
+            poptávek LEDX (platba převodem).
+          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Číslo účtu</span>
+              <input name="bankAccount" defaultValue={String(general.bankAccount ?? "")} placeholder="123456789/0100" className={input} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>IBAN</span>
+              <input name="iban" defaultValue={String(general.iban ?? "")} placeholder="CZ65 0100 …" className={input} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>BIC / SWIFT</span>
+              <input name="bic" defaultValue={String(general.bic ?? "")} placeholder="KOMBCZPP" className={input} />
+            </label>
+          </div>
           <button className={saveBtn}>Uložit</button>
         </ToastForm>
 

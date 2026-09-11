@@ -343,6 +343,60 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/* ── LEDX poptávka — zpráva z adminu (nabídka, dotaz, zrušení, potvrzení) ─ */
+
+const LEDX_MESSAGE_FOOTER: Record<Locale, string> = {
+  cs: "Reptiplus — výhradní dodavatel LEDX pro ČR",
+  en: "Reptiplus — exclusive LEDX distributor for the Czech Republic",
+  de: "Reptiplus — exklusiver LEDX-Vertriebspartner für Tschechien",
+};
+
+/**
+ * Obecný e-mail zákazníkovi k poptávce LEDX. Tělo je prostý text z adminu
+ * (admin ho může před odesláním upravit) — odstavce oddělené prázdným
+ * řádkem, řádky začínající „– " / „- " se vykreslí jako odrážky.
+ */
+export function ledxInquiryMessageEmail(d: {
+  locale: Locale;
+  subject: string;
+  body: string;
+}): { subject: string; html: string; text: string } {
+  const footer = LEDX_MESSAGE_FOOTER[d.locale] ?? LEDX_MESSAGE_FOOTER.cs;
+  const paragraphs = d.body
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const html = paragraphs
+    .map((p) => {
+      const lines = p.split("\n");
+      const isList = lines.every((l) => /^[–\-•]\s/.test(l));
+      if (isList) {
+        const lis = lines
+          .map((l) => `<li style="margin:0 0 4px;">${escapeHtml(l.replace(/^[–\-•]\s/, ""))}</li>`)
+          .join("");
+        return `<ul style="margin:0 0 14px;padding-left:20px;font-size:14px;line-height:1.55;">${lis}</ul>`;
+      }
+      return `<p style="margin:0 0 14px;font-size:14px;line-height:1.55;">${lines.map(escapeHtml).join("<br />")}</p>`;
+    })
+    .join("");
+
+  const preheader = paragraphs[1] ?? paragraphs[0] ?? d.subject;
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 18px;font-size:20px;color:${INK};">${escapeHtml(d.subject)}</h1>
+${html}
+</td></tr>
+<tr><td style="padding:18px 28px;background:${CREAM};border-top:1px solid ${BORDER};color:${MUTED};font-size:12px;">${footer} · reptiplus.cz</td></tr>`;
+
+  return {
+    subject: d.subject,
+    html: layout(inner, preheader.slice(0, 140)),
+    text: paragraphs.join("\n\n"),
+  };
+}
+
 /* ── LEDX poptávka — potvrzení pro zákazníka ──────────────────────────── */
 
 const LEDX_COPY = {

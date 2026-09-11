@@ -10,6 +10,10 @@ export type ShopContact = {
   dic: string;
   address: string;
   registration: string;
+  /** Bankovní spojení pro platby převodem (LEDX objednávky, faktury). */
+  bankAccount: string;
+  iban: string;
+  bic: string;
 };
 
 /** Obecné nastavení obchodu (identifikace prodejce) z app_setting. */
@@ -29,6 +33,9 @@ export async function getShopContact(): Promise<ShopContact> {
     dic: v.dic ?? "",
     address: v.address ?? "",
     registration: v.registration ?? "",
+    bankAccount: v.bankAccount ?? "",
+    iban: v.iban ?? "",
+    bic: v.bic ?? "",
   };
 }
 

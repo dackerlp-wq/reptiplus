@@ -44,11 +44,11 @@ export default async function AdminLayout({
   const { locale } = await params;
   await requireAdmin(locale);
 
-  // Počet nevyřízených poptávek LEDX → odznak v menu
+  // Počet nových poptávek LEDX (bez reakce obchodu) → odznak v menu
   const { count: openInquiries } = await createServiceClient()
     .from("ledx_inquiry")
     .select("id", { count: "exact", head: true })
-    .eq("handled", false);
+    .eq("status", "new");
   const badges: Record<string, number> = { "/admin/inquiries": openInquiries ?? 0 };
   const Badge = ({ href }: { href: string }) =>
     badges[href] ? (

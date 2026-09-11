@@ -1322,6 +1322,9 @@ export async function saveGeneralAction(fd: FormData) {
     dic: str(fd, "dic"),
     address: str(fd, "address"),
     registration: str(fd, "registration"),
+    bankAccount: str(fd, "bankAccount"),
+    iban: str(fd, "iban"),
+    bic: str(fd, "bic"),
   });
 }
 
@@ -1503,19 +1506,6 @@ export async function saveLedxPageContentAction(fd: FormData): Promise<void> {
     flashRedirect(`/${locale}/admin/ledx/content`, "error", e instanceof Error ? e.message : "Uložení selhalo");
   }
   flashRedirect(`/${locale}/admin/ledx/content`, "saved", "Obsah uložen");
-}
-
-/* ── Poptávky LEDX ─────────────────────────────────────────────────────── */
-export async function setInquiryHandledAction(fd: FormData) {
-  await assertAdmin();
-  const id = str(fd, "id");
-  const handled = fd.get("handled") === "1";
-  const { error } = await createServiceClient()
-    .from("ledx_inquiry")
-    .update({ handled })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
-  revalidatePath("/", "layout");
 }
 
 /* ── Recenze ───────────────────────────────────────────────────────────── */
