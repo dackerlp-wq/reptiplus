@@ -62,8 +62,13 @@ export function CategoryMenu({
     >
       {/* ── Desktop ── */}
       <div className="relative mx-auto hidden max-w-7xl items-center px-4 md:flex">
-        <div className="hidden shrink-0 items-center group-data-[compact]:flex animate-reveal">{leading}</div>
-        <div className="flex flex-1 items-center justify-center gap-1">
+        {/* Boční prvky se plynule vysunou (max-width + opacity), výška řádku se nemění → žádné poskočení. */}
+        <div className="flex max-w-0 shrink-0 items-center overflow-hidden opacity-0 transition-[max-width,opacity] duration-300 ease-out group-data-[compact]:max-w-48 group-data-[compact]:opacity-100">
+          {leading}
+        </div>
+        {/* Když se kategorie nevejdou (tablet), pás jde posouvat a vpravo vybledne. */}
+        <div className="flex min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden group-data-[compact]:max-lg:[mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)]">
+        <div className="mx-auto flex items-center gap-1">
           {categories.map((cat) => {
             const Icon = iconFor(cat.slug);
             return (
@@ -72,28 +77,32 @@ export function CategoryMenu({
                   href={`/kategorie/${cat.slug}`}
                   onClick={() => setActive(null)}
                   className={cn(
-                    "flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-3.5 text-base font-semibold transition-[padding,color,background-color] duration-300 group-data-[compact]:px-3 group-data-[compact]:py-2.5 group-data-[compact]:text-[15px]",
+                    "flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-3.5 text-base font-semibold transition-[padding,color,background-color] duration-300 group-data-[compact]:px-3",
                     active === cat.slug
                       ? "bg-forest/10 text-forest"
                       : "text-charcoal hover:bg-forest/5 hover:text-forest",
                   )}
                 >
-                  <Icon className="size-5 shrink-0" />
+                  {/* V kompaktní liště na užších obrazovkách bez ikon — ať se vše vejde. */}
+                  <Icon className="size-5 shrink-0 group-data-[compact]:max-xl:hidden" />
                   {cat.name}
                 </Link>
               </div>
             );
           })}
         </div>
+        </div>
         <Link
           href="/o-nas"
           onClick={() => setActive(null)}
           onMouseEnter={() => setActive(null)}
-          className="ml-3 flex items-center gap-2 whitespace-nowrap border-l border-cream-dark py-3.5 pl-5 text-base font-semibold text-charcoal transition-[padding,color] duration-300 hover:text-forest group-data-[compact]:py-2.5 group-data-[compact]:text-[15px]"
+          className="ml-3 flex shrink-0 items-center gap-2 whitespace-nowrap border-l border-cream-dark py-3.5 pl-5 text-base font-semibold text-charcoal transition-[padding,color] duration-300 hover:text-forest group-data-[compact]:pl-4 group-data-[compact]:max-lg:hidden"
         >
           <Info className="size-[18px]" /> {t("about")}
         </Link>
-        <div className="hidden shrink-0 items-center group-data-[compact]:flex animate-reveal">{trailing}</div>
+        <div className="flex max-w-0 shrink-0 items-center overflow-hidden opacity-0 transition-[max-width,opacity] duration-300 ease-out group-data-[compact]:max-w-48 group-data-[compact]:opacity-100">
+          {trailing}
+        </div>
       </div>
 
       {/* ── Mobil: hamburger (+ v kompaktním režimu logo a ikony) ── */}
@@ -102,13 +111,17 @@ export function CategoryMenu({
           type="button"
           onClick={() => setMobileOpen((o) => !o)}
           aria-expanded={mobileOpen}
-          className="flex items-center gap-2 py-3 text-base font-semibold text-charcoal transition-[padding] duration-300 group-data-[compact]:py-2"
+          className="flex h-12 shrink-0 items-center gap-2 text-base font-semibold text-charcoal"
         >
           {mobileOpen ? <X className="size-5" /> : <MenuIcon className="size-5" />}
           <span className="group-data-[compact]:sr-only">{t("menu")}</span>
         </button>
-        <div className="hidden flex-1 items-center justify-center group-data-[compact]:flex animate-reveal">{leading}</div>
-        <div className="ml-auto hidden shrink-0 items-center group-data-[compact]:flex animate-reveal">{trailing}</div>
+        <div className="flex max-w-0 flex-1 items-center justify-center overflow-hidden opacity-0 transition-[max-width,opacity] duration-300 ease-out group-data-[compact]:max-w-full group-data-[compact]:opacity-100">
+          {leading}
+        </div>
+        <div className="ml-auto flex max-w-0 shrink-0 items-center overflow-hidden opacity-0 transition-[max-width,opacity] duration-300 ease-out group-data-[compact]:max-w-48 group-data-[compact]:opacity-100">
+          {trailing}
+        </div>
       </div>
 
       {/* ── Mobil: rozbalené menu (kategorie + podkategorie) ── */}

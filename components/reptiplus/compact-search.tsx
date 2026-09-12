@@ -27,6 +27,7 @@ export function CompactSearch({ placeholder, locale, className }: { placeholder:
 
   return (
     <div ref={boxRef} className={cn("contents", className)}>
+      {/* Panel je absolute vůči <nav> (relative), ne vůči ořezanému wrapperu → nic ho neořízne. */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

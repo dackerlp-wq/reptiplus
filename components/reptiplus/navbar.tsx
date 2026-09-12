@@ -30,15 +30,14 @@ export async function Navbar({ locale }: { locale: Locale }) {
 
   // Kompaktní lišta (po scrollu): malé logo vlevo, hledání + účet + košík vpravo.
   const compactLeading = (
-    <Link href="/" aria-label="Reptiplus" className="mr-4 shrink-0 transition-opacity hover:opacity-80">
+    <Link href="/" aria-label="Reptiplus" className="mr-4 shrink-0 transition-opacity hover:opacity-80 md:mr-4">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/logo.svg" alt="Reptiplus" className="h-9 w-auto" />
     </Link>
   );
   const compactTrailing = (
     <div className="flex items-center gap-1">
-      <SearchBar placeholder={t("search")} locale={locale} size="compact" className="hidden w-52 xl:block xl:w-64" />
-      <CompactSearch placeholder={t("search")} locale={locale} className="xl:hidden" />
+      <CompactSearch placeholder={t("search")} locale={locale} />
       <Link href="/ucet" aria-label={t("account")} className="flex items-center justify-center rounded-xl p-2 text-charcoal transition-colors hover:bg-white hover:text-forest">
         <User className="size-6" />
       </Link>

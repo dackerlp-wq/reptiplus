@@ -1,46 +1,13 @@
-import {
-  LayoutDashboard,
-  Package,
-  FolderTree,
-  Tag,
-  ShoppingBag,
-  Star,
-  Settings,
-  Ticket,
-  Users,
-  Lightbulb,
-  Sparkles,
-  ExternalLink,
-  LogOut,
-  FileText,
-  Mail,
-  Gift,
-  PackageX,
-} from "lucide-react";
+import { ExternalLink, LogOut } from "lucide-react";
 import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { signOutAction } from "@/lib/auth/actions";
 import { Toaster, FlashToast } from "@/components/admin/toast";
+import { AdminSidebar, AdminMobileNav, type AdminBadges } from "@/components/admin/admin-nav";
+import { effectiveStock } from "@/lib/stock-alerts/low-stock";
 
-const NAV = [
-  { href: "/admin", label: "Přehled", icon: LayoutDashboard },
-  { href: "/admin/products", label: "Produkty", icon: Package },
-  { href: "/admin/categories", label: "Kategorie", icon: FolderTree },
-  { href: "/admin/brands", label: "Značky", icon: Tag },
-  { href: "/admin/orders", label: "Objednávky", icon: ShoppingBag },
-  { href: "/admin/invoices", label: "Faktury", icon: FileText },
-  { href: "/admin/claims", label: "Reklamace", icon: PackageX },
-  { href: "/admin/ledx", label: "LEDX řady", icon: Sparkles },
-  { href: "/admin/inquiries", label: "Poptávky LEDX", icon: Lightbulb },
-  { href: "/admin/customers", label: "Zákazníci", icon: Users },
-  { href: "/admin/discounts", label: "Slevy", icon: Ticket },
-  { href: "/admin/vouchers", label: "Poukazy", icon: Gift },
-  { href: "/admin/reviews", label: "Recenze", icon: Star },
-  { href: "/admin/newsletter", label: "Newsletter", icon: Mail },
-  { href: "/admin/settings", label: "Nastavení", icon: Settings },
-];
 
 export default async function AdminLayout({
   children,
@@ -52,24 +19,30 @@ export default async function AdminLayout({
   const { locale } = await params;
   await requireAdmin(locale);
 
-  // Počet nových poptávek LEDX (bez reakce obchodu) → odznak v menu
-  const { count: openInquiries } = await createServiceClient()
-    .from("ledx_inquiry")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "new");
-  const badges: Record<string, number> = { "/admin/inquiries": openInquiries ?? 0 };
-  const Badge = ({ href }: { href: string }) =>
-    badges[href] ? (
-      <span className="ml-auto rounded-full bg-amber px-1.5 py-0.5 font-mono text-[10px] font-bold leading-none text-white">
-        {badges[href]}
-      </span>
-    ) : null;
+  // Odznaky v menu: co čeká na vyřízení (jeden dotaz na každou oblast, jen počty).
+  const svc = createServiceClient();
+  const [inq, ordersOpen, claimsNew, reviewsPending, products] = await Promise.all([
+    svc.from("ledx_inquiry").select("id", { count: "exact", head: true }).eq("status", "new"),
+    svc.from("order").select("id", { count: "exact", head: true }).in("status", ["new", "paid", "processing"]),
+    svc.from("claim").select("id", { count: "exact", head: true }).eq("status", "new"),
+    svc.from("review").select("id", { count: "exact", head: true }).eq("is_approved", false),
+    svc.from("product").select("stock_qty, low_stock_threshold, is_gift_voucher, product_variant(stock_qty)").eq("is_published", true).limit(2000),
+  ]);
+  const lowStock = (products.data ?? []).filter((p) => !p.is_gift_voucher && effectiveStock(p) <= (p.low_stock_threshold ?? 5)).length;
+  const badges: AdminBadges = {
+    "/admin/inquiries": inq.count ?? 0,
+    "/admin/orders": ordersOpen.count ?? 0,
+    "/admin/claims": claimsNew.count ?? 0,
+    "/admin/reviews": reviewsPending.count ?? 0,
+    "/admin/products": lowStock,
+  };
 
   return (
     <div className="min-h-dvh bg-cream">
       {/* Horní lišta */}
       <header className="sticky top-0 z-40 border-b border-cream-dark bg-white">
-        <div className="flex items-center gap-4 px-4 py-3">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <AdminMobileNav badges={badges} />
           <Link href="/admin" className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.svg" alt="Reptiplus" className="h-7 w-auto" />
@@ -92,34 +65,10 @@ export default async function AdminLayout({
             </form>
           </div>
         </div>
-        {/* Mobilní navigace */}
-        <nav className="flex gap-1 overflow-x-auto border-t border-cream px-2 py-2 md:hidden">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-charcoal hover:bg-cream"
-            >
-              <item.icon className="size-4" /> {item.label} <Badge href={item.href} />
-            </Link>
-          ))}
-        </nav>
       </header>
 
       <div className="flex">
-        {/* Postranní menu */}
-        <aside className="sticky top-[57px] hidden h-[calc(100dvh-57px)] w-56 shrink-0 flex-col gap-1 border-r border-cream-dark bg-white p-3 md:flex">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-charcoal hover:bg-cream"
-            >
-              <item.icon className="size-4" /> {item.label}
-              <Badge href={item.href} />
-            </Link>
-          ))}
-        </aside>
+        <AdminSidebar badges={badges} />
 
         <main className="min-w-0 flex-1 p-6 lg:p-8">{children}</main>
       </div>
