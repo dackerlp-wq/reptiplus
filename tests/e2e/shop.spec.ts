@@ -26,9 +26,11 @@ test.describe("Obchod (cs)", () => {
     await firstProduct.click();
     await expect(page).toHaveURL(/\/cs\/produkt\//);
 
-    const addBtn = page.getByRole("button", { name: cs.Product.addToCart });
+    // Vyprodaný produkt má tlačítko vypnuté → hledáme jen povolené.
+    const addBtn = page.getByRole("button", { name: cs.Product.addToCart, disabled: false });
     test.skip(!(await addBtn.count()), "První produkt není skladem – přeskočeno.");
     await addBtn.first().click();
+    await expect(page.getByRole("button", { name: cs.Product.addToCart }).first()).toBeEnabled();
 
     await page.goto("/cs/kosik");
     await expect(page.getByRole("heading", { name: cs.Cart.title })).toBeVisible();

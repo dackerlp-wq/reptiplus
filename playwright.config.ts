@@ -17,6 +17,11 @@ export default defineConfig({
     locale: "cs-CZ",
     trace: "retain-on-failure",
     ...devices["Desktop Chrome"],
+    // Prostředí s předinstalovaným Chromiem (bez `playwright install`): PLAYWRIGHT_CHROMIUM_PATH=/cesta/k/chrome
+    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } : undefined,
+    // Sandbox s povinnou odchozí proxy (vlastní CA): PLAYWRIGHT_PROXY=http://host:port PLAYWRIGHT_IGNORE_TLS=1
+    proxy: process.env.PLAYWRIGHT_PROXY ? { server: process.env.PLAYWRIGHT_PROXY } : undefined,
+    ignoreHTTPSErrors: process.env.PLAYWRIGHT_IGNORE_TLS === "1",
   },
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
