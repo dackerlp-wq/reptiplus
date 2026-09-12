@@ -49,7 +49,10 @@ export async function Navbar({ locale }: { locale: Locale }) {
     </div>
   );
 
+  // Přilepený řádek kategorií musí být SOUROZENEC hlavičky (sticky se drží jen
+  // uvnitř svého rodiče — uvnitř <header> by odjel spolu s ní).
   return (
+    <>
     <header className="bg-cream">
       {/* Horní lišta — e-mail, slogan, jazyk */}
       <div className="bg-forest-deep text-cream">
@@ -107,10 +110,11 @@ export async function Navbar({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      {/* Menu kategorií — megamenu; jediná přilepená část hlavičky */}
-      <StickyBar>
-        <CategoryMenu categories={menu} leading={compactLeading} trailing={compactTrailing} />
-      </StickyBar>
     </header>
+    {/* Menu kategorií — megamenu; jediná přilepená část hlavičky */}
+    <StickyBar>
+      <CategoryMenu categories={menu} leading={compactLeading} trailing={compactTrailing} />
+    </StickyBar>
+    </>
   );
 }
