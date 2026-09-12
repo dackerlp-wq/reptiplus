@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentType } from "react";
+import { useState, type ComponentType, type ReactNode } from "react";
 import Image from "next/image";
 import {
   ChevronRight,
@@ -28,7 +28,17 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
 };
 const iconFor = (slug: string) => ICONS[slug] ?? Leaf;
 
-export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
+export function CategoryMenu({
+  categories,
+  leading,
+  trailing,
+}: {
+  categories: MenuCategory[];
+  /** Zobrazí se jen v kompaktním (přilepeném) režimu vlevo — malé logo. */
+  leading?: ReactNode;
+  /** Zobrazí se jen v kompaktním režimu vpravo — hledání, účet, košík. */
+  trailing?: ReactNode;
+}) {
   const t = useTranslations("Nav");
   const [active, setActive] = useState<string | null>(null); // desktop hover
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -47,11 +57,12 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
 
   return (
     <nav
-      className="relative border-b border-cream-dark bg-white shadow-sm"
+      className="relative border-b border-cream-dark bg-white shadow-sm transition-shadow duration-300 group-data-[compact]:shadow-md"
       onMouseLeave={() => setActive(null)}
     >
       {/* ── Desktop ── */}
       <div className="relative mx-auto hidden max-w-7xl items-center px-4 md:flex">
+        <div className="hidden shrink-0 items-center group-data-[compact]:flex animate-reveal">{leading}</div>
         <div className="flex flex-1 items-center justify-center gap-1">
           {categories.map((cat) => {
             const Icon = iconFor(cat.slug);
@@ -61,7 +72,7 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
                   href={`/kategorie/${cat.slug}`}
                   onClick={() => setActive(null)}
                   className={cn(
-                    "flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-3.5 text-base font-semibold transition-colors",
+                    "flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-3.5 text-base font-semibold transition-[padding,color,background-color] duration-300 group-data-[compact]:px-3 group-data-[compact]:py-2.5 group-data-[compact]:text-[15px]",
                     active === cat.slug
                       ? "bg-forest/10 text-forest"
                       : "text-charcoal hover:bg-forest/5 hover:text-forest",
@@ -78,23 +89,26 @@ export function CategoryMenu({ categories }: { categories: MenuCategory[] }) {
           href="/o-nas"
           onClick={() => setActive(null)}
           onMouseEnter={() => setActive(null)}
-          className="ml-3 flex items-center gap-2 whitespace-nowrap border-l border-cream-dark py-3.5 pl-5 text-base font-semibold text-charcoal transition-colors hover:text-forest"
+          className="ml-3 flex items-center gap-2 whitespace-nowrap border-l border-cream-dark py-3.5 pl-5 text-base font-semibold text-charcoal transition-[padding,color] duration-300 hover:text-forest group-data-[compact]:py-2.5 group-data-[compact]:text-[15px]"
         >
           <Info className="size-[18px]" /> {t("about")}
         </Link>
+        <div className="hidden shrink-0 items-center group-data-[compact]:flex animate-reveal">{trailing}</div>
       </div>
 
-      {/* ── Mobil: hamburger ── */}
-      <div className="mx-auto flex max-w-7xl items-center px-4 md:hidden">
+      {/* ── Mobil: hamburger (+ v kompaktním režimu logo a ikony) ── */}
+      <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 md:hidden">
         <button
           type="button"
           onClick={() => setMobileOpen((o) => !o)}
           aria-expanded={mobileOpen}
-          className="flex items-center gap-2 py-3 text-base font-semibold text-charcoal"
+          className="flex items-center gap-2 py-3 text-base font-semibold text-charcoal transition-[padding] duration-300 group-data-[compact]:py-2"
         >
           {mobileOpen ? <X className="size-5" /> : <MenuIcon className="size-5" />}
-          {t("menu")}
+          <span className="group-data-[compact]:sr-only">{t("menu")}</span>
         </button>
+        <div className="hidden flex-1 items-center justify-center group-data-[compact]:flex animate-reveal">{leading}</div>
+        <div className="ml-auto hidden shrink-0 items-center group-data-[compact]:flex animate-reveal">{trailing}</div>
       </div>
 
       {/* ── Mobil: rozbalené menu (kategorie + podkategorie) ── */}

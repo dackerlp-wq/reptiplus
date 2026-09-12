@@ -215,3 +215,18 @@ html[data-theme="logo-tepla"] {
     margin: 1rem 0;
   }
 }
+
+/* Objevení prvků v kompaktní (přilepené) hlavičce po scrollu. */
+@theme {
+  --animate-reveal: reveal 0.25s ease-out both;
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}

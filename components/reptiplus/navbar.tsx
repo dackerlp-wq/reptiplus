@@ -8,7 +8,8 @@ import { getShopContact } from "@/lib/settings";
 import { LanguageSwitcher } from "./language-switcher";
 import { SearchBar } from "./search-bar";
 import { CategoryMenu } from "./category-menu";
-import { HideOnScrollHeader } from "./hide-on-scroll-header";
+import { StickyBar } from "./sticky-bar";
+import { CompactSearch } from "./compact-search";
 
 export async function Navbar({ locale }: { locale: Locale }) {
   const t = await getTranslations("Nav");
@@ -18,8 +19,38 @@ export async function Navbar({ locale }: { locale: Locale }) {
     getShopContact(),
   ]);
 
+  const iconLink =
+    "flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-[11px] font-medium text-charcoal transition-colors hover:bg-white hover:text-forest";
+  const cartBadge = (cls: string) =>
+    cartCount > 0 ? (
+      <span className={`absolute flex min-w-5 items-center justify-center rounded-full bg-forest px-1.5 text-xs font-semibold leading-5 text-white ${cls}`}>
+        {cartCount > 99 ? "99+" : cartCount}
+      </span>
+    ) : null;
+
+  // Kompaktní lišta (po scrollu): malé logo vlevo, hledání + účet + košík vpravo.
+  const compactLeading = (
+    <Link href="/" aria-label="Reptiplus" className="mr-4 shrink-0">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.svg" alt="Reptiplus" className="h-9 w-auto" />
+    </Link>
+  );
+  const compactTrailing = (
+    <div className="flex items-center gap-1">
+      <SearchBar placeholder={t("search")} locale={locale} size="compact" className="hidden w-52 xl:block xl:w-64" />
+      <CompactSearch placeholder={t("search")} locale={locale} className="xl:hidden" />
+      <Link href="/ucet" aria-label={t("account")} className="flex items-center justify-center rounded-xl p-2 text-charcoal transition-colors hover:bg-white hover:text-forest">
+        <User className="size-6" />
+      </Link>
+      <Link href="/kosik" aria-label={t("cart")} className="relative flex items-center justify-center rounded-xl p-2 text-charcoal transition-colors hover:bg-white hover:text-forest">
+        <ShoppingCart className="size-6" />
+        {cartBadge("-right-0.5 -top-0.5")}
+      </Link>
+    </div>
+  );
+
   return (
-    <HideOnScrollHeader className="z-40 bg-cream/95 backdrop-blur">
+    <header className="bg-cream">
       {/* Horní lišta — e-mail, slogan, jazyk */}
       <div className="bg-forest-deep text-cream">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-1.5 text-xs">
@@ -56,26 +87,14 @@ export async function Navbar({ locale }: { locale: Locale }) {
           />
 
           <div className="ml-auto flex items-center gap-1 sm:ml-0 sm:gap-2">
-            <Link
-              href="/ucet"
-              aria-label={t("account")}
-              className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-[11px] font-medium text-charcoal transition-colors hover:bg-white hover:text-forest"
-            >
+            <Link href="/ucet" aria-label={t("account")} className={iconLink}>
               <User className="size-7" />
               <span className="hidden lg:block">{t("account")}</span>
             </Link>
-            <Link
-              href="/kosik"
-              aria-label={t("cart")}
-              className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-[11px] font-medium text-charcoal transition-colors hover:bg-white hover:text-forest"
-            >
+            <Link href="/kosik" aria-label={t("cart")} className={iconLink}>
               <span className="relative">
                 <ShoppingCart className="size-7" />
-                {cartCount > 0 && (
-                  <span className="absolute -right-2 -top-2 flex min-w-5 items-center justify-center rounded-full bg-forest px-1.5 text-xs font-semibold leading-5 text-white">
-                    {cartCount > 99 ? "99+" : cartCount}
-                  </span>
-                )}
+                {cartBadge("-right-2 -top-2")}
               </span>
               <span className="hidden lg:block">{t("cart")}</span>
             </Link>
@@ -88,8 +107,10 @@ export async function Navbar({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      {/* Menu kategorií — megamenu */}
-      <CategoryMenu categories={menu} />
-    </HideOnScrollHeader>
+      {/* Menu kategorií — megamenu; jediná přilepená část hlavičky */}
+      <StickyBar>
+        <CategoryMenu categories={menu} leading={compactLeading} trailing={compactTrailing} />
+      </StickyBar>
+    </header>
   );
 }
