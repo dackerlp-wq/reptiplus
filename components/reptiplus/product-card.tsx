@@ -52,7 +52,7 @@ export async function ProductCard({
     stock <= 0 ? "text-error" : stock <= 5 ? "text-amber" : "text-success";
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-xl border border-cream-dark bg-white transition-shadow hover:shadow-lg">
+    <div className="group flex flex-col overflow-hidden rounded-xl border border-cream-dark bg-white transition-[box-shadow,transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-forest/30 hover:shadow-lg">
       <Link
         href={href}
         className="relative flex aspect-square items-center justify-center overflow-hidden bg-paper"
@@ -136,7 +136,7 @@ export async function ProductCard({
           <AddToCartButton
             productId={product.id}
             label={t("addToCart")}
-            addedLabel={t("added")}
+            goToCartLabel={t("goToCart")}
             disabled={product.stock_qty <= 0}
           />
         )}

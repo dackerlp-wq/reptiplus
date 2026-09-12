@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import Image from "next/image";
-import { Check, Loader2, ShoppingCart } from "lucide-react";
+import { ArrowRight, Check, Loader2, ShoppingCart } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { formatPrice, discountPercent, localeCurrency } from "@/lib/i18n";
 import { addToCartAction } from "@/lib/cart/actions";
 import { trackAddToCart } from "@/lib/analytics/events";
@@ -49,6 +50,7 @@ export function ProductBuyBox({
     variant: string;
     addToCart: string;
     added: string;
+    goToCart: string;
     outOfStock: string;
     lowest30: string;
   };
@@ -80,7 +82,7 @@ export function ProductBuyBox({
           localeCurrency[locale],
         );
         setAdded(true);
-        setTimeout(() => setAdded(false), 1500);
+        setTimeout(() => setAdded(false), 5000);
       }
     });
 
@@ -173,24 +175,29 @@ export function ProductBuyBox({
       )}
 
       <div className="mt-6 flex max-w-md flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={add}
-          disabled={out || pending}
-          className="flex min-w-[12rem] flex-1 items-center justify-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-forest-light disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {pending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : added ? (
-            <>
-              <Check className="size-4" /> {labels.added}
-            </>
-          ) : (
-            <>
-              <ShoppingCart className="size-4" /> {out ? labels.outOfStock : labels.addToCart}
-            </>
-          )}
-        </button>
+        {added ? (
+          <Link
+            href="/kosik"
+            className="flex min-w-[12rem] flex-1 items-center justify-center gap-2 rounded-lg bg-forest-deep px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-forest animate-reveal"
+          >
+            <Check className="size-4" /> {labels.added} · {labels.goToCart} <ArrowRight className="size-4" />
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={add}
+            disabled={out || pending}
+            className="flex min-w-[12rem] flex-1 items-center justify-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-forest-light disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {pending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <>
+                <ShoppingCart className="size-4" /> {out ? labels.outOfStock : labels.addToCart}
+              </>
+            )}
+          </button>
+        )}
         <WishlistButton productId={productId} variant="text" />
       </div>
       {out && <StockAlertForm productId={productId} variantId={selId} defaultEmail={userEmail} />}

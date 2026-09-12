@@ -90,7 +90,8 @@
     "notifyEmail": "Váš e-mail",
     "notifySubmit": "Hlídat",
     "notifyDone": "Dáme vám vědět, jakmile bude produkt skladem.",
-    "notifyError": "Zadejte platný e-mail."
+    "notifyError": "Zadejte platný e-mail.",
+    "goToCart": "Přejít do košíku"
   },
   "Reviews": {
     "title": "Hodnocení a recenze",

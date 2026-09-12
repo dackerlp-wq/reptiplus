@@ -90,7 +90,7 @@ export function ClaimForm({
         <span>
           {t.rich("gdpr", {
             link: (c) => (
-              <Link href="/ochrana-osobnich-udaju" target="_blank" rel="noopener" className="text-forest underline">
+              <Link href="/ochrana-osobnich-udaju" target="_blank" rel="noopener" className="text-forest underline hover:text-forest-light">
                 {c}
               </Link>
             ),

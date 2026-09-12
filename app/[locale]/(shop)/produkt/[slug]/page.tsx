@@ -290,6 +290,7 @@ export default async function ProductPage({
                 variant: t("variant"),
                 addToCart: t("addToCart"),
                 added: t("added"),
+                goToCart: t("goToCart"),
                 outOfStock: t("outOfStock"),
                 lowest30: t("lowest30d"),
               }}

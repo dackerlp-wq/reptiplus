@@ -61,7 +61,7 @@ export default async function CartPage({
             <li key={line.id} className="flex gap-4 p-4">
               <Link
                 href={`/produkt/${line.slug}`}
-                className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-paper"
+                className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-paper transition-opacity hover:opacity-80"
               >
                 {line.imageUrl ? (
                   <Image

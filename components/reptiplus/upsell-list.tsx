@@ -40,7 +40,7 @@ export function UpsellList({
             <Link
               key={p.id}
               href={`/produkt/${p.slug}`}
-              className="group flex items-center gap-3 rounded-xl border border-cream-dark bg-white p-2.5 transition-shadow hover:shadow-md"
+              className="group flex items-center gap-3 rounded-xl border border-cream-dark bg-white p-2.5 transition-[box-shadow,transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-forest/30 hover:shadow-md"
             >
               <span className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-paper">
                 {p.image ? (

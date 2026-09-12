@@ -130,6 +130,40 @@ html[data-theme="logo-tepla"] {
     color: var(--color-ink);
     letter-spacing: -0.025em;
   }
+
+  /* Tailwind v4 už tlačítkům nedává kurzor „ruka“ — klikatelné prvky ho mají mít všude,
+     zakázané naopak jasně „nelze“. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="file"]:not(:disabled),
+  label:has(> input[type="checkbox"]),
+  label:has(> input[type="radio"]) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  /* Jemná odezva: barvy, stín a posun se mění plynule, ne skokem. */
+  a,
+  button,
+  summary {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    a,
+    button,
+    summary {
+      transition-duration: 0ms;
+    }
+  }
 }
 
 /* Formátovaný obsah z WYSIWYG editoru (popisy, právní stránky) */

@@ -97,7 +97,7 @@ export function CatalogFilters({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="mb-3 flex w-full items-center justify-between rounded-lg border border-cream-dark bg-white px-4 py-2.5 text-sm font-semibold lg:hidden"
+        className="mb-3 flex w-full items-center justify-between rounded-lg border border-cream-dark bg-white px-4 py-2.5 text-sm font-semibold transition-colors hover:border-forest hover:text-forest lg:hidden"
       >
         <span className="flex items-center gap-2">
           <SlidersHorizontal className="size-4" /> {t("filters")}

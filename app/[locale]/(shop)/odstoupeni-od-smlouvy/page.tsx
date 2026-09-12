@@ -32,7 +32,7 @@ export default async function WithdrawalPage({ params, searchParams }: { params:
         <li>{t("withdrawalStep3")}</li>
       </ol>
       <p className="mt-3 text-sm text-gray-soft">
-        {t.rich("withdrawalLegal", { link: (c) => <Link href="/obchodni-podminky" className="text-forest underline">{c}</Link> })}
+        {t.rich("withdrawalLegal", { link: (c) => <Link href="/obchodni-podminky" className="text-forest underline hover:text-forest-light">{c}</Link> })}
         {contact.address ? ` ${t("returnAddress")}: ${contact.name}, ${contact.address}.` : ""}
       </p>
       <div className="mt-8">

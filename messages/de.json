@@ -90,7 +90,8 @@
     "notifyEmail": "Ihre E-Mail",
     "notifySubmit": "Benachrichtigen",
     "notifyDone": "Wir melden uns, sobald das Produkt wieder verfügbar ist.",
-    "notifyError": "Geben Sie eine gültige E-Mail ein."
+    "notifyError": "Geben Sie eine gültige E-Mail ein.",
+    "goToCart": "Zum Warenkorb"
   },
   "Reviews": {
     "title": "Bewertungen & Rezensionen",

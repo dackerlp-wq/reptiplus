@@ -90,7 +90,8 @@
     "notifyEmail": "Your e-mail",
     "notifySubmit": "Notify me",
     "notifyDone": "We'll e-mail you as soon as it's back in stock.",
-    "notifyError": "Enter a valid e-mail."
+    "notifyError": "Enter a valid e-mail.",
+    "goToCart": "Go to cart"
   },
   "Reviews": {
     "title": "Ratings & reviews",

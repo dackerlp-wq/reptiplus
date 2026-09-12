@@ -32,7 +32,7 @@ export default async function ClaimPage({ params, searchParams }: { params: Prom
         <li>{t("claimStep3")}</li>
       </ol>
       <p className="mt-3 text-sm text-gray-soft">
-        {t.rich("claimLegal", { link: (c) => <Link href="/reklamacni-rad" className="text-forest underline">{c}</Link> })}
+        {t.rich("claimLegal", { link: (c) => <Link href="/reklamacni-rad" className="text-forest underline hover:text-forest-light">{c}</Link> })}
         {contact.address ? ` ${t("returnAddress")}: ${contact.name}, ${contact.address}.` : ""}
       </p>
       <div className="mt-8">

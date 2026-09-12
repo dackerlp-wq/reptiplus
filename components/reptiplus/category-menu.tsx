@@ -124,7 +124,7 @@ export function CategoryMenu({
                   <Link
                     href={`/kategorie/${cat.slug}`}
                     onClick={closeMobile}
-                    className="flex flex-1 items-center gap-3 px-4 py-3.5 font-semibold text-charcoal"
+                    className="flex flex-1 items-center gap-3 px-4 py-3.5 font-semibold text-charcoal transition-colors hover:text-forest active:bg-cream"
                   >
                     <Icon className="size-5 shrink-0 text-forest" />
                     {cat.name}
@@ -152,7 +152,7 @@ export function CategoryMenu({
                         key={s.slug}
                         href={`/kategorie/${s.slug}`}
                         onClick={closeMobile}
-                        className="block py-2.5 pl-12 pr-4 text-sm text-charcoal"
+                        className="block py-2.5 pl-12 pr-4 text-sm text-charcoal transition-colors hover:text-forest active:bg-cream-dark/40"
                       >
                         {s.name}
                       </Link>
@@ -165,7 +165,7 @@ export function CategoryMenu({
           <Link
             href="/o-nas"
             onClick={closeMobile}
-            className="flex items-center gap-3 px-4 py-3.5 font-semibold text-charcoal"
+            className="flex items-center gap-3 px-4 py-3.5 font-semibold text-charcoal transition-colors hover:text-forest active:bg-cream"
           >
             <Info className="size-5 shrink-0 text-forest" /> {t("about")}
           </Link>

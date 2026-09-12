@@ -30,7 +30,7 @@ export async function Navbar({ locale }: { locale: Locale }) {
 
   // Kompaktní lišta (po scrollu): malé logo vlevo, hledání + účet + košík vpravo.
   const compactLeading = (
-    <Link href="/" aria-label="Reptiplus" className="mr-4 shrink-0">
+    <Link href="/" aria-label="Reptiplus" className="mr-4 shrink-0 transition-opacity hover:opacity-80">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/logo.svg" alt="Reptiplus" className="h-9 w-auto" />
     </Link>
@@ -78,7 +78,7 @@ export async function Navbar({ locale }: { locale: Locale }) {
       {/* Hlavní lišta — logo, vyhledávání, účet/košík */}
       <div className="border-b border-cream-dark">
         <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-5 md:py-6">
-          <Link href="/" aria-label="Reptiplus" className="shrink-0">
+          <Link href="/" aria-label="Reptiplus" className="shrink-0 transition-opacity hover:opacity-80">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.svg" alt="Reptiplus" className="h-16 w-auto md:h-28" />
           </Link>
