@@ -188,7 +188,7 @@
     "title": "Thank you for your order!",
     "subtitle": "We've sent a confirmation to your email.",
     "payCod": "Cash on delivery — you'll pay when the parcel is delivered.",
-    "payBank": "Bank transfer — we'll email you the payment details. We ship once the payment arrives.",
+    "payBank": "Bank transfer — please use the details below. We ship once the payment arrives.",
     "payOther": "We'll email you the payment instructions.",
     "payStatusPaid": "Payment successful. Thank you! We'll prepare your order for shipping.",
     "payStatusPending": "Your payment is being processed. We'll ship once it's confirmed.",
@@ -198,7 +198,16 @@
     "discount": "Discount",
     "total": "Total",
     "deliveryTo": "Delivery to",
-    "continueShopping": "Continue shopping"
+    "continueShopping": "Continue shopping",
+    "bankAccount": "Account number",
+    "iban": "IBAN",
+    "bic": "BIC / SWIFT",
+    "variableSymbol": "Payment reference",
+    "amount": "Amount",
+    "paymentMessage": "Message for recipient",
+    "documents": "Documents",
+    "invoice": "Invoice",
+    "creditNote": "Credit note"
   },
   "ResetPassword": {
     "title": "Reset password",
@@ -273,7 +282,8 @@
     "statusShipped": "Shipped",
     "statusDelivered": "Delivered",
     "statusCancelled": "Cancelled",
-    "statusRefunded": "Refunded"
+    "statusRefunded": "Refunded",
+    "invoices": "Documents"
   },
   "Ledx": {
     "navLabel": "Professional lighting",

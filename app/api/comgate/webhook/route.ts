@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getComgateConfig, getComgateStatus } from "@/lib/comgate/client";
+import { markOrderPaid } from "@/lib/orders/payment";
+import { logOrderEvent } from "@/lib/orders/events";
 
 // Webhook musí být vždy dynamický (příchozí POST od Comgate).
 export const dynamic = "force-dynamic";
@@ -50,11 +52,21 @@ export async function POST(req: NextRequest) {
   if (patch.payment_status) {
     const svc = createServiceClient();
     // Ztotožnění přes číslo objednávky (refId) i transId pro jistotu.
-    await svc
+    const { data: order } = await svc
       .from("order")
-      .update(patch as never)
+      .select("id, payment_status")
       .eq("number", refId)
-      .eq("comgate_ref", transId);
+      .eq("comgate_ref", transId)
+      .maybeSingle();
+    if (order) {
+      if (status === "PAID") {
+        // Označí zaplaceno, vystaví fakturu a pošle e-mail „platba přijata".
+        await markOrderPaid(order.id, { source: "comgate" });
+      } else if (order.payment_status !== "paid") {
+        await svc.from("order").update({ payment_status: "failed" }).eq("id", order.id);
+        await logOrderEvent(order.id, "payment", null, { status: "failed", source: "comgate", trans_id: transId });
+      }
+    }
   }
 
   return ack();

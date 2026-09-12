@@ -188,7 +188,7 @@
     "title": "Děkujeme za objednávku!",
     "subtitle": "Potvrzení jsme vám poslali na e-mail.",
     "payCod": "Platba dobírkou — částku uhradíte při převzetí zásilky.",
-    "payBank": "Platba převodem — platební údaje vám zašleme e-mailem. Objednávku expedujeme po připsání platby.",
+    "payBank": "Platba převodem — použijte prosím údaje níže. Objednávku expedujeme po připsání platby.",
     "payOther": "Pokyny k platbě vám zašleme e-mailem.",
     "payStatusPaid": "Platba proběhla úspěšně. Děkujeme! Objednávku připravíme k expedici.",
     "payStatusPending": "Platba se zpracovává. Jakmile ji potvrdíme, objednávku expedujeme.",
@@ -198,7 +198,16 @@
     "discount": "Sleva",
     "total": "Celkem",
     "deliveryTo": "Doručení na adresu",
-    "continueShopping": "Pokračovat v nákupu"
+    "continueShopping": "Pokračovat v nákupu",
+    "bankAccount": "Číslo účtu",
+    "iban": "IBAN",
+    "bic": "BIC / SWIFT",
+    "variableSymbol": "Variabilní symbol",
+    "amount": "Částka",
+    "paymentMessage": "Zpráva pro příjemce",
+    "documents": "Doklady",
+    "invoice": "Faktura",
+    "creditNote": "Dobropis"
   },
   "ResetPassword": {
     "title": "Obnova hesla",
@@ -273,7 +282,8 @@
     "statusShipped": "Odeslaná",
     "statusDelivered": "Doručená",
     "statusCancelled": "Stornovaná",
-    "statusRefunded": "Vrácená"
+    "statusRefunded": "Vrácená",
+    "invoices": "Doklady"
   },
   "Ledx": {
     "navLabel": "Profi osvětlení",

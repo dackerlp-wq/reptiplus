@@ -2,90 +2,7 @@ import "server-only";
 import { formatPrice } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 
-export type OrderEmailData = {
-  number: string;
-  email: string;
-  items: { name: string; qty: number; lineTotal: number }[];
-  subtotal: number;
-  shipping: number;
-  paymentFee: number;
-  discount: number;
-  total: number;
-  currency: "CZK" | "EUR";
-  paymentMethod: string; // code: cod | bank | ...
-  shippingAddress: {
-    full_name?: string;
-    street?: string;
-    city?: string;
-    postal_code?: string;
-    country?: string;
-  } | null;
-  orderUrl: string;
-  locale: Locale;
-};
-
-const COPY = {
-  cs: {
-    subject: (n: string) => `Potvrzení objednávky ${n} — Reptiplus`,
-    preheader: "Děkujeme za vaši objednávku.",
-    thanks: "Děkujeme za objednávku!",
-    intro: "Vaši objednávku jsme přijali. Níže najdete její shrnutí.",
-    orderNo: "Číslo objednávky",
-    items: "Položky",
-    qty: "ks",
-    subtotal: "Mezisoučet",
-    shipping: "Doprava a platba",
-    discount: "Sleva",
-    total: "Celkem",
-    delivery: "Doručovací adresa",
-    payTitle: "Platba",
-    payCod: "Dobírka — částku uhradíte při převzetí zásilky.",
-    payBank: "Bankovní převod — platební údaje vám zašleme samostatně. Objednávku expedujeme po připsání platby.",
-    payOther: "Pokyny k platbě vám zašleme e-mailem.",
-    viewOrder: "Zobrazit objednávku",
-    footer: "Reptiplus — specializovaná teraristika",
-  },
-  en: {
-    subject: (n: string) => `Order confirmation ${n} — Reptiplus`,
-    preheader: "Thank you for your order.",
-    thanks: "Thank you for your order!",
-    intro: "We've received your order. Here's a summary below.",
-    orderNo: "Order number",
-    items: "Items",
-    qty: "pcs",
-    subtotal: "Subtotal",
-    shipping: "Shipping & payment",
-    discount: "Discount",
-    total: "Total",
-    delivery: "Delivery address",
-    payTitle: "Payment",
-    payCod: "Cash on delivery — you'll pay when the parcel is delivered.",
-    payBank: "Bank transfer — we'll send you the payment details separately. We ship once the payment arrives.",
-    payOther: "We'll email you the payment instructions.",
-    viewOrder: "View order",
-    footer: "Reptiplus — specialist terrarium shop",
-  },
-  de: {
-    subject: (n: string) => `Bestellbestätigung ${n} — Reptiplus`,
-    preheader: "Vielen Dank für Ihre Bestellung.",
-    thanks: "Vielen Dank für Ihre Bestellung!",
-    intro: "Wir haben Ihre Bestellung erhalten. Nachfolgend die Zusammenfassung.",
-    orderNo: "Bestellnummer",
-    items: "Artikel",
-    qty: "Stk",
-    subtotal: "Zwischensumme",
-    shipping: "Versand & Zahlung",
-    discount: "Rabatt",
-    total: "Gesamt",
-    delivery: "Lieferadresse",
-    payTitle: "Zahlung",
-    payCod: "Nachnahme — Sie zahlen bei der Zustellung.",
-    payBank: "Banküberweisung — die Zahlungsdaten senden wir separat. Wir versenden nach Zahlungseingang.",
-    payOther: "Die Zahlungsanweisungen senden wir per E-Mail.",
-    viewOrder: "Bestellung ansehen",
-    footer: "Reptiplus — Fachgeschäft für Terraristik",
-  },
-} as const;
+/* ── Sdílené ───────────────────────────────────────────────────────────── */
 
 const BRAND = "#3f6a2e";
 const INK = "#26231d";
@@ -95,9 +12,15 @@ const CREAM = "#f7f5ef";
 // Bílá varianta loga (PNG kvůli kompatibilitě e-mailových klientů) na canonical doméně.
 const LOGO_URL = "https://reptiplus.cz/logo-email.png";
 
+const FOOTER: Record<Locale, string> = {
+  cs: "Reptiplus — specializovaná teraristika",
+  en: "Reptiplus — specialist terrarium shop",
+  de: "Reptiplus — Fachgeschäft für Terraristik",
+};
+
 function layout(inner: string, preheader: string): string {
   return `<!doctype html><html><body style="margin:0;background:${CREAM};font-family:Arial,Helvetica,sans-serif;color:${INK};">
-<span style="display:none;max-height:0;overflow:hidden;opacity:0">${preheader}</span>
+<span style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(preheader)}</span>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};padding:24px 0;">
 <tr><td align="center">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid ${BORDER};border-radius:12px;overflow:hidden;">
@@ -111,8 +34,266 @@ ${inner}
 </body></html>`;
 }
 
+function footerRow(locale: Locale): string {
+  return `<tr><td style="padding:18px 28px;background:${CREAM};border-top:1px solid ${BORDER};color:${MUTED};font-size:12px;">${FOOTER[locale] ?? FOOTER.cs} · reptiplus.cz</td></tr>`;
+}
+
+function button(href: string, label: string, secondary = false): string {
+  return secondary
+    ? `<a href="${href}" style="display:inline-block;color:${BRAND};text-decoration:none;font-weight:bold;font-size:14px;padding:12px 6px;">${escapeHtml(label)}</a>`
+    : `<a href="${href}" style="display:inline-block;background:${BRAND};color:#ffffff;text-decoration:none;font-weight:bold;font-size:14px;padding:12px 22px;border-radius:8px;">${escapeHtml(label)}</a>`;
+}
+
+function infoBox(html: string): string {
+  return `<div style="background:${CREAM};border:1px solid ${BORDER};border-radius:10px;padding:12px 16px;font-size:14px;line-height:1.55;">${html}</div>`;
+}
+
+function kvRows(rows: [string, string][]): string {
+  return rows
+    .map(
+      ([k, v]) =>
+        `<tr><td style="padding:3px 14px 3px 0;color:${MUTED};font-size:14px;white-space:nowrap;">${escapeHtml(k)}</td><td style="padding:3px 0;font-size:14px;"><strong>${escapeHtml(v)}</strong></td></tr>`,
+    )
+    .join("");
+}
+
 function money(m: number, locale: Locale) {
   return formatPrice(m, locale);
+}
+
+/**
+ * Prostý text → HTML: odstavce oddělené prázdným řádkem, řádky začínající
+ * „– " / „- " / „• " jako odrážky. Používají zprávy psané v adminu.
+ */
+export function plainTextToHtml(body: string): { html: string; paragraphs: string[] } {
+  const paragraphs = body
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const html = paragraphs
+    .map((p) => {
+      const lines = p.split("\n");
+      const isList = lines.every((l) => /^[–\-•]\s/.test(l));
+      if (isList) {
+        const lis = lines
+          .map((l) => `<li style="margin:0 0 4px;">${escapeHtml(l.replace(/^[–\-•]\s/, ""))}</li>`)
+          .join("");
+        return `<ul style="margin:0 0 14px;padding-left:20px;font-size:14px;line-height:1.55;">${lis}</ul>`;
+      }
+      return `<p style="margin:0 0 14px;font-size:14px;line-height:1.55;">${lines.map(escapeHtml).join("<br />")}</p>`;
+    })
+    .join("");
+  return { html, paragraphs };
+}
+
+/* ── Objednávka — potvrzení ────────────────────────────────────────────── */
+
+export type OrderAddress = {
+  full_name?: string;
+  company?: string;
+  street?: string;
+  city?: string;
+  postal_code?: string;
+  country?: string;
+  phone?: string;
+} | null;
+
+export type OrderEmailData = {
+  number: string;
+  email: string;
+  items: { name: string; qty: number; lineTotal: number }[];
+  subtotal: number;
+  shipping: number;
+  paymentFee: number;
+  discount: number;
+  total: number;
+  currency: "CZK" | "EUR";
+  paymentMethod: string; // kód: cod | bank | card …
+  paymentMethodLabel?: string | null;
+  shippingMethodLabel?: string | null;
+  shippingAddress: OrderAddress;
+  billingAddress?: OrderAddress;
+  note?: string | null;
+  /** Bankovní spojení obchodu (pro platbu převodem). */
+  bank?: { account?: string; iban?: string; bic?: string; variableSymbol: string } | null;
+  orderUrl: string;
+  adminUrl?: string;
+  locale: Locale;
+};
+
+const COPY = {
+  cs: {
+    subject: (n: string) => `Potvrzení objednávky ${n} — Reptiplus`,
+    preheader: "Děkujeme za vaši objednávku.",
+    thanks: "Děkujeme za objednávku!",
+    intro: "Vaši objednávku jsme přijali. Níže najdete její shrnutí.",
+    orderNo: "Číslo objednávky",
+    qty: "ks",
+    subtotal: "Mezisoučet",
+    shipping: "Doprava",
+    paymentFee: "Poplatek za platbu",
+    discount: "Sleva",
+    total: "Celkem",
+    delivery: "Doručovací adresa",
+    billing: "Fakturační adresa",
+    shippingMethod: "Doprava",
+    paymentMethod: "Platba",
+    note: "Vaše poznámka",
+    payTitle: "Platba",
+    payCod: "Dobírka — částku uhradíte při převzetí zásilky.",
+    payBank: "Prosíme o úhradu převodem na náš účet. Objednávku expedujeme po připsání platby.",
+    payBankNoDetails: "Bankovní převod — platební údaje vám zašleme samostatně.",
+    payCard: "Platba kartou proběhla online. Jakmile bránu potvrdíme, začneme objednávku připravovat.",
+    payOther: "Pokyny k platbě vám zašleme e-mailem.",
+    account: "Číslo účtu",
+    iban: "IBAN",
+    bic: "BIC / SWIFT",
+    vs: "Variabilní symbol",
+    amount: "Částka",
+    message: "Zpráva pro příjemce",
+    viewOrder: "Zobrazit objednávku",
+    reply: "Máte dotaz? Stačí odpovědět na tento e-mail.",
+  },
+  en: {
+    subject: (n: string) => `Order confirmation ${n} — Reptiplus`,
+    preheader: "Thank you for your order.",
+    thanks: "Thank you for your order!",
+    intro: "We've received your order. Here's a summary below.",
+    orderNo: "Order number",
+    qty: "pcs",
+    subtotal: "Subtotal",
+    shipping: "Shipping",
+    paymentFee: "Payment fee",
+    discount: "Discount",
+    total: "Total",
+    delivery: "Delivery address",
+    billing: "Billing address",
+    shippingMethod: "Shipping",
+    paymentMethod: "Payment",
+    note: "Your note",
+    payTitle: "Payment",
+    payCod: "Cash on delivery — you'll pay when the parcel is delivered.",
+    payBank: "Please pay by bank transfer to our account. We ship once the payment arrives.",
+    payBankNoDetails: "Bank transfer — we'll send you the payment details separately.",
+    payCard: "Your card payment was made online. We'll start preparing the order as soon as the gateway confirms it.",
+    payOther: "We'll email you the payment instructions.",
+    account: "Account number",
+    iban: "IBAN",
+    bic: "BIC / SWIFT",
+    vs: "Payment reference",
+    amount: "Amount",
+    message: "Message for recipient",
+    viewOrder: "View order",
+    reply: "Any questions? Just reply to this e-mail.",
+  },
+  de: {
+    subject: (n: string) => `Bestellbestätigung ${n} — Reptiplus`,
+    preheader: "Vielen Dank für Ihre Bestellung.",
+    thanks: "Vielen Dank für Ihre Bestellung!",
+    intro: "Wir haben Ihre Bestellung erhalten. Nachfolgend die Zusammenfassung.",
+    orderNo: "Bestellnummer",
+    qty: "Stk",
+    subtotal: "Zwischensumme",
+    shipping: "Versand",
+    paymentFee: "Zahlungsgebühr",
+    discount: "Rabatt",
+    total: "Gesamt",
+    delivery: "Lieferadresse",
+    billing: "Rechnungsadresse",
+    shippingMethod: "Versand",
+    paymentMethod: "Zahlung",
+    note: "Ihre Anmerkung",
+    payTitle: "Zahlung",
+    payCod: "Nachnahme — Sie zahlen bei der Zustellung.",
+    payBank: "Bitte überweisen Sie den Betrag auf unser Konto. Wir versenden nach Zahlungseingang.",
+    payBankNoDetails: "Banküberweisung — die Zahlungsdaten senden wir separat.",
+    payCard: "Ihre Kartenzahlung erfolgte online. Sobald das Zahlungsportal sie bestätigt, bereiten wir die Bestellung vor.",
+    payOther: "Die Zahlungsanweisungen senden wir per E-Mail.",
+    account: "Kontonummer",
+    iban: "IBAN",
+    bic: "BIC / SWIFT",
+    vs: "Verwendungszweck",
+    amount: "Betrag",
+    message: "Nachricht an den Empfänger",
+    viewOrder: "Bestellung ansehen",
+    reply: "Haben Sie Fragen? Antworten Sie einfach auf diese E-Mail.",
+  },
+} as const;
+
+type OrderCopy = (typeof COPY)[keyof typeof COPY];
+
+const isBank = (code: string) => code === "bank" || code === "bank_transfer";
+
+function addressHtml(a: OrderAddress): string {
+  if (!a) return "";
+  const lines = [
+    a.full_name,
+    a.company,
+    a.street,
+    [a.postal_code, a.city].filter(Boolean).join(" ") + (a.country ? `, ${a.country}` : ""),
+    a.phone,
+  ].filter((x) => x && x.trim());
+  return `<p style="margin:6px 0 0;font-size:14px;line-height:1.5;">${lines.map((l) => escapeHtml(String(l))).join("<br>")}</p>`;
+}
+
+function addressText(a: OrderAddress): string {
+  if (!a) return "";
+  return [a.full_name, a.company, a.street, [a.postal_code, a.city].filter(Boolean).join(" "), a.country, a.phone]
+    .filter((x) => x && String(x).trim())
+    .join(", ");
+}
+
+function sectionLabel(text: string): string {
+  return `<p style="margin:22px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:${MUTED};">${escapeHtml(text)}</p>`;
+}
+
+/** Blok s platebními instrukcemi (převod = tabulka s údaji). */
+function paymentBlock(d: OrderEmailData, c: OrderCopy): { html: string; text: string[] } {
+  if (d.paymentMethod === "cod") return { html: infoBox(escapeHtml(c.payCod)), text: [c.payCod] };
+  if (isBank(d.paymentMethod)) {
+    if (!d.bank || (!d.bank.account && !d.bank.iban)) {
+      return { html: infoBox(escapeHtml(c.payBankNoDetails)), text: [c.payBankNoDetails] };
+    }
+    const rows: [string, string][] = [];
+    if (d.bank.account) rows.push([c.account, d.bank.account]);
+    if (d.bank.iban) rows.push([c.iban, d.bank.iban]);
+    if (d.bank.bic) rows.push([c.bic, d.bank.bic]);
+    rows.push([c.vs, d.bank.variableSymbol]);
+    rows.push([c.amount, money(d.total, d.locale)]);
+    rows.push([c.message, d.number]);
+    return {
+      html: infoBox(
+        `<p style="margin:0 0 8px;">${escapeHtml(c.payBank)}</p><table role="presentation" cellpadding="0" cellspacing="0">${kvRows(rows)}</table>`,
+      ),
+      text: [c.payBank, ...rows.map(([k, v]) => `${k}: ${v}`)],
+    };
+  }
+  if (d.paymentMethod === "card" || d.paymentMethod === "comgate") {
+    return { html: infoBox(escapeHtml(c.payCard)), text: [c.payCard] };
+  }
+  return { html: infoBox(escapeHtml(c.payOther)), text: [c.payOther] };
+}
+
+function itemsTable(d: OrderEmailData, c: OrderCopy): string {
+  const rows = d.items
+    .map(
+      (it) => `<tr>
+<td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:14px;">${escapeHtml(it.name)} <span style="color:${MUTED};white-space:nowrap;">× ${it.qty} ${c.qty}</span></td>
+<td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:14px;text-align:right;white-space:nowrap;">${money(it.lineTotal, d.locale)}</td>
+</tr>`,
+    )
+    .join("");
+  const sum = (label: string, value: string, opts: { strong?: boolean; color?: string } = {}) =>
+    `<tr><td style="padding:${opts.strong ? "10px 0 0" : "2px 0"};${opts.strong ? `border-top:2px solid ${BORDER};` : ""}font-size:${opts.strong ? 16 : 14}px;${opts.strong ? "font-weight:bold;" : `color:${opts.color ?? MUTED};`}">${escapeHtml(label)}</td><td style="padding:${opts.strong ? "10px 0 0" : "2px 0"};${opts.strong ? `border-top:2px solid ${BORDER};` : ""}text-align:right;font-size:${opts.strong ? 16 : 14}px;${opts.strong ? "font-weight:bold;" : opts.color ? `color:${opts.color};` : ""}">${value}</td></tr>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
+${rows}
+${sum(c.subtotal, money(d.subtotal, d.locale))}
+${sum(d.shippingMethodLabel ? `${c.shipping} — ${d.shippingMethodLabel}` : c.shipping, money(d.shipping, d.locale))}
+${d.paymentFee > 0 ? sum(d.paymentMethodLabel ? `${c.paymentFee} — ${d.paymentMethodLabel}` : c.paymentFee, money(d.paymentFee, d.locale)) : ""}
+${d.discount > 0 ? sum(c.discount, `− ${money(d.discount, d.locale)}`, { color: BRAND }) : ""}
+${sum(c.total, money(d.total, d.locale), { strong: true })}
+</table>`;
 }
 
 /** Potvrzení objednávky pro zákazníka. */
@@ -121,60 +302,56 @@ export function orderConfirmationEmail(d: OrderEmailData): {
   html: string;
   text: string;
 } {
-  const c = COPY[d.locale] ?? COPY.cs;
-  const rows = d.items
-    .map(
-      (it) => `<tr>
-<td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:14px;">${escapeHtml(it.name)} <span style="color:${MUTED};">×${it.qty}</span></td>
-<td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:14px;text-align:right;white-space:nowrap;">${money(it.lineTotal, d.locale)}</td>
-</tr>`,
-    )
-    .join("");
+  const c: OrderCopy = COPY[d.locale] ?? COPY.cs;
+  const pay = paymentBlock(d, c);
+  const meta: [string, string][] = [];
+  if (d.shippingMethodLabel) meta.push([c.shippingMethod, d.shippingMethodLabel]);
+  if (d.paymentMethodLabel) meta.push([c.paymentMethod, d.paymentMethodLabel]);
 
-  const payText =
-    d.paymentMethod === "cod"
-      ? c.payCod
-      : d.paymentMethod === "bank" || d.paymentMethod === "bank_transfer"
-        ? c.payBank
-        : c.payOther;
-
-  const a = d.shippingAddress;
-  const addressBlock = a
-    ? `<p style="margin:6px 0 0;font-size:14px;line-height:1.5;">
-${escapeHtml(a.full_name ?? "")}<br>${escapeHtml(a.street ?? "")}<br>${escapeHtml(a.postal_code ?? "")} ${escapeHtml(a.city ?? "")}, ${escapeHtml(a.country ?? "")}</p>`
-    : "";
+  const sameAddress = !d.billingAddress || addressText(d.billingAddress) === addressText(d.shippingAddress);
 
   const inner = `
 <tr><td style="padding:28px;">
 <h1 style="margin:0 0 6px;font-size:22px;color:${INK};">${c.thanks}</h1>
 <p style="margin:0 0 4px;font-size:14px;color:${MUTED};">${c.intro}</p>
 <p style="margin:14px 0 20px;font-size:14px;">${c.orderNo}: <strong style="font-family:monospace;">${escapeHtml(d.number)}</strong></p>
-
-<div style="background:${CREAM};border:1px solid ${BORDER};border-radius:10px;padding:12px 16px;font-size:14px;line-height:1.5;">${payText}</div>
-
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
-${rows}
-<tr><td style="padding:10px 0 2px;color:${MUTED};font-size:14px;">${c.subtotal}</td><td style="padding:10px 0 2px;text-align:right;font-size:14px;">${money(d.subtotal, d.locale)}</td></tr>
-<tr><td style="padding:2px 0;color:${MUTED};font-size:14px;">${c.shipping}</td><td style="padding:2px 0;text-align:right;font-size:14px;">${money(d.shipping + d.paymentFee, d.locale)}</td></tr>
-${d.discount > 0 ? `<tr><td style="padding:2px 0;color:${BRAND};font-size:14px;">${c.discount}</td><td style="padding:2px 0;text-align:right;font-size:14px;color:${BRAND};">− ${money(d.discount, d.locale)}</td></tr>` : ""}
-<tr><td style="padding:10px 0 0;border-top:2px solid ${BORDER};font-size:16px;font-weight:bold;">${c.total}</td><td style="padding:10px 0 0;border-top:2px solid ${BORDER};text-align:right;font-size:16px;font-weight:bold;">${money(d.total, d.locale)}</td></tr>
-</table>
-
-<p style="margin:22px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:${MUTED};">${c.delivery}</p>
-${addressBlock}
-
-<div style="margin-top:26px;">
-<a href="${d.orderUrl}" style="display:inline-block;background:${BRAND};color:#ffffff;text-decoration:none;font-weight:bold;font-size:14px;padding:12px 22px;border-radius:8px;">${c.viewOrder}</a>
-</div>
+${pay.html}
+${itemsTable(d, c)}
+${meta.length ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:18px;">${kvRows(meta)}</table>` : ""}
+${sectionLabel(c.delivery)}
+${addressHtml(d.shippingAddress)}
+${!sameAddress ? `${sectionLabel(c.billing)}${addressHtml(d.billingAddress ?? null)}` : ""}
+${d.note ? `${sectionLabel(c.note)}<p style="margin:0;font-size:14px;line-height:1.5;white-space:pre-line;">${escapeHtml(d.note)}</p>` : ""}
+<div style="margin-top:26px;">${button(d.orderUrl, c.viewOrder)}</div>
+<p style="margin:22px 0 0;font-size:13px;color:${MUTED};">${c.reply}</p>
 </td></tr>
-<tr><td style="padding:18px 28px;background:${CREAM};border-top:1px solid ${BORDER};color:${MUTED};font-size:12px;">${c.footer} · reptiplus.cz</td></tr>`;
+${footerRow(d.locale)}`;
 
-  const text = `${c.thanks}\n${c.orderNo}: ${d.number}\n${c.total}: ${money(d.total, d.locale)}\n${c.viewOrder}: ${d.orderUrl}`;
+  const text = [
+    c.thanks,
+    `${c.orderNo}: ${d.number}`,
+    "",
+    ...pay.text,
+    "",
+    ...d.items.map((it) => `${it.name} × ${it.qty} ${c.qty} — ${money(it.lineTotal, d.locale)}`),
+    `${c.subtotal}: ${money(d.subtotal, d.locale)}`,
+    `${c.shipping}${d.shippingMethodLabel ? ` (${d.shippingMethodLabel})` : ""}: ${money(d.shipping, d.locale)}`,
+    ...(d.paymentFee > 0 ? [`${c.paymentFee}: ${money(d.paymentFee, d.locale)}`] : []),
+    ...(d.discount > 0 ? [`${c.discount}: −${money(d.discount, d.locale)}`] : []),
+    `${c.total}: ${money(d.total, d.locale)}`,
+    "",
+    `${c.delivery}: ${addressText(d.shippingAddress)}`,
+    ...(!sameAddress ? [`${c.billing}: ${addressText(d.billingAddress ?? null)}`] : []),
+    ...(d.note ? ["", `${c.note}: ${d.note}`] : []),
+    "",
+    `${c.viewOrder}: ${d.orderUrl}`,
+    c.reply,
+  ].join("\n");
 
   return { subject: c.subject(d.number), html: layout(inner, c.preheader), text };
 }
 
-/** Jednoduchá notifikace do obchodu o nové objednávce. */
+/** Notifikace do obchodu o nové objednávce (česky, se vším podstatným pro vyřízení). */
 export function newOrderNotificationEmail(d: OrderEmailData): {
   subject: string;
   html: string;
@@ -183,40 +360,63 @@ export function newOrderNotificationEmail(d: OrderEmailData): {
   const rows = d.items
     .map((it) => `<li>${escapeHtml(it.name)} × ${it.qty} — ${money(it.lineTotal, d.locale)}</li>`)
     .join("");
-  const a = d.shippingAddress;
+  const meta: [string, string][] = [
+    ["Zákazník", d.email],
+    ["Platba", `${d.paymentMethodLabel ?? d.paymentMethod}${d.paymentFee > 0 ? ` (+${money(d.paymentFee, d.locale)})` : ""}`],
+    ["Doprava", `${d.shippingMethodLabel ?? "—"} (${money(d.shipping, d.locale)})`],
+    ["Jazyk", d.locale.toUpperCase()],
+  ];
+  if (d.shippingAddress?.phone) meta.push(["Telefon", d.shippingAddress.phone]);
+  if (d.discount > 0) meta.push(["Sleva", `−${money(d.discount, d.locale)}`]);
+
   const inner = `
 <tr><td style="padding:28px;">
 <h1 style="margin:0 0 10px;font-size:20px;">Nová objednávka ${escapeHtml(d.number)}</h1>
-<p style="margin:0 0 10px;font-size:14px;">Celkem <strong>${money(d.total, d.locale)}</strong> · platba: ${escapeHtml(d.paymentMethod)} · ${escapeHtml(d.email)}</p>
-<ul style="font-size:14px;padding-left:18px;">${rows}</ul>
-${a ? `<p style="font-size:14px;">${escapeHtml(a.full_name ?? "")}, ${escapeHtml(a.street ?? "")}, ${escapeHtml(a.postal_code ?? "")} ${escapeHtml(a.city ?? "")}</p>` : ""}
-<p style="margin-top:14px;"><a href="${d.orderUrl}" style="color:${BRAND};">${d.number}</a></p>
+<p style="margin:0 0 14px;font-size:18px;"><strong>${money(d.total, d.locale)}</strong></p>
+<table role="presentation" cellpadding="0" cellspacing="0">${kvRows(meta)}</table>
+<ul style="font-size:14px;padding-left:18px;margin:16px 0;">${rows}</ul>
+${sectionLabel("Doručení")}${addressHtml(d.shippingAddress)}
+${d.billingAddress && addressText(d.billingAddress) !== addressText(d.shippingAddress) ? `${sectionLabel("Fakturace")}${addressHtml(d.billingAddress)}` : ""}
+${d.note ? `${sectionLabel("Poznámka zákazníka")}<p style="margin:0;font-size:14px;white-space:pre-line;">${escapeHtml(d.note)}</p>` : ""}
+<div style="margin-top:22px;">${d.adminUrl ? button(d.adminUrl, "Otevřít v adminu") : ""} ${button(d.orderUrl, "Stránka objednávky", true)}</div>
 </td></tr>`;
+  const text = [
+    `Nová objednávka ${d.number} — ${money(d.total, d.locale)}`,
+    ...meta.map(([k, v]) => `${k}: ${v}`),
+    "",
+    ...d.items.map((it) => `${it.name} × ${it.qty} — ${money(it.lineTotal, d.locale)}`),
+    "",
+    `Doručení: ${addressText(d.shippingAddress)}`,
+    ...(d.note ? [`Poznámka: ${d.note}`] : []),
+    ...(d.adminUrl ? [`Admin: ${d.adminUrl}`] : []),
+  ].join("\n");
   return {
     subject: `Nová objednávka ${d.number} — ${money(d.total, d.locale)}`,
     html: layout(inner, `Nová objednávka ${d.number}`),
-    text: `Nová objednávka ${d.number}, celkem ${money(d.total, d.locale)}, ${d.email}`,
+    text,
   };
 }
 
 /* ── E-mail o změně stavu objednávky ───────────────────────────────────── */
 
-type NotifiableStatus = "processing" | "shipped" | "delivered" | "cancelled";
-const NOTIFIABLE: NotifiableStatus[] = [
-  "processing",
-  "shipped",
-  "delivered",
-  "cancelled",
-];
+export type NotifiableStatus = "paid" | "processing" | "shipped" | "delivered" | "cancelled";
+export const NOTIFIABLE_STATUSES: NotifiableStatus[] = ["paid", "processing", "shipped", "delivered", "cancelled"];
 
 const STATUS_COPY = {
   cs: {
     orderNo: "Číslo objednávky",
     trackingLabel: "Sledovací číslo",
-    carrierLabel: "Doprava",
+    carrierLabel: "Dopravce",
+    track: "Sledovat zásilku",
     viewOrder: "Zobrazit objednávku",
-    footer: "Reptiplus — specializovaná teraristika",
+    invoiceAttached: "Fakturu (daňový doklad) najdete v příloze tohoto e-mailu.",
+    reply: "Máte dotaz? Stačí odpovědět na tento e-mail.",
     s: {
+      paid: {
+        subject: (n: string) => `Platba za objednávku ${n} přijata — Reptiplus`,
+        title: "Platbu jsme přijali",
+        body: "Děkujeme, vaše platba dorazila. Objednávku teď připravíme k expedici a dáme vám vědět, jakmile ji předáme dopravci.",
+      },
       processing: {
         subject: (n: string) => `Objednávka ${n} se zpracovává — Reptiplus`,
         title: "Vaše objednávka se zpracovává",
@@ -225,7 +425,7 @@ const STATUS_COPY = {
       shipped: {
         subject: (n: string) => `Objednávka ${n} byla odeslána — Reptiplus`,
         title: "Zásilka je na cestě",
-        body: "Vaši objednávku jsme právě předali dopravci.",
+        body: "Vaši objednávku jsme právě předali dopravci. Stav zásilky můžete sledovat přes odkaz níže.",
       },
       delivered: {
         subject: (n: string) => `Objednávka ${n} byla doručena — Reptiplus`,
@@ -235,7 +435,7 @@ const STATUS_COPY = {
       cancelled: {
         subject: (n: string) => `Objednávka ${n} byla stornována — Reptiplus`,
         title: "Objednávka stornována",
-        body: "Vaši objednávku jsme stornovali. Pokud jste již platili, ozveme se vám ohledně vrácení platby.",
+        body: "Vaši objednávku jsme stornovali. Pokud jste již platili, peníze vám vrátíme stejnou cestou a pošleme dobropis.",
       },
     },
   },
@@ -243,9 +443,16 @@ const STATUS_COPY = {
     orderNo: "Order number",
     trackingLabel: "Tracking number",
     carrierLabel: "Carrier",
+    track: "Track parcel",
     viewOrder: "View order",
-    footer: "Reptiplus — specialist terrarium shop",
+    invoiceAttached: "Your invoice is attached to this e-mail.",
+    reply: "Any questions? Just reply to this e-mail.",
     s: {
+      paid: {
+        subject: (n: string) => `Payment for order ${n} received — Reptiplus`,
+        title: "Payment received",
+        body: "Thank you, your payment has arrived. We'll now prepare your order for dispatch and let you know once it's handed to the carrier.",
+      },
       processing: {
         subject: (n: string) => `Order ${n} is being processed — Reptiplus`,
         title: "Your order is being processed",
@@ -254,7 +461,7 @@ const STATUS_COPY = {
       shipped: {
         subject: (n: string) => `Order ${n} has shipped — Reptiplus`,
         title: "Your parcel is on its way",
-        body: "We've just handed your order to the carrier.",
+        body: "We've just handed your order to the carrier. You can follow the parcel using the link below.",
       },
       delivered: {
         subject: (n: string) => `Order ${n} has been delivered — Reptiplus`,
@@ -264,17 +471,24 @@ const STATUS_COPY = {
       cancelled: {
         subject: (n: string) => `Order ${n} has been cancelled — Reptiplus`,
         title: "Order cancelled",
-        body: "Your order has been cancelled. If you already paid, we'll contact you about a refund.",
+        body: "Your order has been cancelled. If you already paid, we'll refund you the same way and send a credit note.",
       },
     },
   },
   de: {
     orderNo: "Bestellnummer",
     trackingLabel: "Sendungsnummer",
-    carrierLabel: "Versand",
+    carrierLabel: "Versanddienstleister",
+    track: "Sendung verfolgen",
     viewOrder: "Bestellung ansehen",
-    footer: "Reptiplus — Fachgeschäft für Terraristik",
+    invoiceAttached: "Ihre Rechnung finden Sie im Anhang dieser E-Mail.",
+    reply: "Haben Sie Fragen? Antworten Sie einfach auf diese E-Mail.",
     s: {
+      paid: {
+        subject: (n: string) => `Zahlung für Bestellung ${n} eingegangen — Reptiplus`,
+        title: "Zahlung eingegangen",
+        body: "Vielen Dank, Ihre Zahlung ist eingegangen. Wir bereiten Ihre Bestellung nun für den Versand vor und melden uns, sobald sie an den Versanddienstleister übergeben wird.",
+      },
       processing: {
         subject: (n: string) => `Bestellung ${n} wird bearbeitet — Reptiplus`,
         title: "Ihre Bestellung wird bearbeitet",
@@ -283,7 +497,7 @@ const STATUS_COPY = {
       shipped: {
         subject: (n: string) => `Bestellung ${n} wurde versandt — Reptiplus`,
         title: "Ihr Paket ist unterwegs",
-        body: "Wir haben Ihre Bestellung soeben an den Versanddienstleister übergeben.",
+        body: "Wir haben Ihre Bestellung soeben an den Versanddienstleister übergeben. Über den Link unten können Sie die Sendung verfolgen.",
       },
       delivered: {
         subject: (n: string) => `Bestellung ${n} wurde zugestellt — Reptiplus`,
@@ -293,7 +507,7 @@ const STATUS_COPY = {
       cancelled: {
         subject: (n: string) => `Bestellung ${n} wurde storniert — Reptiplus`,
         title: "Bestellung storniert",
-        body: "Ihre Bestellung wurde storniert. Falls Sie bereits bezahlt haben, melden wir uns wegen der Rückerstattung.",
+        body: "Ihre Bestellung wurde storniert. Falls Sie bereits bezahlt haben, erstatten wir den Betrag auf demselben Weg und senden eine Gutschrift.",
       },
     },
   },
@@ -304,35 +518,152 @@ export function orderStatusEmail(d: {
   number: string;
   status: string;
   trackingNumber?: string | null;
-  shippingMethod?: string | null;
+  trackingUrl?: string | null;
+  carrierLabel?: string | null;
+  invoiceAttached?: boolean;
   orderUrl: string;
   locale: Locale;
 }): { subject: string; html: string; text: string } | null {
-  if (!NOTIFIABLE.includes(d.status as NotifiableStatus)) return null;
+  if (!NOTIFIABLE_STATUSES.includes(d.status as NotifiableStatus)) return null;
   const t = STATUS_COPY[d.locale] ?? STATUS_COPY.cs;
   const c = t.s[d.status as NotifiableStatus];
 
-  const trackRows =
-    d.status === "shipped" && (d.trackingNumber || d.shippingMethod)
-      ? `<div style="margin-top:18px;background:${CREAM};border:1px solid ${BORDER};border-radius:10px;padding:12px 16px;font-size:14px;line-height:1.6;">
-${d.shippingMethod ? `${t.carrierLabel}: <strong>${escapeHtml(d.shippingMethod)}</strong><br>` : ""}${d.trackingNumber ? `${t.trackingLabel}: <strong style="font-family:monospace;">${escapeHtml(d.trackingNumber)}</strong>` : ""}</div>`
-      : "";
+  const trackRows: [string, string][] = [];
+  if (d.status === "shipped") {
+    if (d.carrierLabel) trackRows.push([t.carrierLabel, d.carrierLabel]);
+    if (d.trackingNumber) trackRows.push([t.trackingLabel, d.trackingNumber]);
+  }
+  const trackBox = trackRows.length
+    ? `<div style="margin-top:18px;">${infoBox(`<table role="presentation" cellpadding="0" cellspacing="0">${kvRows(trackRows)}</table>`)}</div>`
+    : "";
 
   const inner = `
 <tr><td style="padding:28px;">
 <h1 style="margin:0 0 8px;font-size:22px;color:${INK};">${c.title}</h1>
 <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:${INK};">${c.body}</p>
 <p style="margin:0;font-size:14px;">${t.orderNo}: <strong style="font-family:monospace;">${escapeHtml(d.number)}</strong></p>
-${trackRows}
+${trackBox}
+${d.invoiceAttached ? `<p style="margin:16px 0 0;font-size:14px;line-height:1.5;">${t.invoiceAttached}</p>` : ""}
 <div style="margin-top:26px;">
-<a href="${d.orderUrl}" style="display:inline-block;background:${BRAND};color:#ffffff;text-decoration:none;font-weight:bold;font-size:14px;padding:12px 22px;border-radius:8px;">${t.viewOrder}</a>
+${d.status === "shipped" && d.trackingUrl ? `${button(d.trackingUrl, t.track)}&nbsp;&nbsp;${button(d.orderUrl, t.viewOrder, true)}` : button(d.orderUrl, t.viewOrder)}
 </div>
+<p style="margin:22px 0 0;font-size:13px;color:${MUTED};">${t.reply}</p>
 </td></tr>
-<tr><td style="padding:18px 28px;background:${CREAM};border-top:1px solid ${BORDER};color:${MUTED};font-size:12px;">${t.footer} · reptiplus.cz</td></tr>`;
+${footerRow(d.locale)}`;
 
-  const text = `${c.title}\n${t.orderNo}: ${d.number}${d.trackingNumber ? `\n${t.trackingLabel}: ${d.trackingNumber}` : ""}\n${t.viewOrder}: ${d.orderUrl}`;
+  const text = [
+    c.title,
+    c.body,
+    `${t.orderNo}: ${d.number}`,
+    ...trackRows.map(([k, v]) => `${k}: ${v}`),
+    ...(d.status === "shipped" && d.trackingUrl ? [`${t.track}: ${d.trackingUrl}`] : []),
+    ...(d.invoiceAttached ? [t.invoiceAttached] : []),
+    `${t.viewOrder}: ${d.orderUrl}`,
+  ].join("\n");
 
   return { subject: c.subject(d.number), html: layout(inner, c.title), text };
+}
+
+/* ── Vrácení peněz ─────────────────────────────────────────────────────── */
+
+const REFUND_COPY = {
+  cs: {
+    subject: (n: string) => `Vrácení platby k objednávce ${n} — Reptiplus`,
+    title: "Vracíme vám peníze",
+    body: (partial: boolean) =>
+      partial
+        ? "K vaší objednávce jsme vrátili část platby. Peníze odešly stejnou cestou, jakou jste platili; podle banky se připíší do 3–10 pracovních dnů."
+        : "Vrátili jsme vám celou platbu za objednávku. Peníze odešly stejnou cestou, jakou jste platili; podle banky se připíší do 3–10 pracovních dnů.",
+    amount: "Vrácená částka",
+    orderNo: "Číslo objednávky",
+    creditNote: "Dobropis",
+    attached: "Dobropis (opravný daňový doklad) najdete v příloze.",
+    viewOrder: "Zobrazit objednávku",
+    reply: "Máte dotaz? Stačí odpovědět na tento e-mail.",
+  },
+  en: {
+    subject: (n: string) => `Refund for order ${n} — Reptiplus`,
+    title: "We've refunded you",
+    body: (partial: boolean) =>
+      partial
+        ? "We've refunded part of your payment for this order. The money goes back the same way you paid; depending on your bank it arrives within 3–10 business days."
+        : "We've refunded the full payment for your order. The money goes back the same way you paid; depending on your bank it arrives within 3–10 business days.",
+    amount: "Refunded amount",
+    orderNo: "Order number",
+    creditNote: "Credit note",
+    attached: "The credit note is attached to this e-mail.",
+    viewOrder: "View order",
+    reply: "Any questions? Just reply to this e-mail.",
+  },
+  de: {
+    subject: (n: string) => `Erstattung zur Bestellung ${n} — Reptiplus`,
+    title: "Wir haben Ihnen den Betrag erstattet",
+    body: (partial: boolean) =>
+      partial
+        ? "Wir haben einen Teil Ihrer Zahlung zu dieser Bestellung erstattet. Das Geld geht auf demselben Weg zurück; je nach Bank dauert es 3–10 Werktage."
+        : "Wir haben Ihnen die gesamte Zahlung zur Bestellung erstattet. Das Geld geht auf demselben Weg zurück; je nach Bank dauert es 3–10 Werktage.",
+    amount: "Erstatteter Betrag",
+    orderNo: "Bestellnummer",
+    creditNote: "Gutschrift",
+    attached: "Die Gutschrift finden Sie im Anhang dieser E-Mail.",
+    viewOrder: "Bestellung ansehen",
+    reply: "Haben Sie Fragen? Antworten Sie einfach auf diese E-Mail.",
+  },
+} as const;
+
+export function orderRefundEmail(d: {
+  number: string;
+  amount: number;
+  partial: boolean;
+  creditNoteNumber?: string | null;
+  orderUrl: string;
+  locale: Locale;
+}): { subject: string; html: string; text: string } {
+  const c = REFUND_COPY[d.locale] ?? REFUND_COPY.cs;
+  const rows: [string, string][] = [
+    [c.orderNo, d.number],
+    [c.amount, money(d.amount, d.locale)],
+  ];
+  if (d.creditNoteNumber) rows.push([c.creditNote, d.creditNoteNumber]);
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 8px;font-size:22px;color:${INK};">${c.title}</h1>
+<p style="margin:0 0 16px;font-size:14px;line-height:1.6;">${c.body(d.partial)}</p>
+${infoBox(`<table role="presentation" cellpadding="0" cellspacing="0">${kvRows(rows)}</table>`)}
+${d.creditNoteNumber ? `<p style="margin:16px 0 0;font-size:14px;">${c.attached}</p>` : ""}
+<div style="margin-top:26px;">${button(d.orderUrl, c.viewOrder)}</div>
+<p style="margin:22px 0 0;font-size:13px;color:${MUTED};">${c.reply}</p>
+</td></tr>
+${footerRow(d.locale)}`;
+  const text = [c.title, c.body(d.partial), ...rows.map(([k, v]) => `${k}: ${v}`), ...(d.creditNoteNumber ? [c.attached] : []), `${c.viewOrder}: ${d.orderUrl}`].join("\n");
+  return { subject: c.subject(d.number), html: layout(inner, c.title), text };
+}
+
+/* ── Vlastní zpráva z adminu (objednávka) ──────────────────────────────── */
+
+/** Obecná zpráva k objednávce psaná v adminu (prostý text → HTML). */
+export function orderMessageEmail(d: {
+  locale: Locale;
+  subject: string;
+  body: string;
+  orderNumber: string;
+  orderUrl: string;
+}): { subject: string; html: string; text: string } {
+  const { html, paragraphs } = plainTextToHtml(d.body);
+  const t = STATUS_COPY[d.locale] ?? STATUS_COPY.cs;
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 18px;font-size:20px;color:${INK};">${escapeHtml(d.subject)}</h1>
+${html}
+<p style="margin:6px 0 0;font-size:13px;color:${MUTED};">${t.orderNo}: <strong style="font-family:monospace;color:${INK};">${escapeHtml(d.orderNumber)}</strong></p>
+<div style="margin-top:22px;">${button(d.orderUrl, t.viewOrder, true)}</div>
+</td></tr>
+${footerRow(d.locale)}`;
+  return {
+    subject: d.subject,
+    html: layout(inner, (paragraphs[1] ?? paragraphs[0] ?? d.subject).slice(0, 140)),
+    text: [...paragraphs, "", `${t.orderNo}: ${d.orderNumber}`, `${t.viewOrder}: ${d.orderUrl}`].join("\n\n"),
+  };
 }
 
 function escapeHtml(s: string): string {
@@ -362,26 +693,7 @@ export function ledxInquiryMessageEmail(d: {
   body: string;
 }): { subject: string; html: string; text: string } {
   const footer = LEDX_MESSAGE_FOOTER[d.locale] ?? LEDX_MESSAGE_FOOTER.cs;
-  const paragraphs = d.body
-    .replace(/\r\n/g, "\n")
-    .split(/\n{2,}/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-
-  const html = paragraphs
-    .map((p) => {
-      const lines = p.split("\n");
-      const isList = lines.every((l) => /^[–\-•]\s/.test(l));
-      if (isList) {
-        const lis = lines
-          .map((l) => `<li style="margin:0 0 4px;">${escapeHtml(l.replace(/^[–\-•]\s/, ""))}</li>`)
-          .join("");
-        return `<ul style="margin:0 0 14px;padding-left:20px;font-size:14px;line-height:1.55;">${lis}</ul>`;
-      }
-      return `<p style="margin:0 0 14px;font-size:14px;line-height:1.55;">${lines.map(escapeHtml).join("<br />")}</p>`;
-    })
-    .join("");
-
+  const { html, paragraphs } = plainTextToHtml(d.body);
   const preheader = paragraphs[1] ?? paragraphs[0] ?? d.subject;
   const inner = `
 <tr><td style="padding:28px;">
@@ -508,4 +820,90 @@ ${note}
   ].join("\n");
 
   return { subject: c.subject(d.rada ?? ""), html: layout(inner, c.preheader), text };
+}
+
+/* ── Doklad (faktura / dobropis) e-mailem ──────────────────────────────── */
+
+const INVOICE_COPY = {
+  cs: {
+    subject: (n: string, credit: boolean, order: string) =>
+      credit ? `Dobropis ${n} k objednávce ${order} — Reptiplus` : `Faktura ${n} k objednávce ${order} — Reptiplus`,
+    title: (credit: boolean) => (credit ? "Dobropis k vaší objednávce" : "Faktura k vaší objednávce"),
+    intro: (credit: boolean, order: string) =>
+      credit
+        ? `v příloze posíláme dobropis k objednávce ${order}. Částka vám bude vrácena stejnou cestou, jakou jste platili.`
+        : `v příloze posíláme fakturu k objednávce ${order}. Doklad si můžete kdykoli stáhnout i z odkazu níže.`,
+    number: "Číslo dokladu",
+    amount: "Částka",
+    download: "Stáhnout PDF",
+    viewOrder: "Zobrazit objednávku",
+    footer: "Reptiplus — specializovaná teraristika",
+  },
+  en: {
+    subject: (n: string, credit: boolean, order: string) =>
+      credit ? `Credit note ${n} for order ${order} — Reptiplus` : `Invoice ${n} for order ${order} — Reptiplus`,
+    title: (credit: boolean) => (credit ? "Credit note for your order" : "Invoice for your order"),
+    intro: (credit: boolean, order: string) =>
+      credit
+        ? `please find attached the credit note for order ${order}. The amount will be refunded the same way you paid.`
+        : `please find attached the invoice for order ${order}. You can download it any time using the link below.`,
+    number: "Document number",
+    amount: "Amount",
+    download: "Download PDF",
+    viewOrder: "View order",
+    footer: "Reptiplus — specialist terrarium shop",
+  },
+  de: {
+    subject: (n: string, credit: boolean, order: string) =>
+      credit ? `Gutschrift ${n} zur Bestellung ${order} — Reptiplus` : `Rechnung ${n} zur Bestellung ${order} — Reptiplus`,
+    title: (credit: boolean) => (credit ? "Gutschrift zu Ihrer Bestellung" : "Rechnung zu Ihrer Bestellung"),
+    intro: (credit: boolean, order: string) =>
+      credit
+        ? `anbei senden wir Ihnen die Gutschrift zur Bestellung ${order}. Der Betrag wird auf demselben Weg erstattet, wie Sie bezahlt haben.`
+        : `anbei senden wir Ihnen die Rechnung zur Bestellung ${order}. Sie können den Beleg jederzeit über den Link unten herunterladen.`,
+    number: "Belegnummer",
+    amount: "Betrag",
+    download: "PDF herunterladen",
+    viewOrder: "Bestellung ansehen",
+    footer: "Reptiplus — Fachgeschäft für Terraristik",
+  },
+} as const;
+
+export function invoiceEmail(d: {
+  locale: Locale;
+  number: string;
+  isCreditNote: boolean;
+  orderNumber: string;
+  total: number;
+  currency: "CZK" | "EUR";
+  downloadUrl: string;
+  orderUrl: string;
+  greetingName?: string | null;
+}): { subject: string; html: string; text: string } {
+  const c = INVOICE_COPY[d.locale] ?? INVOICE_COPY.cs;
+  const hello = d.greetingName
+    ? d.locale === "de" ? `Guten Tag ${d.greetingName},` : d.locale === "en" ? `Hello ${d.greetingName},` : `Dobrý den ${d.greetingName},`
+    : d.locale === "de" ? "Guten Tag," : d.locale === "en" ? "Hello," : "Dobrý den,";
+  const amount = new Intl.NumberFormat(d.currency === "CZK" ? "cs-CZ" : "de-DE", {
+    style: "currency",
+    currency: d.currency,
+    minimumFractionDigits: 2,
+  }).format(d.total / 100);
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 14px;font-size:22px;color:${INK};">${c.title(d.isCreditNote)}</h1>
+<p style="margin:0 0 6px;font-size:14px;line-height:1.55;">${escapeHtml(hello)}</p>
+<p style="margin:0 0 20px;font-size:14px;line-height:1.55;">${escapeHtml(c.intro(d.isCreditNote, d.orderNumber))}</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px;">
+<tr><td style="padding:4px 18px 4px 0;color:${MUTED};">${c.number}</td><td style="padding:4px 0;"><strong style="font-family:monospace;">${escapeHtml(d.number)}</strong></td></tr>
+<tr><td style="padding:4px 18px 4px 0;color:${MUTED};">${c.amount}</td><td style="padding:4px 0;"><strong>${amount}</strong></td></tr>
+</table>
+<div style="margin-top:24px;">
+<a href="${d.downloadUrl}" style="display:inline-block;background:${BRAND};color:#ffffff;text-decoration:none;font-weight:bold;font-size:14px;padding:12px 22px;border-radius:8px;">${c.download}</a>
+&nbsp;&nbsp;<a href="${d.orderUrl}" style="display:inline-block;color:${BRAND};text-decoration:none;font-weight:bold;font-size:14px;padding:12px 6px;">${c.viewOrder}</a>
+</div>
+</td></tr>
+<tr><td style="padding:18px 28px;background:${CREAM};border-top:1px solid ${BORDER};color:${MUTED};font-size:12px;">${c.footer} · reptiplus.cz</td></tr>`;
+  const text = [c.title(d.isCreditNote), "", hello, c.intro(d.isCreditNote, d.orderNumber), "", `${c.number}: ${d.number}`, `${c.amount}: ${amount}`, "", `${c.download}: ${d.downloadUrl}`, `${c.viewOrder}: ${d.orderUrl}`].join("\n");
+  return { subject: c.subject(d.number, d.isCreditNote, d.orderNumber), html: layout(inner, c.title(d.isCreditNote)), text };
 }

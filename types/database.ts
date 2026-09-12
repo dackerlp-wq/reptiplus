@@ -595,6 +595,161 @@ export type Database = {
         }
         Relationships: []
       }
+      order_event: {
+        Row: {
+          id: string
+          order_id: string
+          type: string
+          body: string | null
+          meta: Json
+          author_id: string | null
+          author_email: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          type: string
+          body?: string | null
+          meta?: Json
+          author_id?: string | null
+          author_email?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          type?: string
+          body?: string | null
+          meta?: Json
+          author_id?: string | null
+          author_email?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_event_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice: {
+        Row: {
+          id: string
+          number: string
+          type: string
+          order_id: string
+          related_invoice_id: string | null
+          issued_at: string
+          taxable_date: string
+          due_date: string | null
+          paid_at: string | null
+          currency: string
+          subtotal: number
+          vat_total: number
+          total: number
+          vat_breakdown: Json
+          exchange_rate: number | null
+          vat_total_czk: number | null
+          seller: Json
+          buyer: Json
+          items: Json
+          payment_method: string | null
+          variable_symbol: string | null
+          note: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          number: string
+          type: string
+          order_id: string
+          related_invoice_id?: string | null
+          issued_at?: string
+          taxable_date?: string
+          due_date?: string | null
+          paid_at?: string | null
+          currency: string
+          subtotal: number
+          vat_total: number
+          total: number
+          vat_breakdown?: Json
+          exchange_rate?: number | null
+          vat_total_czk?: number | null
+          seller: Json
+          buyer: Json
+          items: Json
+          payment_method?: string | null
+          variable_symbol?: string | null
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          number?: string
+          type?: string
+          order_id?: string
+          related_invoice_id?: string | null
+          issued_at?: string
+          taxable_date?: string
+          due_date?: string | null
+          paid_at?: string | null
+          currency?: string
+          subtotal?: number
+          vat_total?: number
+          total?: number
+          vat_breakdown?: Json
+          exchange_rate?: number | null
+          vat_total_czk?: number | null
+          seller?: Json
+          buyer?: Json
+          items?: Json
+          payment_method?: string | null
+          variable_symbol?: string | null
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_related_invoice_id_fkey"
+            columns: ["related_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoice"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_counter: {
+        Row: {
+          series: string
+          year: number
+          last_number: number
+        }
+        Insert: {
+          series: string
+          year: number
+          last_number?: number
+        }
+        Update: {
+          series?: string
+          year?: number
+          last_number?: number
+        }
+        Relationships: []
+      }
       order: {
         Row: {
           admin_note: string | null
@@ -626,6 +781,7 @@ export type Database = {
           refunded_amount: number
           refunded_at: string | null
           updated_at: string
+          locale: string
         }
         Insert: {
           admin_note?: string | null
@@ -657,6 +813,7 @@ export type Database = {
           refunded_amount?: number
           refunded_at?: string | null
           updated_at?: string
+          locale?: string
         }
         Update: {
           admin_note?: string | null
@@ -688,6 +845,7 @@ export type Database = {
           refunded_amount?: number
           refunded_at?: string | null
           updated_at?: string
+          locale?: string
         }
         Relationships: [
           {
@@ -717,6 +875,7 @@ export type Database = {
           sku: string | null
           unit_price: number
           variant_id: string | null
+          vat_rate: number
         }
         Insert: {
           id?: string
@@ -728,6 +887,7 @@ export type Database = {
           sku?: string | null
           unit_price: number
           variant_id?: string | null
+          vat_rate?: number
         }
         Update: {
           id?: string
@@ -739,6 +899,7 @@ export type Database = {
           sku?: string | null
           unit_price?: number
           variant_id?: string | null
+          vat_rate?: number
         }
         Relationships: [
           {
@@ -824,6 +985,7 @@ export type Database = {
           slug: string
           stock_qty: number
           updated_at: string
+          vat_rate: number
         }
         Insert: {
           brand_id?: string | null
@@ -848,6 +1010,7 @@ export type Database = {
           slug: string
           stock_qty?: number
           updated_at?: string
+          vat_rate?: number
         }
         Update: {
           brand_id?: string | null
@@ -872,6 +1035,7 @@ export type Database = {
           slug?: string
           stock_qty?: number
           updated_at?: string
+          vat_rate?: number
         }
         Relationships: [
           {
@@ -1204,6 +1368,10 @@ export type Database = {
       admin_edit_order_items: {
         Args: { p_order_id: string; p_items: Json }
         Returns: undefined
+      }
+      next_invoice_number: {
+        Args: { p_series: string; p_year: number }
+        Returns: number
       }
       cleanup_abandoned_carts: {
         Args: { p_days?: number }

@@ -40,6 +40,7 @@ type ProductRow = {
   brand_id: string | null;
   is_published: boolean;
   is_featured: boolean;
+  vat_rate?: number;
 };
 
 const minor = (v: number | null | undefined) =>
@@ -288,6 +289,22 @@ export function ProductForm({
                 Sklad se řídí variantami (součet jejich skladů).
               </p>
             )}
+          </div>
+
+          {/* DPH */}
+          <div className={card}>
+            <p className={cardTitle}>DPH</p>
+            <label className={label}>
+              <span className={legend}>Sazba DPH</span>
+              <select name="vat_rate" defaultValue={String(product?.vat_rate ?? 21)} className={input}>
+                <option value="21">21 % (základní)</option>
+                <option value="12">12 % (snížená — krmiva, knihy…)</option>
+                <option value="0">0 % (osvobozeno)</option>
+              </select>
+            </label>
+            <p className="text-xs text-gray-soft">
+              Ceny jsou včetně DPH. Sazba se propíše do položek objednávky a na fakturu.
+            </p>
           </div>
 
           {/* Stav */}

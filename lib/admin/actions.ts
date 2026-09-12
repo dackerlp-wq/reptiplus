@@ -6,10 +6,13 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import { getCnbEurRate } from "@/lib/exchange-rate";
 import { sendOrderStatusEmail } from "@/lib/orders/notify";
+import { markOrderPaid } from "@/lib/orders/payment";
+import { afterRefund } from "@/lib/orders/refund";
+import { logOrderEvent } from "@/lib/orders/events";
+import { sendOrderConfirmation } from "@/lib/orders/confirmation";
+import { assertAdminUser } from "@/lib/admin/auth";
 import { refundComgatePayment } from "@/lib/comgate/client";
 import { pickI18n } from "@/lib/i18n";
-import { sendMail } from "@/lib/email/client";
-import { orderConfirmationEmail, type OrderEmailData } from "@/lib/email/templates";
 import { DEFAULT_THEME, isThemeKey } from "@/lib/themes";
 import { LEDX_PAGE_SETTING, normalizeLedxPage } from "@/lib/ledx/content";
 
@@ -105,6 +108,9 @@ export async function saveProductAction(formData: FormData) {
     stock_qty: parseInt(str(formData, "stock_qty") || "0", 10),
     is_published: formData.get("is_published") === "on",
     is_featured: formData.get("is_featured") === "on",
+    vat_rate: [0, 12, 21].includes(parseInt(str(formData, "vat_rate") || "21", 10))
+      ? parseInt(str(formData, "vat_rate") || "21", 10)
+      : 21,
   };
 
   let productId = id;
@@ -733,24 +739,29 @@ export async function deleteBrandAction(formData: FormData) {
 
 /* ── Objednávky ────────────────────────────────────────────────────────── */
 export async function updateOrderAction(formData: FormData) {
-  await assertAdmin();
+  const admin = await assertAdminUser();
   const svc = createServiceClient();
   const id = str(formData, "id");
   const status = str(formData, "status");
+  const paymentStatus = str(formData, "payment_status");
   const shippingMethod = str(formData, "shipping_method") || null;
   const trackingNumber = str(formData, "tracking_number") || null;
+  const notify = formData.get("notify") === "on";
 
   const { data: prev } = await svc
     .from("order")
-    .select("status,number,email,currency")
+    .select("id,status,payment_status,number,email,currency,locale,tracking_url,shipping_method,tracking_number,admin_note")
     .eq("id", id)
     .maybeSingle();
+  if (!prev) throw new Error("Objednávka nenalezena");
 
+  // Přijetí platby řeší markOrderPaid (faktura + e-mail) — stav platby tu neměníme na paid přímo.
+  const becomesPaid = paymentStatus === "paid" && prev.payment_status !== "paid";
   const { error } = await svc
     .from("order")
     .update({
       status: status as never,
-      payment_status: str(formData, "payment_status") as never,
+      payment_status: (becomesPaid ? prev.payment_status : paymentStatus) as never,
       shipping_method: shippingMethod,
       tracking_number: trackingNumber,
       admin_note: str(formData, "admin_note") || null,
@@ -758,17 +769,32 @@ export async function updateOrderAction(formData: FormData) {
     .eq("id", id);
   if (error) throw new Error(error.message);
 
+  if (prev.status !== status) {
+    await logOrderEvent(id, "status", null, { from: prev.status, to: status, source: "admin" }, admin.email);
+  }
+  if (!becomesPaid && prev.payment_status !== paymentStatus) {
+    await logOrderEvent(id, "payment", null, { status: paymentStatus, source: "admin" }, admin.email);
+  }
+  if (becomesPaid) {
+    await markOrderPaid(id, { source: "admin", author: admin.email, notify });
+  }
+
   // E-mail zákazníkovi jen když je zaškrtnuto a stav se skutečně změnil
-  if (formData.get("notify") === "on" && prev && prev.status !== status) {
+  // (stav „paid" už poslal markOrderPaid včetně faktury).
+  if (notify && prev.status !== status && status !== "paid") {
     await sendOrderStatusEmail(
       {
+        id,
         number: prev.number,
         email: prev.email,
         currency: prev.currency,
+        locale: prev.locale,
         tracking_number: trackingNumber,
+        tracking_url: prev.tracking_url,
         shipping_method: shippingMethod,
       },
       status,
+      { author: admin.email },
     );
   }
   revalidatePath("/", "layout");
@@ -787,34 +813,52 @@ const PAYMENT_STATUSES = ["pending", "paid", "failed", "refunded"];
 
 /** Rychlá inline změna stavu objednávky z výpisu (+ e-mail zákazníkovi). */
 export async function setOrderStatusAction(id: string, status: string) {
-  await assertAdmin();
+  const admin = await assertAdminUser();
   if (!id || !ORDER_STATUSES.includes(status)) return;
   const svc = createServiceClient();
   const { data: prev } = await svc
     .from("order")
-    .select("number,email,currency,tracking_number,shipping_method,status")
+    .select("id,number,email,currency,locale,tracking_number,tracking_url,shipping_method,status,payment_status")
     .eq("id", id)
     .maybeSingle();
+  if (!prev || prev.status === status) return;
+
+  if (status === "paid" && prev.payment_status !== "paid") {
+    // „Zaplacená" = přijetí platby → faktura + e-mail přes markOrderPaid.
+    await markOrderPaid(id, { source: "admin", author: admin.email });
+    if (prev.status !== "new") {
+      await svc.from("order").update({ status: "paid" as never }).eq("id", id);
+      await logOrderEvent(id, "status", null, { from: prev.status, to: status, source: "admin" }, admin.email);
+    }
+    revalidatePath("/", "layout");
+    return;
+  }
+
   const { error } = await svc
     .from("order")
     .update({ status: status as never })
     .eq("id", id);
   if (error) throw new Error(error.message);
-  if (prev && prev.status !== status) {
-    await sendOrderStatusEmail(prev, status);
-  }
+  await logOrderEvent(id, "status", null, { from: prev.status, to: status, source: "admin" }, admin.email);
+  await sendOrderStatusEmail(prev, status, { author: admin.email });
   revalidatePath("/", "layout");
 }
 
 /** Rychlá inline změna stavu platby z výpisu. */
 export async function setOrderPaymentAction(id: string, payment: string) {
-  await assertAdmin();
+  const admin = await assertAdminUser();
   if (!id || !PAYMENT_STATUSES.includes(payment)) return;
+  if (payment === "paid") {
+    await markOrderPaid(id, { source: "admin", author: admin.email });
+    revalidatePath("/", "layout");
+    return;
+  }
   const { error } = await createServiceClient()
     .from("order")
     .update({ payment_status: payment as never })
     .eq("id", id);
   if (error) throw new Error(error.message);
+  await logOrderEvent(id, "payment", null, { status: payment, source: "admin" }, admin.email);
   revalidatePath("/", "layout");
 }
 
@@ -952,10 +996,16 @@ function genOrderNumber(): string {
  * Dopravné/poplatek se dopočítají z ceníku metod, sleva se zadává ručně.
  */
 export async function createManualOrderAction(fd: FormData) {
-  await assertAdmin();
+  const admin = await assertAdminUser();
   const svc = createServiceClient();
   const locale = str(fd, "locale") || "cs";
   const currency = str(fd, "currency") === "EUR" ? "EUR" : "CZK";
+  const customerLocaleRaw = str(fd, "customer_locale");
+  const customerLocale = ["cs", "en", "de"].includes(customerLocaleRaw)
+    ? customerLocaleRaw
+    : currency === "CZK"
+      ? "cs"
+      : "en";
 
   const email = str(fd, "email");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
@@ -1063,6 +1113,7 @@ export async function createManualOrderAction(fd: FormData) {
         shipping_address: ship,
         note: str(fd, "note"),
         cart_id: "",
+        locale: customerLocale,
         items: payloadItems,
       } as never,
     });
@@ -1081,42 +1132,19 @@ export async function createManualOrderAction(fd: FormData) {
     .eq("number", number)
     .maybeSingle();
 
-  // Volitelně rovnou označit jako zaplacenou (platba na prodejně / převodem).
-  if (fd.get("mark_paid") === "on" && ord) {
-    await svc
-      .from("order")
-      .update({ payment_status: "paid" as never, status: "paid" as never })
-      .eq("id", ord.id);
+  if (ord) {
+    await logOrderEvent(ord.id, "system", "Objednávka vytvořena ručně v adminu.", { source: "manual" }, admin.email);
   }
 
-  // Volitelně poslat zákazníkovi potvrzení.
-  if (fd.get("notify") === "on") {
-    try {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://reptiplus.cz";
-      const emailData: OrderEmailData = {
-        number,
-        email,
-        items: items.map((it) => ({
-          name: it.name,
-          qty: it.qty,
-          lineTotal: it.unit_price * it.qty,
-        })),
-        subtotal,
-        shipping: shippingFee,
-        paymentFee,
-        discount,
-        total,
-        currency,
-        paymentMethod: paymentCode,
-        shippingAddress: ship,
-        orderUrl: `${siteUrl}/${locale}/objednavka/${number}`,
-        locale: locale as OrderEmailData["locale"],
-      };
-      const conf = orderConfirmationEmail(emailData);
-      await sendMail({ to: email, ...conf });
-    } catch (e) {
-      console.error("[admin] potvrzení ruční objednávky se nepodařilo odeslat:", e);
-    }
+  // Volitelně poslat zákazníkovi potvrzení (s platebními údaji u převodu).
+  if (fd.get("notify") === "on" && ord) {
+    await sendOrderConfirmation(ord.id, { notifyShop: false, author: admin.email });
+  }
+
+  // Volitelně rovnou označit jako zaplacenou (platba na prodejně / převodem)
+  // → faktura + e-mail „platba přijata" (jen když je zapnuté upozornění).
+  if (fd.get("mark_paid") === "on" && ord) {
+    await markOrderPaid(ord.id, { source: "manual", author: admin.email, notify: fd.get("notify") === "on" });
   }
 
   revalidatePath("/", "layout");
@@ -1130,7 +1158,7 @@ export async function createManualOrderAction(fd: FormData) {
  * „Vrácená" + platbu „Vráceno".
  */
 export async function refundOrderAction(fd: FormData) {
-  await assertAdmin();
+  const admin = await assertAdminUser();
   const svc = createServiceClient();
   const id = str(fd, "id");
   const amount = money(fd, "amount");
@@ -1175,6 +1203,9 @@ export async function refundOrderAction(fd: FormData) {
     })
     .eq("id", id);
   if (error) throw new Error(error.message);
+
+  // Dobropis + e-mail zákazníkovi o vrácení peněz.
+  await afterRefund(id, amount, { author: admin.email, fully: fullyRefunded, reason: str(fd, "reason") || null });
   revalidatePath("/", "layout");
 }
 
@@ -1183,7 +1214,7 @@ export async function refundOrderAction(fd: FormData) {
  * U změny stavu pošle e-mail jen těm, kterým se stav reálně změnil.
  */
 export async function bulkOrderAction(formData: FormData) {
-  await assertAdmin();
+  const admin = await assertAdminUser();
   const svc = createServiceClient();
   const [kind, value] = str(formData, "op").split(":");
   const ids = str(formData, "ids")
@@ -1193,9 +1224,13 @@ export async function bulkOrderAction(formData: FormData) {
   if (ids.length === 0 || !kind || !value) return;
 
   if (kind === "status" && ORDER_STATUSES.includes(value)) {
+    if (value === "paid") {
+      for (const id of ids) await setOrderStatusAction(id, "paid");
+      return;
+    }
     const { data: rows } = await svc
       .from("order")
-      .select("id,number,email,currency,tracking_number,shipping_method,status")
+      .select("id,number,email,currency,locale,tracking_number,tracking_url,shipping_method,status")
       .in("id", ids);
     const { error } = await svc
       .from("order")
@@ -1203,13 +1238,23 @@ export async function bulkOrderAction(formData: FormData) {
       .in("id", ids);
     if (error) throw new Error(error.message);
     const changed = (rows ?? []).filter((r) => r.status !== value);
-    await Promise.all(changed.map((r) => sendOrderStatusEmail(r, value)));
+    await Promise.all(
+      changed.map(async (r) => {
+        await logOrderEvent(r.id, "status", null, { from: r.status, to: value, source: "admin-bulk" }, admin.email);
+        await sendOrderStatusEmail(r, value, { author: admin.email });
+      }),
+    );
   } else if (kind === "payment" && PAYMENT_STATUSES.includes(value)) {
-    const { error } = await svc
-      .from("order")
-      .update({ payment_status: value as never })
-      .in("id", ids);
-    if (error) throw new Error(error.message);
+    if (value === "paid") {
+      for (const id of ids) await markOrderPaid(id, { source: "admin", author: admin.email });
+    } else {
+      const { error } = await svc
+        .from("order")
+        .update({ payment_status: value as never })
+        .in("id", ids);
+      if (error) throw new Error(error.message);
+      await Promise.all(ids.map((id) => logOrderEvent(id, "payment", null, { status: value, source: "admin-bulk" }, admin.email)));
+    }
   } else {
     return;
   }

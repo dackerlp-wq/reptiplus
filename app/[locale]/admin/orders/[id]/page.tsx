@@ -1,4 +1,19 @@
-import { ArrowLeft, Printer, Truck, ExternalLink, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  Printer,
+  Truck,
+  ExternalLink,
+  FileText,
+  History,
+  StickyNote,
+  Send,
+  ArrowRightLeft,
+  Banknote,
+  Package,
+  Receipt,
+  RotateCcw,
+  Mail,
+} from "lucide-react";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -10,6 +25,14 @@ import {
 import { carrierForOrder } from "@/lib/shipping";
 import { ToastForm } from "@/components/admin/toast";
 import { OrderItemsEditor } from "@/components/admin/order-items-editor";
+import { OrderEmailComposer } from "@/components/admin/order-email-composer";
+import { getInvoicesForOrder } from "@/lib/invoices/issue";
+import { formatMoney } from "@/lib/invoices/calc";
+import { issueInvoiceAction, issueCreditNoteAction, sendInvoiceEmailAction } from "@/lib/admin/invoice-actions";
+import { addOrderNoteAction } from "@/lib/admin/order-actions";
+import { buildAllOrderMessageDrafts } from "@/lib/orders/message-drafts";
+import { orderLocale } from "@/lib/orders/notify";
+import { getShopContact } from "@/lib/settings";
 
 const input =
   "w-full rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm outline-none focus:border-forest";
@@ -56,6 +79,62 @@ type Addr = {
   country?: string;
   phone?: string;
 } | null;
+
+type EventMeta = Record<string, string | number | boolean | null | undefined>;
+const STATUS_LABEL: Record<string, string> = Object.fromEntries(STATUSES);
+const PAY_LABEL: Record<string, string> = Object.fromEntries(PAYMENTS);
+
+function orderEventTitle(
+  type: string,
+  meta: EventMeta,
+  currency: string,
+  dayFmt: Intl.DateTimeFormat,
+): { icon: typeof History; title: string } {
+  const src = meta.source ? ` (${String(meta.source)})` : "";
+  switch (type) {
+    case "status":
+      return {
+        icon: ArrowRightLeft,
+        title: `Stav: ${STATUS_LABEL[String(meta.from)] ?? meta.from ?? "—"} → ${STATUS_LABEL[String(meta.to)] ?? meta.to ?? "—"}${src}`,
+      };
+    case "payment":
+      return {
+        icon: Banknote,
+        title: `Platba: ${PAY_LABEL[String(meta.status)] ?? meta.status}${typeof meta.amount === "number" ? ` · ${formatMoney(meta.amount, currency)}` : ""}${src}`,
+      };
+    case "email": {
+      const kind = String(meta.kind ?? "");
+      const label = kind === "confirmation" ? "Potvrzení objednávky"
+        : kind === "invoice" ? "Faktura e-mailem"
+        : kind === "credit_note" ? "Dobropis e-mailem"
+        : kind === "refund" ? "E-mail o vrácení peněz"
+        : kind.startsWith("status:") ? `E-mail o stavu: ${STATUS_LABEL[kind.slice(7)] ?? kind.slice(7)}`
+        : kind.startsWith("message:") ? "Zpráva z adminu"
+        : "E-mail";
+      return { icon: Send, title: `${label} → ${meta.to ?? "?"}` };
+    }
+    case "shipment":
+      return {
+        icon: Truck,
+        title: `Zásilka vytvořena${meta.carrier ? ` (${String(meta.carrier)})` : ""}${meta.tracking_number ? ` · ${String(meta.tracking_number)}` : ""}`,
+      };
+    case "invoice":
+      return {
+        icon: Receipt,
+        title: `${meta.kind === "credit_note" ? "Dobropis" : "Faktura"} ${meta.number ?? ""} vystaven${meta.kind === "credit_note" ? "" : "a"}${typeof meta.total === "number" ? ` · ${formatMoney(meta.total, String(meta.currency ?? currency))}` : ""}`,
+      };
+    case "refund":
+      return {
+        icon: RotateCcw,
+        title: `Vráceno ${typeof meta.amount === "number" ? formatMoney(meta.amount, currency) : ""}${meta.fully ? " (celá platba)" : " (částečně)"}`,
+      };
+    case "note":
+      return { icon: StickyNote, title: "Interní poznámka" };
+    default:
+      return { icon: History, title: String(meta.title ?? "Systém") + (meta.source ? "" : "") };
+  }
+  void dayFmt;
+}
 
 function Address({ title, a }: { title: string; a: Addr }) {
   if (!a) return null;
@@ -108,7 +187,25 @@ export default async function OrderDetailPage({
     qty: it.qty,
   }));
 
-  const carrier = await carrierForOrder(order.shipping_method);
+  const [carrier, invoices, { data: events }, shop] = await Promise.all([
+    carrierForOrder(order.shipping_method),
+    getInvoicesForOrder(order.id),
+    svc.from("order_event").select("*").eq("order_id", order.id).order("created_at", { ascending: false }),
+    getShopContact(),
+  ]);
+  const customerLocale = orderLocale(order);
+  const drafts = buildAllOrderMessageDrafts({
+    number: order.number,
+    locale: customerLocale,
+    customerName: (order.billing_address as Addr)?.full_name ?? (order.shipping_address as Addr)?.full_name ?? null,
+    shopName: shop.name,
+    shopPhone: shop.phone,
+    shopEmail: shop.email,
+    shopAddress: shop.address,
+  });
+  const mainInvoice = invoices.find((i) => i.type === "invoice");
+  const dateFmt = new Intl.DateTimeFormat("cs-CZ", { dateStyle: "medium", timeStyle: "short" });
+  const dayFmt = new Intl.DateTimeFormat("cs-CZ", { dateStyle: "medium" });
   const payBadge = PAY_BADGE[order.payment_status] ?? PAY_BADGE.pending;
   const refunded = order.refunded_amount ?? 0;
   const refundable = (order.total ?? 0) - refunded;
@@ -129,14 +226,21 @@ export default async function OrderDetailPage({
           </h1>
           <p className="text-sm text-gray-soft">{order.email}</p>
         </div>
-        <a
-          href={`/${locale}/faktura/${order.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-lg border border-forest px-4 py-2 text-sm font-semibold text-forest transition-colors hover:bg-forest hover:text-white"
-        >
-          <FileText className="size-4" /> Faktura / doklad
-        </a>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-md bg-gold/15 px-2 py-1 font-mono text-xs font-semibold uppercase text-earth" title="Jazyk zákazníka">
+            {customerLocale}
+          </span>
+          {mainInvoice && (
+            <a
+              href={`/api/invoices/${mainInvoice.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-forest px-4 py-2 text-sm font-semibold text-forest transition-colors hover:bg-forest hover:text-white"
+            >
+              <FileText className="size-4" /> Faktura {mainInvoice.number}
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
@@ -191,6 +295,71 @@ export default async function OrderDetailPage({
             <Address title="Fakturační adresa" a={order.billing_address as Addr} />
             <Address title="Dodací adresa" a={order.shipping_address as Addr} />
           </div>
+          {order.note && (
+            <div>
+              <p className={legend}>Poznámka zákazníka</p>
+              <p className="mt-1 whitespace-pre-line rounded-lg bg-paper p-3 text-sm text-charcoal">{order.note}</p>
+            </div>
+          )}
+
+          <OrderEmailComposer orderId={order.id} customerEmail={order.email} locale={customerLocale} drafts={drafts} />
+
+          {/* ── Historie ─────────────────────────────────────────── */}
+          <section className="rounded-xl border border-cream-dark bg-white p-5">
+            <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold">
+              <History className="size-5 text-forest" /> Historie
+            </h2>
+            <ToastForm action={addOrderNoteAction} success="Poznámka přidána" className="mb-5 flex gap-2">
+              <input type="hidden" name="id" value={order.id} />
+              <input name="body" required maxLength={5000} placeholder="Interní poznámka do historie (zákazník nevidí)…" className={input} />
+              <button className="shrink-0 rounded-lg border border-cream-dark px-3 py-2 text-sm font-medium text-charcoal hover:border-forest hover:text-forest">
+                Přidat
+              </button>
+            </ToastForm>
+            {!events || events.length === 0 ? (
+              <p className="text-sm text-gray-soft">Zatím žádná aktivita.</p>
+            ) : (
+              <ol className="space-y-4">
+                {events.map((ev) => {
+                  const meta = (ev.meta ?? {}) as Record<string, string | number | boolean | null | undefined>;
+                  const { icon: Icon, title } = orderEventTitle(ev.type, meta, order.currency, dayFmt);
+                  return (
+                    <li key={ev.id} className="flex gap-3">
+                      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-cream text-forest">
+                        <Icon className="size-3.5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-ink">{title}</p>
+                        <p className="text-xs text-gray-soft">
+                          {dateFmt.format(new Date(ev.created_at))}
+                          {ev.author_email ? ` · ${ev.author_email}` : ""}
+                        </p>
+                        {ev.type === "email" && ev.body ? (
+                          <details className="mt-1">
+                            <summary className="cursor-pointer text-xs text-forest hover:underline">
+                              {meta.subject ? String(meta.subject) : "Zobrazit text e-mailu"}
+                            </summary>
+                            <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-paper p-3 font-sans text-sm text-charcoal">{ev.body}</pre>
+                          </details>
+                        ) : ev.body ? (
+                          <p className="mt-1 whitespace-pre-line rounded-lg bg-paper p-3 text-sm text-charcoal">{ev.body}</p>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+                <li className="flex gap-3">
+                  <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-cream text-forest">
+                    <Package className="size-3.5" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Objednávka přijata</p>
+                    <p className="text-xs text-gray-soft">{dateFmt.format(new Date(order.created_at))}</p>
+                  </div>
+                </li>
+              </ol>
+            )}
+          </section>
         </div>
 
         {/* Pravý sloupec: doprava & platba + správa */}
@@ -288,6 +457,66 @@ export default async function OrderDetailPage({
           </div>
         </div>
 
+        {/* ── Doklady ───────────────────────────────────────────── */}
+        <div className="space-y-3 rounded-xl border border-cream-dark bg-white p-5">
+          <p className="flex items-center gap-2 font-display text-lg font-semibold">
+            <Receipt className="size-5 text-forest" /> Doklady
+          </p>
+          {invoices.length === 0 ? (
+            <p className="text-sm text-gray-soft">
+              Faktura zatím nebyla vystavena. Vystaví se automaticky po přijetí platby (u dobírky při odeslání).
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {invoices.map((inv) => (
+                <li key={inv.id} className="rounded-lg border border-cream px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`font-mono font-semibold ${inv.type === "credit_note" ? "text-error" : "text-ink"}`}>
+                      {inv.type === "credit_note" ? "Dobropis " : "Faktura "}
+                      {inv.number}
+                    </span>
+                    <span className="font-mono text-xs">{formatMoney(inv.total, inv.currency)}</span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-soft">
+                    <span>{dayFmt.format(new Date(inv.issued_at))}</span>
+                    <span>{inv.paid_at ? `uhrazeno ${dayFmt.format(new Date(inv.paid_at))}` : inv.due_date ? `splatnost ${dayFmt.format(new Date(inv.due_date))}` : ""}</span>
+                    <a href={`/api/invoices/${inv.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-forest hover:underline">
+                      <FileText className="size-3" /> PDF
+                    </a>
+                    <ToastForm action={sendInvoiceEmailAction} success="Doklad odeslán zákazníkovi" className="inline">
+                      <input type="hidden" name="invoice_id" value={inv.id} />
+                      <button className="inline-flex items-center gap-1 text-forest hover:underline">
+                        <Mail className="size-3" /> Poslat e-mailem
+                      </button>
+                    </ToastForm>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          {!mainInvoice && (
+            <ToastForm action={issueInvoiceAction} success="Faktura vystavena">
+              <input type="hidden" name="order_id" value={order.id} />
+              <button className="w-full rounded-lg border border-forest px-4 py-2 text-sm font-semibold text-forest hover:bg-forest hover:text-white">
+                Vystavit fakturu teď
+              </button>
+            </ToastForm>
+          )}
+          {mainInvoice && (
+            <details className="text-sm">
+              <summary className="cursor-pointer text-xs text-gray-soft hover:text-forest">Ruční dobropis (bez vrácení peněz přes bránu)</summary>
+              <ToastForm action={issueCreditNoteAction} success="Dobropis vystaven" className="mt-2 space-y-2">
+                <input type="hidden" name="order_id" value={order.id} />
+                <input name="amount" inputMode="decimal" placeholder={`Částka (${order.currency})`} className={input} />
+                <input name="reason" placeholder="Důvod (na dokladu)" className={input} />
+                <button className="w-full rounded-lg border border-cream-dark px-3 py-2 text-sm text-charcoal hover:border-forest hover:text-forest">
+                  Vystavit dobropis
+                </button>
+              </ToastForm>
+            </details>
+          )}
+        </div>
+
         {/* ── Refundace / dobropis ─────────────────────────────── */}
         <div className="space-y-3 rounded-xl border border-cream-dark bg-white p-5">
           <p className="font-display text-lg font-semibold">Refundace</p>
@@ -324,6 +553,10 @@ export default async function OrderDetailPage({
                   Max. {money(refundable, order.currency)}
                 </span>
               </label>
+              <label className="flex flex-col gap-1.5">
+                <span className={legend}>Důvod (na dobropisu, nepovinné)</span>
+                <input name="reason" maxLength={300} placeholder="např. vrácení zboží ve 14 dnech" className={input} />
+              </label>
               <button
                 type="submit"
                 className="w-full rounded-lg border border-error px-4 py-2.5 text-sm font-semibold text-error transition-colors hover:bg-error hover:text-white"
@@ -333,7 +566,8 @@ export default async function OrderDetailPage({
               <p className="text-xs text-gray-soft">
                 {isOnlinePayment
                   ? "Platba proběhla přes Comgate — částka se vrátí automaticky přes platební bránu."
-                  : "Dobírka/převod — vratku pošlete zákazníkovi ručně, zde ji jen zaevidujete."}
+                  : "Dobírka/převod — vratku pošlete zákazníkovi ručně, zde ji jen zaevidujete."}{" "}
+                Zákazníkovi odejde e-mail a k faktuře se vystaví dobropis.
               </p>
             </ToastForm>
           ) : (
@@ -416,8 +650,9 @@ export default async function OrderDetailPage({
             <span className="text-charcoal">
               Poslat zákazníkovi e-mail o změně stavu
               <span className="mt-0.5 block text-xs text-gray-soft">
-                Odešle se jen při změně na: zpracovává se, odesláno, doručeno,
-                stornováno.
+                Odešle se při změně na: zpracovává se, odesláno (se sledováním),
+                doručeno, stornováno. Stav platby „zaplaceno" vystaví fakturu a
+                pošle ji zákazníkovi.
               </span>
             </span>
           </label>

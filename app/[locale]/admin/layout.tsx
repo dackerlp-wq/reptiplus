@@ -12,6 +12,7 @@ import {
   Sparkles,
   ExternalLink,
   LogOut,
+  FileText,
 } from "lucide-react";
 import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
@@ -26,6 +27,7 @@ const NAV = [
   { href: "/admin/categories", label: "Kategorie", icon: FolderTree },
   { href: "/admin/brands", label: "Značky", icon: Tag },
   { href: "/admin/orders", label: "Objednávky", icon: ShoppingBag },
+  { href: "/admin/invoices", label: "Faktury", icon: FileText },
   { href: "/admin/ledx", label: "LEDX řady", icon: Sparkles },
   { href: "/admin/inquiries", label: "Poptávky LEDX", icon: Lightbulb },
   { href: "/admin/customers", label: "Zákazníci", icon: Users },

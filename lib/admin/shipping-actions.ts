@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createShipmentForOrder, carrierForOrder } from "@/lib/shipping";
+import { assertAdminUser } from "@/lib/admin/auth";
+import { afterShipmentCreated } from "@/lib/orders/shipment";
 
 async function assertAdmin() {
   const supabase = await createClient();
@@ -23,7 +25,7 @@ async function assertAdmin() {
 
 /** Vytvoří zásilku u dopravce a uloží tracking + interní ID pro tisk štítku. */
 export async function createShipmentAction(fd: FormData) {
-  await assertAdmin();
+  const admin = await assertAdminUser();
   const id = String(fd.get("id") ?? "");
   if (!id) return;
 
@@ -55,6 +57,8 @@ export async function createShipmentAction(fd: FormData) {
         status: "shipped",
       } as never)
       .eq("id", id);
+    // Historie + e-mail „odesláno" se sledováním (u dobírky s fakturou).
+    await afterShipmentCreated(id, { author: admin.email, carrier: await carrierForOrder(order.shipping_method) });
   } else {
     // Chybu uložíme do tracking_status → zobrazí se v panelu u objednávky.
     await svc
@@ -73,7 +77,7 @@ export async function createShipmentAction(fd: FormData) {
 export async function bulkCreateShipmentsAction(
   fd: FormData,
 ): Promise<{ created: number; failed: number; skipped: number }> {
-  await assertAdmin();
+  const admin = await assertAdminUser();
   const ids = String(fd.get("ids") ?? "")
     .split(",")
     .map((s) => s.trim())
@@ -114,6 +118,7 @@ export async function bulkCreateShipmentsAction(
           status: "shipped",
         } as never)
         .eq("id", order.id);
+      await afterShipmentCreated(order.id, { author: admin.email, carrier });
       created++;
     } else {
       await svc

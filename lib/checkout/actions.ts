@@ -8,13 +8,9 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getCart, getCartId } from "@/lib/cart/cart";
 import { localeCurrency } from "@/lib/i18n";
 import { validateDiscount, type DiscountError } from "@/lib/checkout/discount";
-import { sendMail } from "@/lib/email/client";
 import { createComgatePayment } from "@/lib/comgate/client";
-import {
-  orderConfirmationEmail,
-  newOrderNotificationEmail,
-  type OrderEmailData,
-} from "@/lib/email/templates";
+import { sendOrderConfirmation } from "@/lib/orders/confirmation";
+import { logOrderEvent } from "@/lib/orders/events";
 import { routing, type Locale } from "@/i18n/routing";
 
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
@@ -202,7 +198,8 @@ export async function createOrderAction(
   const items = cart.lines.map((l) => ({
     product_id: l.productId,
     variant_id: l.variantId ?? "",
-    name: l.name,
+    // Název včetně varianty (např. „Arcadia T5 – 39 W") → e-maily, admin, faktura.
+    name: l.variantName ? `${l.name} – ${l.variantName}` : l.name,
     sku: l.sku ?? "",
     unit_price: l.unitPrice,
     qty: l.qty,
@@ -231,6 +228,7 @@ export async function createOrderAction(
         shipping_address: ship,
         note: s(fd, "note"),
         cart_id: cartId ?? "",
+        locale,
         items,
       },
     });
@@ -248,46 +246,11 @@ export async function createOrderAction(
         ? `${proto}://${host}`
         : process.env.NEXT_PUBLIC_SITE_URL || "https://reptiplus.cz";
 
-      // Potvrzovací e-maily — selhání nesmí shodit objednávku.
-      try {
-        const emailData: OrderEmailData = {
-          number: orderNumber,
-          email,
-          items: cart.lines.map((l) => ({
-            name: l.name,
-            qty: l.qty,
-            lineTotal: l.lineTotal,
-          })),
-          subtotal,
-          shipping: shippingFee,
-          paymentFee,
-          discount: discountAmount,
-          total,
-          currency,
-          paymentMethod: paymentCode,
-          shippingAddress: ship,
-          orderUrl: `${siteUrl}/${locale}/objednavka/${orderNumber}`,
-          locale,
-        };
-
-        const conf = orderConfirmationEmail(emailData);
-        await sendMail({ to: email, ...conf });
-
-        // Notifikace do obchodu (adresa z nastavení, nebo env fallback)
-        const { data: setting } = await svc
-          .from("app_setting")
-          .select("value")
-          .eq("key", "shop.general")
-          .maybeSingle();
-        const shopEmail =
-          (setting?.value as { email?: string } | null)?.email ||
-          process.env.SHOP_NOTIFY_EMAIL;
-        if (shopEmail) {
-          const notif = newOrderNotificationEmail(emailData);
-          await sendMail({ to: shopEmail, ...notif });
-        }
-      } catch (e) {
-        console.error("[checkout] e-maily se nepodařilo odeslat:", e);
+      // Potvrzovací e-maily (zákazník + obchod) a historie — selhání nesmí shodit objednávku.
+      const { data: created } = await svc.from("order").select("id").eq("number", orderNumber).maybeSingle();
+      if (created) {
+        await logOrderEvent(created.id, "system", "Objednávka vytvořena v pokladně.", { source: "checkout", locale });
+        await sendOrderConfirmation(created.id, { notifyShop: true });
       }
 
       revalidatePath("/", "layout");

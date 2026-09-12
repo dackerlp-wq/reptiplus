@@ -1,12 +1,15 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Package } from "lucide-react";
+import { CheckCircle2, Package, FileText } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { createServiceClient } from "@/lib/supabase/service";
 import { formatPrice } from "@/lib/i18n";
 import { PurchaseTracker } from "@/components/reptiplus/track";
+import { getShopContact } from "@/lib/settings";
+import { getInvoicesForOrder } from "@/lib/invoices/issue";
+import { variableSymbolForOrder } from "@/lib/orders/vs";
 
 export async function generateMetadata({
   params,
@@ -44,12 +47,28 @@ export default async function OrderConfirmPage({
   const { data: order } = await svc
     .from("order")
     .select(
-      "number, email, status, payment_status, comgate_ref, subtotal, shipping, discount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, order_item(id,product_id,name,sku,unit_price,qty,line_total)",
+      "id, number, email, status, payment_status, comgate_ref, subtotal, shipping, discount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, order_item(id,product_id,name,sku,unit_price,qty,line_total)",
     )
     .eq("number", number)
     .maybeSingle();
 
   if (!order) notFound();
+
+  const isBank = order.payment_method === "bank" || order.payment_method === "bank_transfer";
+  const [shop, invoices] = await Promise.all([
+    isBank && order.payment_status !== "paid" ? getShopContact().catch(() => null) : Promise.resolve(null),
+    getInvoicesForOrder(order.id),
+  ]);
+  const bankRows: [string, string][] = shop
+    ? ([
+        [t("bankAccount"), shop.bankAccount],
+        [t("iban"), shop.iban],
+        [t("bic"), shop.bic],
+        [t("variableSymbol"), variableSymbolForOrder(order.number)],
+        [t("amount"), formatPrice(order.total ?? 0, order.currency === "CZK" ? "cs" : locale)],
+        [t("paymentMessage"), order.number],
+      ] as [string, string][]).filter(([, v]) => Boolean(v))
+    : [];
 
   // Stav platby → hláška a barva banneru.
   const online = Boolean(order.comgate_ref);
@@ -70,7 +89,7 @@ export default async function OrderConfirmPage({
           ? t("payStatusPending")
           : order.payment_method === "cod"
             ? t("payCod")
-            : order.payment_method === "bank_transfer"
+            : isBank
               ? t("payBank")
               : t("payOther");
   const payToneCls: Record<typeof payTone, string> = {
@@ -120,7 +139,36 @@ export default async function OrderConfirmPage({
       {/* Stav / instrukce k platbě */}
       <div className={`mb-6 rounded-xl border p-5 text-sm text-charcoal ${payToneCls[payTone]}`}>
         {payMsg}
+        {payTone === "info" && bankRows.length > 0 && (
+          <dl className="mt-3 grid gap-x-4 gap-y-1 sm:grid-cols-[auto_1fr]">
+            {bankRows.map(([k, v]) => (
+              <div key={k} className="contents">
+                <dt className="text-gray-soft">{k}</dt>
+                <dd className="font-mono font-semibold text-ink">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
       </div>
+
+      {invoices.length > 0 && (
+        <div className="mb-6 rounded-xl border border-cream-dark bg-white p-5 text-sm">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-soft">{t("documents")}</p>
+          <ul className="space-y-1.5">
+            {invoices.map((inv) => (
+              <li key={inv.id}>
+                <a
+                  href={`/api/invoices/${inv.id}?o=${encodeURIComponent(order.number)}&dl=1`}
+                  className="inline-flex items-center gap-2 text-forest hover:underline"
+                >
+                  <FileText className="size-4" />
+                  {inv.type === "credit_note" ? t("creditNote") : t("invoice")} {inv.number} (PDF)
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Položky */}
       <div className="overflow-hidden rounded-xl border border-cream-dark bg-white">

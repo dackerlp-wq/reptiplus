@@ -4,6 +4,8 @@ import { LangFields } from "@/components/admin/lang-fields";
 import { Hint } from "@/components/admin/hint";
 import { ToastForm } from "@/components/admin/toast";
 import { THEMES, isThemeKey, DEFAULT_THEME } from "@/lib/themes";
+import { getInvoiceSettings } from "@/lib/invoices/issue";
+import { saveInvoiceSettingsAction } from "@/lib/admin/invoice-actions";
 import {
   saveGeneralAction,
   saveThemeAction,
@@ -60,12 +62,22 @@ export default async function AdminSettingsPage() {
   const heroStyle =
     heroRaw === "logo" || heroRaw === "logo-dark" ? heroRaw : "light";
 
+  const invoiceSettings = await getInvoiceSettings();
+  const { data: counterRows } = await svc
+    .from("invoice_counter")
+    .select("series, last_number")
+    .eq("year", new Date().getFullYear());
+  const counters = { invoice: 0, credit_note: 0 };
+  for (const r of counterRows ?? []) {
+    if (r.series === "invoice" || r.series === "credit_note") counters[r.series] = r.last_number;
+  }
+
   return (
     <div className="max-w-4xl">
       <h1 className="mb-6 font-display text-3xl font-bold">Nastavení</h1>
 
       <AdminTabs
-        tabs={["Vzhled", "Obchod", "Integrace", "Doprava", "Platby", "Právní", "O nás"]}
+        tabs={["Vzhled", "Obchod", "Fakturace", "Integrace", "Doprava", "Platby", "Právní", "O nás"]}
       >
         {/* ── Vzhled ─────────────────────────────────────────────── */}
         <div className="space-y-6">
@@ -249,6 +261,52 @@ export default async function AdminSettingsPage() {
             </label>
           </div>
           <button className={saveBtn}>Uložit</button>
+        </ToastForm>
+
+        {/* ── Fakturace ──────────────────────────────────────────── */}
+        <ToastForm action={saveInvoiceSettingsAction} className={`${card} space-y-4`}>
+          <div>
+            <h2 className="font-display text-lg font-semibold">Fakturace</h2>
+            <p className="text-sm text-gray-soft">
+              Faktura se vystaví automaticky po přijetí platby (u dobírky při odeslání) a pošle se
+              zákazníkovi jako PDF. Vrácení peněz vystaví dobropis. Plátcovství DPH se řídí vyplněným
+              DIČ v záložce Obchod; sazba DPH je u každého produktu.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Prefix faktur</span>
+              <input name="prefix" defaultValue={invoiceSettings.prefix} placeholder="FV" className={input} />
+              <span className="text-xs text-gray-soft">Číslo: {invoiceSettings.prefix}{new Date().getFullYear()}-0001</span>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Prefix dobropisů</span>
+              <input name="creditPrefix" defaultValue={invoiceSettings.creditPrefix} placeholder="D" className={input} />
+              <span className="text-xs text-gray-soft">Číslo: {invoiceSettings.creditPrefix}{new Date().getFullYear()}-0001</span>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Splatnost (dní)</span>
+              <input name="dueDays" type="number" min="0" defaultValue={invoiceSettings.dueDays} className={input} />
+              <span className="text-xs text-gray-soft">U zaplacených faktur se splatnost rovná datu úhrady.</span>
+            </label>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Příští číslo faktury ({new Date().getFullYear()})</span>
+              <input name="nextInvoice" type="number" min="1" defaultValue={counters.invoice + 1} className={input} />
+              <span className="text-xs text-gray-soft">Jde jen zvýšit (např. při přechodu ze starého systému). Vystaveno: {counters.invoice}.</span>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Příští číslo dobropisu ({new Date().getFullYear()})</span>
+              <input name="nextCredit" type="number" min="1" defaultValue={counters.credit_note + 1} className={input} />
+              <span className="text-xs text-gray-soft">Vystaveno: {counters.credit_note}.</span>
+            </label>
+          </div>
+          <label className="flex flex-col gap-1.5">
+            <span className={legend}>Poznámka na faktuře</span>
+            <textarea name="note" rows={2} defaultValue={invoiceSettings.note} placeholder="např. Děkujeme za nákup." className={input} />
+          </label>
+          <button className={saveBtn}>Uložit fakturaci</button>
         </ToastForm>
 
         {/* ── Integrace ──────────────────────────────────────────── */}

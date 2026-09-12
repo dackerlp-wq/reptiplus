@@ -158,6 +158,15 @@ export function ManualOrderForm({
                 <option value="EUR">EUR</option>
               </select>
             </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Jazyk zákazníka (e-maily, faktura)</span>
+              <select name="customer_locale" defaultValue="" className={input}>
+                <option value="">Podle měny (CZK → čeština, EUR → angličtina)</option>
+                <option value="cs">Čeština</option>
+                <option value="en">Angličtina</option>
+                <option value="de">Němčina</option>
+              </select>
+            </label>
           </div>
         </section>
 

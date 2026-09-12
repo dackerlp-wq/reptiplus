@@ -188,7 +188,7 @@
     "title": "Danke für Ihre Bestellung!",
     "subtitle": "Wir haben Ihnen eine Bestätigung per E-Mail gesendet.",
     "payCod": "Nachnahme — Sie zahlen bei der Zustellung des Pakets.",
-    "payBank": "Banküberweisung — wir senden Ihnen die Zahlungsdaten per E-Mail. Wir versenden nach Zahlungseingang.",
+    "payBank": "Banküberweisung — bitte verwenden Sie die Angaben unten. Wir versenden nach Zahlungseingang.",
     "payOther": "Wir senden Ihnen die Zahlungsanweisungen per E-Mail.",
     "payStatusPaid": "Zahlung erfolgreich. Vielen Dank! Wir bereiten Ihre Bestellung für den Versand vor.",
     "payStatusPending": "Ihre Zahlung wird verarbeitet. Wir versenden, sobald sie bestätigt ist.",
@@ -198,7 +198,16 @@
     "discount": "Rabatt",
     "total": "Gesamt",
     "deliveryTo": "Lieferung an",
-    "continueShopping": "Weiter einkaufen"
+    "continueShopping": "Weiter einkaufen",
+    "bankAccount": "Kontonummer",
+    "iban": "IBAN",
+    "bic": "BIC / SWIFT",
+    "variableSymbol": "Verwendungszweck",
+    "amount": "Betrag",
+    "paymentMessage": "Nachricht an den Empfänger",
+    "documents": "Belege",
+    "invoice": "Rechnung",
+    "creditNote": "Gutschrift"
   },
   "ResetPassword": {
     "title": "Passwort zurücksetzen",
@@ -273,7 +282,8 @@
     "statusShipped": "Versandt",
     "statusDelivered": "Zugestellt",
     "statusCancelled": "Storniert",
-    "statusRefunded": "Erstattet"
+    "statusRefunded": "Erstattet",
+    "invoices": "Belege"
   },
   "Ledx": {
     "navLabel": "Profi-Beleuchtung",

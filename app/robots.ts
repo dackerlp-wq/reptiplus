@@ -14,7 +14,6 @@ export default function robots(): MetadataRoute.Robots {
         "/*/pokladna",
         "/*/kosik",
         "/*/ucet",
-        "/*/faktura",
         "/*/objednavka",
         "/*/prihlaseni",
         "/*/registrace",

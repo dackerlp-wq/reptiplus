@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { LogOut, ChevronRight } from "lucide-react";
+import { LogOut, ChevronRight, FileText } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
@@ -38,6 +38,17 @@ export default async function AccountPage({
     .from("order")
     .select("id, number, status, total, currency, created_at")
     .order("created_at", { ascending: false });
+  // Doklady k objednávkám (RLS: owner read na tabulce invoice)
+  const { data: invoices } = await supabase
+    .from("invoice")
+    .select("id, order_id, number, type")
+    .order("created_at", { ascending: true });
+  const invoicesByOrder = new Map<string, { id: string; number: string; type: string }[]>();
+  for (const inv of invoices ?? []) {
+    const list = invoicesByOrder.get(inv.order_id) ?? [];
+    list.push(inv);
+    invoicesByOrder.set(inv.order_id, list);
+  }
 
   const dateFmt = new Intl.DateTimeFormat(locale === "cs" ? "cs-CZ" : "en-GB", {
     day: "numeric",
@@ -96,6 +107,19 @@ export default async function AccountPage({
                   </span>
                   <ChevronRight className="size-4 text-gray-soft" />
                 </Link>
+                {(invoicesByOrder.get(o.id) ?? []).length > 0 && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 px-5 pb-3 text-xs">
+                    {(invoicesByOrder.get(o.id) ?? []).map((inv) => (
+                      <a
+                        key={inv.id}
+                        href={`/api/invoices/${inv.id}?o=${encodeURIComponent(o.number)}&dl=1`}
+                        className="inline-flex items-center gap-1 text-forest hover:underline"
+                      >
+                        <FileText className="size-3.5" /> {inv.number}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </li>
             ))}
           </ul>

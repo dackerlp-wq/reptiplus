@@ -46,8 +46,7 @@ Seed dat: `supabase/seed.sql`, `supabase/seed_admin.sql`.
 ### Route groups
 - `app/[locale]/(shop)/` — veřejný obchod (české slugy: `kategorie`, `produkt`, `kosik`, `pokladna`, `objednavka`, `ucet`, …). Layout přidává Navbar, Footer, cookie lištu a `AnalyticsGate`.
 - `app/[locale]/admin/` — administrace, layout volá `requireAdmin()` (`lib/admin/auth.ts`): role `admin`/`staff` ze sloupce `customer.role`.
-- `app/[locale]/faktura/[id]` — tisknutelný doklad (admin-only).
-- `app/api/` — route handlers: `comgate/webhook` (platební PUSH), `cron/cleanup-carts` (chráněno `CRON_SECRET`), `admin/translate` (AI překlad), `admin/orders/*/label` (štítky PDF), `search`, `exchange-rate`.
+- `app/api/` — route handlers: `comgate/webhook` (platební PUSH), `cron/cleanup-carts` (chráněno `CRON_SECRET`), `admin/translate` (AI překlad), `admin/orders/*/label` (štítky PDF), `invoices/[id]` (PDF dokladu), `admin/invoices/export`, `admin/inquiries/export`, `search`, `exchange-rate`.
 - `app/feed/*.xml` — Heureka / Zboží / Google feed, `revalidate = 3600`; stejně `app/sitemap.ts`.
 
 ### Supabase klienti (tři, nezaměňovat)
@@ -64,12 +63,35 @@ Všechny tabulky mají RLS zapnuté. Typy z DB: `types/database.ts` (generované
   Formuláře posílají `FormData`; i18n pole se čtou jako `name_cs` / `name_en` / `name_de` (helper `i18n(fd, base)`).
 - Kritické DB operace jsou Postgres RPC (`security definer`): `place_order` (atomické odečtení skladu produktu/varianty + vytvoření objednávky), `admin_edit_order_items`, `cleanup_abandoned_carts`.
 - Košík: cookie `rp_cart` + tabulky `cart`/`cart_item`; hostový košík se po přihlášení sloučí (`lib/cart/cart.ts`).
-- Objednávka: `lib/checkout/actions.ts` → `place_order` → e-maily (`lib/email/templates.ts` přes nodemailer SMTP v `lib/email/client.ts`; bez SMTP env se e-mail tiše přeskočí) → případně Comgate platba (`lib/comgate/client.ts`); stav platby aktualizuje webhook. Číslo objednávky `RPyyMMdd-XXXX`.
+- Objednávka: `lib/checkout/actions.ts` → `place_order` (ukládá `locale`, názvy položek vč. varianty, `vat_rate`) → `sendOrderConfirmation()` → případně Comgate platba (`lib/comgate/client.ts`); zaplacení řeší webhook přes `markOrderPaid()`. Bez SMTP env se e-maily tiše přeskočí. Číslo objednávky `RPyyMMdd-XXXX`.
 - Doprava: `lib/shipping/` (Packeta = Zásilkovna, PPL) — tvorba zásilek a PDF štítky (`pdf-lib` slučuje hromadné štítky).
+
+### E-maily objednávek a historie
+- Odesílání: `lib/email/client.ts` (`sendMail`, podporuje přílohy; odesílatel „Reptiplus <MAIL_FROM>"). Šablony v `lib/email/templates.ts` (cs/en/de podle `order.locale`,
+  staré objednávky bez locale podle měny přes `orderLocale()` v `lib/orders/notify.ts`).
+- Toky (vše `server-only`, nikdy nevyhazují, logují do `order_event` přes `lib/orders/events.ts`):
+  `lib/orders/confirmation.ts` (potvrzení + notifikace obchodu, platební údaje pro převod, VS z `lib/orders/vs.ts`),
+  `lib/orders/payment.ts` `markOrderPaid()` (Comgate webhook i admin → zaplaceno + faktura + e-mail s PDF; idempotentní),
+  `lib/orders/shipment.ts` `afterShipmentCreated()` (po štítku: e-mail se sledováním, u dobírky vystaví fakturu),
+  `lib/orders/refund.ts` `afterRefund()` (dobropis + e-mail), `lib/orders/notify.ts` `sendOrderStatusEmail()` (stavy paid/processing/shipped/delivered/cancelled).
+- Vlastní zpráva z adminu: šablony `lib/orders/message-drafts.ts`, editor `components/admin/order-email-composer.tsx`, akce `lib/admin/order-actions.ts`.
+- Změna stavu platby na „paid" v adminu **vždy** jde přes `markOrderPaid`, ne přímým update (jinak nevznikne faktura).
+
+### Fakturace (`invoice`, `invoice_counter`)
+- Výpočet: `lib/invoices/calc.ts` (čisté funkce; ceny vč. DPH → základ = cena/(1+sazba); sleva poměrně po položkách; doprava a poplatek 21 %).
+  Sazba DPH je na produktu (`product.vat_rate` 0/12/21) a snapshotem na `order_item.vat_rate` (plní RPC `place_order` a `admin_edit_order_items`).
+- Vystavení: `lib/invoices/issue.ts` — `issueInvoiceForOrder()` (idempotentní, jedna faktura na objednávku), `issueCreditNoteForRefund()` (dobropis poměrně
+  po sazbách původní faktury), číslo přes RPC `next_invoice_number(series, year)` + prefix z `app_setting` `invoices.settings` (`getInvoiceSettings()`).
+  Doklad je neměnný snapshot (seller/buyer/items/vat_breakdown v JSONB); plátcovství DPH = vyplněné DIČ v `shop.general`; EUR doklady mají kurz ČNB a DPH v CZK.
+- PDF: `lib/invoices/pdf.ts` (pdf-lib + fontkit, fonty `public/fonts/LiberationSans-*.ttf` kvůli diakritice; jazyk podle `buyer.locale`).
+  Download `app/api/invoices/[id]` (admin, vlastník, nebo `?o=<číslo objednávky>` z e-mailu). E-mail s PDF: `lib/invoices/email.ts`.
+- Admin: `app/[locale]/admin/invoices` (+ CSV export `app/api/admin/invoices/export`), karta Doklady v detailu objednávky, akce `lib/admin/invoice-actions.ts`,
+  nastavení řady v Nastavení → Fakturace. Zákazník: odkazy na stránce objednávky a v účtu (RLS `invoice owner read`).
+- Přihlašovací e-maily (registrace, reset hesla) posílá Supabase Auth: šablony `supabase/templates/*.html`, postup `docs/SUPABASE_AUTH_EMAILS.md`.
 
 ### Nastavení obchodu (`app_setting`)
 Tabulka key/value JSONB, čtená přes `lib/settings.ts` service klientem. Klíče: `shop.general`, `appearance.theme`, `appearance.hero`,
-`legal.terms|privacy|claims`, `content.about`, `integrations.comgate|ppl|zasilkovna|analytics|ai`, `ledx.page`.
+`legal.terms|privacy|claims`, `content.about`, `integrations.comgate|ppl|zasilkovna|analytics|ai`, `ledx.page`, `invoices.settings`.
 Integrace (Comgate, PPL, Zásilkovna) berou přihlašovací údaje primárně z `app_setting`, s fallbackem na env.
 
 ### Vzhled
@@ -103,7 +125,7 @@ Export CSV: `app/api/admin/inquiries/export/route.ts`.
 ## Env proměnné
 
 Kód čte: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL` (kanonická doména pro SEO/sitemap),
-`SMTP_HOST|PORT|USER|PASS`, `MAIL_FROM`, `SHOP_NOTIFY_EMAIL`, `CRON_SECRET`, `RATE_LIMIT_SALT`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `AI_GATEWAY_API_KEY` (implicitně), `AI_GATEWAY_MODEL`,
+`SMTP_HOST|PORT|USER|PASS`, `MAIL_FROM`, `MAIL_FROM_NAME`, `SHOP_NOTIFY_EMAIL`, `CRON_SECRET`, `RATE_LIMIT_SALT`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `AI_GATEWAY_API_KEY` (implicitně), `AI_GATEWAY_MODEL`,
 fallbacky `COMGATE_MERCHANT|SECRET|TEST`, `PPL_CLIENT_ID|SECRET`, `PACKETA_API_PASSWORD|ESHOP_ID|HOME_CARRIER_ID`. Nastavují se ve Vercelu, lokálně `.env.local` (gitignored).
 
 ## Konvence

@@ -27,13 +27,28 @@ function getTransporter(): Transporter | null {
   return cached;
 }
 
+export type MailAttachment = {
+  filename: string;
+  content: Buffer | Uint8Array;
+  contentType?: string;
+};
+
 export type MailInput = {
   to: string;
   subject: string;
   html: string;
   text?: string;
   replyTo?: string;
+  attachments?: MailAttachment[];
 };
+
+/** Odesílatel se zobrazeným jménem obchodu („Reptiplus <info@…>"). */
+function fromAddress(): string {
+  const raw = process.env.MAIL_FROM || process.env.SMTP_USER!;
+  if (/</.test(raw)) return raw; // už obsahuje jméno
+  const name = process.env.MAIL_FROM_NAME || "Reptiplus";
+  return `"${name.replace(/"/g, "")}" <${raw}>`;
+}
 
 /** Odešle e-mail. Vrací true při úspěchu; chyby nepropadají ven (neblokuje flow). */
 export async function sendMail(input: MailInput): Promise<boolean> {
@@ -42,9 +57,20 @@ export async function sendMail(input: MailInput): Promise<boolean> {
     console.warn(`[email] SMTP nenakonfigurováno — přeskočeno: "${input.subject}"`);
     return false;
   }
-  const from = process.env.MAIL_FROM || process.env.SMTP_USER!;
   try {
-    await tx.sendMail({ from, ...input });
+    await tx.sendMail({
+      from: fromAddress(),
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+      text: input.text,
+      replyTo: input.replyTo,
+      attachments: input.attachments?.map((a) => ({
+        filename: a.filename,
+        content: Buffer.from(a.content),
+        contentType: a.contentType ?? "application/pdf",
+      })),
+    });
     return true;
   } catch (e) {
     console.error("[email] Odeslání selhalo:", e);
