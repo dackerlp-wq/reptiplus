@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { addToCartAction } from "@/lib/cart/actions";
-import { routing } from "@/i18n/routing";
+import { confirmSubscriptionForEmail, requestSubscription, unsubscribeByEmail } from "@/lib/newsletter/service";
+import { routing, type Locale } from "@/i18n/routing";
 
 export type AccountState = { ok?: boolean; error?: string; message?: string } | undefined;
 
@@ -198,13 +199,16 @@ export async function deleteReviewAction(fd: FormData): Promise<void> {
 export async function setNewsletterAction(fd: FormData): Promise<void> {
   const { user } = await currentUser();
   if (!user?.email) return;
-  const svc = createServiceClient();
+  const email = user.email.toLowerCase();
   if (fd.get("subscribed") === "on") {
-    await svc
-      .from("newsletter_subscriber")
-      .upsert({ email: user.email.toLowerCase(), is_confirmed: Boolean(user.email_confirmed_at), source: "account" }, { onConflict: "email" });
+    if (user.email_confirmed_at) {
+      // Ověřený e-mail z účtu = rovnou potvrzený odběr (uvítací e-mail + sleva jako při double opt-in).
+      await confirmSubscriptionForEmail(email, localeOf(fd) as Locale, user.id);
+    } else {
+      await requestSubscription(email, localeOf(fd) as Locale, { source: "account", customerId: user.id });
+    }
   } else {
-    await svc.from("newsletter_subscriber").delete().ilike("email", user.email);
+    await unsubscribeByEmail(email);
   }
   revalidatePath("/", "layout");
 }

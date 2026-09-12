@@ -93,6 +93,7 @@ export function CheckoutForm({
   subtotal,
   shippingOptions,
   paymentOptions,
+  freeShippingFrom = null,
   defaultEmail,
   packetaApiKey,
   loggedIn = false,
@@ -102,6 +103,8 @@ export function CheckoutForm({
   subtotal: number;
   shippingOptions: Option[];
   paymentOptions: Option[];
+  /** Limit dopravy zdarma v minor units (null = vypnuto); ceny dopravy už jsou přepočtené ze serveru. */
+  freeShippingFrom?: number | null;
   defaultEmail: string;
   packetaApiKey: string;
   loggedIn?: boolean;
@@ -175,6 +178,7 @@ export function CheckoutForm({
 
   const fmt = (m: number) => formatPrice(m, locale);
   const feeLabel = (fee: number) => (fee > 0 ? `+ ${fmt(fee)}` : t("free"));
+  const freeShippingActive = freeShippingFrom != null && subtotal >= freeShippingFrom;
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
@@ -269,6 +273,11 @@ export function CheckoutForm({
         {/* Doprava */}
         <section className="space-y-3 rounded-xl border border-cream-dark bg-white p-5">
           <h2 className="font-display text-lg font-semibold">{t("shippingMethod")}</h2>
+          {freeShippingFrom != null && (
+            <p className={`text-sm ${freeShippingActive ? "font-medium text-success" : "text-gray-soft"}`}>
+              {freeShippingActive ? t("freeShipping") : t("freeShippingFrom", { amount: fmt(freeShippingFrom) })}
+            </p>
+          )}
           {shippingOptions.map((o) => (
             <OptionRow
               key={o.code}

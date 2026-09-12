@@ -44,6 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["kategorie", 0.8, "weekly"],
     ["kategorie/profi-osvetleni", 0.7, "weekly"],
     ["o-nas", 0.4, "monthly"],
+    ["kontakt", 0.5, "monthly"],
     ["obchodni-podminky", 0.3, "yearly"],
     ["reklamacni-rad", 0.3, "yearly"],
     ["ochrana-osobnich-udaju", 0.3, "yearly"],

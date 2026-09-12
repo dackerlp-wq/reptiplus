@@ -14,6 +14,8 @@ export type ShopContact = {
   bankAccount: string;
   iban: string;
   bic: string;
+  /** Otevírací doba / provozní doba (víceřádkový text, stránka Kontakt). */
+  openingHours: string;
 };
 
 /** Obecné nastavení obchodu (identifikace prodejce) z app_setting. */
@@ -36,6 +38,7 @@ export async function getShopContact(): Promise<ShopContact> {
     bankAccount: v.bankAccount ?? "",
     iban: v.iban ?? "",
     bic: v.bic ?? "",
+    openingHours: v.openingHours ?? "",
   };
 }
 
@@ -121,4 +124,35 @@ export async function getContentI18n(
     .eq("key", key)
     .maybeSingle();
   return (data?.value ?? {}) as Record<string, string>;
+}
+
+export type ShippingSettings = { freeFromCzk: number | null; freeFromEur: number | null };
+
+/** Doprava zdarma od částky (minor units) — `app_setting` klíč `shipping.settings`. */
+export async function getShippingSettings(): Promise<ShippingSettings> {
+  const v = (await getContentI18n("shipping.settings").catch(() => ({}))) as Record<string, unknown>;
+  const num = (x: unknown) => (typeof x === "number" && Number.isFinite(x) && x > 0 ? Math.round(x) : null);
+  return { freeFromCzk: num(v.freeFromCzk), freeFromEur: num(v.freeFromEur) };
+}
+
+/** Limit dopravy zdarma pro měnu (null = vypnuto). */
+export function freeShippingThreshold(s: ShippingSettings, currency: "CZK" | "EUR"): number | null {
+  return currency === "CZK" ? s.freeFromCzk : s.freeFromEur;
+}
+
+export type NewsletterSettings = {
+  discountCzk: number; // minor units; 0 = bez slevy
+  minOrderCzk: number; // minor units
+  validDays: number;
+};
+
+/** Nastavení newsletteru (sleva za přihlášení) — `app_setting` klíč `newsletter.settings`. */
+export async function getNewsletterSettings(): Promise<NewsletterSettings> {
+  const v = (await getContentI18n("newsletter.settings").catch(() => ({}))) as Record<string, unknown>;
+  const num = (x: unknown, d: number) => (typeof x === "number" && Number.isFinite(x) && x >= 0 ? Math.round(x) : d);
+  return {
+    discountCzk: num(v.discountCzk, 10000),
+    minOrderCzk: num(v.minOrderCzk, 100000),
+    validDays: num(v.validDays, 30),
+  };
 }

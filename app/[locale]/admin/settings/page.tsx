@@ -21,6 +21,8 @@ import {
   deletePaymentMethodAction,
   saveLegalAction,
   saveAboutAction,
+  saveShippingSettingsAction,
+  saveNewsletterSettingsAction,
 } from "@/lib/admin/actions";
 
 type I18nText = { cs?: string; en?: string; de?: string };
@@ -45,6 +47,8 @@ export default async function AdminSettingsPage() {
   const get = (k: string): Record<string, unknown> =>
     (settings?.find((s) => s.key === k)?.value as Record<string, unknown>) ?? {};
   const general = get("shop.general");
+  const shippingSettings = get("shipping.settings") as { freeFromCzk?: number | null; freeFromEur?: number | null };
+  const newsletterSettings = get("newsletter.settings") as { discountCzk?: number; minOrderCzk?: number; validDays?: number };
   const comgate = get("integrations.comgate");
   const ppl = get("integrations.ppl");
   const zas = get("integrations.zasilkovna");
@@ -195,6 +199,7 @@ export default async function AdminSettingsPage() {
         </div>
 
         {/* ── Obchod ─────────────────────────────────────────────── */}
+        <div className="space-y-6">
         <ToastForm action={saveGeneralAction} className={`${card} space-y-4`}>
           <div>
             <h2 className="font-display text-lg font-semibold">Údaje obchodu</h2>
@@ -243,7 +248,7 @@ export default async function AdminSettingsPage() {
           </div>
 
           <p className="text-sm text-gray-soft">
-            Bankovní spojení — doplní se do e-mailu „Potvrzení objednání" u
+            Bankovní spojení — doplní se do e-mailu „Potvrzení objednání“ u
             poptávek LEDX (platba převodem).
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -260,8 +265,46 @@ export default async function AdminSettingsPage() {
               <input name="bic" defaultValue={String(general.bic ?? "")} placeholder="KOMBCZPP" className={input} />
             </label>
           </div>
+
+          <label className="flex flex-col gap-1.5">
+            <span className={legend}>Otevírací / provozní doba (stránka Kontakt)</span>
+            <textarea
+              name="openingHours"
+              rows={3}
+              defaultValue={String(general.openingHours ?? "")}
+              placeholder={"Po–Pá 9:00–17:00\nSo–Ne zavřeno"}
+              className={input}
+            />
+            <span className="text-xs text-gray-soft">Každý řádek se zobrazí zvlášť. Prázdné = nezobrazí se.</span>
+          </label>
           <button className={saveBtn}>Uložit</button>
         </ToastForm>
+
+        <ToastForm action={saveNewsletterSettingsAction} className={`${card} space-y-4`}>
+          <div>
+            <h2 className="font-display text-lg font-semibold">Newsletter — uvítací sleva</h2>
+            <p className="text-sm text-gray-soft">
+              Po potvrzení odběru dostane zákazník jednorázový kód (VITEJ-XXXXXX). Částky zadáváš v Kč,
+              pro EUR se přepočítají kurzem ČNB. Sleva 0 = bez kódu, jen uvítací e-mail.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Sleva (Kč)</span>
+              <input name="discountCzk" type="number" min={0} step={1} defaultValue={minor(newsletterSettings.discountCzk ?? 10000)} className={input} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Min. hodnota objednávky (Kč)</span>
+              <input name="minOrderCzk" type="number" min={0} step={1} defaultValue={minor(newsletterSettings.minOrderCzk ?? 100000)} className={input} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Platnost kódu (dny)</span>
+              <input name="validDays" type="number" min={1} step={1} defaultValue={String(newsletterSettings.validDays ?? 30)} className={input} />
+            </label>
+          </div>
+          <button className={saveBtn}>Uložit</button>
+        </ToastForm>
+        </div>
 
         {/* ── Fakturace ──────────────────────────────────────────── */}
         <ToastForm action={saveInvoiceSettingsAction} className={`${card} space-y-4`}>
@@ -427,7 +470,7 @@ export default async function AdminSettingsPage() {
             <div>
               <h2 className="font-display text-lg font-semibold">AI překlady</h2>
               <p className="text-sm text-gray-soft">
-                Překlady (tlačítko „Přeložit z ČJ") běží přednostně{" "}
+                Překlady (tlačítko „Přeložit z ČJ“) běží přednostně{" "}
                 <strong>přímo přes Anthropic API</strong> s klíčem níže
                 (model <code>claude-haiku-4-5</code>, lze změnit env{" "}
                 <code>ANTHROPIC_MODEL</code>). Když klíč chybí, použije se{" "}
@@ -495,6 +538,26 @@ export default async function AdminSettingsPage() {
 
         {/* ── Doprava ────────────────────────────────────────────── */}
         <div className="space-y-4">
+          <ToastForm action={saveShippingSettingsAction} className={`${card} space-y-4`}>
+            <div>
+              <h2 className="font-display text-lg font-semibold">Doprava zdarma od částky</h2>
+              <p className="text-sm text-gray-soft">
+                Při mezisoučtu zboží od této částky je doprava v pokladně zdarma (všechny metody).
+                V košíku se zobrazí lišta „do dopravy zdarma zbývá…“. Prázdné = vypnuto.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5">
+                <span className={legend}>Od částky (Kč)</span>
+                <input name="freeFromCzk" type="number" min={0} step={1} defaultValue={minor(shippingSettings.freeFromCzk)} placeholder="např. 2000" className={input} />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className={legend}>Od částky (€)</span>
+                <input name="freeFromEur" type="number" min={0} step={0.01} defaultValue={minor(shippingSettings.freeFromEur)} placeholder="např. 80" className={input} />
+              </label>
+            </div>
+            <button className={saveBtn}>Uložit</button>
+          </ToastForm>
           <Hint>
             Způsoby dopravy nabízené v pokladně. Cenu zadáváš v Kč i €; pro
             zákazníka se zobrazí podle jeho jazyka. Neaktivní metody se v
@@ -531,7 +594,7 @@ export default async function AdminSettingsPage() {
             Text se zobrazí na stránkách v patičce (Obchodní podmínky, Zpracování
             osobních údajů). Piš prostý text — odstavce oddělíš prázdným řádkem.
             Prázdné pole = návštěvníkovi se ukáže jen upozornění „dokument
-            připravujeme". EN/DE můžeš doplnit tlačítkem AI překladu.
+            připravujeme“. EN/DE můžeš doplnit tlačítkem AI překladu.
           </Hint>
 
           <ToastForm action={saveLegalAction} className={`${card} space-y-4`}>
@@ -577,13 +640,13 @@ export default async function AdminSettingsPage() {
         {/* ── O nás ──────────────────────────────────────────────── */}
         <div className="space-y-6">
           <Hint>
-            Text stránky „O nás" (zobrazí se na /o-nas). Můžeš přidávat nadpisy,
+            Text stránky „O nás“ (zobrazí se na /o-nas). Můžeš přidávat nadpisy,
             odkazy i <strong>obrázky</strong> (ikona obrázku v liště editoru).
             EN/DE doplníš tlačítkem AI překladu.
           </Hint>
           <ToastForm action={saveAboutAction} className={`${card} space-y-4`}>
             <h2 className="font-display text-lg font-semibold">
-              Stránka „O nás"
+              Stránka „O nás“
             </h2>
             <LangFields
               fields={[

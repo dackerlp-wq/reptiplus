@@ -17,6 +17,7 @@ import {
   HeroCarousel,
   type HeroSlide,
 } from "@/components/reptiplus/hero-carousel";
+import { NewsletterForm } from "@/components/reptiplus/newsletter-form";
 
 export async function generateMetadata({
   params,
@@ -144,20 +145,7 @@ export default async function HomePage({
           <p className="mx-auto mt-3 max-w-md text-gray-soft">
             {t("newsletterSubtitle")}
           </p>
-          <form className="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row">
-            <input
-              type="email"
-              required
-              placeholder={t("newsletterPlaceholder")}
-              className="flex-1 rounded-lg border border-cream-dark bg-white px-4 py-3 text-sm outline-none focus:border-forest"
-            />
-            <button
-              type="submit"
-              className="rounded-lg bg-forest px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-forest-light"
-            >
-              {t("newsletterCta")}
-            </button>
-          </form>
+          <NewsletterForm />
         </div>
       </section>
     </>

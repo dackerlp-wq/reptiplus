@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { Loader2, AlertTriangle } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   updateProfileAction,
   changePasswordAction,
@@ -123,8 +123,10 @@ export function EmailForm({ email, confirmed }: { email: string; confirmed: bool
 
 export function NewsletterForm({ subscribed }: { subscribed: boolean }) {
   const t = useTranslations("Account");
+  const locale = useLocale();
   return (
     <form action={setNewsletterAction} className={card}>
+      <input type="hidden" name="locale" value={locale} />
       <h2 className="font-display text-lg font-semibold">{t("newsletter")}</h2>
       <p className="text-sm text-gray-soft">{t("newsletterText")}</p>
       <label className="flex items-center gap-2 text-sm text-ink">

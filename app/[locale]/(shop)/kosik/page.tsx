@@ -5,7 +5,8 @@ import { ShoppingCart, ArrowRight, Leaf } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { getCart } from "@/lib/cart/cart";
-import { formatPrice } from "@/lib/i18n";
+import { formatPrice, localeCurrency } from "@/lib/i18n";
+import { freeShippingThreshold, getShippingSettings } from "@/lib/settings";
 import { CartItemControls } from "@/components/reptiplus/cart-item-controls";
 
 export async function generateMetadata({
@@ -27,7 +28,9 @@ export default async function CartPage({
   setRequestLocale(locale);
   const t = await getTranslations("Cart");
 
-  const cart = await getCart(locale);
+  const [cart, shippingSettings] = await Promise.all([getCart(locale), getShippingSettings()]);
+  const freeFrom = freeShippingThreshold(shippingSettings, localeCurrency[locale]);
+  const freeLeft = freeFrom != null ? Math.max(0, freeFrom - cart.subtotal) : null;
 
   if (cart.lines.length === 0) {
     return (
@@ -117,6 +120,20 @@ export default async function CartPage({
             </span>
           </div>
           <p className="mt-2 text-xs text-gray-soft">{t("shippingNote")}</p>
+
+          {freeFrom != null && freeLeft != null && (
+            <div className="mt-4 rounded-lg bg-paper p-3">
+              <p className={`text-xs font-medium ${freeLeft === 0 ? "text-success" : "text-charcoal"}`}>
+                {freeLeft === 0 ? t("freeShippingReached") : t("freeShippingLeft", { amount: formatPrice(freeLeft, locale) })}
+              </p>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-cream-dark" aria-hidden="true">
+                <div
+                  className={`h-full rounded-full transition-all ${freeLeft === 0 ? "bg-success" : "bg-forest"}`}
+                  style={{ width: `${Math.min(100, Math.round((cart.subtotal / freeFrom) * 100))}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           <Link
             href="/pokladna"

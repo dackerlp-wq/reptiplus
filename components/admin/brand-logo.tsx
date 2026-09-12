@@ -105,7 +105,7 @@ export function BrandLogo({
         </div>
       ) : (
         <p className="rounded-lg border border-dashed border-cream-dark px-4 py-6 text-center text-sm text-gray-soft">
-          Bez loga. Zobrazí se v sekci „O výrobci" na detailu produktu.
+          Bez loga. Zobrazí se v sekci „O výrobci“ na detailu produktu.
         </p>
       )}
     </div>

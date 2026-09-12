@@ -60,7 +60,7 @@ export function UpsellPicker({
         Doporučené produkty (upsell)
       </h2>
       <p className="mb-3 text-xs text-gray-soft">
-        Zobrazí se na detailu v sekci „Doporučujeme k tomuto". Vyhledej a
+        Zobrazí se na detailu v sekci „Doporučujeme k tomuto“. Vyhledej a
         zaškrtni produkty.
       </p>
 

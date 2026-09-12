@@ -1375,6 +1375,25 @@ export async function saveGeneralAction(fd: FormData) {
     bankAccount: str(fd, "bankAccount"),
     iban: str(fd, "iban"),
     bic: str(fd, "bic"),
+    openingHours: str(fd, "openingHours").slice(0, 500),
+  });
+}
+
+/** Doprava zdarma od částky (Kč / €), prázdné = vypnuto. */
+export async function saveShippingSettingsAction(fd: FormData) {
+  await upsertSetting("shipping.settings", {
+    freeFromCzk: money(fd, "freeFromCzk"),
+    freeFromEur: money(fd, "freeFromEur"),
+  });
+}
+
+/** Newsletter: sleva za potvrzení odběru (Kč, EUR se přepočítá kurzem ČNB). */
+export async function saveNewsletterSettingsAction(fd: FormData) {
+  const days = parseInt(str(fd, "validDays"), 10);
+  await upsertSetting("newsletter.settings", {
+    discountCzk: money(fd, "discountCzk") ?? 0,
+    minOrderCzk: money(fd, "minOrderCzk") ?? 0,
+    validDays: Number.isFinite(days) && days > 0 ? days : 30,
   });
 }
 

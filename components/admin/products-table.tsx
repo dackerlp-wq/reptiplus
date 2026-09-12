@@ -208,6 +208,44 @@ function downloadCsv(rows: ProductRow[]) {
   URL.revokeObjectURL(url);
 }
 
+
+/** Řaditelná hlavička tabulky (mimo render komponenty kvůli stabilní identitě). */
+function SortableTh<K extends string>({
+  col,
+  sortKey,
+  sortDir,
+  onToggle,
+  className,
+  children,
+}: {
+  col: K;
+  sortKey: K;
+  sortDir: "asc" | "desc";
+  onToggle: (k: K) => void;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const active = sortKey === col;
+  return (
+    <th className={cn("px-4 py-3", className)}>
+      <button
+        type="button"
+        onClick={() => onToggle(col)}
+        className={cn("inline-flex items-center gap-1 transition-colors hover:text-forest", active && "text-forest")}
+      >
+        {children}
+        {!active ? (
+          <ArrowUpDown className="size-3.5 opacity-40" />
+        ) : sortDir === "asc" ? (
+          <ArrowUp className="size-3.5" />
+        ) : (
+          <ArrowDown className="size-3.5" />
+        )}
+      </button>
+    </th>
+  );
+}
+
 export function ProductsTable({
   products,
   categories,
@@ -318,10 +356,7 @@ export function ProductsTable({
   }, [products, q, category, status, stock, onlySale, onlyFeatured, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  // Ochrana proti stránce mimo rozsah po změně filtru
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
+  // Stránka mimo rozsah (po změně filtru) se jen ořízne při vykreslení.
   const safePage = Math.min(page, totalPages);
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
@@ -351,37 +386,6 @@ export function ProductsTable({
 
   const selectedIds = [...selected].join(",");
 
-  const SortIcon = ({ col }: { col: SortKey }) => {
-    if (sortKey !== col) return <ArrowUpDown className="size-3.5 opacity-40" />;
-    return sortDir === "asc" ? (
-      <ArrowUp className="size-3.5" />
-    ) : (
-      <ArrowDown className="size-3.5" />
-    );
-  };
-  const Th = ({
-    col,
-    children,
-    className,
-  }: {
-    col: SortKey;
-    children: React.ReactNode;
-    className?: string;
-  }) => (
-    <th className={cn("px-4 py-3", className)}>
-      <button
-        type="button"
-        onClick={() => toggleSort(col)}
-        className={cn(
-          "inline-flex items-center gap-1 transition-colors hover:text-forest",
-          sortKey === col && "text-forest",
-        )}
-      >
-        {children}
-        <SortIcon col={col} />
-      </button>
-    </th>
-  );
 
   const selectCls =
     "rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-forest";
@@ -575,11 +579,11 @@ export function ProductsTable({
                   title="Vybrat vše"
                 />
               </th>
-              <Th col="name">Název</Th>
-              <Th col="category">Kategorie</Th>
-              <Th col="price">Cena</Th>
-              <Th col="stock">Sklad</Th>
-              <Th col="sold">Prodáno</Th>
+              <SortableTh col="name" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Název</SortableTh>
+              <SortableTh col="category" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Kategorie</SortableTh>
+              <SortableTh col="price" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Cena</SortableTh>
+              <SortableTh col="stock" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Sklad</SortableTh>
+              <SortableTh col="sold" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Prodáno</SortableTh>
               <th className="px-4 py-3">Stav</th>
               <th className="px-4 py-3 text-right">Akce</th>
             </tr>

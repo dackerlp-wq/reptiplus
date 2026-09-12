@@ -104,7 +104,6 @@ export function RichEditor({
     if (next !== current && next !== (current === "<p></p>" ? "" : current)) {
       editor.commands.setContent(next, false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, editor]);
 
   if (!editor) {

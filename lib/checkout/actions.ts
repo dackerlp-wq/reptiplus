@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCart, getCartId } from "@/lib/cart/cart";
 import { localeCurrency } from "@/lib/i18n";
+import { freeShippingThreshold, getShippingSettings } from "@/lib/settings";
 import { validateDiscount, type DiscountError } from "@/lib/checkout/discount";
 import { createComgatePayment } from "@/lib/comgate/client";
 import { sendOrderConfirmation } from "@/lib/orders/confirmation";
@@ -154,8 +155,12 @@ export async function createOrderAction(
     .eq("is_active", true)
     .maybeSingle();
   if (!shipRow) return { error: "SHIPPING" };
+  // Doprava zdarma od částky (nastavení obchodu) — počítá se z mezisoučtu zboží.
+  const freeFrom = freeShippingThreshold(await getShippingSettings(), currency);
   const shippingFee =
-    (shipRow as unknown as Record<string, number | null>)[priceCol] ?? 0;
+    freeFrom != null && cart.subtotal >= freeFrom
+      ? 0
+      : ((shipRow as unknown as Record<string, number | null>)[priceCol] ?? 0);
 
   // Výdejní místo (Zásilkovna) — povinné, pokud metoda vyžaduje pickup.
   const requiresPickup =

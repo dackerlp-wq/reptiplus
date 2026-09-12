@@ -23,12 +23,17 @@ export async function Navbar({ locale }: { locale: Locale }) {
       {/* Horní lišta — e-mail, slogan, jazyk */}
       <div className="bg-forest-deep text-cream">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-1.5 text-xs">
-          <a
-            href={`mailto:${contact.email}`}
-            className="flex items-center gap-1.5 text-cream/80 transition-colors hover:text-white"
-          >
-            <Mail className="size-3.5" /> {contact.email}
-          </a>
+          <div className="flex items-center gap-4">
+            <a
+              href={`mailto:${contact.email}`}
+              className="flex items-center gap-1.5 text-cream/80 transition-colors hover:text-white"
+            >
+              <Mail className="size-3.5" /> {contact.email}
+            </a>
+            <Link href="/kontakt" className="hidden text-cream/80 transition-colors hover:text-white sm:block">
+              {t("contact")}
+            </Link>
+          </div>
           <span className="hidden flex-1 text-center font-medium italic text-cream/90 md:block">
             {t("slogan")}
           </span>

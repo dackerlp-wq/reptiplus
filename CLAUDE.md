@@ -11,7 +11,8 @@ Infrastruktura:
 - GitHub `dackerlp-wq/reptiplus`, vývoj i push jde na `main`. Větve `claude/*` jsou starý kód a s `main` nesouvisí
   (`claude/wordpress-plugin-merge-hrc9po` drží nesouvisející WordPress plugin, nemazat). Repo `Reptiplus/reptiplus` je duplikát, ignorovat.
 - Vercel: projekt `reptiplus` (`prj_9fSGoOlyRzybaaJv5g92puOknsnw`, tým `team_5syHQcguxaekOGMAp7ikxARv`), nasazuje automaticky po pushi na `main`.
-  Domény `reptiplus.cz` / `.eu` / `.shop`. Cron `/api/cron/cleanup-carts` denně (`vercel.json`).
+  Domény `reptiplus.cz` / `.eu` / `.shop`. Crony ve `vercel.json`: `/api/cron/cleanup-carts` (opuštěné košíky) a `/api/cron/cancel-unpaid`
+  (storno nezaplacených karetních objednávek po 24 h, RPC `cancel_unpaid_order` vrací sklad, e-mail zákazníkovi), oba chráněné `CRON_SECRET`.
 - Supabase: projekt „Reptiplus“ `duaihkobtgfzprufqjmh` (eu-west-1, Postgres 17). Storage bucket `products` pro obrázky.
 
 ## Příkazy
@@ -20,11 +21,14 @@ Infrastruktura:
 npm run dev      # next dev (port 3000)
 npm run build    # next build — spouštět před pushem, Vercel build je jediná „CI“
 npx tsc --noEmit # typecheck (nejrychlejší kontrola před pushem)
+npm run lint     # ESLint 9 flat config (eslint.config.mjs, eslint-config-next); build ho nespouští
 npm start
 ```
 
-`npm run lint` je rozbité (`next lint` v Next 16 neexistuje, ESLint config chybí). Testy v projektu nejsou (viz roadmapa, bod 19).
-Ověření změny = `npx tsc --noEmit` + `npm run build` + ruční kontrola. Build prerenderuje stránky proti Supabase, lokálně potřebuje `.env.local` s klíči.
+Testy v projektu nejsou (viz roadmapa, bod 19).
+Ověření změny = `npx tsc --noEmit` + `npm run lint` + `npm run build` + ruční kontrola. Lint hlídá i pravidla React Compileru
+(`react-hooks/set-state-in-effect`, `static-components`): žádný synchronní `setState` v těle efektu (časová past formulářů se řeší
+`ref` callbackem `stampTs`, debounce nastavuje loading až v timeoutu), komponenty nedefinovat uvnitř renderu. Build prerenderuje stránky proti Supabase, lokálně potřebuje `.env.local` s klíči.
 
 Databáze: migrace jsou ručně psané SQL soubory v `supabase/migrations/` pojmenované `YYYYMMDD_NNNN_popis.sql`,
 obalené `begin; … commit;`, idempotentní (`if not exists`, `create or replace`, `on conflict`).
@@ -46,7 +50,8 @@ Seed dat: `supabase/seed.sql`, `supabase/seed_admin.sql`.
 ### Route groups
 - `app/[locale]/(shop)/` — veřejný obchod (české slugy: `kategorie`, `produkt`, `kosik`, `pokladna`, `objednavka`, `ucet`, …). Layout přidává Navbar, Footer, cookie lištu a `AnalyticsGate`.
 - `app/[locale]/admin/` — administrace, layout volá `requireAdmin()` (`lib/admin/auth.ts`): role `admin`/`staff` ze sloupce `customer.role`.
-- `app/api/` — route handlers: `comgate/webhook` (platební PUSH), `cron/cleanup-carts` (chráněno `CRON_SECRET`), `admin/translate` (AI překlad), `admin/orders/*/label` (štítky PDF), `invoices/[id]` (PDF dokladu), `admin/invoices/export`, `admin/inquiries/export`, `wishlist` (ID oblíbených), `search`, `exchange-rate`.
+- `app/api/` — route handlers: `comgate/webhook` (platební PUSH), `cron/cleanup-carts` (chráněno `CRON_SECRET`), `admin/translate` (AI překlad), `admin/orders/*/label` (štítky PDF), `invoices/[id]` (PDF dokladu), `admin/invoices/export`, `admin/inquiries/export`, `admin/newsletter/export`, `newsletter/confirm|unsubscribe` (tokenové odkazy z e-mailu),
+  `wishlist` (ID oblíbených), `search`, `exchange-rate`.
 - `app/feed/*.xml` — Heureka / Zboží / Google feed, `revalidate = 3600`; stejně `app/sitemap.ts`.
 
 ### Supabase klienti (tři, nezaměňovat)
@@ -130,6 +135,19 @@ Export CSV: `app/api/admin/inquiries/export/route.ts`.
 - Hlídání skladu: `StockAlertForm` u vyprodaného produktu/varianty → `stock_alert` (service role, honeypot, unikát product+variant+email);
   `notifyStockAlerts(productId)` v `lib/stock-alerts/notify.ts` se volá po uložení produktu a inline změně skladu v adminu.
 - Přihlášení: `/prihlaseni?redirectTo=/cs/...` (jen relativní cesty), po přihlášení se sloučí hostův košík a připojí objednávky.
+
+### Newsletter, kontakt, doprava zdarma, chybové stránky
+- Newsletter (`newsletter_subscriber`, double opt-in): `lib/newsletter/service.ts` (`requestSubscription` → potvrzovací e-mail s tokenem,
+  `confirmSubscription` → `confirmed_at` + jednorázový kód `VITEJ-XXXXXX` v `discount_code` (jen jednou na e-mail, `discount_code_id`) + uvítací e-mail,
+  `unsubscribeByToken`; z účtu s ověřeným e-mailem `confirmSubscriptionForEmail` bez potvrzovacího kroku). Formulář na homepage `components/reptiplus/newsletter-form.tsx`
+  (akce `lib/newsletter/actions.ts`, oznámení `?newsletter=confirmed|unsubscribed|invalid` čte klientsky). Odběratel = `confirmed_at` vyplněné a `unsubscribed_at` null.
+  Výše slevy / min. objednávka / platnost v `app_setting` `newsletter.settings` (Nastavení → Obchod). Admin: `app/[locale]/admin/newsletter` + CSV export.
+- Pevné slevy a min. objednávka jsou v Kč; pro EUR košík je `validateDiscount` přepočítá kurzem ČNB.
+- Kontakt: `app/[locale]/(shop)/kontakt` (údaje z `shop.general` vč. `openingHours`, formulář `components/reptiplus/contact-form.tsx` → `lib/contact/actions.ts`:
+  e-mail obchodu s reply-to, potvrzení zákazníkovi, u čísla objednávky i záznam do `order_event`).
+- Doprava zdarma: `app_setting` `shipping.settings` (`freeFromCzk|freeFromEur`, minor units; Nastavení → Doprava), helper `freeShippingThreshold()` v `lib/settings.ts`.
+  Uplatňuje se na mezisoučet zboží v pokladně (stránka i `createOrderAction`, nikdy z klienta) a jako lišta průběhu v košíku.
+- 404 / chyby: `app/[locale]/(shop)/[...rest]/page.tsx` volá `notFound()` → `(shop)/not-found.tsx` (s Navbar/Footer), `app/[locale]/error.tsx` (client, ns `ErrorPage`), `app/global-error.tsx`.
 
 ### Analytika a souhlas
 `components/reptiplus/cookie-consent.tsx` ukládá volbu do cookie `rp_consent` a vysílá event `rp-consent-changed`; `AnalyticsGate` načte GA4 / Sklik / Meta Pixel až po souhlasu

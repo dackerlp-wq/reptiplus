@@ -590,6 +590,12 @@ export type Database = {
           id: string
           is_confirmed: boolean
           source: string | null
+          token: string | null
+          locale: string
+          confirmed_at: string | null
+          unsubscribed_at: string | null
+          discount_code_id: string | null
+          customer_id: string | null
         }
         Insert: {
           created_at?: string
@@ -597,6 +603,12 @@ export type Database = {
           id?: string
           is_confirmed?: boolean
           source?: string | null
+          token?: string | null
+          locale?: string
+          confirmed_at?: string | null
+          unsubscribed_at?: string | null
+          discount_code_id?: string | null
+          customer_id?: string | null
         }
         Update: {
           created_at?: string
@@ -604,6 +616,12 @@ export type Database = {
           id?: string
           is_confirmed?: boolean
           source?: string | null
+          token?: string | null
+          locale?: string
+          confirmed_at?: string | null
+          unsubscribed_at?: string | null
+          discount_code_id?: string | null
+          customer_id?: string | null
         }
         Relationships: []
       }
@@ -1439,6 +1457,10 @@ export type Database = {
       next_invoice_number: {
         Args: { p_series: string; p_year: number }
         Returns: number
+      }
+      cancel_unpaid_order: {
+        Args: { p_order_id: string }
+        Returns: boolean
       }
       cleanup_abandoned_carts: {
         Args: { p_days?: number }

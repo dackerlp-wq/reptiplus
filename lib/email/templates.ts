@@ -957,3 +957,151 @@ ${footerRow(d.locale)}`;
     text: [c.title, "", c.body(d.productName), "", `${c.cta}: ${d.productUrl}`, "", c.note].join("\n"),
   };
 }
+
+/* ── Newsletter ─────────────────────────────────────────────────────────── */
+
+const NL_COPY = {
+  cs: {
+    confirmSubject: "Potvrďte odběr novinek — Reptiplus",
+    confirmTitle: "Ještě jeden krok",
+    confirmBody: "Děkujeme za zájem o novinky z Reptiplus. Odběr potvrďte kliknutím na tlačítko níže — bez potvrzení vám nic posílat nebudeme.",
+    confirmCta: "Potvrdit odběr",
+    confirmNote: "Pokud jste se k odběru nepřihlásili, tento e-mail ignorujte.",
+    welcomeSubject: (code: string | null) => (code ? `Vítejte! Vaše sleva ${code} — Reptiplus` : "Vítejte v odběru novinek — Reptiplus"),
+    welcomeTitle: "Odběr potvrzen, vítejte!",
+    welcomeBody: "Od teď vám budeme posílat tipy pro chov, novinky v sortimentu a akce. Ne častěji, než je zdravé.",
+    codeIntro: (amount: string, minOrder: string, until: string) => `Jako poděkování máte slevu ${amount} na první nákup nad ${minOrder}. Kód uplatníte v pokladně, platí do ${until}.`,
+    codeLabel: "Váš slevový kód",
+    shopCta: "Jít nakupovat",
+    unsubscribe: "Odhlásit odběr",
+  },
+  en: {
+    confirmSubject: "Confirm your newsletter subscription — Reptiplus",
+    confirmTitle: "One more step",
+    confirmBody: "Thanks for your interest in Reptiplus news. Please confirm your subscription by clicking the button below — we won't send anything without it.",
+    confirmCta: "Confirm subscription",
+    confirmNote: "If you didn't sign up, just ignore this e-mail.",
+    welcomeSubject: (code: string | null) => (code ? `Welcome! Your discount ${code} — Reptiplus` : "Welcome to the newsletter — Reptiplus"),
+    welcomeTitle: "Subscription confirmed, welcome!",
+    welcomeBody: "From now on we'll send you keeper tips, new products and deals. Not more often than is healthy.",
+    codeIntro: (amount: string, minOrder: string, until: string) => `As a thank-you, here's ${amount} off your first order over ${minOrder}. Use the code at checkout; valid until ${until}.`,
+    codeLabel: "Your discount code",
+    shopCta: "Start shopping",
+    unsubscribe: "Unsubscribe",
+  },
+  de: {
+    confirmSubject: "Bestätigen Sie Ihr Newsletter-Abonnement — Reptiplus",
+    confirmTitle: "Noch ein Schritt",
+    confirmBody: "Danke für Ihr Interesse an Neuigkeiten von Reptiplus. Bitte bestätigen Sie das Abonnement über die Schaltfläche unten — ohne Bestätigung senden wir nichts.",
+    confirmCta: "Abonnement bestätigen",
+    confirmNote: "Falls Sie sich nicht angemeldet haben, ignorieren Sie diese E-Mail einfach.",
+    welcomeSubject: (code: string | null) => (code ? `Willkommen! Ihr Rabatt ${code} — Reptiplus` : "Willkommen beim Newsletter — Reptiplus"),
+    welcomeTitle: "Abonnement bestätigt, willkommen!",
+    welcomeBody: "Ab jetzt senden wir Ihnen Tipps für Halter, neue Produkte und Aktionen. Nicht öfter, als gesund ist.",
+    codeIntro: (amount: string, minOrder: string, until: string) => `Als Dankeschön erhalten Sie ${amount} Rabatt auf Ihre erste Bestellung über ${minOrder}. Code an der Kasse eingeben; gültig bis ${until}.`,
+    codeLabel: "Ihr Rabattcode",
+    shopCta: "Jetzt einkaufen",
+    unsubscribe: "Abbestellen",
+  },
+} as const;
+
+export function newsletterConfirmEmail(d: { locale: Locale; confirmUrl: string }): { subject: string; html: string; text: string } {
+  const c = NL_COPY[d.locale] ?? NL_COPY.cs;
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 12px;font-size:22px;color:${INK};">${c.confirmTitle}</h1>
+<p style="margin:0 0 20px;font-size:14px;line-height:1.55;">${c.confirmBody}</p>
+${button(d.confirmUrl, c.confirmCta)}
+<p style="margin:22px 0 0;font-size:12px;color:${MUTED};">${c.confirmNote}</p>
+</td></tr>
+${footerRow(d.locale)}`;
+  return {
+    subject: c.confirmSubject,
+    html: layout(inner, c.confirmBody.slice(0, 140)),
+    text: [c.confirmTitle, "", c.confirmBody, "", `${c.confirmCta}: ${d.confirmUrl}`, "", c.confirmNote].join("\n"),
+  };
+}
+
+export function newsletterWelcomeEmail(d: {
+  locale: Locale;
+  code: string | null;
+  amountLabel?: string;
+  minOrderLabel?: string;
+  validUntil?: string;
+  shopUrl: string;
+  unsubscribeUrl: string;
+}): { subject: string; html: string; text: string } {
+  const c = NL_COPY[d.locale] ?? NL_COPY.cs;
+  const codeBlock = d.code
+    ? `<p style="margin:0 0 12px;font-size:14px;line-height:1.55;">${escapeHtml(c.codeIntro(d.amountLabel ?? "", d.minOrderLabel ?? "", d.validUntil ?? ""))}</p>
+${infoBox(`<span style="display:block;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:${MUTED};">${c.codeLabel}</span><strong style="display:block;margin-top:4px;font-family:monospace;font-size:22px;letter-spacing:1px;color:${BRAND};">${escapeHtml(d.code)}</strong>`)}`
+    : "";
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 12px;font-size:22px;color:${INK};">${c.welcomeTitle}</h1>
+<p style="margin:0 0 18px;font-size:14px;line-height:1.55;">${c.welcomeBody}</p>
+${codeBlock}
+<div style="margin-top:22px;">${button(d.shopUrl, c.shopCta)}</div>
+<p style="margin:26px 0 0;font-size:12px;color:${MUTED};"><a href="${d.unsubscribeUrl}" style="color:${MUTED};">${c.unsubscribe}</a></p>
+</td></tr>
+${footerRow(d.locale)}`;
+  return {
+    subject: c.welcomeSubject(d.code),
+    html: layout(inner, c.welcomeBody.slice(0, 140)),
+    text: [
+      c.welcomeTitle,
+      "",
+      c.welcomeBody,
+      ...(d.code ? ["", c.codeIntro(d.amountLabel ?? "", d.minOrderLabel ?? "", d.validUntil ?? ""), `${c.codeLabel}: ${d.code}`] : []),
+      "",
+      `${c.shopCta}: ${d.shopUrl}`,
+      `${c.unsubscribe}: ${d.unsubscribeUrl}`,
+    ].join("\n"),
+  };
+}
+
+/* ── Kontaktní formulář ────────────────────────────────────────────────── */
+
+const CONTACT_COPY = {
+  cs: { subject: "Přijali jsme vaši zprávu — Reptiplus", title: "Děkujeme za zprávu", body: "Vaši zprávu jsme přijali a ozveme se obvykle do jednoho pracovního dne. Pro doplnění stačí odpovědět na tento e-mail.", yourMessage: "Vaše zpráva" },
+  en: { subject: "We've received your message — Reptiplus", title: "Thanks for your message", body: "We've received your message and usually reply within one business day. To add anything, just reply to this e-mail.", yourMessage: "Your message" },
+  de: { subject: "Wir haben Ihre Nachricht erhalten — Reptiplus", title: "Danke für Ihre Nachricht", body: "Wir haben Ihre Nachricht erhalten und antworten in der Regel innerhalb eines Werktags. Für Ergänzungen antworten Sie einfach auf diese E-Mail.", yourMessage: "Ihre Nachricht" },
+} as const;
+
+export function contactConfirmEmail(d: { locale: Locale; name: string; subject: string; message: string }): { subject: string; html: string; text: string } {
+  const c = CONTACT_COPY[d.locale] ?? CONTACT_COPY.cs;
+  const hello = d.locale === "de" ? `Guten Tag ${d.name},` : d.locale === "en" ? `Hello ${d.name},` : `Dobrý den ${d.name},`;
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 12px;font-size:22px;color:${INK};">${c.title}</h1>
+<p style="margin:0 0 6px;font-size:14px;line-height:1.55;">${escapeHtml(hello)}</p>
+<p style="margin:0 0 18px;font-size:14px;line-height:1.55;">${c.body}</p>
+<p style="margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:${MUTED};">${c.yourMessage}${d.subject ? ` — ${escapeHtml(d.subject)}` : ""}</p>
+${infoBox(`<span style="white-space:pre-line;">${escapeHtml(d.message)}</span>`)}
+</td></tr>
+${footerRow(d.locale)}`;
+  return { subject: c.subject, html: layout(inner, c.body.slice(0, 140)), text: [c.title, "", hello, c.body, "", `${c.yourMessage}: ${d.subject}`, d.message].join("\n") };
+}
+
+/** Zpráva z kontaktního formuláře do obchodu (česky, reply-to = zákazník). */
+export function contactShopEmail(d: { name: string; email: string; phone: string | null; subject: string; message: string; locale: string; orderNumber: string | null }): { subject: string; html: string; text: string } {
+  const rows: [string, string][] = [
+    ["Jméno", d.name],
+    ["E-mail", d.email],
+    ...(d.phone ? ([["Telefon", d.phone]] as [string, string][]) : []),
+    ...(d.orderNumber ? ([["Objednávka", d.orderNumber]] as [string, string][]) : []),
+    ["Jazyk webu", d.locale.toUpperCase()],
+  ];
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 12px;font-size:20px;">Zpráva z kontaktního formuláře${d.subject ? `: ${escapeHtml(d.subject)}` : ""}</h1>
+<table role="presentation" cellpadding="0" cellspacing="0">${kvRows(rows)}</table>
+<div style="margin-top:16px;">${infoBox(`<span style="white-space:pre-line;">${escapeHtml(d.message)}</span>`)}</div>
+<p style="margin:16px 0 0;font-size:12px;color:${MUTED};">Odpověď stačí poslat jako reply — jde přímo zákazníkovi.</p>
+</td></tr>`;
+  return {
+    subject: `Kontakt: ${d.subject || d.name}${d.orderNumber ? ` (${d.orderNumber})` : ""}`,
+    html: layout(inner, d.message.slice(0, 140)),
+    text: [...rows.map(([k, v]) => `${k}: ${v}`), "", d.message].join("\n"),
+  };
+}

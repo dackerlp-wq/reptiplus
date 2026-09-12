@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getCnbEurRate } from "@/lib/exchange-rate";
 
 export type DiscountResult =
   | { ok: true; discountId: string; amount: number; code: string }
@@ -19,7 +20,7 @@ export type DiscountError =
  * (tabulka discount_code nemá public RLS). Vrací výši slevy v minor units.
  *
  * Pozn.: `value`/`min_order` jsou u fixní slevy v haléřích (CZK). Procentní sleva
- * je bezměnová. Fixní sleva a min_order se proto uplatní jen u CZK objednávek.
+ * je bezměnová. U EUR objednávek se fixní částka i min_order přepočítají kurzem ČNB.
  */
 export async function validateDiscount(
   svc: SupabaseClient,
@@ -47,18 +48,21 @@ export async function validateDiscount(
   if (data.usage_limit != null && data.used_count >= data.usage_limit)
     return { ok: false, error: "USED_UP" };
 
-  // Fixní sleva je definovaná v CZK haléřích → pro EUR ji nelze korektně uplatnit.
-  if (data.type === "fixed" && currency !== "CZK")
-    return { ok: false, error: "CURRENCY" };
+  // Fixní sleva a min_order jsou v CZK haléřích → pro EUR přepočet kurzem ČNB.
+  let toCurrency = (czkMinor: number) => czkMinor;
+  if (currency !== "CZK" && (data.type === "fixed" || data.min_order != null)) {
+    const cnb = await getCnbEurRate();
+    if (!cnb) return { ok: false, error: "CURRENCY" };
+    toCurrency = (czkMinor: number) => Math.round(czkMinor / cnb.rate);
+  }
 
-  // min_order (haléře CZK) kontrolujeme jen u CZK objednávek.
-  if (data.min_order != null && currency === "CZK" && subtotalMinor < data.min_order)
+  if (data.min_order != null && subtotalMinor < toCurrency(data.min_order))
     return { ok: false, error: "MIN_ORDER" };
 
   let amount =
     data.type === "percent"
       ? Math.round((subtotalMinor * data.value) / 100)
-      : data.value;
+      : toCurrency(data.value);
 
   // Sleva nikdy nepřesáhne mezisoučet.
   amount = Math.max(0, Math.min(amount, subtotalMinor));

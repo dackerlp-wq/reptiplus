@@ -218,7 +218,7 @@ export function ProductVariants({ initial }: { initial: VariantRow[] }) {
       <p className="mb-3 mt-1 text-xs text-gray-soft">
         Každá varianta má vlastní cenu, sklad, obrázek a <strong>specifické
         parametry</strong> (to, čím se liší od ostatních). Parametry společné pro
-        všechny varianty patří nahoru do „Společných parametrů". Prázdná cena =
+        všechny varianty patří nahoru do „Společných parametrů“. Prázdná cena =
         použije se cena produktu. Přelož názvy i parametry do EN/DE tlačítkem.
       </p>
 

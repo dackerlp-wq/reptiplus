@@ -76,8 +76,8 @@ export async function isNewsletterSubscribed(email: string | undefined): Promise
   if (!email) return false;
   const { data } = await createServiceClient()
     .from("newsletter_subscriber")
-    .select("id")
+    .select("id, confirmed_at, unsubscribed_at")
     .ilike("email", email)
     .maybeSingle();
-  return Boolean(data);
+  return Boolean(data?.confirmed_at) && !data?.unsubscribed_at;
 }

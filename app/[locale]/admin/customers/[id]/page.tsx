@@ -60,7 +60,6 @@ export default async function CustomerDetailPage({
   const orderList = orders ?? [];
 
   const card = "rounded-xl border border-cream-dark bg-white p-5";
-  const legend = "text-xs font-semibold uppercase tracking-wide text-gray-soft";
 
   return (
     <div>

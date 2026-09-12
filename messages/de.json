@@ -11,7 +11,8 @@
     "about": "Über uns",
     "menu": "Menü",
     "viewAll": "Alle ansehen",
-    "slogan": "Was wir selbst verwenden, empfehlen wir mit gutem Gewissen!"
+    "slogan": "Was wir selbst verwenden, empfehlen wir mit gutem Gewissen!",
+    "contact": "Kontakt"
   },
   "Cookies": {
     "title": "Cookies",
@@ -48,7 +49,15 @@
     "newsletterTitle": "Newsletter",
     "newsletterSubtitle": "Haltungstipps, Neuigkeiten und Angebote direkt in Ihr Postfach.",
     "newsletterPlaceholder": "Ihre E-Mail",
-    "newsletterCta": "Abonnieren"
+    "newsletterCta": "Abonnieren",
+    "newsletterSent": "Wir haben Ihnen eine Bestätigungs-E-Mail gesendet. Das Abonnement beginnt nach dem Bestätigen.",
+    "newsletterAlready": "Diese E-Mail ist bereits angemeldet. Vielen Dank!",
+    "newsletterErrEmail": "Geben Sie eine gültige E-Mail ein.",
+    "newsletterErrServer": "Anmeldung fehlgeschlagen, bitte erneut versuchen.",
+    "newsletterConsent": "Mit der Anmeldung stimmen Sie dem Erhalt unserer Neuigkeiten zu. Abbestellen jederzeit über den Link in der E-Mail.",
+    "newsletterConfirmed": "Ihr Abonnement ist bestätigt. Vielen Dank! Die Willkommens-E-Mail mit Ihrem Rabatt ist unterwegs.",
+    "newsletterUnsubscribed": "Sie wurden abgemeldet. Schade, aber wir respektieren das.",
+    "newsletterInvalid": "Der Link ist ungültig oder wurde bereits verwendet."
   },
   "Product": {
     "addToCart": "In den Warenkorb",
@@ -136,7 +145,9 @@
     "remove": "Entfernen",
     "subtotal": "Zwischensumme",
     "shippingNote": "Versand und Zahlung werden an der Kasse gewählt.",
-    "checkout": "Zur Kasse"
+    "checkout": "Zur Kasse",
+    "freeShippingLeft": "Noch {amount} bis zum kostenlosen Versand",
+    "freeShippingReached": "Sie haben kostenlosen Versand!"
   },
   "Checkout": {
     "title": "Kasse",
@@ -198,7 +209,9 @@
     "ico": "Firmen-ID",
     "dic": "USt-IdNr.",
     "saveAddress": "Adresse im Konto speichern",
-    "addressLabelDefault": "Adresse"
+    "addressLabelDefault": "Adresse",
+    "freeShipping": "Kostenloser Versand",
+    "freeShippingFrom": "Kostenloser Versand ab {amount}"
   },
   "OrderConfirm": {
     "title": "Danke für Ihre Bestellung!",
@@ -472,5 +485,43 @@
     "orderTimeline": "Bestellverlauf",
     "accountDeleted": "Ihr Konto wurde gelöscht.",
     "adminEntry": "Verwaltung"
+  },
+  "NotFound": {
+    "title": "Diese Seite haben wir nicht gefunden",
+    "text": "Der Link ist vielleicht veraltet oder das Produkt wird nicht mehr verkauft. Nutzen Sie die Suche oder gehen Sie zur Startseite.",
+    "products": "Produkte ansehen",
+    "home": "Zur Startseite"
+  },
+  "ErrorPage": {
+    "title": "Etwas ist schiefgelaufen",
+    "text": "Die Seite konnte leider nicht geladen werden. Bitte versuchen Sie es erneut; falls es weiterhin passiert, schreiben Sie uns.",
+    "retry": "Erneut versuchen",
+    "home": "Zur Startseite"
+  },
+  "Contact": {
+    "title": "Kontakt",
+    "metaDescription": "Kontaktieren Sie Reptiplus — E-Mail, Telefon, Adresse und Kontaktformular.",
+    "intro": "Wir beraten gerne zu Beleuchtung, Heizung und Futter. Erreichen Sie uns per Telefon, E-Mail oder Formular.",
+    "emailLabel": "E-Mail",
+    "phoneLabel": "Telefon",
+    "addressLabel": "Adresse",
+    "hoursLabel": "Öffnungszeiten",
+    "companyLabel": "Firmendaten",
+    "formTitle": "Schreiben Sie uns",
+    "name": "Name",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "orderNumber": "Bestellnummer (falls zutreffend)",
+    "subject": "Betreff",
+    "message": "Nachricht",
+    "gdpr": "Ich stimme der Verarbeitung meiner Daten zur Bearbeitung der Anfrage gemäß <link>Datenschutzerklärung</link> zu.",
+    "submit": "Nachricht senden",
+    "sending": "Wird gesendet…",
+    "successTitle": "Nachricht gesendet",
+    "successText": "Wir antworten in der Regel innerhalb eines Werktags. Eine Bestätigung haben wir Ihnen per E-Mail geschickt.",
+    "errForm": "Bitte Name, gültige E-Mail und Nachricht ausfüllen.",
+    "errGdpr": "Bitte bestätigen Sie die Einwilligung zur Datenverarbeitung.",
+    "errRate": "Zu viele Nachrichten in kurzer Zeit. Bitte später erneut versuchen.",
+    "errServer": "Die Nachricht konnte nicht gesendet werden. Bitte erneut versuchen."
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { submitLedxInquiry, type InquiryState } from "@/lib/ledx/actions";
@@ -19,6 +19,12 @@ const Arrow = () => (
   </svg>
 );
 
+
+/** Čas vykreslení formuláře (antispam: boti odesílají okamžitě). Nastavuje se až v prohlížeči, bez hydratačního rozdílu. */
+const stampTs = (el: HTMLInputElement | null) => {
+  if (el && !el.value) el.value = String(Date.now());
+};
+
 export function LedxInquiryForm({ config }: { config: RadaConfig }) {
   const t = useTranslations("LedxForm");
   const locale = useLocale();
@@ -26,9 +32,6 @@ export function LedxInquiryForm({ config }: { config: RadaConfig }) {
     submitLedxInquiry,
     { status: "idle" },
   );
-  // Čas vykreslení formuláře (antispam: boti odesílají okamžitě).
-  const [ts, setTs] = useState("");
-  useEffect(() => setTs(String(Date.now())), []);
 
   if (state.status === "ok") {
     return (
@@ -55,7 +58,7 @@ export function LedxInquiryForm({ config }: { config: RadaConfig }) {
     <form className="form" action={action}>
       <input type="hidden" name="rada" value={config.rada} />
       <input type="hidden" name="locale" value={locale} />
-      <input type="hidden" name="ts" value={ts} />
+      <input type="hidden" name="ts" ref={stampTs} />
       {/* Honeypot — lidé pole nevidí, boti ho vyplní. */}
       <div className="hp" aria-hidden="true">
         <label>

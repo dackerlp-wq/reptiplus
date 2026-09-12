@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { Mail, Phone, Info } from "lucide-react";
+import { Mail, Phone, Info, MessageSquare } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { getShopContact } from "@/lib/settings";
 import { CookieSettingsLink } from "./cookie-settings-link";
@@ -17,7 +17,7 @@ export async function Footer() {
           <p className="font-display text-2xl font-bold text-white">Reptiplus</p>
           <span className="mt-3 block h-0.5 w-12 rounded-full bg-gold-light/80" />
           <p className="mt-3 font-display text-base font-semibold italic leading-relaxed text-cream">
-            „{nav("slogan")}"
+            „{nav("slogan")}“
           </p>
         </div>
 
@@ -67,6 +67,14 @@ export async function Footer() {
                 </a>
               </li>
             )}
+            <li>
+              <Link
+                href="/kontakt"
+                className="flex items-center gap-2 hover:text-white"
+              >
+                <MessageSquare className="size-4" /> {nav("contact")}
+              </Link>
+            </li>
             <li>
               <Link
                 href="/o-nas"

@@ -175,7 +175,7 @@ export function LedxContentForm({ initial, locale }: { initial: LedxPageSetting;
       {/* Reference */}
       <div className={card}>
         <div>
-          <p className="font-display text-lg font-semibold">Reference „Kde už LEDX svítí"</p>
+          <p className="font-display text-lg font-semibold">Reference „Kde už LEDX svítí“</p>
           <p className="text-sm text-gray-soft">Fotky realizací (na šířku, ideálně 4:3). Bez fotek se sekce na webu skryje.</p>
         </div>
         {refs.length > 0 && (

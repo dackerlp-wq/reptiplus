@@ -13,6 +13,7 @@ import {
   ExternalLink,
   LogOut,
   FileText,
+  Mail,
 } from "lucide-react";
 import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
@@ -33,6 +34,7 @@ const NAV = [
   { href: "/admin/customers", label: "Zákazníci", icon: Users },
   { href: "/admin/discounts", label: "Slevy", icon: Ticket },
   { href: "/admin/reviews", label: "Recenze", icon: Star },
+  { href: "/admin/newsletter", label: "Newsletter", icon: Mail },
   { href: "/admin/settings", label: "Nastavení", icon: Settings },
 ];
 

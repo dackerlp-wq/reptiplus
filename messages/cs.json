@@ -11,7 +11,8 @@
     "about": "O nás",
     "menu": "Menu",
     "viewAll": "Zobrazit vše",
-    "slogan": "Co sami používáme, to s čistým svědomím doporučujeme!"
+    "slogan": "Co sami používáme, to s čistým svědomím doporučujeme!",
+    "contact": "Kontakt"
   },
   "Cookies": {
     "title": "Cookies",
@@ -48,7 +49,15 @@
     "newsletterTitle": "Odběr novinek",
     "newsletterSubtitle": "Tipy pro chov, novinky a slevy přímo do vaší schránky.",
     "newsletterPlaceholder": "Váš e-mail",
-    "newsletterCta": "Odebírat"
+    "newsletterCta": "Odebírat",
+    "newsletterSent": "Poslali jsme vám potvrzovací e-mail. Odběr začne po jeho otevření a potvrzení.",
+    "newsletterAlready": "Tento e-mail už novinky odebírá. Děkujeme!",
+    "newsletterErrEmail": "Zadejte platný e-mail.",
+    "newsletterErrServer": "Přihlášení se nepodařilo, zkuste to prosím znovu.",
+    "newsletterConsent": "Odesláním souhlasíte se zasíláním novinek. Odhlásit se můžete kdykoli odkazem v e-mailu.",
+    "newsletterConfirmed": "Odběr novinek je potvrzený. Děkujeme! Uvítací e-mail se slevou je na cestě.",
+    "newsletterUnsubscribed": "Odběr novinek jsme zrušili. Mrzí nás to, ale respektujeme to.",
+    "newsletterInvalid": "Odkaz je neplatný nebo už byl použit."
   },
   "Product": {
     "addToCart": "Do košíku",
@@ -136,7 +145,9 @@
     "remove": "Odebrat",
     "subtotal": "Mezisoučet",
     "shippingNote": "Doprava a platba se vyberou v pokladně.",
-    "checkout": "Pokračovat k pokladně"
+    "checkout": "Pokračovat k pokladně",
+    "freeShippingLeft": "Do dopravy zdarma zbývá {amount}",
+    "freeShippingReached": "Máte dopravu zdarma!"
   },
   "Checkout": {
     "title": "Pokladna",
@@ -198,7 +209,9 @@
     "ico": "IČO",
     "dic": "DIČ",
     "saveAddress": "Uložit adresu do účtu",
-    "addressLabelDefault": "Adresa"
+    "addressLabelDefault": "Adresa",
+    "freeShipping": "Doprava zdarma",
+    "freeShippingFrom": "Doprava zdarma od {amount}"
   },
   "OrderConfirm": {
     "title": "Děkujeme za objednávku!",
@@ -472,5 +485,43 @@
     "orderTimeline": "Průběh objednávky",
     "accountDeleted": "Váš účet byl smazán.",
     "adminEntry": "Administrace"
+  },
+  "NotFound": {
+    "title": "Tuhle stránku jsme nenašli",
+    "text": "Odkaz je možná zastaralý, nebo se produkt už neprodává. Zkuste hledání nebo se vraťte na úvod.",
+    "products": "Prohlédnout produkty",
+    "home": "Na úvod"
+  },
+  "ErrorPage": {
+    "title": "Něco se pokazilo",
+    "text": "Omlouváme se, stránku se nepodařilo načíst. Zkuste to prosím znovu; pokud problém přetrvá, napište nám.",
+    "retry": "Zkusit znovu",
+    "home": "Na úvod"
+  },
+  "Contact": {
+    "title": "Kontakt",
+    "metaDescription": "Kontaktujte Reptiplus — e-mail, telefon, adresa a kontaktní formulář.",
+    "intro": "Rádi poradíme s výběrem osvětlení, vytápění i krmiva. Ozvěte se telefonem, e-mailem nebo přes formulář.",
+    "emailLabel": "E-mail",
+    "phoneLabel": "Telefon",
+    "addressLabel": "Adresa",
+    "hoursLabel": "Provozní doba",
+    "companyLabel": "Fakturační údaje",
+    "formTitle": "Napište nám",
+    "name": "Jméno",
+    "email": "E-mail",
+    "phone": "Telefon",
+    "orderNumber": "Číslo objednávky (pokud se týká)",
+    "subject": "Předmět",
+    "message": "Zpráva",
+    "gdpr": "Souhlasím se zpracováním údajů za účelem vyřízení dotazu dle <link>zásad zpracování osobních údajů</link>.",
+    "submit": "Odeslat zprávu",
+    "sending": "Odesílám…",
+    "successTitle": "Zpráva odeslána",
+    "successText": "Ozveme se obvykle do jednoho pracovního dne. Potvrzení jsme vám poslali e-mailem.",
+    "errForm": "Vyplňte prosím jméno, platný e-mail a zprávu.",
+    "errGdpr": "Potvrďte prosím souhlas se zpracováním údajů.",
+    "errRate": "Odeslali jste příliš mnoho zpráv za krátkou dobu. Zkuste to prosím později.",
+    "errServer": "Zprávu se nepodařilo odeslat. Zkuste to prosím znovu."
   }
 }

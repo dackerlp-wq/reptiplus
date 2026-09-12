@@ -60,12 +60,9 @@ export function ManualOrderForm({
 
   useEffect(() => {
     const q = query.trim();
-    if (q.length < 2) {
-      setResults([]);
-      return;
-    }
-    setSearching(true);
+    if (q.length < 2) return; // krátký dotaz: výsledky maže onChange
     const t = setTimeout(async () => {
+      setSearching(true); // až při skutečném požadavku (po debounce)
       try {
         setResults(await searchProductsForOrderAction(q, currency));
       } catch {
@@ -250,7 +247,10 @@ export function ManualOrderForm({
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-soft" />
               <input
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  if (e.target.value.trim().length < 2) setResults([]);
+                }}
                 placeholder="Hledat produkt podle názvu nebo SKU…"
                 className="w-full rounded-lg border border-cream-dark bg-white py-2 pl-9 pr-9 text-sm outline-none focus:border-forest"
               />

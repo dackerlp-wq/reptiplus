@@ -57,15 +57,10 @@ export function SearchBar({
   // Debounced fetch návrhů
   useEffect(() => {
     const query = q.trim();
-    if (query.length < 2) {
-      setCategories([]);
-      setItems([]);
-      setOpen(false);
-      return;
-    }
+    if (query.length < 2) return; // krátký dotaz: výsledky maže onChange
     const ctrl = new AbortController();
-    setLoading(true);
     const timer = setTimeout(async () => {
+      setLoading(true); // až při skutečném požadavku (po debounce), ne synchronně v efektu
       try {
         const res = await fetch(
           `/api/search?q=${encodeURIComponent(query)}&locale=${locale}`,
@@ -160,7 +155,15 @@ export function SearchBar({
           <input
             type="search"
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setQ(v);
+              if (v.trim().length < 2) {
+                setCategories([]);
+                setItems([]);
+                setOpen(false);
+              }
+            }}
             onFocus={() => total > 0 && setOpen(true)}
             onKeyDown={onKeyDown}
             placeholder={placeholder}

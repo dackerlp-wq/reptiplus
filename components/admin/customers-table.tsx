@@ -21,6 +21,44 @@ type SortKey = "name" | "orders" | "spent" | "created";
 
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", { dateStyle: "short" });
 
+
+/** Řaditelná hlavička tabulky (mimo render komponenty kvůli stabilní identitě). */
+function SortableTh<K extends string>({
+  col,
+  sortKey,
+  sortDir,
+  onToggle,
+  className,
+  children,
+}: {
+  col: K;
+  sortKey: K;
+  sortDir: "asc" | "desc";
+  onToggle: (k: K) => void;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const active = sortKey === col;
+  return (
+    <th className={cn("px-4 py-3", className)}>
+      <button
+        type="button"
+        onClick={() => onToggle(col)}
+        className={cn("inline-flex items-center gap-1 transition-colors hover:text-forest", active && "text-forest")}
+      >
+        {children}
+        {!active ? (
+          <ArrowUpDown className="size-3.5 opacity-40" />
+        ) : sortDir === "asc" ? (
+          <ArrowUp className="size-3.5" />
+        ) : (
+          <ArrowDown className="size-3.5" />
+        )}
+      </button>
+    </th>
+  );
+}
+
 export function CustomersTable({ customers }: { customers: CustomerRow[] }) {
   const [q, setQ] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created");
@@ -62,29 +100,6 @@ export function CustomersTable({ customers }: { customers: CustomerRow[] }) {
     return list;
   }, [customers, q, sortKey, sortDir]);
 
-  const SortIcon = ({ col }: { col: SortKey }) =>
-    sortKey !== col ? (
-      <ArrowUpDown className="size-3.5 opacity-40" />
-    ) : sortDir === "asc" ? (
-      <ArrowUp className="size-3.5" />
-    ) : (
-      <ArrowDown className="size-3.5" />
-    );
-  const Th = ({ col, children }: { col: SortKey; children: React.ReactNode }) => (
-    <th className="px-4 py-3">
-      <button
-        type="button"
-        onClick={() => toggleSort(col)}
-        className={cn(
-          "inline-flex items-center gap-1 transition-colors hover:text-forest",
-          sortKey === col && "text-forest",
-        )}
-      >
-        {children}
-        <SortIcon col={col} />
-      </button>
-    </th>
-  );
 
   return (
     <div>
@@ -102,12 +117,12 @@ export function CustomersTable({ customers }: { customers: CustomerRow[] }) {
         <table className="w-full text-sm">
           <thead className="border-b border-cream-dark text-left text-xs uppercase tracking-wide text-gray-soft">
             <tr>
-              <Th col="name">Jméno</Th>
+              <SortableTh col="name" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Jméno</SortableTh>
               <th className="px-4 py-3">E-mail</th>
               <th className="px-4 py-3">Telefon</th>
-              <Th col="orders">Objednávky</Th>
-              <Th col="spent">Útrata</Th>
-              <Th col="created">Registrace</Th>
+              <SortableTh col="orders" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Objednávky</SortableTh>
+              <SortableTh col="spent" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Útrata</SortableTh>
+              <SortableTh col="created" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort}>Registrace</SortableTh>
               <th className="px-4 py-3">Role</th>
             </tr>
           </thead>

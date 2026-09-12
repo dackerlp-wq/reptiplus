@@ -170,7 +170,7 @@ export default async function OrderDetailPage({
 }: {
   params: Promise<{ id: string; locale: string }>;
 }) {
-  const { id, locale } = await params;
+  const { id } = await params;
   const svc = createServiceClient();
   const { data: order } = await svc
     .from("order")
@@ -662,7 +662,7 @@ export default async function OrderDetailPage({
               Poslat zákazníkovi e-mail o změně stavu
               <span className="mt-0.5 block text-xs text-gray-soft">
                 Odešle se při změně na: zpracovává se, odesláno (se sledováním),
-                doručeno, stornováno. Stav platby „zaplaceno" vystaví fakturu a
+                doručeno, stornováno. Stav platby „zaplaceno“ vystaví fakturu a
                 pošle ji zákazníkovi.
               </span>
             </span>

@@ -5,7 +5,7 @@ import type { Locale } from "@/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
 import { getCart } from "@/lib/cart/cart";
 import { getShippingMethods, getPaymentMethods } from "@/lib/queries";
-import { getPacketaApiKey } from "@/lib/settings";
+import { freeShippingThreshold, getPacketaApiKey, getShippingSettings } from "@/lib/settings";
 import { localeCurrency, pickI18n } from "@/lib/i18n";
 import { CheckoutForm } from "@/components/reptiplus/checkout-form";
 import { BeginCheckoutTracker } from "@/components/reptiplus/track";
@@ -33,10 +33,11 @@ export default async function CheckoutPage({
   // Prázdný košík → zpět do košíku (nedává smysl objednávat nic)
   if (cart.lines.length === 0) redirect(`/${locale}/kosik`);
 
-  const [shipping, payment, packetaApiKey, supabase] = await Promise.all([
+  const [shipping, payment, packetaApiKey, shippingSettings, supabase] = await Promise.all([
     getShippingMethods(),
     getPaymentMethods(),
     getPacketaApiKey(),
+    getShippingSettings(),
     createClient(),
   ]);
   const {
@@ -52,10 +53,13 @@ export default async function CheckoutPage({
     : { data: [] };
 
   const currency = localeCurrency[locale];
+  // Doprava zdarma od částky (nastavení obchodu) — platí pro mezisoučet zboží.
+  const freeShippingFrom = freeShippingThreshold(shippingSettings, currency);
+  const freeShipping = freeShippingFrom != null && cart.subtotal >= freeShippingFrom;
   const shippingOptions = shipping.map((m) => ({
     code: m.code,
     name: pickI18n(m.name_i18n, locale),
-    fee: (currency === "CZK" ? m.price_czk : m.price_eur) ?? 0,
+    fee: freeShipping ? 0 : ((currency === "CZK" ? m.price_czk : m.price_eur) ?? 0),
     pickup: m.pickup_point,
   }));
   const paymentOptions = payment.map((m) => ({
@@ -82,6 +86,7 @@ export default async function CheckoutPage({
         subtotal={cart.subtotal}
         shippingOptions={shippingOptions}
         paymentOptions={paymentOptions}
+        freeShippingFrom={freeShippingFrom}
         defaultEmail={user?.email ?? ""}
         packetaApiKey={packetaApiKey}
         loggedIn={Boolean(user)}

@@ -11,7 +11,8 @@
     "about": "About us",
     "menu": "Menu",
     "viewAll": "View all",
-    "slogan": "What we use ourselves, we recommend with a clear conscience!"
+    "slogan": "What we use ourselves, we recommend with a clear conscience!",
+    "contact": "Contact"
   },
   "Cookies": {
     "title": "Cookies",
@@ -48,7 +49,15 @@
     "newsletterTitle": "Newsletter",
     "newsletterSubtitle": "Care tips, news and deals straight to your inbox.",
     "newsletterPlaceholder": "Your email",
-    "newsletterCta": "Subscribe"
+    "newsletterCta": "Subscribe",
+    "newsletterSent": "We've sent you a confirmation e-mail. The subscription starts once you open and confirm it.",
+    "newsletterAlready": "This e-mail is already subscribed. Thank you!",
+    "newsletterErrEmail": "Enter a valid e-mail.",
+    "newsletterErrServer": "Subscription failed, please try again.",
+    "newsletterConsent": "By subscribing you agree to receive our news. Unsubscribe any time via the link in the e-mail.",
+    "newsletterConfirmed": "Your subscription is confirmed. Thank you! The welcome e-mail with your discount is on its way.",
+    "newsletterUnsubscribed": "You've been unsubscribed. Sorry to see you go.",
+    "newsletterInvalid": "The link is invalid or has already been used."
   },
   "Product": {
     "addToCart": "Add to cart",
@@ -136,7 +145,9 @@
     "remove": "Remove",
     "subtotal": "Subtotal",
     "shippingNote": "Shipping and payment are selected at checkout.",
-    "checkout": "Proceed to checkout"
+    "checkout": "Proceed to checkout",
+    "freeShippingLeft": "{amount} more for free shipping",
+    "freeShippingReached": "You've got free shipping!"
   },
   "Checkout": {
     "title": "Checkout",
@@ -198,7 +209,9 @@
     "ico": "Company ID",
     "dic": "VAT ID",
     "saveAddress": "Save address to my account",
-    "addressLabelDefault": "Address"
+    "addressLabelDefault": "Address",
+    "freeShipping": "Free shipping",
+    "freeShippingFrom": "Free shipping from {amount}"
   },
   "OrderConfirm": {
     "title": "Thank you for your order!",
@@ -472,5 +485,43 @@
     "orderTimeline": "Order progress",
     "accountDeleted": "Your account has been deleted.",
     "adminEntry": "Administration"
+  },
+  "NotFound": {
+    "title": "We couldn't find that page",
+    "text": "The link may be outdated or the product is no longer sold. Try searching or go back home.",
+    "products": "Browse products",
+    "home": "Home"
+  },
+  "ErrorPage": {
+    "title": "Something went wrong",
+    "text": "Sorry, the page couldn't be loaded. Please try again; if it keeps happening, let us know.",
+    "retry": "Try again",
+    "home": "Home"
+  },
+  "Contact": {
+    "title": "Contact",
+    "metaDescription": "Contact Reptiplus — e-mail, phone, address and contact form.",
+    "intro": "Happy to help with lighting, heating or feeding. Reach us by phone, e-mail or the form below.",
+    "emailLabel": "E-mail",
+    "phoneLabel": "Phone",
+    "addressLabel": "Address",
+    "hoursLabel": "Opening hours",
+    "companyLabel": "Company details",
+    "formTitle": "Write to us",
+    "name": "Name",
+    "email": "E-mail",
+    "phone": "Phone",
+    "orderNumber": "Order number (if related)",
+    "subject": "Subject",
+    "message": "Message",
+    "gdpr": "I agree to the processing of my data to handle this request as described in the <link>privacy policy</link>.",
+    "submit": "Send message",
+    "sending": "Sending…",
+    "successTitle": "Message sent",
+    "successText": "We usually reply within one business day. A confirmation has been e-mailed to you.",
+    "errForm": "Please fill in your name, a valid e-mail and the message.",
+    "errGdpr": "Please confirm the data processing consent.",
+    "errRate": "Too many messages in a short time. Please try again later.",
+    "errServer": "The message couldn't be sent. Please try again."
   }
 }

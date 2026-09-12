@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { Cookie, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -48,6 +48,11 @@ function writeConsent(c: ConsentCategories) {
   window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: c }));
 }
 
+function subscribeConsent(cb: () => void) {
+  window.addEventListener(CHANGE_EVENT, cb);
+  return () => window.removeEventListener(CHANGE_EVENT, cb);
+}
+
 /** Otevře nastavení cookies (např. z odkazu v patičce). */
 export function openCookieSettings() {
   window.dispatchEvent(new Event(OPEN_EVENT));
@@ -55,14 +60,13 @@ export function openCookieSettings() {
 
 export function CookieConsent() {
   const t = useTranslations("Cookies");
-  const [mounted, setMounted] = useState(false);
-  const [decided, setDecided] = useState(true);
+  // Stav souhlasu je externí (cookie): na serveru neznámý (null), v prohlížeči true/false,
+  // po uložení se přepočítá přes event CHANGE_EVENT.
+  const decided = useSyncExternalStore(subscribeConsent, () => getConsent() !== null, () => null);
   const [showSettings, setShowSettings] = useState(false);
   const [draft, setDraft] = useState<ConsentCategories>(ALL_OFF);
 
   useEffect(() => {
-    setMounted(true);
-    setDecided(getConsent() !== null);
     const open = () => {
       setDraft(getConsent() ?? ALL_OFF);
       setShowSettings(true);
@@ -73,11 +77,10 @@ export function CookieConsent() {
 
   const save = (c: ConsentCategories) => {
     writeConsent(c);
-    setDecided(true);
     setShowSettings(false);
   };
 
-  if (!mounted) return null;
+  if (decided === null) return null;
   const bannerVisible = !decided && !showSettings;
   if (!bannerVisible && !showSettings) return null;
 

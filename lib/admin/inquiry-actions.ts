@@ -41,7 +41,7 @@ async function logEvent(
   if (error) console.error("[inquiry] zápis události selhal:", error.message);
 }
 
-function revalidate(_id?: string) {
+function revalidate() {
   revalidatePath("/", "layout"); // odznak v menu, seznam i detail
 }
 
@@ -73,7 +73,7 @@ export async function setInquiryStatusAction(fd: FormData) {
   if (error) throw new Error(error.message);
 
   await logEvent(id, admin, "status", null, { from: inq.status, to: status });
-  revalidate(id);
+  revalidate();
 }
 
 /* ── Interní poznámka ──────────────────────────────────────────────────── */
@@ -86,7 +86,7 @@ export async function addInquiryNoteAction(fd: FormData) {
   await logEvent(id, admin, "note", body);
   // updated_at drží trigger jen při update řádku → dotkneme se ho
   await createServiceClient().from("ledx_inquiry").update({ updated_at: new Date().toISOString() }).eq("id", id);
-  revalidate(id);
+  revalidate();
 }
 
 /* ── Nabídka ───────────────────────────────────────────────────────────── */
@@ -124,7 +124,7 @@ export async function saveInquiryQuoteAction(fd: FormData) {
     number,
   });
   if (statusChange) await logEvent(id, admin, "status", null, { from: inq.status, to: "quoted" });
-  revalidate(id);
+  revalidate();
 }
 
 /* ── Další kontakt (follow-up) ─────────────────────────────────────────── */
@@ -143,7 +143,7 @@ export async function setInquiryFollowUpAction(fd: FormData) {
   if (error) throw new Error(error.message);
 
   await logEvent(id, admin, "follow_up", null, { from: inq.follow_up_at, to: date });
-  revalidate(id);
+  revalidate();
 }
 
 /* ── E-mail zákazníkovi ────────────────────────────────────────────────── */
@@ -216,7 +216,7 @@ export async function sendInquiryEmailAction(
     await createServiceClient().from("ledx_inquiry").update({ updated_at: new Date().toISOString() }).eq("id", id);
   }
 
-  revalidate(id);
+  revalidate();
   return { status: "sent", at: new Date().toISOString() };
 }
 
@@ -251,7 +251,7 @@ export async function anonymizeInquiryAction(fd: FormData) {
     from: inq.status,
     to: closed,
   });
-  revalidate(id);
+  revalidate();
 }
 
 /** Smaže poptávku i s historií. Přesměrování na seznam řeší klient (InquiryDangerZone). */
