@@ -34,6 +34,7 @@ export async function buildOrderEmailData(orderId: string): Promise<OrderEmailDa
     shipping: order.shipping ?? 0,
     paymentFee: order.payment_fee ?? 0,
     discount: order.discount ?? 0,
+    voucher: order.voucher_amount ?? 0,
     total: order.total ?? 0,
     currency: order.currency === "EUR" ? "EUR" : "CZK",
     paymentMethod: order.payment_method ?? "",

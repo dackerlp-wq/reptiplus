@@ -8,6 +8,7 @@ export type Review = {
   body: string | null;
   createdAt: string;
   author: string | null;
+  verified: boolean;
 };
 
 export type ProductReviews = {
@@ -24,7 +25,7 @@ export async function getProductReviews(
   const { data } = await svc
     .from("review")
     .select(
-      "id, rating, title, body, created_at, customer:customer_id(full_name)",
+      "id, rating, title, body, created_at, verified_purchase, customer:customer_id(full_name)",
     )
     .eq("product_id", productId)
     .eq("is_approved", true)
@@ -36,6 +37,7 @@ export async function getProductReviews(
     title: string | null;
     body: string | null;
     created_at: string;
+    verified_purchase: boolean;
     customer: { full_name: string | null } | null;
   }[];
 
@@ -46,6 +48,7 @@ export async function getProductReviews(
     body: r.body,
     createdAt: r.created_at,
     author: r.customer?.full_name?.trim() || null,
+    verified: r.verified_purchase,
   }));
   const count = reviews.length;
   const average = count

@@ -390,6 +390,7 @@ export type Database = {
           id: string
           session_id: string | null
           updated_at: string
+          reminder_sent_at: string | null
         }
         Insert: {
           created_at?: string
@@ -397,6 +398,7 @@ export type Database = {
           id?: string
           session_id?: string | null
           updated_at?: string
+          reminder_sent_at?: string | null
         }
         Update: {
           created_at?: string
@@ -404,6 +406,7 @@ export type Database = {
           id?: string
           session_id?: string | null
           updated_at?: string
+          reminder_sent_at?: string | null
         }
         Relationships: [
           {
@@ -867,6 +870,8 @@ export type Database = {
           refunded_at: string | null
           updated_at: string
           locale: string
+          voucher_id: string | null
+          voucher_amount: number
         }
         Insert: {
           admin_note?: string | null
@@ -899,6 +904,8 @@ export type Database = {
           refunded_at?: string | null
           updated_at?: string
           locale?: string
+          voucher_id?: string | null
+          voucher_amount?: number
         }
         Update: {
           admin_note?: string | null
@@ -931,6 +938,8 @@ export type Database = {
           refunded_at?: string | null
           updated_at?: string
           locale?: string
+          voucher_id?: string | null
+          voucher_amount?: number
         }
         Relationships: [
           {
@@ -1071,6 +1080,9 @@ export type Database = {
           stock_qty: number
           updated_at: string
           vat_rate: number
+          low_stock_threshold: number | null
+          low_stock_notified_at: string | null
+          is_gift_voucher: boolean
         }
         Insert: {
           brand_id?: string | null
@@ -1096,6 +1108,9 @@ export type Database = {
           stock_qty?: number
           updated_at?: string
           vat_rate?: number
+          low_stock_threshold?: number | null
+          low_stock_notified_at?: string | null
+          is_gift_voucher?: boolean
         }
         Update: {
           brand_id?: string | null
@@ -1121,6 +1136,9 @@ export type Database = {
           stock_qty?: number
           updated_at?: string
           vat_rate?: number
+          low_stock_threshold?: number | null
+          low_stock_notified_at?: string | null
+          is_gift_voucher?: boolean
         }
         Relationships: [
           {
@@ -1312,6 +1330,182 @@ export type Database = {
           },
         ]
       }
+      gift_voucher: {
+        Row: {
+          id: string
+          code: string
+          value: number
+          balance: number
+          status: string
+          valid_to: string | null
+          order_id: string | null
+          recipient_name: string | null
+          recipient_email: string | null
+          message: string | null
+          note: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          value: number
+          balance: number
+          status?: string
+          valid_to?: string | null
+          order_id?: string | null
+          recipient_name?: string | null
+          recipient_email?: string | null
+          message?: string | null
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          value?: number
+          balance?: number
+          status?: string
+          valid_to?: string | null
+          order_id?: string | null
+          recipient_name?: string | null
+          recipient_email?: string | null
+          message?: string | null
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_voucher_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_voucher_redemption: {
+        Row: {
+          id: string
+          voucher_id: string
+          order_id: string
+          amount_czk: number
+          amount: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          voucher_id: string
+          order_id: string
+          amount_czk: number
+          amount: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          voucher_id?: string
+          order_id?: string
+          amount_czk?: number
+          amount?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_voucher_redemption_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "gift_voucher"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_voucher_redemption_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim: {
+        Row: {
+          id: string
+          type: string
+          status: string
+          order_number: string
+          order_id: string | null
+          customer_id: string | null
+          name: string
+          email: string
+          phone: string | null
+          items: string
+          reason: string | null
+          bank_account: string | null
+          locale: string
+          admin_note: string | null
+          resolved_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          type: string
+          status?: string
+          order_number: string
+          order_id?: string | null
+          customer_id?: string | null
+          name: string
+          email: string
+          phone?: string | null
+          items: string
+          reason?: string | null
+          bank_account?: string | null
+          locale?: string
+          admin_note?: string | null
+          resolved_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          type?: string
+          status?: string
+          order_number?: string
+          order_id?: string | null
+          customer_id?: string | null
+          name?: string
+          email?: string
+          phone?: string | null
+          items?: string
+          reason?: string | null
+          bank_account?: string | null
+          locale?: string
+          admin_note?: string | null
+          resolved_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review: {
         Row: {
           body: string | null
@@ -1322,6 +1516,7 @@ export type Database = {
           product_id: string
           rating: number
           title: string | null
+          verified_purchase: boolean
         }
         Insert: {
           body?: string | null
@@ -1332,6 +1527,7 @@ export type Database = {
           product_id: string
           rating: number
           title?: string | null
+          verified_purchase?: boolean
         }
         Update: {
           body?: string | null
@@ -1342,6 +1538,7 @@ export type Database = {
           product_id?: string
           rating?: number
           title?: string | null
+          verified_purchase?: boolean
         }
         Relationships: [
           {

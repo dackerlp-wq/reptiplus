@@ -2,6 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+
+/** Stavy objednávky, které počítáme jako uskutečněný nákup. */
+const PURCHASED_STATUSES = ["paid", "processing", "shipped", "delivered"] as const;
+
+/** Koupil zákazník tento produkt (zaplacená / odeslaná / doručená objednávka s položkou)? */
+async function hasPurchased(customerId: string, productId: string): Promise<boolean> {
+  const svc = createServiceClient();
+  const { data } = await svc
+    .from("order_item")
+    .select("id, order:order_id!inner(customer_id, status, payment_status)")
+    .eq("product_id", productId)
+    .eq("order.customer_id", customerId)
+    .or(`status.in.(${PURCHASED_STATUSES.join(",")}),payment_status.eq.paid`, { referencedTable: "order" })
+    .limit(1);
+  return (data?.length ?? 0) > 0;
+}
 
 export type ReviewState =
   | { status: "idle" }
@@ -28,13 +45,15 @@ export async function submitReviewAction(
   if (!body) return { status: "error", error: "BODY" };
   if (!productId) return { status: "error", error: "SERVER" };
 
-  // RLS: owner insert (customer_id = auth.uid()), is_approved zůstává false.
-  const { error } = await supabase.from("review").insert({
+  // Vkládá service klient (štítek „ověřený nákup" nesmí jít nastavit z klienta); is_approved zůstává false.
+  const verified = await hasPurchased(user.id, productId);
+  const { error } = await createServiceClient().from("review").insert({
     product_id: productId,
     customer_id: user.id,
     rating,
     title: title || null,
     body,
+    verified_purchase: verified,
   });
   if (error) return { status: "error", error: "SERVER" };
 

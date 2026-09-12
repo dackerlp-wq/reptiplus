@@ -36,6 +36,8 @@ type ProductRow = {
   compare_at_czk: number | null;
   compare_at_eur: number | null;
   stock_qty: number;
+  low_stock_threshold?: number | null;
+  is_gift_voucher?: boolean;
   category_id: string | null;
   brand_id: string | null;
   is_published: boolean;
@@ -289,6 +291,20 @@ export function ProductForm({
                 Sklad se řídí variantami (součet jejich skladů).
               </p>
             )}
+            <label className={label}>
+              <span className={legend}>Upozornit na docházející sklad při (ks)</span>
+              <input
+                name="low_stock_threshold"
+                type="number"
+                min={0}
+                defaultValue={product?.low_stock_threshold ?? ""}
+                placeholder="prázdné = nehlídat"
+                className={input}
+              />
+              <span className="text-xs text-gray-soft">
+                Klesne-li sklad (u variant součet) na tuto hodnotu nebo pod ni, přijde obchodu e-mail. Jednou, znovu až po naskladnění.
+              </span>
+            </label>
           </div>
 
           {/* DPH */}
@@ -317,6 +333,15 @@ export function ProductForm({
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="is_featured" defaultChecked={product?.is_featured ?? false} className="size-4 accent-forest" />
               Doporučujeme
+            </label>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" name="is_gift_voucher" defaultChecked={product?.is_gift_voucher ?? false} className="mt-0.5 size-4 accent-forest" />
+              <span>
+                Dárkový poukaz
+                <span className="block text-xs text-gray-soft">
+                  Po zaplacení objednávky se vygeneruje kód v hodnotě ceny produktu a pošle zákazníkovi e-mailem (PDF). Nastav sklad např. 9999.
+                </span>
+              </span>
             </label>
           </div>
 

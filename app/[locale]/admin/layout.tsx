@@ -14,6 +14,8 @@ import {
   LogOut,
   FileText,
   Mail,
+  Gift,
+  PackageX,
 } from "lucide-react";
 import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
@@ -29,10 +31,12 @@ const NAV = [
   { href: "/admin/brands", label: "Značky", icon: Tag },
   { href: "/admin/orders", label: "Objednávky", icon: ShoppingBag },
   { href: "/admin/invoices", label: "Faktury", icon: FileText },
+  { href: "/admin/claims", label: "Reklamace", icon: PackageX },
   { href: "/admin/ledx", label: "LEDX řady", icon: Sparkles },
   { href: "/admin/inquiries", label: "Poptávky LEDX", icon: Lightbulb },
   { href: "/admin/customers", label: "Zákazníci", icon: Users },
   { href: "/admin/discounts", label: "Slevy", icon: Ticket },
+  { href: "/admin/vouchers", label: "Poukazy", icon: Gift },
   { href: "/admin/reviews", label: "Recenze", icon: Star },
   { href: "/admin/newsletter", label: "Newsletter", icon: Mail },
   { href: "/admin/settings", label: "Nastavení", icon: Settings },

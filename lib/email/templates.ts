@@ -109,6 +109,8 @@ export type OrderEmailData = {
   shipping: number;
   paymentFee: number;
   discount: number;
+  /** Uplatněný dárkový poukaz (v měně objednávky). */
+  voucher?: number;
   total: number;
   currency: "CZK" | "EUR";
   paymentMethod: string; // kód: cod | bank | card …
@@ -136,6 +138,7 @@ const COPY = {
     shipping: "Doprava",
     paymentFee: "Poplatek za platbu",
     discount: "Sleva",
+    voucher: "Dárkový poukaz",
     total: "Celkem",
     delivery: "Doručovací adresa",
     billing: "Fakturační adresa",
@@ -168,6 +171,7 @@ const COPY = {
     shipping: "Shipping",
     paymentFee: "Payment fee",
     discount: "Discount",
+    voucher: "Gift voucher",
     total: "Total",
     delivery: "Delivery address",
     billing: "Billing address",
@@ -200,6 +204,7 @@ const COPY = {
     shipping: "Versand",
     paymentFee: "Zahlungsgebühr",
     discount: "Rabatt",
+    voucher: "Geschenkgutschein",
     total: "Gesamt",
     delivery: "Lieferadresse",
     billing: "Rechnungsadresse",
@@ -295,6 +300,7 @@ ${sum(c.subtotal, money(d.subtotal, d.locale))}
 ${sum(d.shippingMethodLabel ? `${c.shipping} — ${d.shippingMethodLabel}` : c.shipping, money(d.shipping, d.locale))}
 ${d.paymentFee > 0 ? sum(d.paymentMethodLabel ? `${c.paymentFee} — ${d.paymentMethodLabel}` : c.paymentFee, money(d.paymentFee, d.locale)) : ""}
 ${d.discount > 0 ? sum(c.discount, `− ${money(d.discount, d.locale)}`, { color: BRAND }) : ""}
+${(d.voucher ?? 0) > 0 ? sum(c.voucher, `− ${money(d.voucher ?? 0, d.locale)}`, { color: BRAND }) : ""}
 ${sum(c.total, money(d.total, d.locale), { strong: true })}
 </table>`;
 }
@@ -341,6 +347,7 @@ ${footerRow(d.locale)}`;
     `${c.shipping}${d.shippingMethodLabel ? ` (${d.shippingMethodLabel})` : ""}: ${money(d.shipping, d.locale)}`,
     ...(d.paymentFee > 0 ? [`${c.paymentFee}: ${money(d.paymentFee, d.locale)}`] : []),
     ...(d.discount > 0 ? [`${c.discount}: −${money(d.discount, d.locale)}`] : []),
+    ...((d.voucher ?? 0) > 0 ? [`${c.voucher}: −${money(d.voucher ?? 0, d.locale)}`] : []),
     `${c.total}: ${money(d.total, d.locale)}`,
     "",
     `${c.delivery}: ${addressText(d.shippingAddress)}`,
@@ -371,6 +378,7 @@ export function newOrderNotificationEmail(d: OrderEmailData): {
   ];
   if (d.shippingAddress?.phone) meta.push(["Telefon", d.shippingAddress.phone]);
   if (d.discount > 0) meta.push(["Sleva", `−${money(d.discount, d.locale)}`]);
+  if ((d.voucher ?? 0) > 0) meta.push(["Dárkový poukaz", `−${money(d.voucher ?? 0, d.locale)}`]);
 
   const inner = `
 <tr><td style="padding:28px;">
@@ -1103,5 +1111,270 @@ export function contactShopEmail(d: { name: string; email: string; phone: string
     subject: `Kontakt: ${d.subject || d.name}${d.orderNumber ? ` (${d.orderNumber})` : ""}`,
     html: layout(inner, d.message.slice(0, 140)),
     text: [...rows.map(([k, v]) => `${k}: ${v}`), "", d.message].join("\n"),
+  };
+}
+
+/* ── Opuštěný košík ─────────────────────────────────────────────────────── */
+
+const ABANDONED_COPY = {
+  cs: {
+    subject: "Máte rozpracovaný nákup — Reptiplus",
+    title: "Nechali jste něco v košíku",
+    body: (name: string) => `${name ? `Dobrý den, ${name},` : "Dobrý den,"} v košíku na Reptiplus na vás čeká zboží. Přidali jsme si ho stranou, ale sklad nedržíme neomezeně dlouho.`,
+    cta: "Zpět do košíku",
+    note: "Pokud jste už nakoupili nebo o zboží nemáte zájem, tento e-mail prostě ignorujte. Posíláme ho jen jednou.",
+    qty: "ks",
+  },
+  en: {
+    subject: "You left something in your cart — Reptiplus",
+    title: "Your cart is waiting",
+    body: (name: string) => `${name ? `Hello ${name},` : "Hello,"} the items in your Reptiplus cart are still waiting for you. We've set them aside, but stock doesn't last forever.`,
+    cta: "Back to cart",
+    note: "If you've already ordered or changed your mind, just ignore this e-mail. We only send it once.",
+    qty: "pcs",
+  },
+  de: {
+    subject: "Sie haben etwas im Warenkorb gelassen — Reptiplus",
+    title: "Ihr Warenkorb wartet",
+    body: (name: string) => `${name ? `Hallo ${name},` : "Hallo,"} die Artikel in Ihrem Reptiplus-Warenkorb warten noch auf Sie. Wir haben sie beiseitegelegt, aber der Lagerbestand ist nicht unbegrenzt.`,
+    cta: "Zurück zum Warenkorb",
+    note: "Falls Sie bereits bestellt haben oder kein Interesse mehr haben, ignorieren Sie diese E-Mail einfach. Wir senden sie nur einmal.",
+    qty: "Stk.",
+  },
+} as const;
+
+/** Připomínka opuštěného košíku (jen přihlášení zákazníci, jednou na košík). */
+export function abandonedCartEmail(d: {
+  locale: Locale;
+  name: string;
+  items: { name: string; qty: number; lineTotal: number }[];
+  cartUrl: string;
+}): { subject: string; html: string; text: string } {
+  const c = ABANDONED_COPY[d.locale] ?? ABANDONED_COPY.cs;
+  const rows = d.items
+    .map(
+      (it) => `<tr>
+<td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:14px;">${escapeHtml(it.name)} <span style="color:${MUTED};">× ${it.qty} ${c.qty}</span></td>
+<td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:14px;text-align:right;white-space:nowrap;">${money(it.lineTotal, d.locale)}</td>
+</tr>`,
+    )
+    .join("");
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 12px;font-size:22px;color:${INK};">${c.title}</h1>
+<p style="margin:0 0 18px;font-size:14px;line-height:1.55;">${escapeHtml(c.body(d.name))}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;">${rows}</table>
+${button(d.cartUrl, c.cta)}
+<p style="margin:22px 0 0;font-size:12px;color:${MUTED};">${c.note}</p>
+</td></tr>
+${footerRow(d.locale)}`;
+  return {
+    subject: c.subject,
+    html: layout(inner, c.body(d.name).slice(0, 140)),
+    text: [
+      c.title,
+      "",
+      c.body(d.name),
+      "",
+      ...d.items.map((it) => `– ${it.name} × ${it.qty} ${c.qty}: ${money(it.lineTotal, d.locale)}`),
+      "",
+      `${c.cta}: ${d.cartUrl}`,
+      "",
+      c.note,
+    ].join("\n"),
+  };
+}
+
+/* ── Docházející sklad (interní e-mail obchodu) ─────────────────────────── */
+
+/** Upozornění obchodu na produkty pod limitem skladu (česky, interní). */
+export function lowStockEmail(d: {
+  products: { name: string; sku: string | null; stock: number; threshold: number; adminUrl: string }[];
+}): { subject: string; html: string; text: string } {
+  const rows = d.products
+    .map(
+      (p) => `<tr>
+<td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:14px;"><a href="${p.adminUrl}" style="color:${BRAND};">${escapeHtml(p.name)}</a>${p.sku ? ` <span style="color:${MUTED};">(${escapeHtml(p.sku)})</span>` : ""}</td>
+<td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:14px;text-align:right;white-space:nowrap;"><strong>${p.stock} ks</strong> <span style="color:${MUTED};">/ limit ${p.threshold}</span></td>
+</tr>`,
+    )
+    .join("");
+  const title = d.products.length === 1 ? "Dochází sklad: 1 produkt" : `Dochází sklad: ${d.products.length} produktů`;
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 12px;font-size:22px;color:${INK};">${title}</h1>
+<p style="margin:0 0 18px;font-size:14px;line-height:1.55;">Tyto produkty klesly na limit nastavený v adminu nebo pod něj. Upozornění posíláme jednou; znovu až po naskladnění nad limit.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
+</td></tr>
+${footerRow("cs")}`;
+  return {
+    subject: `${title} — Reptiplus admin`,
+    html: layout(inner, title),
+    text: [title, "", ...d.products.map((p) => `– ${p.name}${p.sku ? ` (${p.sku})` : ""}: ${p.stock} ks / limit ${p.threshold} — ${p.adminUrl}`)].join("\n"),
+  };
+}
+
+/* ── Dárkové poukazy ────────────────────────────────────────────────────── */
+
+const VOUCHER_COPY = {
+  cs: {
+    subject: (n: number) => (n === 1 ? "Váš dárkový poukaz — Reptiplus" : `Vaše dárkové poukazy (${n}) — Reptiplus`),
+    title: (n: number) => (n === 1 ? "Dárkový poukaz je připravený" : "Dárkové poukazy jsou připravené"),
+    body: (order: string | null) => `Děkujeme za nákup${order ? ` (objednávka ${order})` : ""}. Poukaz najdete v příloze jako PDF k vytištění nebo přeposlání. Kód stačí zadat v pokladně do pole „Dárkový poukaz“; čerpat ho lze i postupně.`,
+    value: "Hodnota",
+    validTo: "Platí do",
+    cta: "Jít nakupovat",
+  },
+  en: {
+    subject: (n: number) => (n === 1 ? "Your gift voucher — Reptiplus" : `Your gift vouchers (${n}) — Reptiplus`),
+    title: (n: number) => (n === 1 ? "Your gift voucher is ready" : "Your gift vouchers are ready"),
+    body: (order: string | null) => `Thank you for your purchase${order ? ` (order ${order})` : ""}. The voucher is attached as a PDF to print or forward. Enter the code in the “Gift voucher” field at checkout; the balance can be used across several orders.`,
+    value: "Value",
+    validTo: "Valid until",
+    cta: "Start shopping",
+  },
+  de: {
+    subject: (n: number) => (n === 1 ? "Ihr Geschenkgutschein — Reptiplus" : `Ihre Geschenkgutscheine (${n}) — Reptiplus`),
+    title: (n: number) => (n === 1 ? "Ihr Geschenkgutschein ist bereit" : "Ihre Geschenkgutscheine sind bereit"),
+    body: (order: string | null) => `Vielen Dank für Ihren Einkauf${order ? ` (Bestellung ${order})` : ""}. Der Gutschein ist als PDF angehängt – zum Ausdrucken oder Weiterleiten. Geben Sie den Code an der Kasse im Feld „Geschenkgutschein“ ein; das Guthaben kann über mehrere Bestellungen genutzt werden.`,
+    value: "Wert",
+    validTo: "Gültig bis",
+    cta: "Jetzt einkaufen",
+  },
+} as const;
+
+export function giftVoucherEmail(d: {
+  locale: Locale;
+  vouchers: { code: string; valueCzk: number; validTo: string | null }[];
+  shopUrl: string;
+  orderNumber: string | null;
+}): { subject: string; html: string; text: string } {
+  const c = VOUCHER_COPY[d.locale] ?? VOUCHER_COPY.cs;
+  const n = d.vouchers.length;
+  const rows = d.vouchers
+    .map(
+      (v) => `<tr><td style="padding:10px 0;border-bottom:1px solid ${BORDER};">
+<div style="font-family:monospace;font-size:20px;font-weight:bold;color:${INK};letter-spacing:1px;">${escapeHtml(v.code)}</div>
+<div style="font-size:13px;color:${MUTED};">${c.value}: <strong style="color:${INK};">${money(v.valueCzk, "cs")}</strong>${v.validTo ? ` · ${c.validTo} ${escapeHtml(v.validTo)}` : ""}</div>
+</td></tr>`,
+    )
+    .join("");
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 12px;font-size:22px;color:${INK};">${c.title(n)}</h1>
+<p style="margin:0 0 18px;font-size:14px;line-height:1.55;">${escapeHtml(c.body(d.orderNumber))}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;">${rows}</table>
+${button(d.shopUrl, c.cta)}
+</td></tr>
+${footerRow(d.locale)}`;
+  return {
+    subject: c.subject(n),
+    html: layout(inner, c.body(d.orderNumber).slice(0, 140)),
+    text: [
+      c.title(n),
+      "",
+      c.body(d.orderNumber),
+      "",
+      ...d.vouchers.map((v) => `${v.code} — ${c.value}: ${money(v.valueCzk, "cs")}${v.validTo ? ` · ${c.validTo} ${v.validTo}` : ""}`),
+      "",
+      `${c.cta}: ${d.shopUrl}`,
+    ].join("\n"),
+  };
+}
+
+/* ── Reklamace / odstoupení od smlouvy ──────────────────────────────────── */
+
+const CLAIM_COPY = {
+  cs: {
+    claim: { subject: (n: string) => `Přijali jsme vaši reklamaci k objednávce ${n} — Reptiplus`, title: "Reklamaci jsme přijali", body: "Děkujeme, reklamaci jsme zaevidovali. Ozveme se vám nejpozději do 30 dnů, obvykle mnohem dřív. Zboží zatím neposílejte, dostanete od nás pokyny." },
+    withdrawal: { subject: (n: string) => `Přijali jsme odstoupení od smlouvy k objednávce ${n} — Reptiplus`, title: "Odstoupení od smlouvy jsme přijali", body: "Děkujeme, odstoupení jsme zaevidovali. Zboží nám prosím pošlete zpět do 14 dnů (adresu najdete níže). Peníze vracíme nejpozději do 14 dnů od doručení zboží zpět." },
+    order: "Objednávka",
+    items: "Zboží",
+    reason: "Popis",
+    address: "Adresa pro vrácení",
+  },
+  en: {
+    claim: { subject: (n: string) => `We received your claim for order ${n} — Reptiplus`, title: "Claim received", body: "Thank you, your claim has been registered. We'll get back to you within 30 days, usually much sooner. Please don't ship anything yet — we'll send instructions." },
+    withdrawal: { subject: (n: string) => `We received your withdrawal for order ${n} — Reptiplus`, title: "Withdrawal received", body: "Thank you, your withdrawal has been registered. Please return the goods within 14 days (address below). We refund within 14 days of receiving the goods back." },
+    order: "Order",
+    items: "Items",
+    reason: "Description",
+    address: "Return address",
+  },
+  de: {
+    claim: { subject: (n: string) => `Ihre Reklamation zur Bestellung ${n} ist eingegangen — Reptiplus`, title: "Reklamation eingegangen", body: "Vielen Dank, Ihre Reklamation ist registriert. Wir melden uns spätestens innerhalb von 30 Tagen, meist deutlich früher. Bitte noch nichts zurücksenden – Sie erhalten Anweisungen von uns." },
+    withdrawal: { subject: (n: string) => `Ihr Widerruf zur Bestellung ${n} ist eingegangen — Reptiplus`, title: "Widerruf eingegangen", body: "Vielen Dank, Ihr Widerruf ist registriert. Bitte senden Sie die Ware innerhalb von 14 Tagen zurück (Adresse unten). Wir erstatten spätestens 14 Tage nach Erhalt der Ware." },
+    order: "Bestellung",
+    items: "Artikel",
+    reason: "Beschreibung",
+    address: "Rücksendeadresse",
+  },
+} as const;
+
+export function claimConfirmEmail(d: { type: "claim" | "withdrawal"; locale: Locale; name: string; orderNumber: string; items: string; reason: string | null; returnAddress?: string | null }): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const c = CLAIM_COPY[d.locale] ?? CLAIM_COPY.cs;
+  const k = c[d.type];
+  const rows = [
+    [c.order, d.orderNumber],
+    [c.items, d.items],
+    ...(d.reason ? [[c.reason, d.reason]] : []),
+    ...(d.type === "withdrawal" && d.returnAddress ? [[c.address, d.returnAddress]] : []),
+  ];
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 12px;font-size:22px;color:${INK};">${k.title}</h1>
+<p style="margin:0 0 18px;font-size:14px;line-height:1.55;">${escapeHtml(k.body)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+${rows.map(([l, v]) => `<tr><td style="padding:6px 0;font-size:12px;color:${MUTED};vertical-align:top;width:140px;">${escapeHtml(l)}</td><td style="padding:6px 0;font-size:14px;white-space:pre-wrap;">${escapeHtml(v)}</td></tr>`).join("")}
+</table>
+</td></tr>
+${footerRow(d.locale)}`;
+  return {
+    subject: k.subject(d.orderNumber),
+    html: layout(inner, k.body.slice(0, 140)),
+    text: [k.title, "", k.body, "", ...rows.map(([l, v]) => `${l}: ${v}`)].join("\n"),
+  };
+}
+
+export function claimShopEmail(d: {
+  type: "claim" | "withdrawal";
+  name: string;
+  email: string;
+  phone: string | null;
+  orderNumber: string;
+  items: string;
+  reason: string | null;
+  bankAccount: string | null;
+  locale: string;
+  orderFound: boolean;
+  claimId: string;
+}): { subject: string; html: string; text: string } {
+  const label = d.type === "claim" ? "Reklamace" : "Odstoupení od smlouvy";
+  const rows: [string, string][] = [
+    ["Objednávka", `${d.orderNumber}${d.orderFound ? "" : " (číslo nenalezeno!)"}`],
+    ["Zákazník", `${d.name} <${d.email}>${d.phone ? `, ${d.phone}` : ""}`],
+    ["Jazyk", d.locale.toUpperCase()],
+    ["Zboží", d.items],
+    ...(d.reason ? [["Popis", d.reason] as [string, string]] : []),
+    ...(d.bankAccount ? [["Účet pro vrácení", d.bankAccount] as [string, string]] : []),
+  ];
+  const adminUrl = `https://reptiplus.cz/cs/admin/claims?focus=${d.claimId}`;
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 12px;font-size:22px;color:${INK};">${label}: ${escapeHtml(d.orderNumber)}</h1>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+${rows.map(([l, v]) => `<tr><td style="padding:6px 0;font-size:12px;color:${MUTED};vertical-align:top;width:140px;">${escapeHtml(l)}</td><td style="padding:6px 0;font-size:14px;white-space:pre-wrap;">${escapeHtml(v)}</td></tr>`).join("")}
+</table>
+<p style="margin:18px 0 0;">${button(adminUrl, "Otevřít v administraci")}</p>
+</td></tr>
+${footerRow("cs")}`;
+  return {
+    subject: `${label} ${d.orderNumber} — ${d.name}`,
+    html: layout(inner, `${label} od ${d.name}`),
+    text: [`${label}: ${d.orderNumber}`, "", ...rows.map(([l, v]) => `${l}: ${v}`), "", adminUrl].join("\n"),
   };
 }

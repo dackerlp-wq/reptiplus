@@ -12,7 +12,9 @@
     "menu": "Menu",
     "viewAll": "View all",
     "slogan": "What we use ourselves, we recommend with a clear conscience!",
-    "contact": "Contact"
+    "contact": "Contact",
+    "claim": "Claims",
+    "withdrawal": "Returns"
   },
   "Cookies": {
     "title": "Cookies",
@@ -108,7 +110,8 @@
       "BODY": "Please write your review.",
       "AUTH": "Please sign in to write a review.",
       "SERVER": "Couldn't submit the review, please try again."
-    }
+    },
+    "verified": "Verified purchase"
   },
   "Catalog": {
     "title": "All products",
@@ -191,7 +194,8 @@
       "STOCK": "Some item is no longer in stock in the requested quantity.",
       "DISCOUNT": "The discount code is no longer valid, please remove it.",
       "PICKUP": "Please select a pickup point.",
-      "SERVER": "We couldn't complete the order. Please try again."
+      "SERVER": "We couldn't complete the order. Please try again.",
+      "VOUCHER": "The gift voucher could not be applied, please check the code."
     },
     "discountErrors": {
       "NOT_FOUND": "Discount code not found.",
@@ -211,7 +215,18 @@
     "saveAddress": "Save address to my account",
     "addressLabelDefault": "Address",
     "freeShipping": "Free shipping",
-    "freeShippingFrom": "Free shipping from {amount}"
+    "freeShippingFrom": "Free shipping from {amount}",
+    "voucherTitle": "Gift voucher",
+    "voucherPlaceholder": "Voucher code (DP-XXXX-XXXX)",
+    "voucherApplied": "Voucher {code} applied, balance {balance}",
+    "voucher": "Gift voucher",
+    "voucherErrors": {
+      "NOT_FOUND": "No voucher with this code.",
+      "INACTIVE": "This voucher is not valid.",
+      "EXPIRED": "This voucher has expired.",
+      "EMPTY": "This voucher has no balance left.",
+      "CURRENCY": "The voucher cannot be applied in this currency right now."
+    }
   },
   "OrderConfirm": {
     "title": "Thank you for your order!",
@@ -236,7 +251,10 @@
     "paymentMessage": "Message for recipient",
     "documents": "Documents",
     "invoice": "Invoice",
-    "creditNote": "Credit note"
+    "creditNote": "Credit note",
+    "voucher": "Gift voucher",
+    "claimLink": "Make a claim",
+    "withdrawalLink": "Return within 14 days"
   },
   "ResetPassword": {
     "title": "Reset password",
@@ -523,5 +541,44 @@
     "errGdpr": "Please confirm the data processing consent.",
     "errRate": "Too many messages in a short time. Please try again later.",
     "errServer": "The message couldn't be sent. Please try again."
+  },
+  "Claims": {
+    "claimTitle": "Product claim",
+    "claimMeta": "Reptiplus claim form – claims are handled within 30 days, usually sooner.",
+    "claimIntro": "Something isn't working as it should? Fill in the form and we'll get back to you with the next steps. Please don't ship anything yet.",
+    "claimStep1": "Enter your order number, the item(s) concerned and describe the fault (a photo by e-mail helps).",
+    "claimStep2": "Within 2 working days we'll tell you how and where to send the goods, or resolve it remotely.",
+    "claimStep3": "Claims are settled within 30 days of receiving the goods.",
+    "claimLegal": "Details are in our <link>claims policy</link>.",
+    "withdrawalTitle": "Withdrawal within 14 days",
+    "withdrawalMeta": "Form for returning goods within 14 days without giving a reason.",
+    "withdrawalIntro": "Goods bought online can be returned within 14 days of delivery without giving a reason. Fill in the form and send the goods back to us.",
+    "withdrawalStep1": "Enter the order number and what you are returning. No reason needed.",
+    "withdrawalStep2": "Send the complete, undamaged goods to our address within 14 days (not cash on delivery).",
+    "withdrawalStep3": "We refund within 14 days of receiving the goods, the same way you paid or to the account given.",
+    "withdrawalLegal": "Conditions are in our <link>terms and conditions</link>.",
+    "returnAddress": "Return address",
+    "successTitle": "Sent, thank you.",
+    "successClaim": "Your claim is registered and a confirmation is on its way by e-mail. We'll be in touch with the next steps.",
+    "successWithdrawal": "Your withdrawal is registered and a confirmation with the return address is on its way by e-mail.",
+    "orderNumber": "Order number",
+    "email": "E-mail",
+    "name": "Full name",
+    "phone": "Phone",
+    "items": "Item(s) concerned",
+    "itemsPlaceholder": "e.g. Arcadia T5 39 W – 1 pc",
+    "reason": "Description of the fault",
+    "reasonOptional": "Note (optional)",
+    "reasonPlaceholder": "What doesn't work, since when, under what conditions…",
+    "reasonOptionalPlaceholder": "Anything that helps us process the return faster.",
+    "bankAccount": "Bank account for the refund",
+    "bankAccountHint": "Card payments are refunded to the card; no account needed.",
+    "gdpr": "I agree to the processing of my data to handle this request (<link>privacy policy</link>).",
+    "errForm": "Please fill in all required fields.",
+    "errGdpr": "We can't accept the request without your consent.",
+    "errRate": "Too many submissions, please try again in a moment.",
+    "errServer": "Sending failed, please try again or e-mail us.",
+    "sending": "Sending…",
+    "submit": "Send"
   }
 }

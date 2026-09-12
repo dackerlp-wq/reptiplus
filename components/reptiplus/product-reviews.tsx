@@ -95,8 +95,13 @@ export function ProductReviews({
                   {r.body}
                 </p>
               )}
-              <p className="mt-2 text-xs text-gray-soft">
-                {r.author || t("anonymous")}
+              <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-soft">
+                <span>{r.author || t("anonymous")}</span>
+                {r.verified && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 font-medium text-success">
+                    <CheckCircle2 className="size-3" /> {t("verified")}
+                  </span>
+                )}
               </p>
             </li>
           ))}

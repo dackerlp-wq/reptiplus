@@ -25,3 +25,7 @@ build/
 
 .vercel
 /LEDX/
+
+# testy
+/playwright-report/
+/test-results/

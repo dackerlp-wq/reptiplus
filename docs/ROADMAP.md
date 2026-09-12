@@ -30,20 +30,22 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 - [x] **9e. Stránky 404 a chyb** — přeložená 404 v layoutu obchodu, `error.tsx` s tlačítkem Zkusit znovu, `global-error.tsx`. ESLint opraven (`npm run lint`, ESLint 9 + eslint-config-next).
 
 ## Fáze 4 — Sklad & dashboard
-- [ ] **10. Sklad** — import z CSV, e-mail upozornění na docházející sklad, historie pohybů, hromadná úprava.
-- [ ] **11. Dashboard** — grafy tržeb v čase, průměrná hodnota objednávky, konverze, nejprodávanější, opuštěné košíky.
+- [x] **10. Sklad** — limit docházejícího skladu na produktu + e-mail obchodu (jednou, reset po naskladnění), CSV import skladu a cen podle SKU s náhledem (Produkty → Import CSV), přehled docházejících na dashboardu. Historie pohybů a hromadná úprava zatím ne.
+- [x] **11. Dashboard** — období 7/30/90/365 dní, tržby (zaplacené, EUR kurzem ČNB) s porovnáním s předchozím obdobím, počet objednávek, průměrná objednávka, konverze košíků (orientační), graf po dnech/měsících, nejprodávanější produkty, docházející sklad, opuštěné košíky, nové reklamace, objednávky k vyřízení. Migrace `20260912_0005`.
 
 ## Fáze 5 — Zákazník / UX
 - [x] **12. Oblíbené (wishlist)** — srdíčko na kartě i v detailu (`components/reptiplus/wishlist-button.tsx`, ID přes `/api/wishlist`), seznam v účtu.
 - [x] **13. Účet zákazníka** — sekce Přehled / Objednávky / Adresy / Oblíbené / Recenze / Profil (`app/[locale]/(shop)/ucet/*`, `lib/account/*`). Adresy s firemními údaji (IČO/DIČ) a výchozí adresou, předvyplnění a uložení adresy v pokladně, přepínač „Nakupuji na firmu“. Detail objednávky s průběhem, sledováním zásilky, doklady a „Objednat znovu“. Profil: jméno, telefon, změna hesla, změna e-mailu (s potvrzením), newsletter, smazání účtu (GDPR — objednávky a doklady zůstanou anonymizované). Hostovské objednávky se stejným ověřeným e-mailem se při přihlášení připojí k účtu. Migrace `20260912_0003`.
 - [x] **14. „Naskladnit — upozornit mě"** — formulář u vyprodaného produktu/varianty (`stock_alert`), e-mail po naskladnění z adminu (`lib/stock-alerts/notify.ts`).
-- [ ] **15. Recenze+** — ověřený nákup, odpověď obchodu, fotky.
+- [x] **15. Recenze+** — štítek „Ověřený nákup“ (podle objednávek zákazníka, nastavuje server). Odpověď obchodu a fotky odloženy.
+- [x] **15b. Dárkové poukazy** — produkt s příznakem „Dárkový poukaz“ → po zaplacení kódy DP-XXXX-XXXX e-mailem s PDF (platnost 12 měsíců); ruční vystavení v adminu (Poukazy), uplatnění v pokladně samostatným polem s postupným čerpáním zůstatku (EUR kurzem ČNB), plně uhrazená objednávka rovnou zaplacená, faktura s poznámkou o úhradě poukazem, storno nezaplacené objednávky vrací zůstatek.
+- [x] **15c. Reklamace a odstoupení od smlouvy** — stránky `/reklamace` a `/odstoupeni-od-smlouvy` s formulářem (předvyplnění z objednávky), e-mail obchodu + potvrzení zákazníkovi s adresou pro vrácení, záznam do historie objednávky, admin Reklamace (stavy, poznámky).
 
 ## Fáze 6 — Provoz / technika
 - [ ] **16. Monitoring chyb** (Sentry).
-- [ ] **17. Opuštěný košík** — recovery e-mail.
+- [x] **17. Opuštěný košík** — e-mail přihlášeným zákazníkům 24–72 h po poslední změně košíku, jednou na košík, bez slevy (cron `/api/cron/abandoned-carts` 08:00 UTC).
 - [ ] **18. Audit log adminu** — kdo/kdy co změnil.
-- [ ] **19. Automatické testy** klíčových toků.
+- [x] **19. Automatické testy** — Vitest (`npm test`: DPH faktury, slevy, doprava zdarma, poukazy, statistiky dashboardu) + Playwright (`npm run test:e2e`: homepage, 404, produkt → košík → pokladna, kontakt/reklamace/odstoupení). Bez CI — spouštět před pushem.
 
 ## Odloženo
 - Blog / Průvodce chovem (tabulka `article` existuje; odkaz zatím z menu skrýt, nebo dodělat později).

@@ -2,7 +2,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getContentI18n, getShopContact, type ShopContact } from "@/lib/settings";
 import { getCnbEurRate } from "@/lib/exchange-rate";
-import { pickI18n } from "@/lib/i18n";
+import { formatPrice, pickI18n } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 import type { Json, Tables } from "@/types/database";
 import {
@@ -255,7 +255,13 @@ export async function issueInvoiceForOrder(
     items: totals.lines as unknown as Json,
     payment_method: methods.payment || order.payment_method,
     variable_symbol: variableSymbolFrom(number),
-    note: [settings.note, `${locale === "cs" ? "Objednávka" : locale === "de" ? "Bestellung" : "Order"} ${order.number}`]
+    note: [
+      settings.note,
+      `${locale === "cs" ? "Objednávka" : locale === "de" ? "Bestellung" : "Order"} ${order.number}`,
+      (order.voucher_amount ?? 0) > 0
+        ? `${locale === "cs" ? "Uhrazeno dárkovým poukazem" : locale === "de" ? "Bezahlt mit Geschenkgutschein" : "Paid by gift voucher"}: ${formatPrice(order.voucher_amount, locale)}`
+        : "",
+    ]
       .filter(Boolean)
       .join("\n"),
     created_by: opts.author ?? null,

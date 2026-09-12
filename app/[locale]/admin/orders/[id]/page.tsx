@@ -287,6 +287,14 @@ export default async function OrderDetailPage({
                   </span>
                 </div>
               )}
+              {order.voucher_amount > 0 && (
+                <div className="flex justify-between text-gray-soft">
+                  <span>Dárkový poukaz</span>
+                  <span className="font-mono">
+                    − {money(order.voucher_amount, order.currency)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between text-gray-soft">
                 <span>Platba</span>
                 <span className="font-medium text-ink">

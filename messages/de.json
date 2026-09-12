@@ -12,7 +12,9 @@
     "menu": "Menü",
     "viewAll": "Alle ansehen",
     "slogan": "Was wir selbst verwenden, empfehlen wir mit gutem Gewissen!",
-    "contact": "Kontakt"
+    "contact": "Kontakt",
+    "claim": "Reklamation",
+    "withdrawal": "Rückgabe"
   },
   "Cookies": {
     "title": "Cookies",
@@ -108,7 +110,8 @@
       "BODY": "Bitte schreiben Sie Ihre Bewertung.",
       "AUTH": "Bitte melden Sie sich an, um zu bewerten.",
       "SERVER": "Bewertung konnte nicht gesendet werden, bitte erneut versuchen."
-    }
+    },
+    "verified": "Verifizierter Kauf"
   },
   "Catalog": {
     "title": "Alle Produkte",
@@ -191,7 +194,8 @@
       "STOCK": "Ein Artikel ist nicht mehr in der gewünschten Menge verfügbar.",
       "DISCOUNT": "Der Rabattcode ist nicht mehr gültig, bitte entfernen Sie ihn.",
       "PICKUP": "Bitte wählen Sie eine Abholstelle.",
-      "SERVER": "Die Bestellung konnte nicht abgeschlossen werden. Bitte erneut versuchen."
+      "SERVER": "Die Bestellung konnte nicht abgeschlossen werden. Bitte erneut versuchen.",
+      "VOUCHER": "Der Geschenkgutschein konnte nicht eingelöst werden, bitte Code prüfen."
     },
     "discountErrors": {
       "NOT_FOUND": "Rabattcode nicht gefunden.",
@@ -211,7 +215,18 @@
     "saveAddress": "Adresse im Konto speichern",
     "addressLabelDefault": "Adresse",
     "freeShipping": "Kostenloser Versand",
-    "freeShippingFrom": "Kostenloser Versand ab {amount}"
+    "freeShippingFrom": "Kostenloser Versand ab {amount}",
+    "voucherTitle": "Geschenkgutschein",
+    "voucherPlaceholder": "Gutscheincode (DP-XXXX-XXXX)",
+    "voucherApplied": "Gutschein {code} eingelöst, Restguthaben {balance}",
+    "voucher": "Geschenkgutschein",
+    "voucherErrors": {
+      "NOT_FOUND": "Kein Gutschein mit diesem Code.",
+      "INACTIVE": "Dieser Gutschein ist nicht gültig.",
+      "EXPIRED": "Dieser Gutschein ist abgelaufen.",
+      "EMPTY": "Dieser Gutschein hat kein Guthaben mehr.",
+      "CURRENCY": "Der Gutschein kann derzeit nicht in dieser Währung eingelöst werden."
+    }
   },
   "OrderConfirm": {
     "title": "Danke für Ihre Bestellung!",
@@ -236,7 +251,10 @@
     "paymentMessage": "Nachricht an den Empfänger",
     "documents": "Belege",
     "invoice": "Rechnung",
-    "creditNote": "Gutschrift"
+    "creditNote": "Gutschrift",
+    "voucher": "Geschenkgutschein",
+    "claimLink": "Reklamieren",
+    "withdrawalLink": "Innerhalb von 14 Tagen zurückgeben"
   },
   "ResetPassword": {
     "title": "Passwort zurücksetzen",
@@ -523,5 +541,44 @@
     "errGdpr": "Bitte bestätigen Sie die Einwilligung zur Datenverarbeitung.",
     "errRate": "Zu viele Nachrichten in kurzer Zeit. Bitte später erneut versuchen.",
     "errServer": "Die Nachricht konnte nicht gesendet werden. Bitte erneut versuchen."
+  },
+  "Claims": {
+    "claimTitle": "Reklamation",
+    "claimMeta": "Reklamationsformular Reptiplus – Bearbeitung innerhalb von 30 Tagen, meist schneller.",
+    "claimIntro": "Etwas funktioniert nicht wie es soll? Füllen Sie das Formular aus, wir melden uns mit dem weiteren Vorgehen. Bitte noch nichts zurücksenden.",
+    "claimStep1": "Bestellnummer, betroffene Artikel und Beschreibung des Mangels angeben (ein Foto per E-Mail hilft).",
+    "claimStep2": "Innerhalb von 2 Werktagen sagen wir Ihnen, wie und wohin Sie die Ware senden, oder lösen es aus der Ferne.",
+    "claimStep3": "Reklamationen werden innerhalb von 30 Tagen nach Wareneingang erledigt.",
+    "claimLegal": "Details finden Sie in unserer <link>Reklamationsordnung</link>.",
+    "withdrawalTitle": "Widerruf innerhalb von 14 Tagen",
+    "withdrawalMeta": "Formular zur Rückgabe innerhalb von 14 Tagen ohne Angabe von Gründen.",
+    "withdrawalIntro": "Online gekaufte Ware können Sie innerhalb von 14 Tagen nach Erhalt ohne Angabe von Gründen zurückgeben. Füllen Sie das Formular aus und senden Sie die Ware zurück.",
+    "withdrawalStep1": "Bestellnummer und zurückgesendete Artikel angeben. Ein Grund ist nicht nötig.",
+    "withdrawalStep2": "Vollständige, unbeschädigte Ware innerhalb von 14 Tagen an unsere Adresse senden (nicht per Nachnahme).",
+    "withdrawalStep3": "Wir erstatten innerhalb von 14 Tagen nach Wareneingang, auf demselben Weg oder auf das angegebene Konto.",
+    "withdrawalLegal": "Die Bedingungen finden Sie in den <link>AGB</link>.",
+    "returnAddress": "Rücksendeadresse",
+    "successTitle": "Gesendet, vielen Dank.",
+    "successClaim": "Ihre Reklamation ist registriert, eine Bestätigung kommt per E-Mail. Wir melden uns mit dem weiteren Vorgehen.",
+    "successWithdrawal": "Ihr Widerruf ist registriert, eine Bestätigung mit der Rücksendeadresse kommt per E-Mail.",
+    "orderNumber": "Bestellnummer",
+    "email": "E-Mail",
+    "name": "Vor- und Nachname",
+    "phone": "Telefon",
+    "items": "Betroffene Artikel",
+    "itemsPlaceholder": "z. B. Arcadia T5 39 W – 1 Stk.",
+    "reason": "Beschreibung des Mangels",
+    "reasonOptional": "Anmerkung (optional)",
+    "reasonPlaceholder": "Was funktioniert nicht, seit wann, unter welchen Bedingungen…",
+    "reasonOptionalPlaceholder": "Alles, was uns hilft, die Rückgabe schneller zu bearbeiten.",
+    "bankAccount": "Bankkonto für die Erstattung",
+    "bankAccountHint": "Kartenzahlungen erstatten wir auf die Karte; kein Konto nötig.",
+    "gdpr": "Ich stimme der Verarbeitung meiner Daten zur Bearbeitung dieser Anfrage zu (<link>Datenschutz</link>).",
+    "errForm": "Bitte alle Pflichtfelder ausfüllen.",
+    "errGdpr": "Ohne Zustimmung können wir die Anfrage nicht annehmen.",
+    "errRate": "Zu viele Sendungen, bitte in Kürze erneut versuchen.",
+    "errServer": "Senden fehlgeschlagen, bitte erneut versuchen oder eine E-Mail schreiben.",
+    "sending": "Wird gesendet…",
+    "submit": "Senden"
   }
 }

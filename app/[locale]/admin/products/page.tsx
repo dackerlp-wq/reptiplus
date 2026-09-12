@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Upload, Plus } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ProductsTable, type ProductRow } from "@/components/admin/products-table";
@@ -50,12 +50,20 @@ export default async function AdminProductsPage() {
           <h1 className="font-display text-3xl font-bold">Produkty</h1>
           <p className="mt-1 text-sm text-gray-soft">{rows.length} produktů</p>
         </div>
-        <Link
-          href="/admin/products/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-forest px-4 py-2 text-sm font-semibold text-white hover:bg-forest-light"
-        >
-          <Plus className="size-4" /> Nový produkt
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/products/import"
+            className="inline-flex items-center gap-2 rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm font-medium text-charcoal hover:border-forest hover:text-forest"
+          >
+            <Upload className="size-4" /> Import CSV
+          </Link>
+          <Link
+            href="/admin/products/new"
+            className="inline-flex items-center gap-2 rounded-lg bg-forest px-4 py-2 text-sm font-semibold text-white hover:bg-forest-light"
+          >
+            <Plus className="size-4" /> Nový produkt
+          </Link>
+        </div>
       </div>
 
       <ProductsTable products={rows} categories={categories} />

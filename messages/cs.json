@@ -12,7 +12,9 @@
     "menu": "Menu",
     "viewAll": "Zobrazit vše",
     "slogan": "Co sami používáme, to s čistým svědomím doporučujeme!",
-    "contact": "Kontakt"
+    "contact": "Kontakt",
+    "claim": "Reklamace",
+    "withdrawal": "Vrácení zboží"
   },
   "Cookies": {
     "title": "Cookies",
@@ -108,7 +110,8 @@
       "BODY": "Napište prosím text recenze.",
       "AUTH": "Pro napsání recenze se přihlaste.",
       "SERVER": "Recenzi se nepodařilo odeslat, zkuste to znovu."
-    }
+    },
+    "verified": "Ověřený nákup"
   },
   "Catalog": {
     "title": "Všechny produkty",
@@ -191,7 +194,8 @@
       "STOCK": "Některá položka již není skladem v požadovaném množství.",
       "DISCOUNT": "Slevový kód už není platný, odeberte ho prosím.",
       "PICKUP": "Vyberte prosím výdejní místo.",
-      "SERVER": "Objednávku se nepodařilo dokončit. Zkuste to prosím znovu."
+      "SERVER": "Objednávku se nepodařilo dokončit. Zkuste to prosím znovu.",
+      "VOUCHER": "Dárkový poukaz se nepodařilo uplatnit, zkontrolujte kód."
     },
     "discountErrors": {
       "NOT_FOUND": "Slevový kód nebyl nalezen.",
@@ -211,7 +215,18 @@
     "saveAddress": "Uložit adresu do účtu",
     "addressLabelDefault": "Adresa",
     "freeShipping": "Doprava zdarma",
-    "freeShippingFrom": "Doprava zdarma od {amount}"
+    "freeShippingFrom": "Doprava zdarma od {amount}",
+    "voucherTitle": "Dárkový poukaz",
+    "voucherPlaceholder": "Kód poukazu (DP-XXXX-XXXX)",
+    "voucherApplied": "Poukaz {code} uplatněn, zůstatek {balance}",
+    "voucher": "Dárkový poukaz",
+    "voucherErrors": {
+      "NOT_FOUND": "Poukaz s tímto kódem neexistuje.",
+      "INACTIVE": "Poukaz není platný.",
+      "EXPIRED": "Platnost poukazu vypršela.",
+      "EMPTY": "Poukaz je už vyčerpaný.",
+      "CURRENCY": "Poukaz teď nelze uplatnit v této měně."
+    }
   },
   "OrderConfirm": {
     "title": "Děkujeme za objednávku!",
@@ -236,7 +251,10 @@
     "paymentMessage": "Zpráva pro příjemce",
     "documents": "Doklady",
     "invoice": "Faktura",
-    "creditNote": "Dobropis"
+    "creditNote": "Dobropis",
+    "voucher": "Dárkový poukaz",
+    "claimLink": "Reklamovat zboží",
+    "withdrawalLink": "Vrátit zboží do 14 dnů"
   },
   "ResetPassword": {
     "title": "Obnova hesla",
@@ -523,5 +541,44 @@
     "errGdpr": "Potvrďte prosím souhlas se zpracováním údajů.",
     "errRate": "Odeslali jste příliš mnoho zpráv za krátkou dobu. Zkuste to prosím později.",
     "errServer": "Zprávu se nepodařilo odeslat. Zkuste to prosím znovu."
+  },
+  "Claims": {
+    "claimTitle": "Reklamace zboží",
+    "claimMeta": "Reklamační formulář Reptiplus – reklamaci vyřídíme do 30 dnů, obvykle dřív.",
+    "claimIntro": "Něco nefunguje, jak má? Vyplňte formulář, ozveme se s dalším postupem. Zboží zatím neposílejte.",
+    "claimStep1": "Vyplňte číslo objednávky, co reklamujete a popište závadu (pomůže i fotka na e-mail).",
+    "claimStep2": "Do 2 pracovních dnů vám napíšeme, jak a kam zboží poslat, nebo závadu vyřešíme na dálku.",
+    "claimStep3": "Reklamaci vyřídíme nejpozději do 30 dnů od přijetí zboží.",
+    "claimLegal": "Podrobnosti najdete v <link>reklamačním řádu</link>.",
+    "withdrawalTitle": "Odstoupení od smlouvy do 14 dnů",
+    "withdrawalMeta": "Formulář pro vrácení zboží do 14 dnů bez udání důvodu.",
+    "withdrawalIntro": "Zboží zakoupené na dálku můžete do 14 dnů od převzetí vrátit bez udání důvodu. Vyplňte formulář a zboží nám pošlete zpět.",
+    "withdrawalStep1": "Vyplňte číslo objednávky a co vracíte. Důvod uvádět nemusíte.",
+    "withdrawalStep2": "Zboží kompletní a nepoškozené pošlete do 14 dnů na naši adresu (ne na dobírku).",
+    "withdrawalStep3": "Peníze vrátíme do 14 dnů od doručení zboží zpět, stejným způsobem nebo na uvedený účet.",
+    "withdrawalLegal": "Podmínky najdete v <link>obchodních podmínkách</link>.",
+    "returnAddress": "Adresa pro vrácení",
+    "successTitle": "Odesláno, děkujeme.",
+    "successClaim": "Reklamaci jsme zaevidovali a poslali vám potvrzení e-mailem. Ozveme se s dalším postupem.",
+    "successWithdrawal": "Odstoupení jsme zaevidovali a poslali vám potvrzení e-mailem s adresou pro vrácení zboží.",
+    "orderNumber": "Číslo objednávky",
+    "email": "E-mail",
+    "name": "Jméno a příjmení",
+    "phone": "Telefon",
+    "items": "Zboží, kterého se to týká",
+    "itemsPlaceholder": "např. Arcadia T5 39 W – 1 ks",
+    "reason": "Popis závady",
+    "reasonOptional": "Poznámka (nepovinné)",
+    "reasonPlaceholder": "Co a od kdy nefunguje, za jakých podmínek…",
+    "reasonOptionalPlaceholder": "Cokoli, co nám pomůže vrácení vyřídit rychleji.",
+    "bankAccount": "Číslo účtu pro vrácení peněz",
+    "bankAccountHint": "U platby kartou vracíme na kartu, účet nemusíte vyplňovat.",
+    "gdpr": "Souhlasím se zpracováním údajů pro vyřízení požadavku (<link>ochrana osobních údajů</link>).",
+    "errForm": "Vyplňte prosím všechna povinná pole.",
+    "errGdpr": "Bez souhlasu požadavek nemůžeme přijmout.",
+    "errRate": "Příliš mnoho odeslání, zkuste to prosím za chvíli.",
+    "errServer": "Odeslání se nepodařilo, zkuste to prosím znovu nebo nám napište e-mail.",
+    "sending": "Odesílám…",
+    "submit": "Odeslat"
   }
 }

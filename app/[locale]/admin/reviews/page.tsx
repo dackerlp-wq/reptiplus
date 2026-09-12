@@ -15,6 +15,7 @@ type ReviewRow = {
   created_at: string;
   product: { slug: string; name: string } | null;
   customer: { full_name: string | null } | null;
+  verified_purchase: boolean;
 };
 
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", {
@@ -28,7 +29,7 @@ export default async function AdminReviewsPage() {
   const { data } = await svc
     .from("review")
     .select(
-      "id, rating, title, body, is_approved, created_at, product:product_id(slug,name), customer:customer_id(full_name)",
+      "id, rating, title, body, is_approved, verified_purchase, created_at, product:product_id(slug,name), customer:customer_id(full_name)",
     )
     .order("is_approved", { ascending: true })
     .order("created_at", { ascending: false });
@@ -94,6 +95,9 @@ export default async function AdminReviewsPage() {
                     {r.customer?.full_name?.trim() || "Zákazník"} ·{" "}
                     {dateFmt.format(new Date(r.created_at))}
                     {r.product && <> · {r.product.name}</>}
+                    {r.verified_purchase && (
+                      <span className="ml-2 rounded-full bg-success/10 px-2 py-0.5 font-medium text-success">Ověřený nákup</span>
+                    )}
                   </p>
                 </div>
 

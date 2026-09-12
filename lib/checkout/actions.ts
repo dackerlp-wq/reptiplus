@@ -9,9 +9,12 @@ import { getCart, getCartId } from "@/lib/cart/cart";
 import { localeCurrency } from "@/lib/i18n";
 import { freeShippingThreshold, getShippingSettings } from "@/lib/settings";
 import { validateDiscount, type DiscountError } from "@/lib/checkout/discount";
+import { validateVoucher, voucherRedemption, type VoucherError } from "@/lib/vouchers/service";
+import { markOrderPaid } from "@/lib/orders/payment";
 import { createComgatePayment } from "@/lib/comgate/client";
 import { sendOrderConfirmation } from "@/lib/orders/confirmation";
 import { logOrderEvent } from "@/lib/orders/events";
+import { checkLowStock } from "@/lib/stock-alerts/low-stock";
 import { routing, type Locale } from "@/i18n/routing";
 
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
@@ -56,6 +59,20 @@ export async function applyDiscountAction(
   return res.ok
     ? { status: "ok", code: res.code, amount: res.amount }
     : { status: "error", error: res.error };
+}
+
+/* ── Ověření dárkového poukazu (živý náhled v pokladně) ────────────────── */
+export type VoucherState =
+  | { status: "idle" }
+  | { status: "ok"; code: string; balance: number }
+  | { status: "error"; error: VoucherError };
+
+export async function applyVoucherAction(_prev: VoucherState, fd: FormData): Promise<VoucherState> {
+  const locale = safeLocale(s(fd, "locale"));
+  const code = s(fd, "voucher_code");
+  if (!code) return { status: "idle" };
+  const res = await validateVoucher(createServiceClient(), code, localeCurrency[locale]);
+  return res.ok ? { status: "ok", code: res.code, balance: res.balance } : { status: "error", error: res.error };
 }
 
 /* ── Dohledání objednávky (host, přes číslo + e-mail) ──────────────────── */
@@ -199,9 +216,26 @@ export async function createOrderAction(
     discountAmount = res.amount;
   }
 
-  // 5) Součty
+  // 4b) Dárkový poukaz (znovu ověřený na serveru; čerpá se až po slevě, max. do výše k úhradě)
   const subtotal = cart.subtotal;
-  const total = Math.max(0, subtotal + shippingFee + paymentFee - discountAmount);
+  const payable = Math.max(0, subtotal + shippingFee + paymentFee - discountAmount);
+  let voucherId: string | null = null;
+  let voucherAmount = 0;
+  let voucherAmountCzk = 0;
+  const voucherCode = s(fd, "voucher_code");
+  if (voucherCode) {
+    const v = await validateVoucher(svc, voucherCode, currency);
+    if (!v.ok) return { error: "VOUCHER" };
+    const red = voucherRedemption(v, payable);
+    if (red.amount > 0) {
+      voucherId = v.voucherId;
+      voucherAmount = red.amount;
+      voucherAmountCzk = red.amountCzk;
+    }
+  }
+
+  // 5) Součty
+  const total = Math.max(0, payable - voucherAmount);
 
   // 6) Zákazník (pokud přihlášen)
   const supabase = await createClient();
@@ -236,6 +270,9 @@ export async function createOrderAction(
         currency,
         payment_fee: paymentFee,
         discount_code_id: discountId ?? "",
+        voucher_id: voucherId ?? "",
+        voucher_amount: voucherAmount,
+        voucher_amount_czk: voucherAmountCzk,
         shipping_method: shippingCode,
         payment_method: paymentCode,
         billing_address: bill,
@@ -265,7 +302,13 @@ export async function createOrderAction(
       if (created) {
         await logOrderEvent(created.id, "system", "Objednávka vytvořena v pokladně.", { source: "checkout", locale });
         await sendOrderConfirmation(created.id, { notifyShop: true });
+        // Plně uhrazeno dárkovým poukazem → rovnou zaplaceno (faktura, e-mail, případné další poukazy).
+        if (total === 0 && voucherAmount > 0) {
+          await markOrderPaid(created.id, { source: "voucher" });
+        }
       }
+      // Hlídání docházejícího skladu (limit na produktu) — nikdy nevyhazuje.
+      await checkLowStock(items.map((i) => i.product_id));
 
       // Uložit nové adresy do účtu (jen na přání a jen přihlášeným).
       if (user) {
@@ -345,6 +388,7 @@ export async function createOrderAction(
 
     const msg = error.message ?? "";
     if (msg.includes("INSUFFICIENT_STOCK")) return { error: "STOCK" };
+    if (msg.includes("VOUCHER_INVALID")) return { error: "VOUCHER" };
     // 23505 = unique_violation (kolize čísla) → zkusit znovu
     if (!msg.includes("duplicate key") && error.code !== "23505") {
       return { error: "SERVER" };

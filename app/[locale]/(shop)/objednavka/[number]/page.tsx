@@ -52,7 +52,7 @@ export default async function OrderConfirmPage({
   const { data: order } = await svc
     .from("order")
     .select(
-      "id, number, email, status, payment_status, comgate_ref, subtotal, shipping, discount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, created_at, tracking_number, tracking_url, order_item(id,product_id,name,sku,unit_price,qty,line_total)",
+      "id, number, email, status, payment_status, comgate_ref, subtotal, shipping, discount, voucher_amount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, created_at, tracking_number, tracking_url, order_item(id,product_id,name,sku,unit_price,qty,line_total)",
     )
     .eq("number", number)
     .maybeSingle();
@@ -243,6 +243,12 @@ export default async function OrderConfirmPage({
               <dd className="font-mono">− {fmt(order.discount)}</dd>
             </div>
           )}
+          {order.voucher_amount > 0 && (
+            <div className="flex justify-between text-success">
+              <dt>{t("voucher")}</dt>
+              <dd className="font-mono">− {fmt(order.voucher_amount)}</dd>
+            </div>
+          )}
           <div className="flex justify-between border-t border-cream-dark pt-2 text-base font-semibold text-ink">
             <dt>{t("total")}</dt>
             <dd className="font-mono">{fmt(order.total)}</dd>
@@ -266,7 +272,16 @@ export default async function OrderConfirmPage({
         </div>
       )}
 
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+      <p className="mt-8 text-center text-xs text-gray-soft">
+        <Link href={`/reklamace?o=${encodeURIComponent(order.number)}`} className="underline hover:text-forest">
+          {t("claimLink")}
+        </Link>
+        {" · "}
+        <Link href={`/odstoupeni-od-smlouvy?o=${encodeURIComponent(order.number)}`} className="underline hover:text-forest">
+          {t("withdrawalLink")}
+        </Link>
+      </p>
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
         <ReorderButton orderNumber={order.number} />
         <Link
           href="/produkty"

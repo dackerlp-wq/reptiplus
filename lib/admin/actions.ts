@@ -12,6 +12,7 @@ import { logOrderEvent } from "@/lib/orders/events";
 import { sendOrderConfirmation } from "@/lib/orders/confirmation";
 import { assertAdminUser } from "@/lib/admin/auth";
 import { notifyStockAlerts } from "@/lib/stock-alerts/notify";
+import { checkLowStock } from "@/lib/stock-alerts/low-stock";
 import { refundComgatePayment } from "@/lib/comgate/client";
 import { pickI18n } from "@/lib/i18n";
 import { DEFAULT_THEME, isThemeKey } from "@/lib/themes";
@@ -107,8 +108,15 @@ export async function saveProductAction(formData: FormData) {
     category_id: str(formData, "category_id") || null,
     sku: str(formData, "sku") || null,
     stock_qty: parseInt(str(formData, "stock_qty") || "0", 10),
+    low_stock_threshold: (() => {
+      const raw = str(formData, "low_stock_threshold");
+      if (!raw) return null;
+      const n = parseInt(raw, 10);
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    })(),
     is_published: formData.get("is_published") === "on",
     is_featured: formData.get("is_featured") === "on",
+    is_gift_voucher: formData.get("is_gift_voucher") === "on",
     vat_rate: [0, 12, 21].includes(parseInt(str(formData, "vat_rate") || "21", 10))
       ? parseInt(str(formData, "vat_rate") || "21", 10)
       : 21,
@@ -146,6 +154,8 @@ export async function saveProductAction(formData: FormData) {
     const ids = formData.getAll("upsell").map((v) => String(v));
     await syncUpsell(svc, productId, ids);
   }
+  // Hlídání docházejícího skladu (limit na produktu).
+  if (productId) await checkLowStock([productId]);
 
   revalidatePath("/", "layout");
   // Zůstaň v editaci produktu (u nového ať jde hned nahrát fotky/varianty,
@@ -330,7 +340,10 @@ async function syncProductAttributes(
   }
 
   // Hlídání skladu: kdo čekal na naskladnění, dostane e-mail.
-  if (productId) await notifyStockAlerts(productId);
+  if (productId) {
+    await notifyStockAlerts(productId);
+    await checkLowStock([productId]);
+  }
 }
 
 export async function togglePublishAction(formData: FormData) {
@@ -379,6 +392,7 @@ export async function setProductStockAction(id: string, stock: number) {
     .eq("id", id);
   if (error) throw new Error(error.message);
   if (v > 0) await notifyStockAlerts(id);
+  await checkLowStock([id]);
   revalidatePath("/", "layout");
 }
 
@@ -981,6 +995,7 @@ export async function editOrderItemsAction(fd: FormData) {
       throw new Error("Nedostatek skladu u některé položky.");
     throw new Error(error.message);
   }
+  await checkLowStock(items.map((it) => it.product_id));
   revalidatePath("/", "layout");
 }
 

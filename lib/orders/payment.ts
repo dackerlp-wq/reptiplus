@@ -1,6 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { logOrderEvent } from "@/lib/orders/events";
+import { issueVouchersForOrder } from "@/lib/vouchers/service";
 import { sendOrderStatusEmail } from "@/lib/orders/notify";
 import { getInvoicesForOrder, issueInvoiceForOrder, markInvoicePaid } from "@/lib/invoices/issue";
 import { invoiceFileName, renderInvoicePdf } from "@/lib/invoices/pdf";
@@ -14,7 +15,7 @@ import type { TablesUpdate } from "@/types/database";
  */
 export async function markOrderPaid(
   orderId: string,
-  opts: { source: "comgate" | "admin" | "manual"; author?: string | null; notify?: boolean } = { source: "admin" },
+  opts: { source: "comgate" | "admin" | "manual" | "voucher"; author?: string | null; notify?: boolean } = { source: "admin" },
 ): Promise<void> {
   const svc = createServiceClient();
   const { data: order } = await svc.from("order").select("*").eq("id", orderId).maybeSingle();
@@ -53,6 +54,9 @@ export async function markOrderPaid(
   } catch (e) {
     console.error("[order] faktura po zaplacení selhala:", e);
   }
+
+  // Dárkové poukazy v objednávce → vygenerovat kódy a poslat (idempotentní).
+  await issueVouchersForOrder(orderId);
 
   if (opts.notify === false) return;
   await sendOrderStatusEmail(

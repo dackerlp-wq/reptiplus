@@ -11,8 +11,9 @@ Infrastruktura:
 - GitHub `dackerlp-wq/reptiplus`, vývoj i push jde na `main`. Větve `claude/*` jsou starý kód a s `main` nesouvisí
   (`claude/wordpress-plugin-merge-hrc9po` drží nesouvisející WordPress plugin, nemazat). Repo `Reptiplus/reptiplus` je duplikát, ignorovat.
 - Vercel: projekt `reptiplus` (`prj_9fSGoOlyRzybaaJv5g92puOknsnw`, tým `team_5syHQcguxaekOGMAp7ikxARv`), nasazuje automaticky po pushi na `main`.
-  Domény `reptiplus.cz` / `.eu` / `.shop`. Crony ve `vercel.json`: `/api/cron/cleanup-carts` (opuštěné košíky) a `/api/cron/cancel-unpaid`
-  (storno nezaplacených karetních objednávek po 24 h, RPC `cancel_unpaid_order` vrací sklad, e-mail zákazníkovi), oba chráněné `CRON_SECRET`.
+  Domény `reptiplus.cz` / `.eu` / `.shop`. Crony ve `vercel.json` (všechny chráněné `CRON_SECRET`): `/api/cron/cleanup-carts` (mazání starých hostovských košíků),
+  `/api/cron/cancel-unpaid` (storno nezaplacených karetních objednávek po 24 h, RPC `cancel_unpaid_order` vrací sklad i zůstatek poukazu, e-mail zákazníkovi),
+  `/api/cron/abandoned-carts` (připomínka opuštěného košíku přihlášeným po 24–72 h, jednou na košík — `cart.reminder_sent_at`, jazyk z poslední objednávky).
 - Supabase: projekt „Reptiplus“ `duaihkobtgfzprufqjmh` (eu-west-1, Postgres 17). Storage bucket `products` pro obrázky.
 
 ## Příkazy
@@ -23,10 +24,13 @@ npm run build    # next build — spouštět před pushem, Vercel build je jedin
 npx tsc --noEmit # typecheck (nejrychlejší kontrola před pushem)
 npm run lint     # ESLint 9 flat config (eslint.config.mjs, eslint-config-next); build ho nespouští
 npm start
+
+npm test         # Vitest — jednotkové testy čistých výpočtů (tests/unit: DPH faktury, slevy, doprava zdarma, poukazy, statistiky)
+npm run test:e2e # Playwright — průchod obchodem bez odeslání objednávky (tests/e2e; PLAYWRIGHT_BASE_URL=https://reptiplus.cz proti produkci, jinak next dev)
 ```
 
-Testy v projektu nejsou (viz roadmapa, bod 19).
-Ověření změny = `npx tsc --noEmit` + `npm run lint` + `npm run build` + ruční kontrola. Lint hlídá i pravidla React Compileru
+Ověření změny = `npx tsc --noEmit` + `npm run lint` + `npm test` + `npm run build` + ruční kontrola. `server-only` je v testech nahrazen stubem
+(`vitest.config.ts` alias → `tests/stubs/server-only.ts`); moduly, které volají síť/DB, v testech mockovat (`vi.mock("@/lib/exchange-rate")`). Lint hlídá i pravidla React Compileru
 (`react-hooks/set-state-in-effect`, `static-components`): žádný synchronní `setState` v těle efektu (časová past formulářů se řeší
 `ref` callbackem `stampTs`, debounce nastavuje loading až v timeoutu), komponenty nedefinovat uvnitř renderu. Build prerenderuje stránky proti Supabase, lokálně potřebuje `.env.local` s klíči.
 
@@ -66,7 +70,7 @@ Všechny tabulky mají RLS zapnuté. Typy z DB: `types/database.ts` (generované
 - Mutace: Server Actions (`"use server"`), ne API routes. Admin: `lib/admin/actions.ts` (velký soubor, každá akce začíná `assertAdmin()`, po uložení `revalidatePath` + `flashRedirect()` pro toast),
   `lib/admin/shipping-actions.ts`. Shop: `lib/cart/actions.ts`, `lib/checkout/actions.ts`, `lib/auth/actions.ts`, `lib/reviews/actions.ts`, `lib/ledx/actions.ts`.
   Formuláře posílají `FormData`; i18n pole se čtou jako `name_cs` / `name_en` / `name_de` (helper `i18n(fd, base)`).
-- Kritické DB operace jsou Postgres RPC (`security definer`): `place_order` (atomické odečtení skladu produktu/varianty + vytvoření objednávky), `admin_edit_order_items`, `cleanup_abandoned_carts`.
+- Kritické DB operace jsou Postgres RPC (`security definer`): `place_order` (atomické odečtení skladu produktu/varianty + čerpání dárkového poukazu + vytvoření objednávky), `admin_edit_order_items`, `cancel_unpaid_order`, `cleanup_abandoned_carts`.
 - Košík: cookie `rp_cart` + tabulky `cart`/`cart_item`; hostový košík se po přihlášení sloučí (`lib/cart/cart.ts`).
 - Objednávka: `lib/checkout/actions.ts` → `place_order` (ukládá `locale`, názvy položek vč. varianty, `vat_rate`) → `sendOrderConfirmation()` → případně Comgate platba (`lib/comgate/client.ts`); zaplacení řeší webhook přes `markOrderPaid()`. Bez SMTP env se e-maily tiše přeskočí. Číslo objednávky `RPyyMMdd-XXXX`.
 - Doprava: `lib/shipping/` (Packeta = Zásilkovna, PPL) — tvorba zásilek a PDF štítky (`pdf-lib` slučuje hromadné štítky).
@@ -148,6 +152,28 @@ Export CSV: `app/api/admin/inquiries/export/route.ts`.
 - Doprava zdarma: `app_setting` `shipping.settings` (`freeFromCzk|freeFromEur`, minor units; Nastavení → Doprava), helper `freeShippingThreshold()` v `lib/settings.ts`.
   Uplatňuje se na mezisoučet zboží v pokladně (stránka i `createOrderAction`, nikdy z klienta) a jako lišta průběhu v košíku.
 - 404 / chyby: `app/[locale]/(shop)/[...rest]/page.tsx` volá `notFound()` → `(shop)/not-found.tsx` (s Navbar/Footer), `app/[locale]/error.tsx` (client, ns `ErrorPage`), `app/global-error.tsx`.
+
+### Dárkové poukazy (`gift_voucher`, `gift_voucher_redemption`)
+- Hodnota i zůstatek v CZK haléřích; kód `DP-XXXX-XXXX`. Služba `lib/vouchers/service.ts`: `validateVoucher()` (zůstatek v měně košíku, EUR kurzem ČNB),
+  `voucherRedemption()` (čerpá se až po slevě, max. do částky k úhradě), `issueVouchersForOrder()` (volá `markOrderPaid`: položky produktů s `product.is_gift_voucher`
+  → kódy v hodnotě jednotkové ceny, platnost 12 měsíců, e-mail s PDF `lib/vouchers/pdf.ts`; idempotentní podle `order_id`), `sendVoucherEmail()`.
+- Pokladna: samostatné pole „Dárkový poukaz“ (`applyVoucherAction`), `createOrderAction` ověří znovu, pošle `voucher_id|voucher_amount|voucher_amount_czk` do `place_order`
+  (atomicky odečte zůstatek, jinak `VOUCHER_INVALID`), `order.total` je částka k úhradě po poukazu; plně uhrazená objednávka jde rovnou přes `markOrderPaid({source:"voucher"})`.
+  Faktura má plnou částku a v poznámce „Uhrazeno dárkovým poukazem“. Storno nezaplacené objednávky (cron) vrací zůstatek; ruční storno v adminu ho nevrací (obnovit ručně v Poukazech).
+- Admin `app/[locale]/admin/vouchers` (ruční vystavení, znovuodeslání, zrušení/obnovení), akce `lib/admin/voucher-actions.ts`.
+
+### Reklamace a odstoupení (`claim`)
+- Veřejné stránky `/reklamace` a `/odstoupeni-od-smlouvy` (`?o=<číslo objednávky>` předvyplní), formulář `components/reptiplus/claim-form.tsx` → `lib/claims/actions.ts`
+  (antispam, uložení, e-mail obchodu + potvrzení zákazníkovi s adresou pro vrácení, u nalezené objednávky záznam do `order_event`). Stavy a štítky `lib/claims/status.ts`.
+- Admin `app/[locale]/admin/claims` (stav, interní poznámka, smazání), akce `lib/admin/claim-actions.ts`. Vrácení peněz se dělá v detailu objednávky (dobropis).
+
+### Sklad a dashboard
+- `product.low_stock_threshold` (null = nehlídat): `checkLowStock(productIds)` v `lib/stock-alerts/low-stock.ts` po objednávce, editaci položek, uložení produktu,
+  inline změně skladu a CSV importu → jeden e-mail obchodu (`low_stock_notified_at`, reset po naskladnění nad limit). `effectiveStock()` = součet variant, jinak sklad produktu.
+- CSV import skladu a cen: `app/[locale]/admin/products/import` → `lib/admin/import-actions.ts` (náhled podle SKU produktu/varianty, pak zápis; prázdná buňka = beze změny).
+- Dashboard `app/[locale]/admin/page.tsx`: období 7/30/90/365 dní (`?period=`), čisté výpočty v `lib/admin/stats.ts` (tržby jen `payment_status=paid` a ne storno,
+  EUR kurzem ČNB, porovnání s předchozím obdobím, sloupce po dnech/měsících, top produkty, konverze košíků orientačně = objednávky / (objednávky + košíky vzniklé v období)).
+- Recenze: `review.verified_purchase` se nastavuje při vložení (service klient) podle objednávek zákazníka se stavem paid/processing/shipped/delivered nebo zaplacených.
 
 ### Analytika a souhlas
 `components/reptiplus/cookie-consent.tsx` ukládá volbu do cookie `rp_consent` a vysílá event `rp-consent-changed`; `AnalyticsGate` načte GA4 / Sklik / Meta Pixel až po souhlasu
