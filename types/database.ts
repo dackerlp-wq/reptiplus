@@ -224,6 +224,10 @@ export type Database = {
           postal_code: string | null
           street: string | null
           type: Database["public"]["Enums"]["address_type"]
+          ico: string | null
+          dic: string | null
+          label: string | null
+          created_at: string
         }
         Insert: {
           city?: string | null
@@ -237,6 +241,10 @@ export type Database = {
           postal_code?: string | null
           street?: string | null
           type?: Database["public"]["Enums"]["address_type"]
+          ico?: string | null
+          dic?: string | null
+          label?: string | null
+          created_at?: string
         }
         Update: {
           city?: string | null
@@ -250,6 +258,10 @@ export type Database = {
           postal_code?: string | null
           street?: string | null
           type?: Database["public"]["Enums"]["address_type"]
+          ico?: string | null
+          dic?: string | null
+          label?: string | null
+          created_at?: string
         }
         Relationships: [
           {
@@ -749,6 +761,61 @@ export type Database = {
           last_number?: number
         }
         Relationships: []
+      }
+      stock_alert: {
+        Row: {
+          id: string
+          product_id: string
+          variant_id: string | null
+          email: string
+          customer_id: string | null
+          locale: string
+          created_at: string
+          notified_at: string | null
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          variant_id?: string | null
+          email: string
+          customer_id?: string | null
+          locale?: string
+          created_at?: string
+          notified_at?: string | null
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          variant_id?: string | null
+          email?: string
+          customer_id?: string | null
+          locale?: string
+          created_at?: string
+          notified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_alert_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_alert_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variant"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_alert_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order: {
         Row: {

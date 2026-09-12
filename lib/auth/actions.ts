@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { mergeGuestCartOnLogin } from "@/lib/cart/cart";
+import { linkGuestOrders } from "@/lib/account/link-orders";
 
 export type AuthState = { error?: string } | undefined;
 
@@ -21,8 +22,12 @@ export async function signInAction(
   });
   if (error) return { error: error.message };
 
-  // Sloučit hostův košík do účtu, aby zákazník nepřišel o položky.
-  if (data.user) await mergeGuestCartOnLogin(data.user.id);
+  // Sloučit hostův košík do účtu, aby zákazník nepřišel o položky,
+  // a připojit dřívější hostovské objednávky (jen s ověřeným e-mailem).
+  if (data.user) {
+    await mergeGuestCartOnLogin(data.user.id);
+    await linkGuestOrders(data.user);
+  }
 
   redirect(redirectTo);
 }

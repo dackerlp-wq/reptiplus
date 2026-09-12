@@ -46,7 +46,7 @@ Seed dat: `supabase/seed.sql`, `supabase/seed_admin.sql`.
 ### Route groups
 - `app/[locale]/(shop)/` — veřejný obchod (české slugy: `kategorie`, `produkt`, `kosik`, `pokladna`, `objednavka`, `ucet`, …). Layout přidává Navbar, Footer, cookie lištu a `AnalyticsGate`.
 - `app/[locale]/admin/` — administrace, layout volá `requireAdmin()` (`lib/admin/auth.ts`): role `admin`/`staff` ze sloupce `customer.role`.
-- `app/api/` — route handlers: `comgate/webhook` (platební PUSH), `cron/cleanup-carts` (chráněno `CRON_SECRET`), `admin/translate` (AI překlad), `admin/orders/*/label` (štítky PDF), `invoices/[id]` (PDF dokladu), `admin/invoices/export`, `admin/inquiries/export`, `search`, `exchange-rate`.
+- `app/api/` — route handlers: `comgate/webhook` (platební PUSH), `cron/cleanup-carts` (chráněno `CRON_SECRET`), `admin/translate` (AI překlad), `admin/orders/*/label` (štítky PDF), `invoices/[id]` (PDF dokladu), `admin/invoices/export`, `admin/inquiries/export`, `wishlist` (ID oblíbených), `search`, `exchange-rate`.
 - `app/feed/*.xml` — Heureka / Zboží / Google feed, `revalidate = 3600`; stejně `app/sitemap.ts`.
 
 ### Supabase klienti (tři, nezaměňovat)
@@ -117,6 +117,19 @@ akce v `lib/admin/inquiry-actions.ts` (každá loguje událost přes `logEvent`)
 `lib/ledx/inquiry-drafts.ts`, editor `components/admin/inquiry-email-composer.tsx`, odeslání `sendInquiryEmailAction` → `ledxInquiryMessageEmail()`
 (prostý text → HTML, odstavce oddělené prázdným řádkem, řádky „– “ jako odrážky). Bankovní spojení pro potvrzení objednání je v `shop.general` (`bankAccount`, `iban`, `bic`).
 Export CSV: `app/api/admin/inquiries/export/route.ts`.
+
+### Zákaznický účet (`app/[locale]/(shop)/ucet/*`)
+- Layout volá `requireCustomer()` (`lib/account/queries.ts`): bez přihlášení redirect na `/prihlaseni`, zároveň `linkGuestOrders()` (`lib/account/link-orders.ts`)
+  připojí hostovské objednávky se stejným e-mailem — **jen pokud má účet ověřený e-mail**. Podstránky: `objednavky`, `adresy`, `oblibene`, `recenze`, `profil`.
+- Akce v `lib/account/actions.ts` (Server Actions se stavem pro `useActionState`; klientské formuláře v `components/reptiplus/account/*`).
+  Adresy a oblíbené jdou přes SSR klienta (RLS owner), recenze zákazníka a newsletter přes service klienta. Smazání účtu anonymizuje objednávky
+  (e-mail, jméno, ulice, telefon) a smaže auth uživatele přes `auth.admin.deleteUser`; doklady (`invoice`) zůstávají netknuté (zákonná archivace).
+- Pokladna: `CheckoutForm` dostává `savedAddresses` + `loggedIn`; výběr uložené adresy remountuje `AddressFields` přes `key`; firemní údaje
+  (`billing_company|ico|dic`) se ukládají do `billing_address` JSONB (i když je shodná s dodací) a propisují na fakturu (`buyerParty()`).
+- Oblíbené: `WishlistButton` (client) načte ID jednou přes `/api/wishlist` (modulová cache), toggle přes `toggleWishlistAction`; nepřihlášený → `/prihlaseni?redirectTo=`.
+- Hlídání skladu: `StockAlertForm` u vyprodaného produktu/varianty → `stock_alert` (service role, honeypot, unikát product+variant+email);
+  `notifyStockAlerts(productId)` v `lib/stock-alerts/notify.ts` se volá po uložení produktu a inline změně skladu v adminu.
+- Přihlášení: `/prihlaseni?redirectTo=/cs/...` (jen relativní cesty), po přihlášení se sloučí hostův košík a připojí objednávky.
 
 ### Analytika a souhlas
 `components/reptiplus/cookie-consent.tsx` ukládá volbu do cookie `rp_consent` a vysílá event `rp-consent-changed`; `AnalyticsGate` načte GA4 / Sklik / Meta Pixel až po souhlasu

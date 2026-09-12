@@ -13,6 +13,7 @@ import {
   priceForLocale,
 } from "@/lib/i18n";
 import { AddToCartButton } from "./add-to-cart-button";
+import { WishlistButton } from "./wishlist-button";
 
 export async function ProductCard({
   product,
@@ -67,6 +68,9 @@ export async function ProductCard({
         ) : (
           <Leaf className="size-12 text-forest-light/30" />
         )}
+        <div className="absolute right-3 top-3 z-10">
+          <WishlistButton productId={product.id} />
+        </div>
         {discount ? (
           <span className="absolute left-3 top-3 rounded-md bg-error px-2 py-1 text-xs font-semibold text-white">
             −{discount}%

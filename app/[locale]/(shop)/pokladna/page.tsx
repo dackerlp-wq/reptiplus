@@ -42,6 +42,14 @@ export default async function CheckoutPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // Uložené adresy přihlášeného zákazníka (RLS owner) → výběr v pokladně.
+  const { data: savedAddresses } = user
+    ? await supabase
+        .from("address")
+        .select("id, type, label, full_name, company, ico, dic, street, city, postal_code, country, phone, is_default")
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: true })
+    : { data: [] };
 
   const currency = localeCurrency[locale];
   const shippingOptions = shipping.map((m) => ({
@@ -76,6 +84,8 @@ export default async function CheckoutPage({
         paymentOptions={paymentOptions}
         defaultEmail={user?.email ?? ""}
         packetaApiKey={packetaApiKey}
+        loggedIn={Boolean(user)}
+        savedAddresses={savedAddresses ?? []}
       />
     </section>
   );

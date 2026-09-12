@@ -73,6 +73,9 @@ const money = (minor: number, currency: string) =>
 
 type Addr = {
   full_name?: string;
+  company?: string;
+  ico?: string;
+  dic?: string;
   street?: string;
   city?: string;
   postal_code?: string;
@@ -143,6 +146,14 @@ function Address({ title, a }: { title: string; a: Addr }) {
       <p className={legend}>{title}</p>
       <p className="mt-1 text-sm text-ink">
         {a.full_name}
+        {a.company && (
+          <>
+            <br />
+            {a.company}
+            {a.ico ? ` · IČO ${a.ico}` : ""}
+            {a.dic ? ` · DIČ ${a.dic}` : ""}
+          </>
+        )}
         <br />
         {a.street}
         <br />

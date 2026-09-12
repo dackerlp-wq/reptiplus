@@ -30,9 +30,9 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 - [ ] **11. Dashboard** — grafy tržeb v čase, průměrná hodnota objednávky, konverze, nejprodávanější, opuštěné košíky.
 
 ## Fáze 5 — Zákazník / UX
-- [ ] **12. Oblíbené (wishlist)** — UI (tabulka `wishlist_item` existuje).
-- [ ] **13. Účet zákazníka** — správa adres, znovuobjednání, faktury ke stažení.
-- [ ] **14. „Naskladnit — upozornit mě"** u vyprodaných.
+- [x] **12. Oblíbené (wishlist)** — srdíčko na kartě i v detailu (`components/reptiplus/wishlist-button.tsx`, ID přes `/api/wishlist`), seznam v účtu.
+- [x] **13. Účet zákazníka** — sekce Přehled / Objednávky / Adresy / Oblíbené / Recenze / Profil (`app/[locale]/(shop)/ucet/*`, `lib/account/*`). Adresy s firemními údaji (IČO/DIČ) a výchozí adresou, předvyplnění a uložení adresy v pokladně, přepínač „Nakupuji na firmu“. Detail objednávky s průběhem, sledováním zásilky, doklady a „Objednat znovu“. Profil: jméno, telefon, změna hesla, změna e-mailu (s potvrzením), newsletter, smazání účtu (GDPR — objednávky a doklady zůstanou anonymizované). Hostovské objednávky se stejným ověřeným e-mailem se při přihlášení připojí k účtu. Migrace `20260912_0003`.
+- [x] **14. „Naskladnit — upozornit mě"** — formulář u vyprodaného produktu/varianty (`stock_alert`), e-mail po naskladnění z adminu (`lib/stock-alerts/notify.ts`).
 - [ ] **15. Recenze+** — ověřený nákup, odpověď obchodu, fotky.
 
 ## Fáze 6 — Provoz / technika

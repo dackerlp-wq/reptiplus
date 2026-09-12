@@ -11,6 +11,7 @@ import { afterRefund } from "@/lib/orders/refund";
 import { logOrderEvent } from "@/lib/orders/events";
 import { sendOrderConfirmation } from "@/lib/orders/confirmation";
 import { assertAdminUser } from "@/lib/admin/auth";
+import { notifyStockAlerts } from "@/lib/stock-alerts/notify";
 import { refundComgatePayment } from "@/lib/comgate/client";
 import { pickI18n } from "@/lib/i18n";
 import { DEFAULT_THEME, isThemeKey } from "@/lib/themes";
@@ -327,6 +328,9 @@ async function syncProductAttributes(
       })),
     );
   }
+
+  // Hlídání skladu: kdo čekal na naskladnění, dostane e-mail.
+  if (productId) await notifyStockAlerts(productId);
 }
 
 export async function togglePublishAction(formData: FormData) {
@@ -374,6 +378,7 @@ export async function setProductStockAction(id: string, stock: number) {
     .update({ stock_qty: v })
     .eq("id", id);
   if (error) throw new Error(error.message);
+  if (v > 0) await notifyStockAlerts(id);
   revalidatePath("/", "layout");
 }
 

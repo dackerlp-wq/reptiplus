@@ -285,6 +285,7 @@ export default async function ProductPage({
               baseStock={product.stock_qty}
               lowest30={isCzk ? lowest30.czk : lowest30.eur}
               variants={buyVariants}
+              userEmail={authData.user?.email ?? undefined}
               labels={{
                 variant: t("variant"),
                 addToCart: t("addToCart"),

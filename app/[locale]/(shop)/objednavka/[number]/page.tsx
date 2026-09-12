@@ -1,7 +1,8 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Package, FileText } from "lucide-react";
+import { CheckCircle2, Package, FileText, Truck, ExternalLink } from "lucide-react";
+import { ReorderButton } from "@/components/reptiplus/reorder-button";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -41,13 +42,17 @@ export default async function OrderConfirmPage({
   const { locale, number } = await params;
   const { platba } = await searchParams;
   setRequestLocale(locale);
-  const t = await getTranslations("OrderConfirm");
+  const [t, tAcc, tAuth] = await Promise.all([
+    getTranslations("OrderConfirm"),
+    getTranslations("Account"),
+    getTranslations("Auth"),
+  ]);
 
   const svc = createServiceClient();
   const { data: order } = await svc
     .from("order")
     .select(
-      "id, number, email, status, payment_status, comgate_ref, subtotal, shipping, discount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, order_item(id,product_id,name,sku,unit_price,qty,line_total)",
+      "id, number, email, status, payment_status, comgate_ref, subtotal, shipping, discount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, created_at, tracking_number, tracking_url, order_item(id,product_id,name,sku,unit_price,qty,line_total)",
     )
     .eq("number", number)
     .maybeSingle();
@@ -151,6 +156,46 @@ export default async function OrderConfirmPage({
         )}
       </div>
 
+      {/* Průběh objednávky + sledování zásilky */}
+      {(() => {
+        const STEPS = ["new", "paid", "processing", "shipped", "delivered"] as const;
+        const KEY: Record<string, string> = { new: "statusNew", paid: "statusPaid", processing: "statusProcessing", shipped: "statusShipped", delivered: "statusDelivered", cancelled: "statusCancelled", refunded: "statusRefunded" };
+        const terminal = order.status === "cancelled" || order.status === "refunded";
+        const idx = STEPS.indexOf(order.status as (typeof STEPS)[number]);
+        return (
+          <div className="mb-6 rounded-xl border border-cream-dark bg-white p-5 text-sm">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-soft">{tAcc("orderTimeline")}</p>
+            {terminal ? (
+              <p className="inline-flex rounded-md bg-error/10 px-2 py-1 text-xs font-semibold text-error">{tAuth(KEY[order.status])}</p>
+            ) : (
+              <ol className="flex flex-wrap gap-2">
+                {STEPS.map((st, i) => {
+                  const done = i <= idx;
+                  return (
+                    <li key={st} className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${done ? "bg-forest text-white" : "bg-cream text-gray-soft"}`}>
+                      {done && <CheckCircle2 className="size-3.5" />} {tAuth(KEY[st])}
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+            {(order.tracking_number || order.tracking_url) && (
+              <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="inline-flex items-center gap-1.5 text-gray-soft">
+                  <Truck className="size-4 text-forest" /> {tAcc("trackingNumber")}:{" "}
+                  <span className="font-mono font-semibold text-ink">{order.tracking_number}</span>
+                </span>
+                {order.tracking_url && (
+                  <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-forest hover:underline">
+                    {tAcc("trackParcel")} <ExternalLink className="size-3.5" />
+                  </a>
+                )}
+              </p>
+            )}
+          </div>
+        );
+      })()}
+
       {invoices.length > 0 && (
         <div className="mb-6 rounded-xl border border-cream-dark bg-white p-5 text-sm">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-soft">{t("documents")}</p>
@@ -221,7 +266,8 @@ export default async function OrderConfirmPage({
         </div>
       )}
 
-      <div className="mt-8 text-center">
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <ReorderButton orderNumber={order.number} />
         <Link
           href="/produkty"
           className="inline-flex items-center gap-2 rounded-lg bg-forest px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-forest-light"

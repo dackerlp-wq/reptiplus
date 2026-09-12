@@ -109,16 +109,25 @@ export async function createOrderAction(
     return { error: "ADDRESS" };
 
   const billingSame = fd.get("billing_same") !== "off";
-  const bill = billingSame
-    ? ship
-    : {
-        full_name: s(fd, "billing_full_name"),
-        street: s(fd, "billing_street"),
-        city: s(fd, "billing_city"),
-        postal_code: s(fd, "billing_postal_code"),
-        country: s(fd, "billing_country") || "CZ",
-        phone: s(fd, "billing_phone"),
-      };
+  // Firemní údaje (na fakturu) patří k fakturační adrese — i když je shodná s dodací.
+  const companyFields = {
+    company: s(fd, "billing_company") || undefined,
+    ico: s(fd, "billing_ico") || undefined,
+    dic: s(fd, "billing_dic") || undefined,
+  };
+  const bill = {
+    ...(billingSame
+      ? ship
+      : {
+          full_name: s(fd, "billing_full_name"),
+          street: s(fd, "billing_street"),
+          city: s(fd, "billing_city"),
+          postal_code: s(fd, "billing_postal_code"),
+          country: s(fd, "billing_country") || "CZ",
+          phone: s(fd, "billing_phone"),
+        }),
+    ...companyFields,
+  };
   if (!billingSame && (!bill.full_name || !bill.street || !bill.city || !bill.postal_code))
     return { error: "BILLING" };
 
@@ -251,6 +260,48 @@ export async function createOrderAction(
       if (created) {
         await logOrderEvent(created.id, "system", "Objednávka vytvořena v pokladně.", { source: "checkout", locale });
         await sendOrderConfirmation(created.id, { notifyShop: true });
+      }
+
+      // Uložit nové adresy do účtu (jen na přání a jen přihlášeným).
+      if (user) {
+        type SavedAddr = typeof ship & Partial<typeof companyFields>;
+        const toSave: { type: "shipping" | "billing"; a: SavedAddr }[] = [];
+        if (fd.get("save_shipping") === "on") toSave.push({ type: "shipping", a: ship });
+        if (!billingSame && fd.get("save_billing") === "on") toSave.push({ type: "billing", a: bill });
+        for (const { type, a } of toSave) {
+          try {
+            const { data: dup } = await svc
+              .from("address")
+              .select("id")
+              .eq("customer_id", user.id)
+              .eq("type", type)
+              .eq("street", a.street)
+              .eq("postal_code", a.postal_code)
+              .maybeSingle();
+            if (dup) continue;
+            const { count } = await svc
+              .from("address")
+              .select("id", { count: "exact", head: true })
+              .eq("customer_id", user.id)
+              .eq("type", type);
+            await svc.from("address").insert({
+              customer_id: user.id,
+              type,
+              full_name: a.full_name,
+              company: a.company ?? null,
+              ico: a.ico ?? null,
+              dic: a.dic ?? null,
+              street: a.street,
+              city: a.city,
+              postal_code: a.postal_code,
+              country: a.country,
+              phone: a.phone || null,
+              is_default: (count ?? 0) === 0,
+            });
+          } catch (e) {
+            console.error("[checkout] uložení adresy do účtu selhalo:", e);
+          }
+        }
       }
 
       revalidatePath("/", "layout");

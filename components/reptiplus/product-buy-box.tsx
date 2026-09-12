@@ -8,6 +8,8 @@ import { addToCartAction } from "@/lib/cart/actions";
 import { trackAddToCart } from "@/lib/analytics/events";
 import type { Locale } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
+import { WishlistButton } from "./wishlist-button";
+import { StockAlertForm } from "./stock-alert-form";
 
 export type BuyVariant = {
   id: string;
@@ -30,6 +32,7 @@ export function ProductBuyBox({
   lowest30,
   variants,
   labels,
+  userEmail,
 }: {
   productId: string;
   productName: string;
@@ -41,6 +44,7 @@ export function ProductBuyBox({
   baseStock: number;
   lowest30?: number | null;
   variants: BuyVariant[];
+  userEmail?: string;
   labels: {
     variant: string;
     addToCart: string;
@@ -168,12 +172,12 @@ export function ProductBuyBox({
         </div>
       )}
 
-      <div className="mt-6 max-w-xs">
+      <div className="mt-6 flex max-w-md flex-wrap gap-2">
         <button
           type="button"
           onClick={add}
           disabled={out || pending}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-forest-light disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex min-w-[12rem] flex-1 items-center justify-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-forest-light disabled:cursor-not-allowed disabled:opacity-40"
         >
           {pending ? (
             <Loader2 className="size-4 animate-spin" />
@@ -187,7 +191,9 @@ export function ProductBuyBox({
             </>
           )}
         </button>
+        <WishlistButton productId={productId} variant="text" />
       </div>
+      {out && <StockAlertForm productId={productId} variantId={selId} defaultEmail={userEmail} />}
     </div>
   );
 }

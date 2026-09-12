@@ -92,6 +92,8 @@ export function plainTextToHtml(body: string): { html: string; paragraphs: strin
 export type OrderAddress = {
   full_name?: string;
   company?: string;
+  ico?: string;
+  dic?: string;
   street?: string;
   city?: string;
   postal_code?: string;
@@ -230,6 +232,7 @@ function addressHtml(a: OrderAddress): string {
   const lines = [
     a.full_name,
     a.company,
+    [a.ico ? `IČO ${a.ico}` : null, a.dic ? `DIČ ${a.dic}` : null].filter(Boolean).join(" · ") || null,
     a.street,
     [a.postal_code, a.city].filter(Boolean).join(" ") + (a.country ? `, ${a.country}` : ""),
     a.phone,
@@ -239,7 +242,7 @@ function addressHtml(a: OrderAddress): string {
 
 function addressText(a: OrderAddress): string {
   if (!a) return "";
-  return [a.full_name, a.company, a.street, [a.postal_code, a.city].filter(Boolean).join(" "), a.country, a.phone]
+  return [a.full_name, a.company, a.ico ? `IČO ${a.ico}` : null, a.dic ? `DIČ ${a.dic}` : null, a.street, [a.postal_code, a.city].filter(Boolean).join(" "), a.country, a.phone]
     .filter((x) => x && String(x).trim())
     .join(", ");
 }
@@ -906,4 +909,51 @@ export function invoiceEmail(d: {
 <tr><td style="padding:18px 28px;background:${CREAM};border-top:1px solid ${BORDER};color:${MUTED};font-size:12px;">${c.footer} · reptiplus.cz</td></tr>`;
   const text = [c.title(d.isCreditNote), "", hello, c.intro(d.isCreditNote, d.orderNumber), "", `${c.number}: ${d.number}`, `${c.amount}: ${amount}`, "", `${c.download}: ${d.downloadUrl}`, `${c.viewOrder}: ${d.orderUrl}`].join("\n");
   return { subject: c.subject(d.number, d.isCreditNote, d.orderNumber), html: layout(inner, c.title(d.isCreditNote)), text };
+}
+
+/* ── Hlídání skladu ────────────────────────────────────────────────────── */
+
+const STOCK_COPY = {
+  cs: {
+    subject: (n: string) => `${n} je opět skladem — Reptiplus`,
+    title: "Je to zpátky skladem!",
+    body: (n: string) => `Produkt ${n}, který jste chtěli hlídat, máme znovu na skladě. Zásoby bývají omezené, tak neváhejte.`,
+    cta: "Zobrazit produkt",
+    note: "Toto upozornění jsme poslali jednorázově na vaši žádost z webu reptiplus.cz.",
+  },
+  en: {
+    subject: (n: string) => `${n} is back in stock — Reptiplus`,
+    title: "It's back in stock!",
+    body: (n: string) => `${n}, the product you asked us to watch, is available again. Stock is often limited, so don't wait too long.`,
+    cta: "View product",
+    note: "This is a one-time notification you requested on reptiplus.cz.",
+  },
+  de: {
+    subject: (n: string) => `${n} ist wieder auf Lager — Reptiplus`,
+    title: "Wieder auf Lager!",
+    body: (n: string) => `${n}, das Produkt, das Sie beobachten wollten, ist wieder verfügbar. Der Vorrat ist oft begrenzt, also zögern Sie nicht.`,
+    cta: "Produkt ansehen",
+    note: "Diese einmalige Benachrichtigung haben Sie auf reptiplus.cz angefordert.",
+  },
+} as const;
+
+export function stockAlertEmail(d: { locale: Locale; productName: string; productUrl: string }): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const c = STOCK_COPY[d.locale] ?? STOCK_COPY.cs;
+  const inner = `
+<tr><td style="padding:28px;">
+<h1 style="margin:0 0 12px;font-size:22px;color:${INK};">${c.title}</h1>
+<p style="margin:0 0 20px;font-size:14px;line-height:1.55;">${escapeHtml(c.body(d.productName))}</p>
+${button(d.productUrl, c.cta)}
+<p style="margin:22px 0 0;font-size:12px;color:${MUTED};">${c.note}</p>
+</td></tr>
+${footerRow(d.locale)}`;
+  return {
+    subject: c.subject(d.productName),
+    html: layout(inner, c.body(d.productName).slice(0, 140)),
+    text: [c.title, "", c.body(d.productName), "", `${c.cta}: ${d.productUrl}`, "", c.note].join("\n"),
+  };
 }

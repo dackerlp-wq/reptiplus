@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Loader2, Tag, Check, MapPin } from "lucide-react";
+import { Loader2, Tag, Check, MapPin, Building2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { formatPrice } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
@@ -13,6 +13,24 @@ import {
 } from "@/lib/checkout/actions";
 
 type Option = { code: string; name: string; fee: number; pickup?: boolean };
+
+export type SavedAddress = {
+  id: string;
+  type: "billing" | "shipping";
+  label: string | null;
+  full_name: string | null;
+  company: string | null;
+  ico: string | null;
+  dic: string | null;
+  street: string | null;
+  city: string | null;
+  postal_code: string | null;
+  country: string;
+  phone: string | null;
+  is_default: boolean;
+};
+
+type AddressDefaults = Partial<Record<"full_name" | "street" | "city" | "postal_code" | "country" | "phone", string | null>>;
 
 type PickupPoint = { id: string; name: string; address: string };
 
@@ -77,6 +95,8 @@ export function CheckoutForm({
   paymentOptions,
   defaultEmail,
   packetaApiKey,
+  loggedIn = false,
+  savedAddresses = [],
 }: {
   locale: Locale;
   subtotal: number;
@@ -84,12 +104,24 @@ export function CheckoutForm({
   paymentOptions: Option[];
   defaultEmail: string;
   packetaApiKey: string;
+  loggedIn?: boolean;
+  savedAddresses?: SavedAddress[];
 }) {
   const t = useTranslations("Checkout");
 
   const [shipping, setShipping] = useState(shippingOptions[0]?.code ?? "");
   const [payment, setPayment] = useState(paymentOptions[0]?.code ?? "");
   const [billingSame, setBillingSame] = useState(true);
+
+  // Uložené adresy z účtu: výchozí dodací / fakturační předvybraná.
+  const defaultShip = savedAddresses.find((a) => a.type === "shipping" && a.is_default) ?? savedAddresses.find((a) => a.type === "shipping") ?? savedAddresses[0];
+  const defaultBill = savedAddresses.find((a) => a.type === "billing" && a.is_default) ?? savedAddresses.find((a) => a.type === "billing");
+  const [shipSel, setShipSel] = useState<string>(defaultShip?.id ?? "new");
+  const [billSel, setBillSel] = useState<string>(defaultBill?.id ?? "new");
+  const shipAddr = savedAddresses.find((a) => a.id === shipSel) ?? null;
+  const billAddr = savedAddresses.find((a) => a.id === billSel) ?? null;
+  const [company, setCompany] = useState(Boolean(defaultBill?.company || defaultBill?.ico || defaultShip?.company));
+  const companySource = billingSame ? shipAddr : billAddr;
   const [code, setCode] = useState("");
   const [pickupPoint, setPickupPoint] = useState<PickupPoint | null>(null);
   const [pickupOpening, setPickupOpening] = useState(false);
@@ -174,10 +206,19 @@ export function CheckoutForm({
         {/* Dodací adresa */}
         <section className="space-y-4 rounded-xl border border-cream-dark bg-white p-5">
           <h2 className="font-display text-lg font-semibold">{t("shippingAddress")}</h2>
-          <AddressFields prefix="shipping" t={t} required />
+          {savedAddresses.length > 0 && (
+            <SavedAddressPicker name="ship_saved" addresses={savedAddresses} value={shipSel} onChange={setShipSel} t={t} />
+          )}
+          <AddressFields key={`ship-${shipSel}`} prefix="shipping" t={t} required defaults={shipAddr ?? undefined} />
+          {loggedIn && shipSel === "new" && (
+            <label className="flex items-center gap-2.5 text-sm text-ink">
+              <input type="checkbox" name="save_shipping" className="size-4 accent-forest" />
+              {t("saveAddress")}
+            </label>
+          )}
         </section>
 
-        {/* Fakturační adresa */}
+        {/* Fakturační adresa + firma */}
         <section className="space-y-4 rounded-xl border border-cream-dark bg-white p-5">
           <label className="flex items-center gap-2.5 text-sm font-medium text-ink">
             <input
@@ -191,8 +232,37 @@ export function CheckoutForm({
           {!billingSame && (
             <>
               <h2 className="font-display text-lg font-semibold">{t("billingAddress")}</h2>
-              <AddressFields prefix="billing" t={t} required />
+              {savedAddresses.length > 0 && (
+                <SavedAddressPicker name="bill_saved" addresses={savedAddresses} value={billSel} onChange={setBillSel} t={t} />
+              )}
+              <AddressFields key={`bill-${billSel}`} prefix="billing" t={t} required defaults={billAddr ?? undefined} />
+              {loggedIn && billSel === "new" && (
+                <label className="flex items-center gap-2.5 text-sm text-ink">
+                  <input type="checkbox" name="save_billing" className="size-4 accent-forest" />
+                  {t("saveAddress")}
+                </label>
+              )}
             </>
+          )}
+          <label className="flex items-center gap-2.5 border-t border-cream pt-4 text-sm font-medium text-ink">
+            <input type="checkbox" checked={company} onChange={(e) => setCompany(e.target.checked)} className="size-4 accent-forest" />
+            <Building2 className="size-4 text-gray-soft" /> {t("companyToggle")}
+          </label>
+          {company && (
+            <div key={`company-${companySource?.id ?? "new"}`} className="grid gap-4 sm:grid-cols-3">
+              <label className={label}>
+                <span className={legend}>{t("company")}</span>
+                <input name="billing_company" defaultValue={companySource?.company ?? ""} className={input} />
+              </label>
+              <label className={label}>
+                <span className={legend}>{t("ico")}</span>
+                <input name="billing_ico" defaultValue={companySource?.ico ?? ""} className={input} />
+              </label>
+              <label className={label}>
+                <span className={legend}>{t("dic")}</span>
+                <input name="billing_dic" defaultValue={companySource?.dic ?? ""} className={input} />
+              </label>
+            </div>
           )}
         </section>
 
@@ -422,43 +492,96 @@ function OptionRow({
   );
 }
 
+/** Výběr uložené adresy z účtu (nebo „nová adresa"). */
+function SavedAddressPicker({
+  name,
+  addresses,
+  value,
+  onChange,
+  t,
+}: {
+  name: string;
+  addresses: SavedAddress[];
+  value: string;
+  onChange: (id: string) => void;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className={legend}>{t("savedAddresses")}</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {addresses.map((a) => (
+          <label
+            key={a.id}
+            className={`flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors ${
+              value === a.id ? "border-forest bg-forest/5" : "border-cream-dark hover:border-forest/40"
+            }`}
+          >
+            <input type="radio" name={name} checked={value === a.id} onChange={() => onChange(a.id)} className="mt-1 size-4 accent-forest" />
+            <span className="min-w-0">
+              <span className="block font-medium text-ink">
+                {a.label || a.full_name}
+                {a.company ? ` · ${a.company}` : ""}
+              </span>
+              <span className="block text-xs text-gray-soft">
+                {a.street}, {a.postal_code} {a.city}
+              </span>
+            </span>
+          </label>
+        ))}
+        <label
+          className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors ${
+            value === "new" ? "border-forest bg-forest/5" : "border-cream-dark hover:border-forest/40"
+          }`}
+        >
+          <input type="radio" name={name} checked={value === "new"} onChange={() => onChange("new")} className="size-4 accent-forest" />
+          <span className="font-medium text-ink">{t("newAddress")}</span>
+        </label>
+      </div>
+    </div>
+  );
+}
+
 function AddressFields({
   prefix,
   t,
   required,
+  defaults,
 }: {
   prefix: "shipping" | "billing";
   t: ReturnType<typeof useTranslations>;
   required?: boolean;
+  defaults?: AddressDefaults;
 }) {
+  const d = defaults ?? {};
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <label className={`${label} sm:col-span-2`}>
         <span className={legend}>{t("fullName")}</span>
-        <input name={`${prefix}_full_name`} required={required} className={input} />
+        <input name={`${prefix}_full_name`} required={required} defaultValue={d.full_name ?? ""} autoComplete="name" className={input} />
       </label>
       <label className={`${label} sm:col-span-2`}>
         <span className={legend}>{t("street")}</span>
-        <input name={`${prefix}_street`} required={required} className={input} />
+        <input name={`${prefix}_street`} required={required} defaultValue={d.street ?? ""} autoComplete="street-address" className={input} />
       </label>
       <label className={label}>
         <span className={legend}>{t("city")}</span>
-        <input name={`${prefix}_city`} required={required} className={input} />
+        <input name={`${prefix}_city`} required={required} defaultValue={d.city ?? ""} autoComplete="address-level2" className={input} />
       </label>
       <label className={label}>
         <span className={legend}>{t("postalCode")}</span>
-        <input name={`${prefix}_postal_code`} required={required} className={input} />
+        <input name={`${prefix}_postal_code`} required={required} defaultValue={d.postal_code ?? ""} autoComplete="postal-code" className={input} />
       </label>
       <label className={label}>
         <span className={legend}>{t("country")}</span>
-        <select name={`${prefix}_country`} defaultValue="CZ" className={input}>
+        <select name={`${prefix}_country`} defaultValue={d.country ?? "CZ"} className={input}>
           <option value="CZ">{t("countryCZ")}</option>
           <option value="SK">{t("countrySK")}</option>
         </select>
       </label>
       <label className={label}>
         <span className={legend}>{t("phone")}</span>
-        <input name={`${prefix}_phone`} type="tel" className={input} />
+        <input name={`${prefix}_phone`} type="tel" defaultValue={d.phone ?? ""} autoComplete="tel" className={input} />
       </label>
     </div>
   );

@@ -182,6 +182,20 @@ export async function getProducts(opts?: {
   return normalizeList(data);
 }
 
+/** Produkty podle ID (oblíbené v účtu) — v zadaném pořadí, jen publikované. */
+export async function getProductsByIds(ids: string[]): Promise<ProductListItem[]> {
+  if (ids.length === 0) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("product")
+    .select(LIST_COLS)
+    .eq("is_published", true)
+    .in("id", ids);
+  const list = normalizeList(data);
+  const order = new Map(ids.map((id, i) => [id, i]));
+  return list.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+}
+
 /** Nejnovější produkty (sekce „Novinky") */
 export async function getNewProducts(limit = 4): Promise<ProductListItem[]> {
   const supabase = await createClient();

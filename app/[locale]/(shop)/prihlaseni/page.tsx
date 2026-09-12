@@ -15,10 +15,15 @@ export async function generateMetadata({
 
 export default async function LoginPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: Locale }>;
+  searchParams: Promise<{ redirectTo?: string }>;
 }) {
   const { locale } = await params;
+  const { redirectTo } = await searchParams;
   setRequestLocale(locale);
-  return <AuthForm mode="login" redirectTo={`/${locale}/ucet`} />;
+  // Jen relativní cesty na vlastním webu (žádné open redirecty).
+  const safe = redirectTo && /^\/[^/\\]/.test(redirectTo) ? redirectTo : `/${locale}/ucet`;
+  return <AuthForm mode="login" redirectTo={safe} />;
 }
