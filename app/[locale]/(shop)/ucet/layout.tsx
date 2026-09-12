@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { LogOut } from "lucide-react";
+import { LogOut, ShieldCheck } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { requireCustomer } from "@/lib/account/queries";
 import { signOutAction } from "@/lib/auth/actions";
@@ -27,15 +28,25 @@ export default async function AccountLayout({
             {user.email}
           </p>
         </div>
-        <form action={signOutAction}>
-          <input type="hidden" name="redirectTo" value={`/${locale}`} />
-          <button
-            type="submit"
-            className="inline-flex items-center gap-2 rounded-lg border border-cream-dark bg-white px-4 py-2 text-sm font-medium transition-colors hover:bg-cream"
-          >
-            <LogOut className="size-4" /> {tAuth("logout")}
-          </button>
-        </form>
+        <div className="flex flex-wrap items-center gap-2">
+          {(profile?.role === "admin" || profile?.role === "staff") && (
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-2 rounded-lg bg-forest px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-forest-light"
+            >
+              <ShieldCheck className="size-4" /> {t("adminEntry")}
+            </Link>
+          )}
+          <form action={signOutAction}>
+            <input type="hidden" name="redirectTo" value={`/${locale}`} />
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-lg border border-cream-dark bg-white px-4 py-2 text-sm font-medium transition-colors hover:bg-cream"
+            >
+              <LogOut className="size-4" /> {tAuth("logout")}
+            </button>
+          </form>
+        </div>
       </div>
       <div className="grid gap-6 lg:grid-cols-[14rem_1fr]">
         <AccountNav

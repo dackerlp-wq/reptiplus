@@ -470,6 +470,7 @@
     "trackingNumber": "Sendungsnummer",
     "trackParcel": "Sendung verfolgen",
     "orderTimeline": "Bestellverlauf",
-    "accountDeleted": "Ihr Konto wurde gelöscht."
+    "accountDeleted": "Ihr Konto wurde gelöscht.",
+    "adminEntry": "Verwaltung"
   }
 }

@@ -470,6 +470,7 @@
     "trackingNumber": "Tracking number",
     "trackParcel": "Track parcel",
     "orderTimeline": "Order progress",
-    "accountDeleted": "Your account has been deleted."
+    "accountDeleted": "Your account has been deleted.",
+    "adminEntry": "Administration"
   }
 }

@@ -470,6 +470,7 @@
     "trackingNumber": "Sledovací číslo",
     "trackParcel": "Sledovat zásilku",
     "orderTimeline": "Průběh objednávky",
-    "accountDeleted": "Váš účet byl smazán."
+    "accountDeleted": "Váš účet byl smazán.",
+    "adminEntry": "Administrace"
   }
 }
