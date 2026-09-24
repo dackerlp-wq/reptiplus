@@ -19,7 +19,7 @@ Infrastruktura:
 ## Příkazy
 
 ```bash
-npm run dev      # next dev (port 3000)
+npm run dev      # next dev (port 3000); `predev` spustí scripts/check-env.mjs — opraví název/kódování .env.local a založí šablonu
 npm run build    # next build — spouštět před pushem, Vercel build je jediná „CI“
 npx tsc --noEmit # typecheck (nejrychlejší kontrola před pushem)
 npm run lint     # ESLint 9 flat config (eslint.config.mjs, eslint-config-next); build ho nespouští
