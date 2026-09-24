@@ -14,7 +14,8 @@
     "slogan": "What we use ourselves, we recommend with a clear conscience!",
     "contact": "Contact",
     "claim": "Claims",
-    "withdrawal": "Returns"
+    "withdrawal": "Returns",
+    "shipping": "Shipping & payment"
   },
   "Cookies": {
     "title": "Cookies",
@@ -292,7 +293,8 @@
     "terms": "Terms & Conditions",
     "claims": "Complaints Procedure",
     "privacy": "Privacy Policy",
-    "rights": "All rights reserved."
+    "rights": "All rights reserved.",
+    "payments": "Secure payments"
   },
   "Legal": {
     "termsTitle": "Terms & Conditions",
@@ -581,5 +583,29 @@
     "errServer": "Sending failed, please try again or e-mail us.",
     "sending": "Sending…",
     "submit": "Send"
+  },
+  "Shipping": {
+    "title": "Shipping & payment",
+    "metaDescription": "Delivery and payment options at Reptiplus, shipping prices and free shipping.",
+    "intro": "Orders usually ship within 1–2 working days (for prepayment, after the payment is received). Prices include VAT.",
+    "freeFrom": "Free shipping on orders over {amount}",
+    "free": "free",
+    "shippingTitle": "Delivery options",
+    "shippingNote": "Track your parcel via the link in the shipping e-mail. Bulky or fragile goods (terrariums) are packed with extra care; please check the parcel on delivery and report any damage to the carrier and to us.",
+    "paymentTitle": "Payment options",
+    "paymentNote": "Online payments are processed by the Comgate payment gateway (Comgate a.s., a licensed payment institution supervised by the Czech National Bank). Card details are entered on the gateway's secure page; we never see them.",
+    "legalLinks": "Details are in our <terms>terms and conditions</terms>. Goods can be <withdrawal>returned within 14 days</withdrawal> without giving a reason; defects are handled via the <claims>claim form</claims>.",
+    "carrier": {
+      "ppl": "Courier delivery to your address, usually the next working day after dispatch.",
+      "zasilkovna": "Pickup at a Packeta pickup point or Z-BOX of your choice at checkout.",
+      "balikovna": "Pickup at a post office or Balíkovna.",
+      "personal": "Pickup by arrangement at our address, prepaid or cash.",
+      "other": "By arrangement."
+    },
+    "provider": {
+      "comgate": "Card (Visa, Mastercard), Apple Pay, Google Pay or bank button via the Comgate gateway.",
+      "cod": "Cash or card on delivery.",
+      "bank": "Transfer to our account; details are in the order confirmation. We ship once the payment arrives."
+    }
   }
 }

@@ -100,7 +100,8 @@ Všechny tabulky mají RLS zapnuté. Typy z DB: `types/database.ts` (generované
 
 ### Nastavení obchodu (`app_setting`)
 Tabulka key/value JSONB, čtená přes `lib/settings.ts` service klientem. Klíče: `shop.general`, `appearance.theme`, `appearance.hero`,
-`legal.terms|privacy|claims`, `content.about`, `integrations.comgate|ppl|zasilkovna|analytics|ai`, `ledx.page`, `invoices.settings`.
+`legal.terms|privacy|claims`, `content.about`, `content.shipping` (volný text stránky Doprava a platba), `integrations.comgate|ppl|zasilkovna|analytics|ai`, `ledx.page`, `invoices.settings`,
+`shipping.settings`, `newsletter.settings`.
 Integrace (Comgate, PPL, Zásilkovna) berou přihlašovací údaje primárně z `app_setting`, s fallbackem na env.
 
 ### Vzhled
@@ -151,6 +152,12 @@ Export CSV: `app/api/admin/inquiries/export/route.ts`.
   e-mail obchodu s reply-to, potvrzení zákazníkovi, u čísla objednávky i záznam do `order_event`).
 - Doprava zdarma: `app_setting` `shipping.settings` (`freeFromCzk|freeFromEur`, minor units; Nastavení → Doprava), helper `freeShippingThreshold()` v `lib/settings.ts`.
   Uplatňuje se na mezisoučet zboží v pokladně (stránka i `createOrderAction`, nikdy z klienta) a jako lišta průběhu v košíku.
+- Doprava a platba: `app/[locale]/(shop)/doprava-a-platba` — tabulky se generují z `shipping_method` / `payment_method` (ceny podle měny jazyka) + doprava zdarma
+  + volný text `content.shipping` (Nastavení → Doprava). Popisky dopravců/plateb v `messages` (`Shipping.carrier.*`, `Shipping.provider.*`).
+- Požadavky Comgate na web (help.comgate.eu → „Jak získat platební bránu“, „Údaje na webu a loga“): HTTPS, identifikace firmy, kontakty, produkty s cenami,
+  obchodní podmínky (s odstavcem o Comgate), reklamační řád, GDPR, dodací a platební podmínky, loga Visa + Mastercard v patičce (povinné), Comgate s odkazem.
+  Loga jsou v `public/payments/*.svg` (oficiální balíček Comgate), patička je vykresluje z konstanty `PAYMENT_LOGOS` ve `footer.tsx`. Právní texty jsou v `app_setting`
+  `legal.*` (jen `cs`, EN/DE přes AI překlad v adminu) — první verze vložena 24. 9. 2026, majitel je má zkontrolovat.
 - 404 / chyby: `app/[locale]/(shop)/[...rest]/page.tsx` volá `notFound()` → `(shop)/not-found.tsx` (s Navbar/Footer), `app/[locale]/error.tsx` (client, ns `ErrorPage`), `app/global-error.tsx`.
 
 ### Dárkové poukazy (`gift_voucher`, `gift_voucher_redemption`)

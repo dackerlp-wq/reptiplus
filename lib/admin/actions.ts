@@ -1633,6 +1633,18 @@ export async function saveLegalAction(fd: FormData) {
 }
 
 /** Obsah stránky „O nás" (i18n, HTML z WYSIWYG). */
+/** Doplňující text stránky Doprava a platba (`content.shipping`, i18n rich text). */
+export async function saveShippingContentAction(fd: FormData) {
+  await assertAdmin();
+  const svc = createServiceClient();
+  const content = i18n(fd, "content");
+  const { error } = await svc
+    .from("app_setting")
+    .upsert({ key: "content.shipping", value: content as never }, { onConflict: "key" });
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
 export async function saveAboutAction(fd: FormData) {
   await assertAdmin();
   const svc = createServiceClient();

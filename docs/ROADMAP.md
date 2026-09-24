@@ -41,6 +41,8 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 - [x] **15b. Dárkové poukazy** — produkt s příznakem „Dárkový poukaz“ → po zaplacení kódy DP-XXXX-XXXX e-mailem s PDF (platnost 12 měsíců); ruční vystavení v adminu (Poukazy), uplatnění v pokladně samostatným polem s postupným čerpáním zůstatku (EUR kurzem ČNB), plně uhrazená objednávka rovnou zaplacená, faktura s poznámkou o úhradě poukazem, storno nezaplacené objednávky vrací zůstatek.
 - [x] **15c. Reklamace a odstoupení od smlouvy** — stránky `/reklamace` a `/odstoupeni-od-smlouvy` s formulářem (předvyplnění z objednávky), e-mail obchodu + potvrzení zákazníkovi s adresou pro vrácení, záznam do historie objednávky, admin Reklamace (stavy, poznámky).
 
+- [x] **9f. Náležitosti pro Comgate** — obchodní podmínky (vč. odstavce o Comgate, odstoupení, výjimky), reklamační řád a zásady zpracování osobních údajů vloženy do adminu (Nastavení → Právní, česky; EN/DE přes AI překlad), loga Visa/Mastercard/Apple Pay/Google Pay/Comgate v patičce, stránka `/doprava-a-platba` generovaná z metod dopravy a platby, domény `www.*` přesměrované (308) s certifikátem.
+
 ## Fáze 6 — Provoz / technika
 - [ ] **16. Monitoring chyb** (Sentry).
 - [x] **17. Opuštěný košík** — e-mail přihlášeným zákazníkům 24–72 h po poslední změně košíku, jednou na košík, bez slevy (cron `/api/cron/abandoned-carts` 08:00 UTC).

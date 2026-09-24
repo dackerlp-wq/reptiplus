@@ -14,7 +14,8 @@
     "slogan": "Co sami používáme, to s čistým svědomím doporučujeme!",
     "contact": "Kontakt",
     "claim": "Reklamace",
-    "withdrawal": "Vrácení zboží"
+    "withdrawal": "Vrácení zboží",
+    "shipping": "Doprava a platba"
   },
   "Cookies": {
     "title": "Cookies",
@@ -292,7 +293,8 @@
     "terms": "Obchodní podmínky",
     "claims": "Reklamační řád",
     "privacy": "Zpracování osobních údajů",
-    "rights": "Všechna práva vyhrazena."
+    "rights": "Všechna práva vyhrazena.",
+    "payments": "Bezpečné platby"
   },
   "Legal": {
     "termsTitle": "Obchodní podmínky",
@@ -581,5 +583,29 @@
     "errServer": "Odeslání se nepodařilo, zkuste to prosím znovu nebo nám napište e-mail.",
     "sending": "Odesílám…",
     "submit": "Odeslat"
+  },
+  "Shipping": {
+    "title": "Doprava a platba",
+    "metaDescription": "Způsoby doručení a platby v e-shopu Reptiplus, ceny dopravy, doprava zdarma.",
+    "intro": "Zboží odesíláme zpravidla do 1–2 pracovních dnů od přijetí objednávky (u platby předem od připsání platby). Ceny jsou včetně DPH.",
+    "freeFrom": "Doprava zdarma při nákupu od {amount}",
+    "free": "zdarma",
+    "shippingTitle": "Způsoby doručení",
+    "shippingNote": "Zásilku sledujete přes odkaz v e-mailu o odeslání. Objemné nebo křehké zboží (terária) balíme se zvláštní péčí; při převzetí zásilku prosím zkontrolujte a poškození nahlaste dopravci i nám.",
+    "paymentTitle": "Způsoby platby",
+    "paymentNote": "Online platby pro nás zajišťuje platební brána Comgate (Comgate a.s., licencovaná platební instituce pod dohledem ČNB). Údaje o kartě zadáváte přímo na zabezpečené stránce brány, my je nevidíme.",
+    "legalLinks": "Podrobnosti najdete v <terms>obchodních podmínkách</terms>. Zboží lze do 14 dnů <withdrawal>vrátit bez udání důvodu</withdrawal>, vady řešíme přes <claims>reklamační formulář</claims>.",
+    "carrier": {
+      "ppl": "Doručení kurýrem na adresu, obvykle následující pracovní den po odeslání.",
+      "zasilkovna": "Vyzvednutí na výdejním místě nebo v Z-BOXu dle vašeho výběru v pokladně.",
+      "balikovna": "Vyzvednutí na poště nebo v Balíkovně.",
+      "personal": "Vyzvednutí po domluvě na naší adrese, platba předem nebo hotově.",
+      "other": "Podle domluvy."
+    },
+    "provider": {
+      "comgate": "Platební karta (Visa, Mastercard), Apple Pay, Google Pay nebo bankovní tlačítko přes bránu Comgate.",
+      "cod": "Platba hotově nebo kartou při převzetí zásilky.",
+      "bank": "Převod na náš účet, údaje pošleme v potvrzení objednávky. Zboží odesíláme po připsání platby."
+    }
   }
 }

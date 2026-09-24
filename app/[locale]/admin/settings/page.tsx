@@ -23,6 +23,7 @@ import {
   saveAboutAction,
   saveShippingSettingsAction,
   saveNewsletterSettingsAction,
+  saveShippingContentAction,
 } from "@/lib/admin/actions";
 
 type I18nText = { cs?: string; en?: string; de?: string };
@@ -58,6 +59,7 @@ export default async function AdminSettingsPage() {
   const privacy = get("legal.privacy") as I18nText;
   const claims = get("legal.claims") as I18nText;
   const about = get("content.about") as I18nText;
+  const shippingContent = get("content.shipping") as I18nText;
   const appearance = get("appearance.theme") as { theme?: string };
   const activeTheme = isThemeKey(appearance.theme)
     ? appearance.theme
@@ -557,6 +559,17 @@ export default async function AdminSettingsPage() {
               </label>
             </div>
             <button className={saveBtn}>Uložit</button>
+          </ToastForm>
+          <ToastForm action={saveShippingContentAction} className={`${card} space-y-4`}>
+            <div>
+              <h2 className="font-display text-lg font-semibold">Stránka „Doprava a platba“</h2>
+              <p className="text-sm text-gray-soft">
+                Tabulky metod a cen se na /doprava-a-platba generují samy z níže uvedených metod. Tady doplníš volný text pod ně
+                (lhůty, balení, osobní odběr, výjimky). EN/DE doplníš tlačítkem AI překladu.
+              </p>
+            </div>
+            <LangFields fields={[{ name: "content", label: "Doplňující text", type: "rich", values: shippingContent }]} />
+            <button className={saveBtn}>Uložit text</button>
           </ToastForm>
           <Hint>
             Způsoby dopravy nabízené v pokladně. Cenu zadáváš v Kč i €; pro

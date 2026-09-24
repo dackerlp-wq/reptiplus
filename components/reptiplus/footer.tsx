@@ -4,6 +4,15 @@ import { Link } from "@/i18n/navigation";
 import { getShopContact } from "@/lib/settings";
 import { CookieSettingsLink } from "./cookie-settings-link";
 
+/** Oficiální loga z balíčku Comgate (help.comgate.eu → Ke stažení). Comgate s odkazem dle jejich podmínek. */
+const PAYMENT_LOGOS: { src: string; alt: string; href?: string }[] = [
+  { src: "/payments/visa.svg", alt: "Visa" },
+  { src: "/payments/mastercard.svg", alt: "Mastercard" },
+  { src: "/payments/apple-pay.svg", alt: "Apple Pay" },
+  { src: "/payments/google-pay.svg", alt: "Google Pay" },
+  { src: "/payments/comgate.svg", alt: "Platební brána Comgate", href: "https://www.comgate.eu" },
+];
+
 export async function Footer() {
   const t = await getTranslations("Footer");
   const nav = await getTranslations("Nav");
@@ -39,6 +48,11 @@ export async function Footer() {
             <li>
               <Link href="/objednavka" className="hover:text-white">
                 {nav("trackOrder")}
+              </Link>
+            </li>
+            <li>
+              <Link href="/doprava-a-platba" className="hover:text-white">
+                {nav("shipping")}
               </Link>
             </li>
             <li>
@@ -96,6 +110,30 @@ export async function Footer() {
           </ul>
         </div>
 
+      </div>
+
+      {/* Loga platebních metod — Visa a Mastercard vyžaduje Comgate v patičce, Comgate s odkazem. */}
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-3 px-4 py-5 sm:justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider text-cream/70">{t("payments")}</p>
+          <ul className="flex flex-wrap items-center justify-center gap-2">
+            {PAYMENT_LOGOS.map((l) => (
+              <li key={l.src}>
+                {l.href ? (
+                  <a href={l.href} target="_blank" rel="noopener noreferrer" title={l.alt} className="block rounded-md bg-white px-2 py-1 transition-opacity hover:opacity-80">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={l.src} alt={l.alt} className="h-5 w-auto" loading="lazy" />
+                  </a>
+                ) : (
+                  <span className="block rounded-md bg-white px-2 py-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={l.src} alt={l.alt} className="h-5 w-auto" loading="lazy" />
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       <div className="border-t border-white/10">

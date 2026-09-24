@@ -14,7 +14,8 @@
     "slogan": "Was wir selbst verwenden, empfehlen wir mit gutem Gewissen!",
     "contact": "Kontakt",
     "claim": "Reklamation",
-    "withdrawal": "Rückgabe"
+    "withdrawal": "Rückgabe",
+    "shipping": "Versand & Zahlung"
   },
   "Cookies": {
     "title": "Cookies",
@@ -292,7 +293,8 @@
     "terms": "AGB",
     "claims": "Reklamationsordnung",
     "privacy": "Datenschutz",
-    "rights": "Alle Rechte vorbehalten."
+    "rights": "Alle Rechte vorbehalten.",
+    "payments": "Sichere Zahlung"
   },
   "Legal": {
     "termsTitle": "Allgemeine Geschäftsbedingungen",
@@ -581,5 +583,29 @@
     "errServer": "Senden fehlgeschlagen, bitte erneut versuchen oder eine E-Mail schreiben.",
     "sending": "Wird gesendet…",
     "submit": "Senden"
+  },
+  "Shipping": {
+    "title": "Versand & Zahlung",
+    "metaDescription": "Liefer- und Zahlungsarten bei Reptiplus, Versandkosten und kostenloser Versand.",
+    "intro": "Bestellungen werden in der Regel innerhalb von 1–2 Werktagen versendet (bei Vorkasse nach Zahlungseingang). Preise inkl. MwSt.",
+    "freeFrom": "Kostenloser Versand ab {amount}",
+    "free": "kostenlos",
+    "shippingTitle": "Lieferarten",
+    "shippingNote": "Die Sendung verfolgen Sie über den Link in der Versand-E-Mail. Sperrige oder zerbrechliche Ware (Terrarien) verpacken wir besonders sorgfältig; bitte prüfen Sie die Sendung bei Übernahme und melden Sie Schäden dem Zusteller und uns.",
+    "paymentTitle": "Zahlungsarten",
+    "paymentNote": "Online-Zahlungen wickelt das Zahlungsgateway Comgate ab (Comgate a.s., lizenziertes Zahlungsinstitut unter Aufsicht der Tschechischen Nationalbank). Kartendaten geben Sie auf der gesicherten Seite des Gateways ein; wir sehen sie nie.",
+    "legalLinks": "Einzelheiten finden Sie in den <terms>AGB</terms>. Ware kann innerhalb von 14 Tagen <withdrawal>ohne Angabe von Gründen zurückgegeben</withdrawal> werden; Mängel bearbeiten wir über das <claims>Reklamationsformular</claims>.",
+    "carrier": {
+      "ppl": "Kurierzustellung an Ihre Adresse, meist am nächsten Werktag nach Versand.",
+      "zasilkovna": "Abholung an einer Packeta-Abholstelle oder Z-BOX Ihrer Wahl an der Kasse.",
+      "balikovna": "Abholung bei der Post oder Balíkovna.",
+      "personal": "Abholung nach Vereinbarung an unserer Adresse, Vorkasse oder bar.",
+      "other": "Nach Vereinbarung."
+    },
+    "provider": {
+      "comgate": "Karte (Visa, Mastercard), Apple Pay, Google Pay oder Bank-Button über das Comgate-Gateway.",
+      "cod": "Bar- oder Kartenzahlung bei Lieferung.",
+      "bank": "Überweisung auf unser Konto; die Daten stehen in der Bestellbestätigung. Versand nach Zahlungseingang."
+    }
   }
 }
