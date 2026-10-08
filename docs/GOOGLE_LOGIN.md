@@ -34,8 +34,10 @@ typicky několik dní až 2 týdny. Žádá se jen o scopes `email`, `profile`, 
 bez bezpečnostního auditu.
 
 Co web už splňuje: veřejná domovská stránka, Zásady ochrany osobních údajů (`/cs/ochrana-osobnich-udaju`),
-Obchodní podmínky (`/cs/obchodni-podminky`), logo (`public/logo-google-120.png`, 120×120 px, PNG).
+Obchodní podmínky (`/cs/obchodni-podminky`), logo s názvem značky (`public/logo-google-120.png`, 120×120 px; zdroj `logo-square.png` 1200 px).
 
+0. **Pořadí záleží:** nejdřív ověřit doménu v Search Console, pak počkat ~24 h a teprve potom odeslat k ověření.
+   Jinak Google vrátí „Webová stránka vaší domovské stránky není pro vás registrována“.
 1. **Ověřit vlastnictví domény** — Google Search Console (https://search.google.com/search-console) → přidat
    *Doménu* `reptiplus.cz` (DNS TXT záznam u registrátora), případně i `reptiplus.eu` a `reptiplus.shop`.
    Alternativa „HTML tag“: hodnotu z meta tagu `google-site-verification` vložit ve Vercelu do env
@@ -44,7 +46,8 @@ Obchodní podmínky (`/cs/obchodni-podminky`), logo (`public/logo-google-120.png
 2. **Google Cloud Console → APIs & Services → OAuth consent screen → Branding** vyplnit:
    - App name: `Reptiplus`
    - User support email: `info@reptiplus.cz`
-   - App logo: nahrát `public/logo-google-120.png` (120×120 px, PNG; varianta s bílým pozadím `logo-google-120-white.png`)
+   - App logo: nahrát `public/logo-google-120.png` (120×120 px, značka + nápis REPTI PLUS). Samotná zelená značka bez názvu
+     Googlu nestačila („logo neidentifikuje jedinečně vaši značku“).
    - Application home page: `https://reptiplus.cz`
    - Application privacy policy link: `https://reptiplus.cz/cs/ochrana-osobnich-udaju`
    - Application terms of service link: `https://reptiplus.cz/cs/obchodni-podminky`
