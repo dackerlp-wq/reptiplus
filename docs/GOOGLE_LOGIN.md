@@ -26,6 +26,40 @@ Bez nastavení níže tlačítko skončí chybou „Přihlášení přes Google 
      `https://reptiplus.cz/api/auth/callback`, `https://reptiplus.eu/api/auth/callback`, `https://reptiplus.shop/api/auth/callback`,
      `http://localhost:3000/api/auth/callback` (vývoj).
 
+## 3) Aby Google ukazoval „Reptiplus“ místo `duaihkobtgfzprufqjmh.supabase.co`
+
+Na obrazovce výběru účtu Google u neověřené aplikace zobrazuje doménu návratové adresy (Supabase). Název a logo
+„Reptiplus“ se zobrazí až po **ověření značky** (brand verification) OAuth aplikace. Je zdarma, schválení trvá
+typicky několik dní až 2 týdny. Žádá se jen o scopes `email`, `profile`, `openid`, takže jde o „non-sensitive“ ověření
+bez bezpečnostního auditu.
+
+Co web už splňuje: veřejná domovská stránka, Zásady ochrany osobních údajů (`/cs/ochrana-osobnich-udaju`),
+Obchodní podmínky (`/cs/obchodni-podminky`), logo (`public/logo-mark.png`, 240×240 px, PNG s průhledností).
+
+1. **Ověřit vlastnictví domény** — Google Search Console (https://search.google.com/search-console) → přidat
+   *Doménu* `reptiplus.cz` (DNS TXT záznam u registrátora), případně i `reptiplus.eu` a `reptiplus.shop`.
+   Alternativa „HTML tag“: hodnotu z meta tagu `google-site-verification` vložit ve Vercelu do env
+   `GOOGLE_SITE_VERIFICATION` a redeploynout — layout ji vykreslí do `<head>`.
+   Ověření musí udělat stejný Google účet, který vlastní projekt v Google Cloud.
+2. **Google Cloud Console → APIs & Services → OAuth consent screen → Branding** vyplnit:
+   - App name: `Reptiplus`
+   - User support email: `info@reptiplus.cz`
+   - App logo: nahrát `public/logo-mark.png` (Google chce čtverec, max. 1 MB; 120×120 px doporučeno, 240×240 projde)
+   - Application home page: `https://reptiplus.cz`
+   - Application privacy policy link: `https://reptiplus.cz/cs/ochrana-osobnich-udaju`
+   - Application terms of service link: `https://reptiplus.cz/cs/obchodni-podminky`
+   - Authorized domains: `reptiplus.cz` (+ `reptiplus.eu`, `reptiplus.shop`, pokud jsou ověřené v Search Console; `supabase.co` tam být nesmí — není vaše)
+   - Developer contact: `info@reptiplus.cz`
+3. **Audience → Publish app** (ze stavu *Testing* do *In production*). Hned po nahrání loga Google nabídne
+   **Prepare for verification / Submit for verification** — projít průvodcem a odeslat. Zdůvodnění scopes:
+   „Přihlášení zákazníků do e-shopu (e-mail a jméno pro zákaznický účet)“.
+4. Stav sledovat v Google Cloud (Verification Center) a v e-mailu; Google si může vyžádat doplnění (typicky odkaz na
+   zásady ochrany soukromí přímo z domovské stránky — v patičce už je).
+
+Do schválení vše funguje, jen se na obrazovce Googlu zobrazuje doména Supabase. Po schválení se zobrazí
+„Pokračovat do aplikace Reptiplus“ s logem. Pokud by Google i poté ukazoval doménu Supabase, zbývá vlastní doména
+Supabase (Settings → Custom Domains, placený doplněk) a změna redirect URI na `https://auth.reptiplus.cz/auth/v1/callback`.
+
 ## Poznámky
 
 - Zákazník přihlášený přes Google má e-mail od Google rovnou ověřený → hostovské objednávky se stejným e-mailem se k účtu připojí hned.

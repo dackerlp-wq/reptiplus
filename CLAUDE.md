@@ -187,7 +187,7 @@ a `product.is_gift_voucher` v DB zůstávají (RPC `place_order` je dál umí, a
 
 ## Env proměnné
 
-Kód čte: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL` (kanonická doména pro SEO/sitemap),
+Kód čte: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL` (kanonická doména pro SEO/sitemap), `GOOGLE_SITE_VERIFICATION` (meta tag Search Console, nepovinné),
 `SMTP_HOST|PORT|USER|PASS`, `MAIL_FROM`, `MAIL_FROM_NAME`, `SHOP_NOTIFY_EMAIL`, `CRON_SECRET`, `RATE_LIMIT_SALT`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `AI_GATEWAY_API_KEY` (implicitně), `AI_GATEWAY_MODEL`,
 fallbacky `COMGATE_MERCHANT|SECRET|TEST`, `PPL_CLIENT_ID|SECRET`, `PACKETA_API_PASSWORD|ESHOP_ID|HOME_CARRIER_ID`. Nastavují se ve Vercelu, lokálně `.env.local` (gitignored).
 

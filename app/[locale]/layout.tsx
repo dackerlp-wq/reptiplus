@@ -32,6 +32,11 @@ export const metadata: Metadata = {
   description:
     "Specializovaný obchod s teraristickým vybavením pro chovatele plazů a exotických zvířat.",
   applicationName: "Reptiplus",
+  // Ověření vlastnictví domény (Google Search Console → „HTML tag") — nutné pro
+  // ověření OAuth aplikace u Googlu (docs/GOOGLE_LOGIN.md). Hodnota z env, jinak nic.
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+    : {}),
   openGraph: {
     type: "website",
     siteName: "Reptiplus",
