@@ -34,7 +34,7 @@ typicky několik dní až 2 týdny. Žádá se jen o scopes `email`, `profile`, 
 bez bezpečnostního auditu.
 
 Co web už splňuje: veřejná domovská stránka, Zásady ochrany osobních údajů (`/cs/ochrana-osobnich-udaju`),
-Obchodní podmínky (`/cs/obchodni-podminky`), logo (`public/logo-mark.png`, 240×240 px, PNG s průhledností).
+Obchodní podmínky (`/cs/obchodni-podminky`), logo (`public/logo-google-120.png`, 120×120 px, PNG).
 
 1. **Ověřit vlastnictví domény** — Google Search Console (https://search.google.com/search-console) → přidat
    *Doménu* `reptiplus.cz` (DNS TXT záznam u registrátora), případně i `reptiplus.eu` a `reptiplus.shop`.
@@ -44,7 +44,7 @@ Obchodní podmínky (`/cs/obchodni-podminky`), logo (`public/logo-mark.png`, 240
 2. **Google Cloud Console → APIs & Services → OAuth consent screen → Branding** vyplnit:
    - App name: `Reptiplus`
    - User support email: `info@reptiplus.cz`
-   - App logo: nahrát `public/logo-mark.png` (Google chce čtverec, max. 1 MB; 120×120 px doporučeno, 240×240 projde)
+   - App logo: nahrát `public/logo-google-120.png` (120×120 px, PNG; varianta s bílým pozadím `logo-google-120-white.png`)
    - Application home page: `https://reptiplus.cz`
    - Application privacy policy link: `https://reptiplus.cz/cs/ochrana-osobnich-udaju`
    - Application terms of service link: `https://reptiplus.cz/cs/obchodni-podminky`
