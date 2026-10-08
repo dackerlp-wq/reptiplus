@@ -40,7 +40,6 @@ test.describe("Obchod (cs)", () => {
     await expect(page.getByRole("heading", { name: cs.Checkout.title })).toBeVisible();
     await expect(page.locator('form#checkout-form')).toBeVisible();
     await expect(page.getByPlaceholder(cs.Checkout.discountPlaceholder)).toBeVisible();
-    await expect(page.getByPlaceholder(cs.Checkout.voucherPlaceholder)).toBeVisible();
     // Objednávku neodesíláme.
   });
 

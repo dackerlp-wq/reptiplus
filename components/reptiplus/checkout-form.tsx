@@ -1,14 +1,13 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Loader2, Tag, Check, MapPin, Building2 , Gift } from "lucide-react";
+import { Loader2, Tag, Check, MapPin, Building2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { formatPrice } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 import {
   applyDiscountAction,
-  applyVoucherAction,
-  type VoucherState,
   createOrderAction,
   type DiscountState,
   type OrderState,
@@ -117,6 +116,7 @@ export function CheckoutForm({
   const [shipping, setShipping] = useState(shippingOptions[0]?.code ?? "");
   const [payment, setPayment] = useState(paymentOptions[0]?.code ?? "");
   const [billingSame, setBillingSame] = useState(true);
+  const [createAccount, setCreateAccount] = useState(false);
 
   // Uložené adresy z účtu: výchozí dodací / fakturační předvybraná.
   const defaultShip = savedAddresses.find((a) => a.type === "shipping" && a.is_default) ?? savedAddresses.find((a) => a.type === "shipping") ?? savedAddresses[0];
@@ -128,7 +128,6 @@ export function CheckoutForm({
   const [company, setCompany] = useState(Boolean(defaultBill?.company || defaultBill?.ico || defaultShip?.company));
   const companySource = billingSame ? shipAddr : billAddr;
   const [code, setCode] = useState("");
-  const [voucherCode, setVoucherCode] = useState("");
   const [pickupPoint, setPickupPoint] = useState<PickupPoint | null>(null);
   const [pickupOpening, setPickupOpening] = useState(false);
 
@@ -169,7 +168,6 @@ export function CheckoutForm({
     DiscountState,
     FormData
   >(applyDiscountAction, { status: "idle" });
-  const [voucherState, applyVoucher, voucherPending] = useActionState<VoucherState, FormData>(applyVoucherAction, { status: "idle" });
   const [orderState, submitOrder, orderPending] = useActionState<
     OrderState,
     FormData
@@ -178,10 +176,7 @@ export function CheckoutForm({
   const shippingFee = shippingOptions.find((o) => o.code === shipping)?.fee ?? 0;
   const paymentFee = paymentOptions.find((o) => o.code === payment)?.fee ?? 0;
   const discount = discountState.status === "ok" ? discountState.amount : 0;
-  const payable = Math.max(0, subtotal + shippingFee + paymentFee - discount);
-  // Dárkový poukaz se čerpá až po slevě, nejvýš do výše k úhradě (server počítá stejně).
-  const voucherApplied = voucherState.status === "ok" ? Math.min(voucherState.balance, payable) : 0;
-  const total = Math.max(0, payable - voucherApplied);
+  const total = Math.max(0, subtotal + shippingFee + paymentFee - discount);
 
   const fmt = (m: number) => formatPrice(m, locale);
   const feeLabel = (fee: number) => (fee > 0 ? `+ ${fmt(fee)}` : t("free"));
@@ -198,13 +193,22 @@ export function CheckoutForm({
         {discountState.status === "ok" && (
           <input type="hidden" name="discount_code" value={discountState.code} />
         )}
-        {voucherState.status === "ok" && (
-          <input type="hidden" name="voucher_code" value={voucherState.code} />
-        )}
 
         {/* Kontakt */}
         <section className="space-y-4 rounded-xl border border-cream-dark bg-white p-5">
           <h2 className="font-display text-lg font-semibold">{t("contact")}</h2>
+          {!loggedIn && (
+            <p className="text-sm text-gray-soft">
+              {t("haveAccount")}{" "}
+              <Link
+                href={`/prihlaseni?redirectTo=${encodeURIComponent(`/${locale}/pokladna`)}`}
+                className="font-semibold text-forest hover:underline"
+              >
+                {t("loginLink")}
+              </Link>{" "}
+              — {t("loginHint")}
+            </p>
+          )}
           <label className={label}>
             <span className={legend}>{t("email")}</span>
             <input
@@ -215,6 +219,36 @@ export function CheckoutForm({
               className={input}
             />
           </label>
+          {!loggedIn && (
+            <div className="space-y-3 rounded-lg border border-cream-dark bg-paper p-3">
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="create_account"
+                  checked={createAccount}
+                  onChange={(e) => setCreateAccount(e.target.checked)}
+                  className="mt-0.5 size-4 accent-forest"
+                />
+                <span>
+                  <span className="font-medium text-ink">{t("createAccount")}</span>
+                  <span className="block text-xs text-gray-soft">{t("createAccountHint")}</span>
+                </span>
+              </label>
+              {createAccount && (
+                <label className={label}>
+                  <span className={legend}>{t("accountPassword")}</span>
+                  <input
+                    name="account_password"
+                    type="password"
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    className={input}
+                  />
+                </label>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Dodací adresa */}
@@ -425,50 +459,12 @@ export function CheckoutForm({
           )}
         </form>
 
-        {/* Dárkový poukaz */}
-        <form action={applyVoucher} className="space-y-2">
-          <input type="hidden" name="locale" value={locale} />
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Gift className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-soft" />
-              <input
-                name="voucher_code"
-                value={voucherCode}
-                onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-                placeholder={t("voucherPlaceholder")}
-                autoComplete="off"
-                className={`${input} pl-9 font-mono uppercase`}
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={voucherPending || !voucherCode}
-              className="rounded-lg border border-forest px-4 py-2 text-sm font-semibold text-forest transition-colors hover:bg-forest hover:text-white disabled:opacity-50"
-            >
-              {voucherPending ? <Loader2 className="size-4 animate-spin" /> : t("apply")}
-            </button>
-          </div>
-          {voucherState.status === "ok" && (
-            <p className="flex items-center gap-1.5 text-xs text-success">
-              <Check className="size-3.5" /> {t("voucherApplied", { code: voucherState.code, balance: fmt(voucherState.balance) })}
-            </p>
-          )}
-          {voucherState.status === "error" && (
-            <p className="text-xs text-error">
-              {t.has(`voucherErrors.${voucherState.error}`) ? t(`voucherErrors.${voucherState.error}`) : t("voucherErrors.NOT_FOUND")}
-            </p>
-          )}
-        </form>
-
         <dl className="space-y-2 border-t border-cream-dark pt-4 text-sm">
           <Row label={t("subtotal")} value={fmt(subtotal)} />
           <Row label={t("shippingMethod")} value={shippingFee > 0 ? fmt(shippingFee) : t("free")} />
           {paymentFee > 0 && <Row label={t("paymentMethod")} value={fmt(paymentFee)} />}
           {discount > 0 && (
             <Row label={t("discount")} value={`− ${fmt(discount)}`} accent />
-          )}
-          {voucherApplied > 0 && (
-            <Row label={t("voucher")} value={`− ${fmt(voucherApplied)}`} accent />
           )}
         </dl>
 

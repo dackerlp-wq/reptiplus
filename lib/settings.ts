@@ -1,6 +1,5 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
-import { DEFAULT_THEME, isThemeKey, type ThemeKey } from "@/lib/themes";
 
 export type ShopContact = {
   name: string;
@@ -40,40 +39,6 @@ export async function getShopContact(): Promise<ShopContact> {
     bic: v.bic ?? "",
     openingHours: v.openingHours ?? "",
   };
-}
-
-/** Aktivní barevná varianta webu z app_setting (klíč `appearance.theme`). */
-export async function getActiveTheme(): Promise<ThemeKey> {
-  try {
-    const svc = createServiceClient();
-    const { data } = await svc
-      .from("app_setting")
-      .select("value")
-      .eq("key", "appearance.theme")
-      .maybeSingle();
-    const theme = (data?.value as { theme?: string } | null)?.theme;
-    return isThemeKey(theme) ? theme : DEFAULT_THEME;
-  } catch {
-    return DEFAULT_THEME;
-  }
-}
-
-export type HeroStyle = "light" | "logo" | "logo-dark";
-
-/** Styl hero carouselu na homepage z app_setting (`appearance.hero`). */
-export async function getHeroStyle(): Promise<HeroStyle> {
-  try {
-    const svc = createServiceClient();
-    const { data } = await svc
-      .from("app_setting")
-      .select("value")
-      .eq("key", "appearance.hero")
-      .maybeSingle();
-    const style = (data?.value as { style?: string } | null)?.style;
-    return style === "logo" || style === "logo-dark" ? style : "light";
-  } catch {
-    return "light";
-  }
 }
 
 export type LegalKey = "legal.terms" | "legal.privacy" | "legal.claims";

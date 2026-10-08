@@ -9,7 +9,7 @@ const CSP = [
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
-  "form-action 'self' https://*.comgate.cz",
+  "form-action 'self' https://*.comgate.cz https://*.supabase.co https://accounts.google.com",
   // Next.js App Router používá inline skripty (hydratace) → 'unsafe-inline'.
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.packeta.com https://*.packetery.com https://www.googletagmanager.com https://connect.facebook.net https://c.seznam.cz https://www.seznam.cz",
   "style-src 'self' 'unsafe-inline'",

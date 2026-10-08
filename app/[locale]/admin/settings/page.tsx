@@ -3,13 +3,10 @@ import { AdminTabs } from "@/components/admin/admin-tabs";
 import { LangFields } from "@/components/admin/lang-fields";
 import { Hint } from "@/components/admin/hint";
 import { ToastForm } from "@/components/admin/toast";
-import { THEMES, isThemeKey, DEFAULT_THEME } from "@/lib/themes";
 import { getInvoiceSettings } from "@/lib/invoices/issue";
 import { saveInvoiceSettingsAction } from "@/lib/admin/invoice-actions";
 import {
   saveGeneralAction,
-  saveThemeAction,
-  saveHeroStyleAction,
   saveComgateAction,
   savePplAction,
   saveZasilkovnaAction,
@@ -60,13 +57,6 @@ export default async function AdminSettingsPage() {
   const claims = get("legal.claims") as I18nText;
   const about = get("content.about") as I18nText;
   const shippingContent = get("content.shipping") as I18nText;
-  const appearance = get("appearance.theme") as { theme?: string };
-  const activeTheme = isThemeKey(appearance.theme)
-    ? appearance.theme
-    : DEFAULT_THEME;
-  const heroRaw = (get("appearance.hero") as { style?: string }).style;
-  const heroStyle =
-    heroRaw === "logo" || heroRaw === "logo-dark" ? heroRaw : "light";
 
   const invoiceSettings = await getInvoiceSettings();
   const { data: counterRows } = await svc
@@ -83,123 +73,8 @@ export default async function AdminSettingsPage() {
       <h1 className="mb-6 font-display text-3xl font-bold">Nastavení</h1>
 
       <AdminTabs
-        tabs={["Vzhled", "Obchod", "Fakturace", "Integrace", "Doprava", "Platby", "Právní", "O nás"]}
+        tabs={["Obchod", "Fakturace", "Integrace", "Doprava", "Platby", "Právní", "O nás"]}
       >
-        {/* ── Vzhled ─────────────────────────────────────────────── */}
-        <div className="space-y-6">
-        <ToastForm action={saveThemeAction} className={`${card} space-y-4`}>
-          <div>
-            <h2 className="font-display text-lg font-semibold">
-              Barevná varianta webu
-            </h2>
-            <p className="text-sm text-gray-soft">
-              Dočasné ladění barev podle loga. Vybraná varianta se projeví na
-              celém webu pro všechny návštěvníky.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {THEMES.map((t) => (
-              <label
-                key={t.key}
-                className="flex cursor-pointer gap-3 rounded-xl border border-cream-dark p-3 transition-colors has-[:checked]:border-forest has-[:checked]:bg-forest/5 has-[:checked]:ring-2 has-[:checked]:ring-forest/25"
-              >
-                <input
-                  type="radio"
-                  name="theme"
-                  value={t.key}
-                  defaultChecked={activeTheme === t.key}
-                  className="sr-only"
-                />
-                <span className="mt-0.5 flex shrink-0 gap-1">
-                  {[t.swatch.primary, t.swatch.light, t.swatch.accent, t.swatch.bg].map(
-                    (c, i) => (
-                      <span
-                        key={i}
-                        className="size-6 rounded-full border border-black/10"
-                        style={{ backgroundColor: c }}
-                      />
-                    ),
-                  )}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-ink">
-                    {t.name}
-                  </span>
-                  <span className="block text-xs text-gray-soft">
-                    {t.description}
-                  </span>
-                </span>
-              </label>
-            ))}
-          </div>
-          <button className={saveBtn}>Uložit vzhled</button>
-        </ToastForm>
-
-        <ToastForm action={saveHeroStyleAction} className={`${card} space-y-4`}>
-          <div>
-            <h2 className="font-display text-lg font-semibold">
-              Styl carouselu na homepage
-            </h2>
-            <p className="text-sm text-gray-soft">
-              Barevné pojetí hlavního carouselu na úvodní stránce.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              {
-                key: "light",
-                name: "Světlý",
-                description: "Světlé pozadí, tmavý text – vzdušný vzhled.",
-                bg: "#f2f5ee",
-                fg: "#1b1f17",
-              },
-              {
-                key: "logo",
-                name: "Barva loga",
-                description: "Zelená z loga (#77ad2e), tmavý text a tmavé prvky.",
-                bg: "#77ad2e",
-                fg: "#1a2d12",
-              },
-              {
-                key: "logo-dark",
-                name: "Barva loga tmavá",
-                description: "Tmavě zelené pozadí, světlý text, zlaté akcenty.",
-                bg: "#1a2d12",
-                fg: "#f7f4ef",
-              },
-            ].map((o) => (
-              <label
-                key={o.key}
-                className="flex cursor-pointer items-center gap-3 rounded-xl border border-cream-dark p-3 transition-colors has-[:checked]:border-forest has-[:checked]:bg-forest/5 has-[:checked]:ring-2 has-[:checked]:ring-forest/25"
-              >
-                <input
-                  type="radio"
-                  name="hero"
-                  value={o.key}
-                  defaultChecked={heroStyle === o.key}
-                  className="sr-only"
-                />
-                <span
-                  className="grid size-12 shrink-0 place-items-center rounded-lg border border-black/10 text-xs font-bold"
-                  style={{ backgroundColor: o.bg, color: o.fg }}
-                >
-                  Aa
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-ink">
-                    {o.name}
-                  </span>
-                  <span className="block text-xs text-gray-soft">
-                    {o.description}
-                  </span>
-                </span>
-              </label>
-            ))}
-          </div>
-          <button className={saveBtn}>Uložit styl carouselu</button>
-        </ToastForm>
-        </div>
-
         {/* ── Obchod ─────────────────────────────────────────────── */}
         <div className="space-y-6">
         <ToastForm action={saveGeneralAction} className={`${card} space-y-4`}>

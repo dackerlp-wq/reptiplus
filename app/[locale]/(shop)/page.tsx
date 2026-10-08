@@ -8,7 +8,7 @@ import {
   getSaleProducts,
 } from "@/lib/queries";
 import type { ProductListItem } from "@/lib/queries";
-import { getHeroStyle, getShopContact } from "@/lib/settings";
+import { getShopContact } from "@/lib/settings";
 import { formatPrice, pickI18n, priceForLocale } from "@/lib/i18n";
 import { absoluteUrl, localizedAlternates } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -40,11 +40,10 @@ export default async function HomePage({
   setRequestLocale(locale);
   const t = await getTranslations("Home");
 
-  const [featured, latest, sale, heroStyle, contact] = await Promise.all([
+  const [featured, latest, sale, contact] = await Promise.all([
     getProducts({ featured: true }),
     getNewProducts(4),
     getSaleProducts(4),
-    getHeroStyle(),
     getShopContact(),
   ]);
 
@@ -99,7 +98,7 @@ export default async function HomePage({
     <>
       <JsonLd data={[orgLd, websiteLd]} />
       {/* Carousel */}
-      <HeroCarousel slides={slides} ctaLabel={t("heroCta")} variant={heroStyle} />
+      <HeroCarousel slides={slides} ctaLabel={t("heroCta")} />
 
       {/* Doporučujeme */}
       {featured.length > 0 && (

@@ -3,29 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-
-/** Stavy objednávky, které počítáme jako uskutečněný nákup. */
-const PURCHASED_STATUSES = ["paid", "processing", "shipped", "delivered"] as const;
-
-/** Koupil zákazník tento produkt (zaplacená / odeslaná / doručená objednávka s položkou)? */
-async function hasPurchased(customerId: string, productId: string): Promise<boolean> {
-  const svc = createServiceClient();
-  const { data } = await svc
-    .from("order_item")
-    .select("id, order:order_id!inner(customer_id, status, payment_status)")
-    .eq("product_id", productId)
-    .eq("order.customer_id", customerId)
-    .or(`status.in.(${PURCHASED_STATUSES.join(",")}),payment_status.eq.paid`, { referencedTable: "order" })
-    .limit(1);
-  return (data?.length ?? 0) > 0;
-}
+import { hasPurchasedProduct } from "@/lib/reviews/queries";
 
 export type ReviewState =
   | { status: "idle" }
-  | { status: "ok" }
+  | { status: "ok"; published: boolean }
   | { status: "error"; error: "AUTH" | "RATING" | "BODY" | "SERVER" };
 
-/** Odeslání recenze přihlášeným zákazníkem. Čeká na schválení (is_approved=false). */
+/**
+ * Odeslání recenze přihlášeným zákazníkem. Ověřený nákup (zákazník si produkt
+ * u nás koupil) se zveřejní rovnou se štítkem „Ověřený nákup"; ostatní čekají
+ * na schválení v adminu (is_approved=false).
+ */
 export async function submitReviewAction(
   _prev: ReviewState,
   fd: FormData,
@@ -45,8 +34,8 @@ export async function submitReviewAction(
   if (!body) return { status: "error", error: "BODY" };
   if (!productId) return { status: "error", error: "SERVER" };
 
-  // Vkládá service klient (štítek „ověřený nákup" nesmí jít nastavit z klienta); is_approved zůstává false.
-  const verified = await hasPurchased(user.id, productId);
+  // Vkládá service klient (štítek „ověřený nákup" ani zveřejnění nesmí jít nastavit z klienta).
+  const verified = await hasPurchasedProduct(user.id, productId);
   const { error } = await createServiceClient().from("review").insert({
     product_id: productId,
     customer_id: user.id,
@@ -54,9 +43,10 @@ export async function submitReviewAction(
     title: title || null,
     body,
     verified_purchase: verified,
+    is_approved: verified,
   });
   if (error) return { status: "error", error: "SERVER" };
 
   revalidatePath("/", "layout");
-  return { status: "ok" };
+  return { status: "ok", published: verified };
 }

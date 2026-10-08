@@ -105,7 +105,9 @@
     "reviewBody": "Ihre Erfahrung mit dem Produkt",
     "submit": "Bewertung senden",
     "submitted": "Danke! Ihre Bewertung wartet auf Freigabe.",
+    "submittedPublished": "Danke! Ihre Bewertung wurde veröffentlicht.",
     "loginPrompt": "Nur angemeldete Kunden können Bewertungen schreiben.",
+    "purchasedNote": "Sie haben dieses Produkt bei uns gekauft – Ihre Bewertung wird sofort mit dem Abzeichen „Verifizierter Kauf“ veröffentlicht.",
     "login": "Anmelden",
     "errors": {
       "RATING": "Bitte wählen Sie eine Sternebewertung.",
@@ -197,7 +199,9 @@
       "DISCOUNT": "Der Rabattcode ist nicht mehr gültig, bitte entfernen Sie ihn.",
       "PICKUP": "Bitte wählen Sie eine Abholstelle.",
       "SERVER": "Die Bestellung konnte nicht abgeschlossen werden. Bitte erneut versuchen.",
-      "VOUCHER": "Der Geschenkgutschein konnte nicht eingelöst werden, bitte Code prüfen."
+      "ACCOUNT_PASSWORD": "Geben Sie ein Passwort (mind. 6 Zeichen) ein oder deaktivieren Sie die Kontoerstellung.",
+      "ACCOUNT_EXISTS": "Für diese E-Mail existiert bereits ein Konto. Melden Sie sich an oder deaktivieren Sie die Kontoerstellung.",
+      "ACCOUNT": "Das Konto konnte nicht erstellt werden. Versuchen Sie es erneut oder bestellen Sie ohne Konto."
     },
     "discountErrors": {
       "NOT_FOUND": "Rabattcode nicht gefunden.",
@@ -218,17 +222,12 @@
     "addressLabelDefault": "Adresse",
     "freeShipping": "Kostenloser Versand",
     "freeShippingFrom": "Kostenloser Versand ab {amount}",
-    "voucherTitle": "Geschenkgutschein",
-    "voucherPlaceholder": "Gutscheincode (DP-XXXX-XXXX)",
-    "voucherApplied": "Gutschein {code} eingelöst, Restguthaben {balance}",
-    "voucher": "Geschenkgutschein",
-    "voucherErrors": {
-      "NOT_FOUND": "Kein Gutschein mit diesem Code.",
-      "INACTIVE": "Dieser Gutschein ist nicht gültig.",
-      "EXPIRED": "Dieser Gutschein ist abgelaufen.",
-      "EMPTY": "Dieser Gutschein hat kein Guthaben mehr.",
-      "CURRENCY": "Der Gutschein kann derzeit nicht in dieser Währung eingelöst werden."
-    }
+    "haveAccount": "Haben Sie bereits ein Konto?",
+    "loginLink": "Anmelden",
+    "loginHint": "Wir füllen Ihre Adressen vor und Sie sehen die Bestellung in Ihrem Konto.",
+    "createAccount": "Mit dieser Bestellung ein Konto erstellen",
+    "accountPassword": "Passwort für das Konto (mind. 6 Zeichen)",
+    "createAccountHint": "Wir erstellen das Konto für die oben angegebene E-Mail. Bestellungen, Adressen und Favoriten finden Sie dann in Ihrem Konto."
   },
   "OrderConfirm": {
     "title": "Danke für Ihre Bestellung!",
@@ -254,7 +253,6 @@
     "documents": "Belege",
     "invoice": "Rechnung",
     "creditNote": "Gutschrift",
-    "voucher": "Geschenkgutschein",
     "claimLink": "Reklamieren",
     "withdrawalLink": "Innerhalb von 14 Tagen zurückgeben"
   },
@@ -333,7 +331,10 @@
     "statusDelivered": "Zugestellt",
     "statusCancelled": "Storniert",
     "statusRefunded": "Erstattet",
-    "invoices": "Belege"
+    "invoices": "Belege",
+    "or": "oder",
+    "google": "Mit Google fortfahren",
+    "oauthError": "Die Anmeldung mit Google ist fehlgeschlagen. Bitte versuchen Sie es erneut."
   },
   "Ledx": {
     "navLabel": "Profi-Beleuchtung",

@@ -105,7 +105,9 @@
     "reviewBody": "Your experience with the product",
     "submit": "Submit review",
     "submitted": "Thank you! Your review is awaiting approval.",
+    "submittedPublished": "Thank you! Your review has been published.",
     "loginPrompt": "Only signed-in customers can write reviews.",
+    "purchasedNote": "You bought this product from us – your review will be published right away with the “Verified purchase” badge.",
     "login": "Sign in",
     "errors": {
       "RATING": "Please select a star rating.",
@@ -197,7 +199,9 @@
       "DISCOUNT": "The discount code is no longer valid, please remove it.",
       "PICKUP": "Please select a pickup point.",
       "SERVER": "We couldn't complete the order. Please try again.",
-      "VOUCHER": "The gift voucher could not be applied, please check the code."
+      "ACCOUNT_PASSWORD": "Enter an account password (at least 6 characters) or untick account creation.",
+      "ACCOUNT_EXISTS": "An account with this e-mail already exists. Sign in or untick account creation.",
+      "ACCOUNT": "The account could not be created. Try again or order without an account."
     },
     "discountErrors": {
       "NOT_FOUND": "Discount code not found.",
@@ -218,17 +222,12 @@
     "addressLabelDefault": "Address",
     "freeShipping": "Free shipping",
     "freeShippingFrom": "Free shipping from {amount}",
-    "voucherTitle": "Gift voucher",
-    "voucherPlaceholder": "Voucher code (DP-XXXX-XXXX)",
-    "voucherApplied": "Voucher {code} applied, balance {balance}",
-    "voucher": "Gift voucher",
-    "voucherErrors": {
-      "NOT_FOUND": "No voucher with this code.",
-      "INACTIVE": "This voucher is not valid.",
-      "EXPIRED": "This voucher has expired.",
-      "EMPTY": "This voucher has no balance left.",
-      "CURRENCY": "The voucher cannot be applied in this currency right now."
-    }
+    "haveAccount": "Already have an account?",
+    "loginLink": "Sign in",
+    "loginHint": "We will pre-fill your addresses and you will see the order in your account.",
+    "createAccount": "Create an account with this order",
+    "accountPassword": "Account password (min. 6 characters)",
+    "createAccountHint": "We will create the account for the e-mail above. Orders, addresses and favourites will then be in your account."
   },
   "OrderConfirm": {
     "title": "Thank you for your order!",
@@ -254,7 +253,6 @@
     "documents": "Documents",
     "invoice": "Invoice",
     "creditNote": "Credit note",
-    "voucher": "Gift voucher",
     "claimLink": "Make a claim",
     "withdrawalLink": "Return within 14 days"
   },
@@ -333,7 +331,10 @@
     "statusDelivered": "Delivered",
     "statusCancelled": "Cancelled",
     "statusRefunded": "Refunded",
-    "invoices": "Documents"
+    "invoices": "Documents",
+    "or": "or",
+    "google": "Continue with Google",
+    "oauthError": "Sign-in with Google failed. Please try again."
   },
   "Ledx": {
     "navLabel": "Professional lighting",

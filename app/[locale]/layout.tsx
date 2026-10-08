@@ -4,7 +4,6 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import { routing } from "@/i18n/routing";
-import { getActiveTheme } from "@/lib/settings";
 import { siteUrl } from "@/lib/seo";
 import "../globals.css";
 
@@ -68,12 +67,9 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
 
-  const theme = await getActiveTheme();
-
   return (
     <html
       lang={locale}
-      data-theme={theme}
       className={`${fraunces.variable} ${inter.variable} ${jetbrains.variable}`}
     >
       <body>

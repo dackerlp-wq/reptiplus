@@ -1,6 +1,26 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 
+/** Stavy objednávky, které počítáme jako uskutečněný nákup. */
+const PURCHASED_STATUSES = ["paid", "processing", "shipped", "delivered"] as const;
+
+/**
+ * Koupil zákazník tento produkt (zaplacená / zpracovávaná / odeslaná / doručená
+ * objednávka s položkou)? Základ štítku „Ověřený nákup" a automatického
+ * zveřejnění recenze bez schvalování.
+ */
+export async function hasPurchasedProduct(customerId: string, productId: string): Promise<boolean> {
+  const svc = createServiceClient();
+  const { data } = await svc
+    .from("order_item")
+    .select("id, order:order_id!inner(customer_id, status, payment_status)")
+    .eq("product_id", productId)
+    .eq("order.customer_id", customerId)
+    .or(`status.in.(${PURCHASED_STATUSES.join(",")}),payment_status.eq.paid`, { referencedTable: "order" })
+    .limit(1);
+  return (data?.length ?? 0) > 0;
+}
+
 export type Review = {
   id: string;
   rating: number;

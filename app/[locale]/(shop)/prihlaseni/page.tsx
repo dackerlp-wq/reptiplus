@@ -18,12 +18,12 @@ export default async function LoginPage({
   searchParams,
 }: {
   params: Promise<{ locale: Locale }>;
-  searchParams: Promise<{ redirectTo?: string }>;
+  searchParams: Promise<{ redirectTo?: string; error?: string }>;
 }) {
   const { locale } = await params;
-  const { redirectTo } = await searchParams;
+  const { redirectTo, error } = await searchParams;
   setRequestLocale(locale);
   // Jen relativní cesty na vlastním webu (žádné open redirecty).
   const safe = redirectTo && /^\/[^/\\]/.test(redirectTo) ? redirectTo : `/${locale}/ucet`;
-  return <AuthForm mode="login" redirectTo={safe} />;
+  return <AuthForm mode="login" redirectTo={safe} error={error === "oauth" ? "oauth" : null} />;
 }

@@ -38,7 +38,8 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 - [x] **13. Účet zákazníka** — sekce Přehled / Objednávky / Adresy / Oblíbené / Recenze / Profil (`app/[locale]/(shop)/ucet/*`, `lib/account/*`). Adresy s firemními údaji (IČO/DIČ) a výchozí adresou, předvyplnění a uložení adresy v pokladně, přepínač „Nakupuji na firmu“. Detail objednávky s průběhem, sledováním zásilky, doklady a „Objednat znovu“. Profil: jméno, telefon, změna hesla, změna e-mailu (s potvrzením), newsletter, smazání účtu (GDPR — objednávky a doklady zůstanou anonymizované). Hostovské objednávky se stejným ověřeným e-mailem se při přihlášení připojí k účtu. Migrace `20260912_0003`.
 - [x] **14. „Naskladnit — upozornit mě"** — formulář u vyprodaného produktu/varianty (`stock_alert`), e-mail po naskladnění z adminu (`lib/stock-alerts/notify.ts`).
 - [x] **15. Recenze+** — štítek „Ověřený nákup“ (podle objednávek zákazníka, nastavuje server). Odpověď obchodu a fotky odloženy.
-- [x] **15b. Dárkové poukazy** — produkt s příznakem „Dárkový poukaz“ → po zaplacení kódy DP-XXXX-XXXX e-mailem s PDF (platnost 12 měsíců); ruční vystavení v adminu (Poukazy), uplatnění v pokladně samostatným polem s postupným čerpáním zůstatku (EUR kurzem ČNB), plně uhrazená objednávka rovnou zaplacená, faktura s poznámkou o úhradě poukazem, storno nezaplacené objednávky vrací zůstatek.
+- [x] ~~**15b. Dárkové poukazy**~~ — zrušeno (10/2026): kód odstraněn, DB tabulky `gift_voucher*` zůstaly prázdné.
+- [x] **15d. Přihlášení přes Google + účet z pokladny** — OAuth přes Supabase (`docs/GOOGLE_LOGIN.md`, provider nutno zapnout v Supabase), v pokladně odkaz na přihlášení a „Vytvořit účet s touto objednávkou“. Recenze od ověřených kupujících se zveřejňují bez schvalování, admin Recenze seskupeny podle produktů. Obrázky lze vybrat už při vytváření produktu. Záložka Vzhled v nastavení zrušena (pevná varianta „Světlá & veselá“).
 - [x] **15c. Reklamace a odstoupení od smlouvy** — stránky `/reklamace` a `/odstoupeni-od-smlouvy` s formulářem (předvyplnění z objednávky), e-mail obchodu + potvrzení zákazníkovi s adresou pro vrácení, záznam do historie objednávky, admin Reklamace (stavy, poznámky).
 
 - [x] **9f. Náležitosti pro Comgate** — obchodní podmínky (vč. odstavce o Comgate, odstoupení, výjimky), reklamační řád a zásady zpracování osobních údajů vloženy do adminu (Nastavení → Právní, česky; EN/DE přes AI překlad), loga Visa/Mastercard/Apple Pay/Google Pay/Comgate v patičce, stránka `/doprava-a-platba` generovaná z metod dopravy a platby, domény `www.*` přesměrované (308) s certifikátem.
@@ -47,7 +48,7 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 - [ ] **16. Monitoring chyb** (Sentry).
 - [x] **17. Opuštěný košík** — e-mail přihlášeným zákazníkům 24–72 h po poslední změně košíku, jednou na košík, bez slevy (cron `/api/cron/abandoned-carts` 08:00 UTC).
 - [ ] **18. Audit log adminu** — kdo/kdy co změnil.
-- [x] **19. Automatické testy** — Vitest (`npm test`: DPH faktury, slevy, doprava zdarma, poukazy, statistiky dashboardu) + Playwright (`npm run test:e2e`: homepage, 404, produkt → košík → pokladna, kontakt/reklamace/odstoupení). Bez CI — spouštět před pushem.
+- [x] **19. Automatické testy** — Vitest (`npm test`: DPH faktury, slevy, doprava zdarma, statistiky dashboardu) + Playwright (`npm run test:e2e`: homepage, 404, produkt → košík → pokladna, kontakt/reklamace/odstoupení). Bez CI — spouštět před pushem.
 
 ## Odloženo
 - Blog / Průvodce chovem (tabulka `article` existuje; odkaz zatím z menu skrýt, nebo dodělat později).

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useEditor, EditorContent, type Editor } from "@tiptap/react";
+import { useEditor, useEditorState, EditorContent, type Editor } from "@tiptap/react";
+import { TextSelection } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
@@ -60,6 +61,48 @@ const StyledImage = Image.extend({
   },
 });
 
+/**
+ * Odstavec s měkkými zalomeními (Shift+Enter, vložený text s <br>) rozdělí tak,
+ * aby řádek s kurzorem byl samostatný blok. Nadpis se pak nastaví jen na ten
+ * řádek, ne na celý odstavec. Bez zalomení nic nemění.
+ */
+function isolateLine(editor: Editor) {
+  return editor
+    .chain()
+    .focus()
+    .command(({ tr, state, dispatch }) => {
+      const { $from, $to } = state.selection;
+      if (!$from.sameParent($to) || !$from.parent.isTextblock) return true;
+      const start = $from.start();
+      let before: number | null = null; // poslední zalomení před výběrem
+      let after: number | null = null; // první zalomení za výběrem
+      $from.parent.forEach((node, offset) => {
+        if (node.type.name !== "hardBreak") return;
+        const pos = start + offset;
+        if (pos + 1 <= $from.pos) before = pos;
+        else if (after === null && pos >= $to.pos) after = pos;
+      });
+      if (before === null && after === null) return true;
+      if (!dispatch) return true;
+      // Nejdřív zalomení ZA výběrem (nemění pozice před ním): smazat <br> a rozdělit blok.
+      if (after !== null) {
+        tr.delete(after, after + 1);
+        tr.split(after);
+      }
+      let from = $from.pos;
+      let to = $to.pos;
+      if (before !== null) {
+        tr.delete(before, before + 1);
+        tr.split(before);
+        // smazání -1, rozdělení +2 → výběr se posune o +1
+        from += 1;
+        to += 1;
+      }
+      tr.setSelection(TextSelection.create(tr.doc, from, to));
+      return true;
+    });
+}
+
 /** Plnohodnotný WYSIWYG editor (Tiptap). Controlled — value je HTML. */
 export function RichEditor({
   value,
@@ -74,6 +117,8 @@ export function RichEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
+        // Shift+Enter (měkké zalomení) nepřenáší tučné/kurzívu na další řádek.
+        hardBreak: { keepMarks: false },
       }),
       Link.configure({
         openOnClick: false,
@@ -106,6 +151,11 @@ export function RichEditor({
     }
   }, [value, editor]);
 
+  const imageActive = useEditorState({
+    editor,
+    selector: ({ editor: e }) => !!e && e.isActive("image"),
+  });
+
   if (!editor) {
     return (
       <div className="min-h-[13rem] rounded-lg border border-cream-dark bg-white" />
@@ -115,17 +165,28 @@ export function RichEditor({
   return (
     <div>
       <Toolbar editor={editor} />
-      {editor.isActive("image") && <ImageControls editor={editor} />}
+      {imageActive && <ImageControls editor={editor} />}
       <EditorContent editor={editor} />
+      <p className="mt-1 text-[11px] text-gray-soft">
+        Enter = nový odstavec, Shift+Enter = jen zalomení řádku. Nadpis a
+        zarovnání se vztahují na celý odstavec, tučné/kurzíva na označený text.
+      </p>
     </div>
   );
 }
 
 /** Ovládání vybraného obrázku — velikost (zmenšit/zvětšit) a obtékání textem. */
 function ImageControls({ editor }: { editor: Editor }) {
-  const attrs = editor.getAttributes("image");
-  const curW = attrs.width as string | undefined;
-  const curA = attrs.align as string | undefined;
+  const { curW, curA } = useEditorState({
+    editor,
+    selector: ({ editor: e }) => {
+      const attrs = e.getAttributes("image");
+      return {
+        curW: attrs.width as string | undefined,
+        curA: attrs.align as string | undefined,
+      };
+    },
+  });
   const setW = (w: string | null) =>
     editor.chain().focus().updateAttributes("image", { width: w }).run();
   const setA = (a: string | null) =>
@@ -185,6 +246,27 @@ function ImageControls({ editor }: { editor: Editor }) {
 function Toolbar({ editor }: { editor: Editor }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  // Aktivní stavy tlačítek odvozené z aktuálního výběru — useEditorState zaručí
+  // překreslení lišty při každé změně výběru/obsahu (jinak může „viset" např. tučné).
+  const st = useEditorState({
+    editor,
+    selector: ({ editor: e }) => ({
+      bold: e.isActive("bold"),
+      italic: e.isActive("italic"),
+      strike: e.isActive("strike"),
+      h2: e.isActive("heading", { level: 2 }),
+      h3: e.isActive("heading", { level: 3 }),
+      bulletList: e.isActive("bulletList"),
+      orderedList: e.isActive("orderedList"),
+      left: e.isActive({ textAlign: "left" }),
+      center: e.isActive({ textAlign: "center" }),
+      right: e.isActive({ textAlign: "right" }),
+      justify: e.isActive({ textAlign: "justify" }),
+      link: e.isActive("link"),
+      canUndo: e.can().undo(),
+      canRedo: e.can().redo(),
+    }),
+  });
 
   const addImage = async (file: File | null) => {
     if (!file) return;
@@ -224,36 +306,36 @@ function Toolbar({ editor }: { editor: Editor }) {
     <div className="flex flex-wrap items-center gap-0.5 rounded-t-lg border border-cream-dark bg-paper px-2 py-1.5">
       <Btn
         onClick={() => editor.chain().focus().toggleBold().run()}
-        active={editor.isActive("bold")}
+        active={st.bold}
         title="Tučné"
       >
         <Bold className="size-4" />
       </Btn>
       <Btn
         onClick={() => editor.chain().focus().toggleItalic().run()}
-        active={editor.isActive("italic")}
+        active={st.italic}
         title="Kurzíva"
       >
         <Italic className="size-4" />
       </Btn>
       <Btn
         onClick={() => editor.chain().focus().toggleStrike().run()}
-        active={editor.isActive("strike")}
+        active={st.strike}
         title="Přeškrtnuté"
       >
         <Strikethrough className="size-4" />
       </Btn>
       <Divider />
       <Btn
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        active={editor.isActive("heading", { level: 2 })}
+        onClick={() => isolateLine(editor).toggleHeading({ level: 2 }).run()}
+        active={st.h2}
         title="Nadpis 2"
       >
         <Heading2 className="size-4" />
       </Btn>
       <Btn
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        active={editor.isActive("heading", { level: 3 })}
+        onClick={() => isolateLine(editor).toggleHeading({ level: 3 }).run()}
+        active={st.h3}
         title="Nadpis 3"
       >
         <Heading3 className="size-4" />
@@ -261,14 +343,14 @@ function Toolbar({ editor }: { editor: Editor }) {
       <Divider />
       <Btn
         onClick={() => editor.chain().focus().toggleBulletList().run()}
-        active={editor.isActive("bulletList")}
+        active={st.bulletList}
         title="Odrážky"
       >
         <List className="size-4" />
       </Btn>
       <Btn
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        active={editor.isActive("orderedList")}
+        active={st.orderedList}
         title="Číslovaný seznam"
       >
         <ListOrdered className="size-4" />
@@ -276,39 +358,39 @@ function Toolbar({ editor }: { editor: Editor }) {
       <Divider />
       <Btn
         onClick={() => editor.chain().focus().setTextAlign("left").run()}
-        active={editor.isActive({ textAlign: "left" })}
+        active={st.left}
         title="Zarovnat vlevo"
       >
         <AlignLeft className="size-4" />
       </Btn>
       <Btn
         onClick={() => editor.chain().focus().setTextAlign("center").run()}
-        active={editor.isActive({ textAlign: "center" })}
+        active={st.center}
         title="Na střed"
       >
         <AlignCenter className="size-4" />
       </Btn>
       <Btn
         onClick={() => editor.chain().focus().setTextAlign("right").run()}
-        active={editor.isActive({ textAlign: "right" })}
+        active={st.right}
         title="Zarovnat vpravo"
       >
         <AlignRight className="size-4" />
       </Btn>
       <Btn
         onClick={() => editor.chain().focus().setTextAlign("justify").run()}
-        active={editor.isActive({ textAlign: "justify" })}
+        active={st.justify}
         title="Do bloku"
       >
         <AlignJustify className="size-4" />
       </Btn>
       <Divider />
-      <Btn onClick={setLink} active={editor.isActive("link")} title="Odkaz">
+      <Btn onClick={setLink} active={st.link} title="Odkaz">
         <Link2 className="size-4" />
       </Btn>
       <Btn
         onClick={() => editor.chain().focus().unsetLink().run()}
-        disabled={!editor.isActive("link")}
+        disabled={!st.link}
         title="Zrušit odkaz"
       >
         <Link2Off className="size-4" />
@@ -334,14 +416,14 @@ function Toolbar({ editor }: { editor: Editor }) {
       <Divider />
       <Btn
         onClick={() => editor.chain().focus().undo().run()}
-        disabled={!editor.can().undo()}
+        disabled={!st.canUndo}
         title="Zpět"
       >
         <Undo2 className="size-4" />
       </Btn>
       <Btn
         onClick={() => editor.chain().focus().redo().run()}
-        disabled={!editor.can().redo()}
+        disabled={!st.canRedo}
         title="Vpřed"
       >
         <Redo2 className="size-4" />

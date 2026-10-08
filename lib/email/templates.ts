@@ -109,8 +109,6 @@ export type OrderEmailData = {
   shipping: number;
   paymentFee: number;
   discount: number;
-  /** Uplatněný dárkový poukaz (v měně objednávky). */
-  voucher?: number;
   total: number;
   currency: "CZK" | "EUR";
   paymentMethod: string; // kód: cod | bank | card …
@@ -138,7 +136,6 @@ const COPY = {
     shipping: "Doprava",
     paymentFee: "Poplatek za platbu",
     discount: "Sleva",
-    voucher: "Dárkový poukaz",
     total: "Celkem",
     delivery: "Doručovací adresa",
     billing: "Fakturační adresa",
@@ -171,7 +168,6 @@ const COPY = {
     shipping: "Shipping",
     paymentFee: "Payment fee",
     discount: "Discount",
-    voucher: "Gift voucher",
     total: "Total",
     delivery: "Delivery address",
     billing: "Billing address",
@@ -204,7 +200,6 @@ const COPY = {
     shipping: "Versand",
     paymentFee: "Zahlungsgebühr",
     discount: "Rabatt",
-    voucher: "Geschenkgutschein",
     total: "Gesamt",
     delivery: "Lieferadresse",
     billing: "Rechnungsadresse",
@@ -300,7 +295,6 @@ ${sum(c.subtotal, money(d.subtotal, d.locale))}
 ${sum(d.shippingMethodLabel ? `${c.shipping} — ${d.shippingMethodLabel}` : c.shipping, money(d.shipping, d.locale))}
 ${d.paymentFee > 0 ? sum(d.paymentMethodLabel ? `${c.paymentFee} — ${d.paymentMethodLabel}` : c.paymentFee, money(d.paymentFee, d.locale)) : ""}
 ${d.discount > 0 ? sum(c.discount, `− ${money(d.discount, d.locale)}`, { color: BRAND }) : ""}
-${(d.voucher ?? 0) > 0 ? sum(c.voucher, `− ${money(d.voucher ?? 0, d.locale)}`, { color: BRAND }) : ""}
 ${sum(c.total, money(d.total, d.locale), { strong: true })}
 </table>`;
 }
@@ -347,7 +341,6 @@ ${footerRow(d.locale)}`;
     `${c.shipping}${d.shippingMethodLabel ? ` (${d.shippingMethodLabel})` : ""}: ${money(d.shipping, d.locale)}`,
     ...(d.paymentFee > 0 ? [`${c.paymentFee}: ${money(d.paymentFee, d.locale)}`] : []),
     ...(d.discount > 0 ? [`${c.discount}: −${money(d.discount, d.locale)}`] : []),
-    ...((d.voucher ?? 0) > 0 ? [`${c.voucher}: −${money(d.voucher ?? 0, d.locale)}`] : []),
     `${c.total}: ${money(d.total, d.locale)}`,
     "",
     `${c.delivery}: ${addressText(d.shippingAddress)}`,
@@ -378,7 +371,6 @@ export function newOrderNotificationEmail(d: OrderEmailData): {
   ];
   if (d.shippingAddress?.phone) meta.push(["Telefon", d.shippingAddress.phone]);
   if (d.discount > 0) meta.push(["Sleva", `−${money(d.discount, d.locale)}`]);
-  if ((d.voucher ?? 0) > 0) meta.push(["Dárkový poukaz", `−${money(d.voucher ?? 0, d.locale)}`]);
 
   const inner = `
 <tr><td style="padding:28px;">
@@ -1211,74 +1203,6 @@ ${footerRow("cs")}`;
     subject: `${title} — Reptiplus admin`,
     html: layout(inner, title),
     text: [title, "", ...d.products.map((p) => `– ${p.name}${p.sku ? ` (${p.sku})` : ""}: ${p.stock} ks / limit ${p.threshold} — ${p.adminUrl}`)].join("\n"),
-  };
-}
-
-/* ── Dárkové poukazy ────────────────────────────────────────────────────── */
-
-const VOUCHER_COPY = {
-  cs: {
-    subject: (n: number) => (n === 1 ? "Váš dárkový poukaz — Reptiplus" : `Vaše dárkové poukazy (${n}) — Reptiplus`),
-    title: (n: number) => (n === 1 ? "Dárkový poukaz je připravený" : "Dárkové poukazy jsou připravené"),
-    body: (order: string | null) => `Děkujeme za nákup${order ? ` (objednávka ${order})` : ""}. Poukaz najdete v příloze jako PDF k vytištění nebo přeposlání. Kód stačí zadat v pokladně do pole „Dárkový poukaz“; čerpat ho lze i postupně.`,
-    value: "Hodnota",
-    validTo: "Platí do",
-    cta: "Jít nakupovat",
-  },
-  en: {
-    subject: (n: number) => (n === 1 ? "Your gift voucher — Reptiplus" : `Your gift vouchers (${n}) — Reptiplus`),
-    title: (n: number) => (n === 1 ? "Your gift voucher is ready" : "Your gift vouchers are ready"),
-    body: (order: string | null) => `Thank you for your purchase${order ? ` (order ${order})` : ""}. The voucher is attached as a PDF to print or forward. Enter the code in the “Gift voucher” field at checkout; the balance can be used across several orders.`,
-    value: "Value",
-    validTo: "Valid until",
-    cta: "Start shopping",
-  },
-  de: {
-    subject: (n: number) => (n === 1 ? "Ihr Geschenkgutschein — Reptiplus" : `Ihre Geschenkgutscheine (${n}) — Reptiplus`),
-    title: (n: number) => (n === 1 ? "Ihr Geschenkgutschein ist bereit" : "Ihre Geschenkgutscheine sind bereit"),
-    body: (order: string | null) => `Vielen Dank für Ihren Einkauf${order ? ` (Bestellung ${order})` : ""}. Der Gutschein ist als PDF angehängt – zum Ausdrucken oder Weiterleiten. Geben Sie den Code an der Kasse im Feld „Geschenkgutschein“ ein; das Guthaben kann über mehrere Bestellungen genutzt werden.`,
-    value: "Wert",
-    validTo: "Gültig bis",
-    cta: "Jetzt einkaufen",
-  },
-} as const;
-
-export function giftVoucherEmail(d: {
-  locale: Locale;
-  vouchers: { code: string; valueCzk: number; validTo: string | null }[];
-  shopUrl: string;
-  orderNumber: string | null;
-}): { subject: string; html: string; text: string } {
-  const c = VOUCHER_COPY[d.locale] ?? VOUCHER_COPY.cs;
-  const n = d.vouchers.length;
-  const rows = d.vouchers
-    .map(
-      (v) => `<tr><td style="padding:10px 0;border-bottom:1px solid ${BORDER};">
-<div style="font-family:monospace;font-size:20px;font-weight:bold;color:${INK};letter-spacing:1px;">${escapeHtml(v.code)}</div>
-<div style="font-size:13px;color:${MUTED};">${c.value}: <strong style="color:${INK};">${money(v.valueCzk, "cs")}</strong>${v.validTo ? ` · ${c.validTo} ${escapeHtml(v.validTo)}` : ""}</div>
-</td></tr>`,
-    )
-    .join("");
-  const inner = `
-<tr><td style="padding:28px;">
-<h1 style="margin:0 0 12px;font-size:22px;color:${INK};">${c.title(n)}</h1>
-<p style="margin:0 0 18px;font-size:14px;line-height:1.55;">${escapeHtml(c.body(d.orderNumber))}</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;">${rows}</table>
-${button(d.shopUrl, c.cta)}
-</td></tr>
-${footerRow(d.locale)}`;
-  return {
-    subject: c.subject(n),
-    html: layout(inner, c.body(d.orderNumber).slice(0, 140)),
-    text: [
-      c.title(n),
-      "",
-      c.body(d.orderNumber),
-      "",
-      ...d.vouchers.map((v) => `${v.code} — ${c.value}: ${money(v.valueCzk, "cs")}${v.validTo ? ` · ${c.validTo} ${v.validTo}` : ""}`),
-      "",
-      `${c.cta}: ${d.shopUrl}`,
-    ].join("\n"),
   };
 }
 

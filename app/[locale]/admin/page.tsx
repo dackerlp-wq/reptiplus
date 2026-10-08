@@ -63,7 +63,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
       .limit(500),
     svc
       .from("product")
-      .select("id, name, sku, stock_qty, low_stock_threshold, is_gift_voucher, product_variant(stock_qty)")
+      .select("id, name, sku, stock_qty, low_stock_threshold, product_variant(stock_qty)")
       .eq("is_published", true)
       .limit(2000),
     svc.from("cart").select("id, customer_id, created_at, reminder_sent_at, cart_item(added_at)").limit(2000),
@@ -101,7 +101,6 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
   const abandonedLoggedIn = abandoned.filter((c) => c.customer_id).length;
 
   const lowStock = (productsRes.data ?? [])
-    .filter((p) => !p.is_gift_voucher)
     .map((p) => ({ ...p, stock: effectiveStock(p), limit: p.low_stock_threshold ?? 5 }))
     .filter((p) => p.stock <= p.limit)
     .sort((a, b) => a.stock - b.stock);

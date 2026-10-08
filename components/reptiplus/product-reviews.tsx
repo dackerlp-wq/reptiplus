@@ -35,12 +35,15 @@ export function ProductReviews({
   average,
   count,
   isLoggedIn,
+  purchased = false,
 }: {
   productId: string;
   reviews: Review[];
   average: number;
   count: number;
   isLoggedIn: boolean;
+  /** Zákazník produkt u nás koupil → recenze se zveřejní ihned se štítkem „Ověřený nákup". */
+  purchased?: boolean;
 }) {
   const t = useTranslations("Reviews");
   const locale = useLocale();
@@ -123,10 +126,16 @@ export function ProductReviews({
           </p>
         ) : state.status === "ok" ? (
           <p className="flex items-center gap-2 text-sm text-success">
-            <CheckCircle2 className="size-4" /> {t("submitted")}
+            <CheckCircle2 className="size-4" />{" "}
+            {state.published ? t("submittedPublished") : t("submitted")}
           </p>
         ) : (
           <form action={action} className="space-y-4">
+            {purchased && (
+              <p className="inline-flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2 text-xs font-medium text-success">
+                <CheckCircle2 className="size-4 shrink-0" /> {t("purchasedNote")}
+              </p>
+            )}
             <input type="hidden" name="productId" value={productId} />
             <input type="hidden" name="rating" value={rating} />
 

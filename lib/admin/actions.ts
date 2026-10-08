@@ -15,7 +15,6 @@ import { notifyStockAlerts } from "@/lib/stock-alerts/notify";
 import { checkLowStock } from "@/lib/stock-alerts/low-stock";
 import { refundComgatePayment } from "@/lib/comgate/client";
 import { pickI18n } from "@/lib/i18n";
-import { DEFAULT_THEME, isThemeKey } from "@/lib/themes";
 import { LEDX_PAGE_SETTING, normalizeLedxPage } from "@/lib/ledx/content";
 
 async function assertAdmin() {
@@ -116,7 +115,6 @@ export async function saveProductAction(formData: FormData) {
     })(),
     is_published: formData.get("is_published") === "on",
     is_featured: formData.get("is_featured") === "on",
-    is_gift_voucher: formData.get("is_gift_voucher") === "on",
     vat_rate: [0, 12, 21].includes(parseInt(str(formData, "vat_rate") || "21", 10))
       ? parseInt(str(formData, "vat_rate") || "21", 10)
       : 21,
@@ -157,15 +155,38 @@ export async function saveProductAction(formData: FormData) {
   // Hlídání docházejícího skladu (limit na produktu).
   if (productId) await checkLowStock([productId]);
 
+  // Obrázky vybrané už při vytváření produktu (pole `images` z NewProductImages).
+  const newImages = formData
+    .getAll("images")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  let imageError: string | null = null;
+  if (productId && newImages.length > 0) {
+    imageError = await uploadImagesForProduct(svc, productId, newImages);
+  }
+
   revalidatePath("/", "layout");
-  // Zůstaň v editaci produktu (u nového ať jde hned nahrát fotky/varianty,
-  // u úpravy ať můžeš plynule pokračovat). Zpět na seznam je přes odkaz nahoře.
+  // Zůstaň v editaci produktu (ať jde plynule pokračovat — fotky, varianty).
+  // Zpět na seznam je přes odkaz nahoře.
+  if (imageError) {
+    flashRedirect(
+      `/${locale}/admin/products/${productId}`,
+      "error",
+      `Produkt uložen, ale nahrání obrázků selhalo (${IMAGE_ERRORS[imageError] ?? imageError}). Nahraj je prosím znovu.`,
+    );
+  }
   flashRedirect(
     `/${locale}/admin/products/${productId}`,
     "saved",
-    id ? "Uloženo" : "Produkt vytvořen — teď můžeš přidat fotky a varianty",
+    id ? "Uloženo" : newImages.length > 0 ? "Produkt vytvořen včetně obrázků" : "Produkt vytvořen — teď můžeš přidat fotky a varianty",
   );
 }
+
+const IMAGE_ERRORS: Record<string, string> = {
+  NOT_IMAGE: "jeden ze souborů není obrázek",
+  TOO_LARGE: "obrázek je příliš velký",
+  UPLOAD: "nahrání do úložiště selhalo",
+  DB: "uložení do databáze selhalo",
+};
 
 async function syncUpsell(
   svc: ReturnType<typeof createServiceClient>,
@@ -480,8 +501,19 @@ export async function uploadProductImagesAction(
     .filter((f): f is File => f instanceof File && f.size > 0);
   if (files.length === 0) return { ok: false, error: "NO_FILES" };
 
-  const svc = createServiceClient();
+  const err = await uploadImagesForProduct(createServiceClient(), productId, files);
+  if (err) return { ok: false, error: err };
 
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/** Nahraje soubory do bucketu a založí řádky `product_image` za stávající (v pořadí). Vrací kód chyby nebo null. */
+async function uploadImagesForProduct(
+  svc: ReturnType<typeof createServiceClient>,
+  productId: string,
+  files: File[],
+): Promise<string | null> {
   // Navázat na aktuální nejvyšší sort_order
   const { data: existing } = await svc
     .from("product_image")
@@ -492,25 +524,23 @@ export async function uploadProductImagesAction(
   let sort = (existing?.[0]?.sort_order ?? -1) + 1;
 
   for (const file of files) {
-    if (!file.type.startsWith("image/")) return { ok: false, error: "NOT_IMAGE" };
-    if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "TOO_LARGE" };
+    if (!file.type.startsWith("image/")) return "NOT_IMAGE";
+    if (file.size > MAX_IMAGE_BYTES) return "TOO_LARGE";
 
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
     const path = `${productId}/${crypto.randomUUID()}.${ext}`;
     const { error: upErr } = await svc.storage
       .from(STORAGE_BUCKET)
       .upload(path, file, { contentType: file.type, upsert: false });
-    if (upErr) return { ok: false, error: "UPLOAD" };
+    if (upErr) return "UPLOAD";
 
     const { data: pub } = svc.storage.from(STORAGE_BUCKET).getPublicUrl(path);
     const { error: insErr } = await svc
       .from("product_image")
       .insert({ product_id: productId, url: pub.publicUrl, sort_order: sort++ });
-    if (insErr) return { ok: false, error: "DB" };
+    if (insErr) return "DB";
   }
-
-  revalidatePath("/", "layout");
-  return { ok: true };
+  return null;
 }
 
 /** Nahraje obrázek pro WYSIWYG editor (popisy, stránky) a vrátí veřejnou URL. */
@@ -1412,19 +1442,6 @@ export async function saveNewsletterSettingsAction(fd: FormData) {
   });
 }
 
-export async function saveThemeAction(fd: FormData) {
-  const theme = str(fd, "theme");
-  await upsertSetting("appearance.theme", {
-    theme: isThemeKey(theme) ? theme : DEFAULT_THEME,
-  });
-}
-
-export async function saveHeroStyleAction(fd: FormData) {
-  const style = str(fd, "hero");
-  await upsertSetting("appearance.hero", {
-    style: style === "logo" || style === "logo-dark" ? style : "light",
-  });
-}
 export async function saveComgateAction(fd: FormData) {
   await upsertSetting("integrations.comgate", {
     merchant: str(fd, "merchant"),

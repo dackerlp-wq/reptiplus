@@ -105,7 +105,9 @@
     "reviewBody": "Vaše zkušenost s produktem",
     "submit": "Odeslat recenzi",
     "submitted": "Děkujeme! Recenze čeká na schválení.",
+    "submittedPublished": "Děkujeme! Vaše recenze je zveřejněna.",
     "loginPrompt": "Recenzi mohou psát přihlášení zákazníci.",
+    "purchasedNote": "Tento produkt jste u nás koupili – recenze se zveřejní ihned se štítkem „Ověřený nákup“.",
     "login": "Přihlásit se",
     "errors": {
       "RATING": "Vyberte prosím počet hvězdiček.",
@@ -197,7 +199,9 @@
       "DISCOUNT": "Slevový kód už není platný, odeberte ho prosím.",
       "PICKUP": "Vyberte prosím výdejní místo.",
       "SERVER": "Objednávku se nepodařilo dokončit. Zkuste to prosím znovu.",
-      "VOUCHER": "Dárkový poukaz se nepodařilo uplatnit, zkontrolujte kód."
+      "ACCOUNT_PASSWORD": "Zadejte heslo k účtu (alespoň 6 znaků), nebo zrušte zaškrtnutí vytvoření účtu.",
+      "ACCOUNT_EXISTS": "Na tento e-mail už účet existuje. Přihlaste se, nebo zrušte zaškrtnutí vytvoření účtu.",
+      "ACCOUNT": "Účet se nepodařilo vytvořit. Zkuste to znovu, nebo objednejte bez účtu."
     },
     "discountErrors": {
       "NOT_FOUND": "Slevový kód nebyl nalezen.",
@@ -218,17 +222,12 @@
     "addressLabelDefault": "Adresa",
     "freeShipping": "Doprava zdarma",
     "freeShippingFrom": "Doprava zdarma od {amount}",
-    "voucherTitle": "Dárkový poukaz",
-    "voucherPlaceholder": "Kód poukazu (DP-XXXX-XXXX)",
-    "voucherApplied": "Poukaz {code} uplatněn, zůstatek {balance}",
-    "voucher": "Dárkový poukaz",
-    "voucherErrors": {
-      "NOT_FOUND": "Poukaz s tímto kódem neexistuje.",
-      "INACTIVE": "Poukaz není platný.",
-      "EXPIRED": "Platnost poukazu vypršela.",
-      "EMPTY": "Poukaz je už vyčerpaný.",
-      "CURRENCY": "Poukaz teď nelze uplatnit v této měně."
-    }
+    "haveAccount": "Máte u nás účet?",
+    "loginLink": "Přihlásit se",
+    "loginHint": "Předvyplníme adresy a objednávku uvidíte v účtu.",
+    "createAccount": "Vytvořit účet s touto objednávkou",
+    "accountPassword": "Heslo k účtu (min. 6 znaků)",
+    "createAccountHint": "Účet založíme na e-mail výše. Objednávky, adresy a oblíbené pak najdete ve svém účtu."
   },
   "OrderConfirm": {
     "title": "Děkujeme za objednávku!",
@@ -254,7 +253,6 @@
     "documents": "Doklady",
     "invoice": "Faktura",
     "creditNote": "Dobropis",
-    "voucher": "Dárkový poukaz",
     "claimLink": "Reklamovat zboží",
     "withdrawalLink": "Vrátit zboží do 14 dnů"
   },
@@ -333,7 +331,10 @@
     "statusDelivered": "Doručená",
     "statusCancelled": "Stornovaná",
     "statusRefunded": "Vrácená",
-    "invoices": "Doklady"
+    "invoices": "Doklady",
+    "or": "nebo",
+    "google": "Pokračovat přes Google",
+    "oauthError": "Přihlášení přes Google se nezdařilo. Zkuste to prosím znovu."
   },
   "Ledx": {
     "navLabel": "Profi osvětlení",

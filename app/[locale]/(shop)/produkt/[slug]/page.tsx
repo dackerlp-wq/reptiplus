@@ -16,7 +16,7 @@ import {
   getUpsellProducts,
   getLowestPrice30d,
 } from "@/lib/queries";
-import { getProductReviews } from "@/lib/reviews/queries";
+import { getProductReviews, hasPurchasedProduct } from "@/lib/reviews/queries";
 import { createClient } from "@/lib/supabase/server";
 import {
   compareForLocale,
@@ -84,6 +84,9 @@ export default async function ProductPage({
       getUpsellProducts(product.id, 4),
       getLowestPrice30d(product.id),
     ]);
+
+  // Přihlášený zákazník, který produkt koupil → recenze se zveřejní bez schvalování.
+  const purchased = authData.user ? await hasPurchasedProduct(authData.user.id, product.id) : false;
 
   const productSection = (title: string, items: ProductListItem[]) =>
     items.length > 0 ? (
@@ -395,6 +398,7 @@ export default async function ProductPage({
         average={reviewsData.average}
         count={reviewsData.count}
         isLoggedIn={!!authData.user}
+        purchased={purchased}
       />
 
       {/* Podobné produkty */}

@@ -12,7 +12,7 @@ Infrastruktura:
   (`claude/wordpress-plugin-merge-hrc9po` drží nesouvisející WordPress plugin, nemazat). Repo `Reptiplus/reptiplus` je duplikát, ignorovat.
 - Vercel: projekt `reptiplus` (`prj_9fSGoOlyRzybaaJv5g92puOknsnw`, tým `team_5syHQcguxaekOGMAp7ikxARv`), nasazuje automaticky po pushi na `main`.
   Domény `reptiplus.cz` / `.eu` / `.shop`. Crony ve `vercel.json` (všechny chráněné `CRON_SECRET`): `/api/cron/cleanup-carts` (mazání starých hostovských košíků),
-  `/api/cron/cancel-unpaid` (storno nezaplacených karetních objednávek po 24 h, RPC `cancel_unpaid_order` vrací sklad i zůstatek poukazu, e-mail zákazníkovi),
+  `/api/cron/cancel-unpaid` (storno nezaplacených karetních objednávek po 24 h, RPC `cancel_unpaid_order` vrací sklad, e-mail zákazníkovi),
   `/api/cron/abandoned-carts` (připomínka opuštěného košíku přihlášeným po 24–72 h, jednou na košík — `cart.reminder_sent_at`, jazyk z poslední objednávky).
 - Supabase: projekt „Reptiplus“ `duaihkobtgfzprufqjmh` (eu-west-1, Postgres 17). Storage bucket `products` pro obrázky.
 
@@ -25,7 +25,7 @@ npx tsc --noEmit # typecheck (nejrychlejší kontrola před pushem)
 npm run lint     # ESLint 9 flat config (eslint.config.mjs, eslint-config-next); build ho nespouští
 npm start
 
-npm test         # Vitest — jednotkové testy čistých výpočtů (tests/unit: DPH faktury, slevy, doprava zdarma, poukazy, statistiky)
+npm test         # Vitest — jednotkové testy čistých výpočtů (tests/unit: DPH faktury, slevy, doprava zdarma, statistiky)
 npm run test:e2e # Playwright — průchod obchodem bez odeslání objednávky (tests/e2e; PLAYWRIGHT_BASE_URL=https://reptiplus.cz proti produkci, jinak next dev)
 ```
 
@@ -70,7 +70,7 @@ Všechny tabulky mají RLS zapnuté. Typy z DB: `types/database.ts` (generované
 - Mutace: Server Actions (`"use server"`), ne API routes. Admin: `lib/admin/actions.ts` (velký soubor, každá akce začíná `assertAdmin()`, po uložení `revalidatePath` + `flashRedirect()` pro toast),
   `lib/admin/shipping-actions.ts`. Shop: `lib/cart/actions.ts`, `lib/checkout/actions.ts`, `lib/auth/actions.ts`, `lib/reviews/actions.ts`, `lib/ledx/actions.ts`.
   Formuláře posílají `FormData`; i18n pole se čtou jako `name_cs` / `name_en` / `name_de` (helper `i18n(fd, base)`).
-- Kritické DB operace jsou Postgres RPC (`security definer`): `place_order` (atomické odečtení skladu produktu/varianty + čerpání dárkového poukazu + vytvoření objednávky), `admin_edit_order_items`, `cancel_unpaid_order`, `cleanup_abandoned_carts`.
+- Kritické DB operace jsou Postgres RPC (`security definer`): `place_order` (atomické odečtení skladu produktu/varianty + vytvoření objednávky), `admin_edit_order_items`, `cancel_unpaid_order`, `cleanup_abandoned_carts`.
 - Košík: cookie `rp_cart` + tabulky `cart`/`cart_item`; hostový košík se po přihlášení sloučí (`lib/cart/cart.ts`).
 - Objednávka: `lib/checkout/actions.ts` → `place_order` (ukládá `locale`, názvy položek vč. varianty, `vat_rate`) → `sendOrderConfirmation()` → případně Comgate platba (`lib/comgate/client.ts`); zaplacení řeší webhook přes `markOrderPaid()`. Bez SMTP env se e-maily tiše přeskočí. Číslo objednávky `RPyyMMdd-XXXX`.
 - Doprava: `lib/shipping/` (Packeta = Zásilkovna, PPL) — tvorba zásilek a PDF štítky (`pdf-lib` slučuje hromadné štítky).
@@ -97,16 +97,18 @@ Všechny tabulky mají RLS zapnuté. Typy z DB: `types/database.ts` (generované
 - Admin: `app/[locale]/admin/invoices` (+ CSV export `app/api/admin/invoices/export`), karta Doklady v detailu objednávky, akce `lib/admin/invoice-actions.ts`,
   nastavení řady v Nastavení → Fakturace. Zákazník: odkazy na stránce objednávky a v účtu (RLS `invoice owner read`).
 - Přihlašovací e-maily (registrace, reset hesla) posílá Supabase Auth: šablony `supabase/templates/*.html`, postup `docs/SUPABASE_AUTH_EMAILS.md`.
+- Přihlášení přes Google: `signInWithGoogleAction` (`lib/auth/actions.ts`) → Supabase OAuth → `app/api/auth/callback/route.ts` (mimo `[locale]`, proxy ho nepřesměruje).
+  Nastavení provideru v Google Cloud + Supabase: `docs/GOOGLE_LOGIN.md`.
 
 ### Nastavení obchodu (`app_setting`)
-Tabulka key/value JSONB, čtená přes `lib/settings.ts` service klientem. Klíče: `shop.general`, `appearance.theme`, `appearance.hero`,
+Tabulka key/value JSONB, čtená přes `lib/settings.ts` service klientem. Klíče: `shop.general`,
 `legal.terms|privacy|claims`, `content.about`, `content.shipping` (volný text stránky Doprava a platba), `integrations.comgate|ppl|zasilkovna|analytics|ai`, `ledx.page`, `invoices.settings`,
 `shipping.settings`, `newsletter.settings`.
 Integrace (Comgate, PPL, Zásilkovna) berou přihlašovací údaje primárně z `app_setting`, s fallbackem na env.
 
 ### Vzhled
-- Tailwind v4, design tokeny v `@theme` v `app/globals.css` (`forest`, `cream`, `gold`, `ink`, …). Barevné varianty webu přepínatelné v adminu:
-  registr v `lib/themes.ts`, přepisy tokenů `html[data-theme="…"]` v `globals.css`, atribut se nastavuje v `app/[locale]/layout.tsx`. Klíče v obou souborech držet v souladu.
+- Tailwind v4, design tokeny v `@theme` v `app/globals.css` (`forest`, `cream`, `gold`, `ink`, …). Jediný pevný vzhled (dřívější varianta „Světlá & veselá");
+  přepínání barevných variant a stylu hero carouselu v adminu bylo zrušeno (staré klíče `appearance.*` v `app_setting` se nečtou).
 - Fonty přes `next/font` (Fraunces = display, Inter = sans, JetBrains Mono).
 - CSP a bezpečnostní hlavičky jsou v `next.config.ts`; při přidání externího skriptu/iframe/endpointu je nutné rozšířit CSP.
 - Rich text v adminu: TipTap (`components/admin/rich-editor.tsx`), obrázky se komprimují v prohlížeči (`lib/admin/image-compress.ts`) — proto `serverActions.bodySizeLimit: 6mb`.
@@ -140,6 +142,8 @@ Export CSV: `app/api/admin/inquiries/export/route.ts`.
 - Hlídání skladu: `StockAlertForm` u vyprodaného produktu/varianty → `stock_alert` (service role, honeypot, unikát product+variant+email);
   `notifyStockAlerts(productId)` v `lib/stock-alerts/notify.ts` se volá po uložení produktu a inline změně skladu v adminu.
 - Přihlášení: `/prihlaseni?redirectTo=/cs/...` (jen relativní cesty), po přihlášení se sloučí hostův košík a připojí objednávky.
+- Pokladna bez přihlášení: odkaz na přihlášení (návrat do pokladny) a volba „Vytvořit účet s touto objednávkou" (heslo) — `createOrderAction` založí účet
+  přes `auth.signUp` před `place_order`, objednávku připojí k novému účtu a dodací adresu uloží jako výchozí; existující e-mail → chyba `ACCOUNT_EXISTS`.
 
 ### Newsletter, kontakt, doprava zdarma, chybové stránky
 - Newsletter (`newsletter_subscriber`, double opt-in): `lib/newsletter/service.ts` (`requestSubscription` → potvrzovací e-mail s tokenem,
@@ -160,14 +164,9 @@ Export CSV: `app/api/admin/inquiries/export/route.ts`.
   `legal.*` (jen `cs`, EN/DE přes AI překlad v adminu) — první verze vložena 24. 9. 2026, majitel je má zkontrolovat.
 - 404 / chyby: `app/[locale]/(shop)/[...rest]/page.tsx` volá `notFound()` → `(shop)/not-found.tsx` (s Navbar/Footer), `app/[locale]/error.tsx` (client, ns `ErrorPage`), `app/global-error.tsx`.
 
-### Dárkové poukazy (`gift_voucher`, `gift_voucher_redemption`)
-- Hodnota i zůstatek v CZK haléřích; kód `DP-XXXX-XXXX`. Služba `lib/vouchers/service.ts`: `validateVoucher()` (zůstatek v měně košíku, EUR kurzem ČNB),
-  `voucherRedemption()` (čerpá se až po slevě, max. do částky k úhradě), `issueVouchersForOrder()` (volá `markOrderPaid`: položky produktů s `product.is_gift_voucher`
-  → kódy v hodnotě jednotkové ceny, platnost 12 měsíců, e-mail s PDF `lib/vouchers/pdf.ts`; idempotentní podle `order_id`), `sendVoucherEmail()`.
-- Pokladna: samostatné pole „Dárkový poukaz“ (`applyVoucherAction`), `createOrderAction` ověří znovu, pošle `voucher_id|voucher_amount|voucher_amount_czk` do `place_order`
-  (atomicky odečte zůstatek, jinak `VOUCHER_INVALID`), `order.total` je částka k úhradě po poukazu; plně uhrazená objednávka jde rovnou přes `markOrderPaid({source:"voucher"})`.
-  Faktura má plnou částku a v poznámce „Uhrazeno dárkovým poukazem“. Storno nezaplacené objednávky (cron) vrací zůstatek; ruční storno v adminu ho nevrací (obnovit ručně v Poukazech).
-- Admin `app/[locale]/admin/vouchers` (ruční vystavení, znovuodeslání, zrušení/obnovení), akce `lib/admin/voucher-actions.ts`.
+### Dárkové poukazy — zrušeno
+Funkce byla z kódu odstraněna (říjen 2026). Tabulky `gift_voucher`, `gift_voucher_redemption`, sloupce `order.voucher_id|voucher_amount`
+a `product.is_gift_voucher` v DB zůstávají (RPC `place_order` je dál umí, ale pokladna je neposílá); nic je nečte ani nezapisuje.
 
 ### Reklamace a odstoupení (`claim`)
 - Veřejné stránky `/reklamace` a `/odstoupeni-od-smlouvy` (`?o=<číslo objednávky>` předvyplní), formulář `components/reptiplus/claim-form.tsx` → `lib/claims/actions.ts`

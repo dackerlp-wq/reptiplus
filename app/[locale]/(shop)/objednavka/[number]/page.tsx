@@ -52,7 +52,7 @@ export default async function OrderConfirmPage({
   const { data: order } = await svc
     .from("order")
     .select(
-      "id, number, email, status, payment_status, comgate_ref, subtotal, shipping, discount, voucher_amount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, created_at, tracking_number, tracking_url, order_item(id,product_id,name,sku,unit_price,qty,line_total)",
+      "id, number, email, status, payment_status, comgate_ref, subtotal, shipping, discount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, created_at, tracking_number, tracking_url, order_item(id,product_id,name,sku,unit_price,qty,line_total)",
     )
     .eq("number", number)
     .maybeSingle();
@@ -241,12 +241,6 @@ export default async function OrderConfirmPage({
             <div className="flex justify-between text-success">
               <dt>{t("discount")}</dt>
               <dd className="font-mono">− {fmt(order.discount)}</dd>
-            </div>
-          )}
-          {order.voucher_amount > 0 && (
-            <div className="flex justify-between text-success">
-              <dt>{t("voucher")}</dt>
-              <dd className="font-mono">− {fmt(order.voucher_amount)}</dd>
             </div>
           )}
           <div className="flex justify-between border-t border-cream-dark pt-2 text-base font-semibold text-ink">

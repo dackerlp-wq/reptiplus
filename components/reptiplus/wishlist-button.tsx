@@ -7,26 +7,28 @@ import { useRouter, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { toggleWishlistAction } from "@/lib/account/actions";
 
-/* Jeden dotaz na stránku: sdílená cache ID oblíbených (mění se jen přes toggle). */
-let cache: { ids: Set<string>; auth: boolean } | null = null;
-let inflight: Promise<{ ids: Set<string>; auth: boolean }> | null = null;
+/* Jeden dotaz na stránku: sdílená cache ID oblíbených (mění se jen přes toggle).
+   Klíčem je cesta stránky — po přihlášení (soft navigace, modul zůstává v paměti)
+   se stav znovu načte; nepřihlášený stav se nikdy nedrží přes navigaci. */
+type Wishlist = { ids: Set<string>; auth: boolean };
+let cache: { key: string; data: Wishlist } | null = null;
+let inflight: { key: string; promise: Promise<Wishlist> } | null = null;
 const listeners = new Set<() => void>();
 
-function loadWishlist() {
-  if (cache) return Promise.resolve(cache);
-  if (!inflight) {
-    inflight = fetch("/api/wishlist", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((d: { ids: string[]; auth: boolean }) => {
-        cache = { ids: new Set(d.ids), auth: d.auth };
-        return cache;
-      })
-      .catch(() => {
-        cache = { ids: new Set(), auth: false };
-        return cache;
-      });
-  }
-  return inflight;
+function loadWishlist(key: string): Promise<Wishlist> {
+  if (cache && cache.key === key && cache.data.auth) return Promise.resolve(cache.data);
+  if (inflight && inflight.key === key) return inflight.promise;
+  const promise = fetch("/api/wishlist", { cache: "no-store" })
+    .then((r) => r.json())
+    .then((d: { ids: string[]; auth: boolean }) => ({ ids: new Set(d.ids), auth: d.auth }))
+    .catch((): Wishlist => ({ ids: new Set(), auth: false }))
+    .then((data) => {
+      if (inflight?.key === key) inflight = null;
+      cache = { key, data };
+      return data;
+    });
+  inflight = { key, promise };
+  return promise;
 }
 
 function notify() {
@@ -53,31 +55,34 @@ export function WishlistButton({
   useEffect(() => {
     let alive = true;
     const sync = () => {
-      if (alive && cache) setWished(cache.ids.has(productId));
+      if (alive && cache) setWished(cache.data.ids.has(productId));
     };
-    loadWishlist().then(sync);
+    loadWishlist(pathname).then(sync);
     listeners.add(sync);
     return () => {
       alive = false;
       listeners.delete(sync);
     };
-  }, [productId]);
+  }, [productId, pathname]);
 
   const toggle = () =>
     start(async () => {
-      if (cache && !cache.auth) {
-        router.push(`/prihlaseni?redirectTo=${encodeURIComponent(`/${locale}${pathname}`)}`);
-        return;
-      }
+      // O přihlášení rozhoduje vždy server (cookie), ne cache v prohlížeči —
+      // ta by po přihlášení a návratu zpět mohla být zastaralá.
       const res = await toggleWishlistAction(productId);
       if ("error" in res) {
-        if (res.error === "AUTH") router.push(`/prihlaseni?redirectTo=${encodeURIComponent(`/${locale}${pathname}`)}`);
+        if (res.error === "AUTH") {
+          cache = null;
+          router.push(`/prihlaseni?redirectTo=${encodeURIComponent(`/${locale}${pathname}`)}`);
+        }
         return;
       }
       if (cache) {
-        if (res.wished) cache.ids.add(productId);
-        else cache.ids.delete(productId);
-        cache.auth = true;
+        if (res.wished) cache.data.ids.add(productId);
+        else cache.data.ids.delete(productId);
+        cache.data.auth = true;
+      } else {
+        cache = { key: pathname, data: { ids: new Set(res.wished ? [productId] : []), auth: true } };
       }
       setWished(res.wished);
       notify();

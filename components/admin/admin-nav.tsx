@@ -16,7 +16,6 @@ import {
   Sparkles,
   FileText,
   Mail,
-  Gift,
   PackageX,
   Menu,
   X,
@@ -49,7 +48,6 @@ const GROUPS: Group[] = [
   ],
   [
     { href: "/admin/discounts", label: "Slevy", icon: Ticket },
-    { href: "/admin/vouchers", label: "Poukazy", icon: Gift },
   ],
   [{ href: "/admin/settings", label: "Nastavení", icon: Settings }],
 ];

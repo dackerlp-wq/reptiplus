@@ -9,8 +9,6 @@ import { getCart, getCartId } from "@/lib/cart/cart";
 import { localeCurrency } from "@/lib/i18n";
 import { freeShippingThreshold, getShippingSettings } from "@/lib/settings";
 import { validateDiscount, type DiscountError } from "@/lib/checkout/discount";
-import { validateVoucher, voucherRedemption, type VoucherError } from "@/lib/vouchers/service";
-import { markOrderPaid } from "@/lib/orders/payment";
 import { createComgatePayment } from "@/lib/comgate/client";
 import { sendOrderConfirmation } from "@/lib/orders/confirmation";
 import { logOrderEvent } from "@/lib/orders/events";
@@ -62,19 +60,6 @@ export async function applyDiscountAction(
 }
 
 /* ── Ověření dárkového poukazu (živý náhled v pokladně) ────────────────── */
-export type VoucherState =
-  | { status: "idle" }
-  | { status: "ok"; code: string; balance: number }
-  | { status: "error"; error: VoucherError };
-
-export async function applyVoucherAction(_prev: VoucherState, fd: FormData): Promise<VoucherState> {
-  const locale = safeLocale(s(fd, "locale"));
-  const code = s(fd, "voucher_code");
-  if (!code) return { status: "idle" };
-  const res = await validateVoucher(createServiceClient(), code, localeCurrency[locale]);
-  return res.ok ? { status: "ok", code: res.code, balance: res.balance } : { status: "error", error: res.error };
-}
-
 /* ── Dohledání objednávky (host, přes číslo + e-mail) ──────────────────── */
 export type LookupState = { error?: string } | undefined;
 
@@ -216,32 +201,45 @@ export async function createOrderAction(
     discountAmount = res.amount;
   }
 
-  // 4b) Dárkový poukaz (znovu ověřený na serveru; čerpá se až po slevě, max. do výše k úhradě)
-  const subtotal = cart.subtotal;
-  const payable = Math.max(0, subtotal + shippingFee + paymentFee - discountAmount);
-  let voucherId: string | null = null;
-  let voucherAmount = 0;
-  let voucherAmountCzk = 0;
-  const voucherCode = s(fd, "voucher_code");
-  if (voucherCode) {
-    const v = await validateVoucher(svc, voucherCode, currency);
-    if (!v.ok) return { error: "VOUCHER" };
-    const red = voucherRedemption(v, payable);
-    if (red.amount > 0) {
-      voucherId = v.voucherId;
-      voucherAmount = red.amount;
-      voucherAmountCzk = red.amountCzk;
-    }
-  }
-
   // 5) Součty
-  const total = Math.max(0, payable - voucherAmount);
+  const subtotal = cart.subtotal;
+  const total = Math.max(0, subtotal + shippingFee + paymentFee - discountAmount);
 
-  // 6) Zákazník (pokud přihlášen)
+  // 6) Zákazník (pokud přihlášen), případně nový účet založený rovnou v pokladně.
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  let customerId = user?.id ?? "";
+  if (!user && fd.get("create_account") === "on") {
+    const password = String(fd.get("account_password") ?? "");
+    if (password.length < 6) return { error: "ACCOUNT_PASSWORD" };
+    const { data: signUp, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: ship.full_name } },
+    });
+    if (signUpError) {
+      return { error: /registered|exists/i.test(signUpError.message) ? "ACCOUNT_EXISTS" : "ACCOUNT" };
+    }
+    // Při zapnutém potvrzování e-mailu vrací Supabase pro už existující e-mail
+    // „falešného" uživatele bez identit — účet nezakládáme, ať se přihlásí.
+    if (!signUp.user || (signUp.user.identities?.length ?? 0) === 0) return { error: "ACCOUNT_EXISTS" };
+    customerId = signUp.user.id;
+    // Jméno a dodací adresa rovnou do nového účtu (profil vzniká DB triggerem).
+    await svc.from("customer").update({ full_name: ship.full_name }).eq("id", customerId);
+    await svc.from("address").insert({
+      customer_id: customerId,
+      type: "shipping",
+      full_name: ship.full_name,
+      street: ship.street,
+      city: ship.city,
+      postal_code: ship.postal_code,
+      country: ship.country,
+      phone: ship.phone || null,
+      is_default: true,
+    });
+  }
 
   const items = cart.lines.map((l) => ({
     product_id: l.productId,
@@ -261,7 +259,7 @@ export async function createOrderAction(
     const { data, error } = await svc.rpc("place_order", {
       payload: {
         number,
-        customer_id: user?.id ?? "",
+        customer_id: customerId,
         email,
         subtotal,
         shipping: shippingFee,
@@ -270,9 +268,6 @@ export async function createOrderAction(
         currency,
         payment_fee: paymentFee,
         discount_code_id: discountId ?? "",
-        voucher_id: voucherId ?? "",
-        voucher_amount: voucherAmount,
-        voucher_amount_czk: voucherAmountCzk,
         shipping_method: shippingCode,
         payment_method: paymentCode,
         billing_address: bill,
@@ -302,10 +297,6 @@ export async function createOrderAction(
       if (created) {
         await logOrderEvent(created.id, "system", "Objednávka vytvořena v pokladně.", { source: "checkout", locale });
         await sendOrderConfirmation(created.id, { notifyShop: true });
-        // Plně uhrazeno dárkovým poukazem → rovnou zaplaceno (faktura, e-mail, případné další poukazy).
-        if (total === 0 && voucherAmount > 0) {
-          await markOrderPaid(created.id, { source: "voucher" });
-        }
       }
       // Hlídání docházejícího skladu (limit na produktu) — nikdy nevyhazuje.
       await checkLowStock(items.map((i) => i.product_id));

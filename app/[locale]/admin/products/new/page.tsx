@@ -4,6 +4,7 @@ import type { Locale } from "@/i18n/routing";
 import { getAllCategories, getBrands } from "@/lib/queries";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ProductForm } from "@/components/admin/product-form";
+import { NewProductImages } from "@/components/admin/new-product-images";
 
 export default async function NewProductPage({
   params,
@@ -46,6 +47,7 @@ export default async function NewProductPage({
         specKeys={specKeys}
         keyValues={keyValues}
         allProducts={allProducts}
+        imagesSlot={<NewProductImages />}
       />
     </div>
   );

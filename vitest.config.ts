@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 
-/** Jednotkové testy čistých výpočtů (DPH, slevy, doprava zdarma, statistiky, poukazy). `npm test`. */
+/** Jednotkové testy čistých výpočtů (DPH, slevy, doprava zdarma, statistiky). `npm test`. */
 export default defineConfig({
   test: {
     include: ["tests/unit/**/*.test.ts"],

@@ -26,9 +26,9 @@ export default async function AdminLayout({
     svc.from("order").select("id", { count: "exact", head: true }).in("status", ["new", "paid", "processing"]),
     svc.from("claim").select("id", { count: "exact", head: true }).eq("status", "new"),
     svc.from("review").select("id", { count: "exact", head: true }).eq("is_approved", false),
-    svc.from("product").select("stock_qty, low_stock_threshold, is_gift_voucher, product_variant(stock_qty)").eq("is_published", true).limit(2000),
+    svc.from("product").select("stock_qty, low_stock_threshold, product_variant(stock_qty)").eq("is_published", true).limit(2000),
   ]);
-  const lowStock = (products.data ?? []).filter((p) => !p.is_gift_voucher && effectiveStock(p) <= (p.low_stock_threshold ?? 5)).length;
+  const lowStock = (products.data ?? []).filter((p) => effectiveStock(p) <= (p.low_stock_threshold ?? 5)).length;
   const badges: AdminBadges = {
     "/admin/inquiries": inq.count ?? 0,
     "/admin/orders": ordersOpen.count ?? 0,
