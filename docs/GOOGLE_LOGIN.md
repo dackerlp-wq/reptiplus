@@ -39,7 +39,8 @@ Obchodní podmínky (`/cs/obchodni-podminky`), logo s názvem značky (`public/l
 0. **Pořadí záleží:** nejdřív ověřit doménu v Search Console, pak počkat ~24 h a teprve potom odeslat k ověření.
    Jinak Google vrátí „Webová stránka vaší domovské stránky není pro vás registrována“.
 1. **Ověřit vlastnictví domény** — Google Search Console (https://search.google.com/search-console) → přidat
-   *Doménu* `reptiplus.cz` (DNS TXT záznam u registrátora), případně i `reptiplus.eu` a `reptiplus.shop`.
+   *Doménu* `reptiplus.cz` (DNS TXT záznam u registrátora). `.eu` a `.shop` ověřovat netřeba — přihlášení přes Google
+   na nich funguje stejně (přesměrování jde přes Supabase), v consent screenu se uvádí jen `reptiplus.cz`.
    Alternativa „HTML tag“: hodnotu z meta tagu `google-site-verification` vložit ve Vercelu do env
    `GOOGLE_SITE_VERIFICATION` a redeploynout — layout ji vykreslí do `<head>`.
    Ověření musí udělat stejný Google účet, který vlastní projekt v Google Cloud.
@@ -51,7 +52,7 @@ Obchodní podmínky (`/cs/obchodni-podminky`), logo s názvem značky (`public/l
    - Application home page: `https://reptiplus.cz`
    - Application privacy policy link: `https://reptiplus.cz/cs/ochrana-osobnich-udaju`
    - Application terms of service link: `https://reptiplus.cz/cs/obchodni-podminky`
-   - Authorized domains: `reptiplus.cz` (+ `reptiplus.eu`, `reptiplus.shop`, pokud jsou ověřené v Search Console; `supabase.co` tam být nesmí — není vaše)
+   - Authorized domains: jen `reptiplus.cz` (`supabase.co` tam být nesmí — není vaše)
    - Developer contact: `info@reptiplus.cz`
 3. **Audience → Publish app** (ze stavu *Testing* do *In production*). Hned po nahrání loga Google nabídne
    **Prepare for verification / Submit for verification** — projít průvodcem a odeslat. Zdůvodnění scopes:
