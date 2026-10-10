@@ -4,6 +4,7 @@ import { LangFields } from "@/components/admin/lang-fields";
 import { Hint } from "@/components/admin/hint";
 import { ToastForm } from "@/components/admin/toast";
 import { getInvoiceSettings } from "@/lib/invoices/issue";
+import { getStockSettings } from "@/lib/settings";
 import { saveInvoiceSettingsAction } from "@/lib/admin/invoice-actions";
 import {
   saveGeneralAction,
@@ -19,6 +20,7 @@ import {
   saveLegalAction,
   saveAboutAction,
   saveShippingSettingsAction,
+  saveStockSettingsAction,
   saveNewsletterSettingsAction,
   saveShippingContentAction,
 } from "@/lib/admin/actions";
@@ -59,6 +61,7 @@ export default async function AdminSettingsPage() {
   const shippingContent = get("content.shipping") as I18nText;
 
   const invoiceSettings = await getInvoiceSettings();
+  const stockSettings = await getStockSettings();
   const { data: counterRows } = await svc
     .from("invoice_counter")
     .select("series, last_number")
@@ -73,7 +76,7 @@ export default async function AdminSettingsPage() {
       <h1 className="mb-6 font-display text-3xl font-bold">Nastavení</h1>
 
       <AdminTabs
-        tabs={["Obchod", "Fakturace", "Integrace", "Doprava", "Platby", "Právní", "O nás"]}
+        tabs={["Obchod", "Fakturace", "Integrace", "Doprava", "Platby", "Sklad", "Právní", "O nás"]}
       >
         {/* ── Obchod ─────────────────────────────────────────────── */}
         <div className="space-y-6">
@@ -474,6 +477,34 @@ export default async function AdminSettingsPage() {
             <p className="mb-3 font-display font-semibold">Přidat platbu</p>
             <PaymentCard />
           </div>
+        </div>
+
+        {/* ── Sklad ──────────────────────────────────────────────── */}
+        <div className="space-y-4" id="sklad">
+          <ToastForm action={saveStockSettingsAction} className={`${card} space-y-4`}>
+            <div>
+              <h2 className="font-display text-lg font-semibold">Hodnocení zásob</h2>
+              <p className="text-sm text-gray-soft">
+                Limity pro štítky v sekci Sklad. „Ležák“ = produkt skladem, který se neprodal déle než zadaný počet dní.
+                „Pomalé“ = při současném tempu prodeje vydrží zásoba déle než zadaný počet dní. Limit pro „Docházející“
+                je na každém produktu zvlášť (Upozornit na docházející sklad).
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5">
+                <span className={legend}>Ležák — bez prodeje déle než (dní)</span>
+                <input name="deadDays" type="number" min={1} step={1} defaultValue={stockSettings.deadDays} className={input} />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className={legend}>Pomalé — zásoba na víc než (dní)</span>
+                <input name="slowDays" type="number" min={1} step={1} defaultValue={stockSettings.slowDays} className={input} />
+              </label>
+            </div>
+            <p className="text-xs text-gray-soft">
+              Hodnota zásob se počítá z nákupní ceny produktu (karta produktu → Ceny); bez ní z prodejní ceny bez DPH.
+            </p>
+            <button className={saveBtn}>Uložit</button>
+          </ToastForm>
         </div>
 
         {/* ── Právní ─────────────────────────────────────────────── */}

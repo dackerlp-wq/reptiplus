@@ -34,7 +34,7 @@ export default async function AdminLayout({
     "/admin/orders": ordersOpen.count ?? 0,
     "/admin/claims": claimsNew.count ?? 0,
     "/admin/reviews": reviewsPending.count ?? 0,
-    "/admin/products": lowStock,
+    "/admin/stock": lowStock,
   };
 
   return (

@@ -39,6 +39,7 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 - [x] **14. „Naskladnit — upozornit mě"** — formulář u vyprodaného produktu/varianty (`stock_alert`), e-mail po naskladnění z adminu (`lib/stock-alerts/notify.ts`).
 - [x] **15. Recenze+** — štítek „Ověřený nákup“ (podle objednávek zákazníka, nastavuje server). Odpověď obchodu a fotky odloženy.
 - [x] ~~**15b. Dárkové poukazy**~~ — zrušeno (10/2026): kód odstraněn, DB tabulky `gift_voucher*` zůstaly prázdné.
+- [x] **15e. Sklad** — sekce Sklad v adminu: prodejnost za období, dny zásoby, ležáky/pomalé/docházející, hodnota zásob (nákupní cena na produktu), detail s grafem a formulářem příjmu/odpisu/inventury, deník všech pohybů (`stock_movement` přes DB triggery + kontext RPC), CSV exporty, limity v Nastavení → Sklad. Migrace `20261010_0001`.
 - [x] **15d. Přihlášení přes Google + účet z pokladny** — OAuth přes Supabase (`docs/GOOGLE_LOGIN.md`, provider nutno zapnout v Supabase), v pokladně odkaz na přihlášení a „Vytvořit účet s touto objednávkou“. Recenze od ověřených kupujících se zveřejňují bez schvalování, admin Recenze seskupeny podle produktů. Obrázky lze vybrat už při vytváření produktu. Záložka Vzhled v nastavení zrušena (pevná varianta „Světlá & veselá“).
 - [x] **15c. Reklamace a odstoupení od smlouvy** — stránky `/reklamace` a `/odstoupeni-od-smlouvy` s formulářem (předvyplnění z objednávky), e-mail obchodu + potvrzení zákazníkovi s adresou pro vrácení, záznam do historie objednávky, admin Reklamace (stavy, poznámky).
 

@@ -37,6 +37,8 @@ Ověření změny = `npx tsc --noEmit` + `npm run lint` + `npm test` + `npm run 
 Databáze: migrace jsou ručně psané SQL soubory v `supabase/migrations/` pojmenované `YYYYMMDD_NNNN_popis.sql`,
 obalené `begin; … commit;`, idempotentní (`if not exists`, `create or replace`, `on conflict`).
 Aplikují se na produkční projekt (Supabase MCP `apply_migration` nebo dashboard), žádný automatický deploy migrací neexistuje.
+Pozor: MCP nástroje čekají na ruční potvrzení u SQL obsahujícího `drop` / `delete` (i uvnitř těla funkce) a v autonomní relaci vyprší —
+takové části pouštět přes dashboard, nebo tělo funkce předat `execute replace($fn$…DEL_ETE…$fn$, 'DEL_ETE', 'delete')`.
 Po změně schématu přegenerovat `types/database.ts` (Supabase `generate_typescript_types` nebo `npx supabase gen types`).
 Seed dat: `supabase/seed.sql`, `supabase/seed_admin.sql`.
 
@@ -70,7 +72,7 @@ Všechny tabulky mají RLS zapnuté. Typy z DB: `types/database.ts` (generované
 - Mutace: Server Actions (`"use server"`), ne API routes. Admin: `lib/admin/actions.ts` (velký soubor, každá akce začíná `assertAdmin()`, po uložení `revalidatePath` + `flashRedirect()` pro toast),
   `lib/admin/shipping-actions.ts`. Shop: `lib/cart/actions.ts`, `lib/checkout/actions.ts`, `lib/auth/actions.ts`, `lib/reviews/actions.ts`, `lib/ledx/actions.ts`.
   Formuláře posílají `FormData`; i18n pole se čtou jako `name_cs` / `name_en` / `name_de` (helper `i18n(fd, base)`).
-- Kritické DB operace jsou Postgres RPC (`security definer`): `place_order` (atomické odečtení skladu produktu/varianty + vytvoření objednávky), `admin_edit_order_items`, `cancel_unpaid_order`, `cleanup_abandoned_carts`.
+- Kritické DB operace jsou Postgres RPC (`security definer`): `place_order` (atomické odečtení skladu produktu/varianty + vytvoření objednávky), `admin_edit_order_items`, `cancel_unpaid_order`, `cleanup_abandoned_carts`, `apply_stock_change` (ruční změna skladu s pohybem).
 - Košík: cookie `rp_cart` + tabulky `cart`/`cart_item`; hostový košík se po přihlášení sloučí (`lib/cart/cart.ts`).
 - Objednávka: `lib/checkout/actions.ts` → `place_order` (ukládá `locale`, názvy položek vč. varianty, `vat_rate`) → `sendOrderConfirmation()` → případně Comgate platba (`lib/comgate/client.ts`); zaplacení řeší webhook přes `markOrderPaid()`. Bez SMTP env se e-maily tiše přeskočí. Číslo objednávky `RPyyMMdd-XXXX`.
 - Doprava: `lib/shipping/` (Packeta = Zásilkovna, PPL) — tvorba zásilek a PDF štítky (`pdf-lib` slučuje hromadné štítky).
@@ -174,6 +176,15 @@ a `product.is_gift_voucher` v DB zůstávají (RPC `place_order` je dál umí, a
 - Admin `app/[locale]/admin/claims` (stav, interní poznámka, smazání), akce `lib/admin/claim-actions.ts`. Vrácení peněz se dělá v detailu objednávky (dobropis).
 
 ### Sklad a dashboard
+- Sekce **Sklad** (`app/[locale]/admin/stock`): přehled produktů s prodejností za 30/90/365 dní, dny zásoby, poslední prodej/naskladnění,
+  stav Prodává se / Pomalé / Ležák / Docházející / Vyprodáno a hodnota zásoby (nákupní cena `product.purchase_price_czk`, bez ní prodejní bez DPH);
+  detail `[id]` (graf zásoby a prodejů po týdnech, pohyby, formulář příjem/odpis/inventura/vrácení), deník `movements`, CSV `app/api/admin/stock/export`.
+  Čisté výpočty `lib/admin/stock-stats.ts` (testy `tests/unit/stock-stats.test.ts`), načítání `lib/admin/stock.ts`, akce `lib/admin/stock-actions.ts`.
+  Limity Ležák/Pomalé v `app_setting` `stock.settings` (Nastavení → Sklad, `getStockSettings()`).
+- Deník pohybů `stock_movement` plní DB triggery na `product.stock_qty` / `product_variant.stock_qty` (migrace `20261010_0001`): typ/zdroj/autora
+  berou z kontextu `app.stock_ctx`, který nastavují RPC `place_order` (sale), `cancel_unpaid_order` (cancel), `admin_edit_order_items` (edit)
+  a `apply_stock_change` (ruční změny z adminu — **každá změna skladu z aplikace jde přes `applyStockChange()` v `lib/admin/stock-rpc.ts`**,
+  nikdy přímým update `stock_qty`; bez kontextu by se zapsala jako „adj“ bez autora). Prodeje před zavedením deníku jsou dopočítané z `order_item`.
 - `product.low_stock_threshold` (null = nehlídat): `checkLowStock(productIds)` v `lib/stock-alerts/low-stock.ts` po objednávce, editaci položek, uložení produktu,
   inline změně skladu a CSV importu → jeden e-mail obchodu (`low_stock_notified_at`, reset po naskladnění nad limit). `effectiveStock()` = součet variant, jinak sklad produktu.
 - CSV import skladu a cen: `app/[locale]/admin/products/import` → `lib/admin/import-actions.ts` (náhled podle SKU produktu/varianty, pak zápis; prázdná buňka = beze změny).

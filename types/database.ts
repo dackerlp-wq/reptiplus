@@ -14,254 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      ledx_line: {
-        Row: {
-          id: string
-          slug: string
-          sort_order: number
-          is_published: boolean
-          name: string
-          subtitle: string | null
-          tagline: string | null
-          landing_desc: string | null
-          landing_pills: Json
-          detail_lead: string | null
-          detail_pills: Json
-          models_note: string | null
-          models: Json
-          params: Json
-          uses_title: string | null
-          uses: Json
-          images: Json
-          form_models: Json
-          form_cct: Json
-          form_cct_fixed: string | null
-          form_uhel: Json
-          translations: Json
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          slug: string
-          sort_order?: number
-          is_published?: boolean
-          name: string
-          subtitle?: string | null
-          tagline?: string | null
-          landing_desc?: string | null
-          landing_pills?: Json
-          detail_lead?: string | null
-          detail_pills?: Json
-          models_note?: string | null
-          models?: Json
-          params?: Json
-          uses_title?: string | null
-          uses?: Json
-          images?: Json
-          form_models?: Json
-          form_cct?: Json
-          form_cct_fixed?: string | null
-          form_uhel?: Json
-          translations?: Json
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          slug?: string
-          sort_order?: number
-          is_published?: boolean
-          name?: string
-          subtitle?: string | null
-          tagline?: string | null
-          landing_desc?: string | null
-          landing_pills?: Json
-          detail_lead?: string | null
-          detail_pills?: Json
-          models_note?: string | null
-          models?: Json
-          params?: Json
-          uses_title?: string | null
-          uses?: Json
-          images?: Json
-          form_models?: Json
-          form_cct?: Json
-          form_cct_fixed?: string | null
-          form_uhel?: Json
-          translations?: Json
-          created_at?: string
-        }
-        Relationships: []
-      }
-      ledx_inquiry: {
-        Row: {
-          id: string
-          rada: string | null
-          model: string | null
-          cct: string | null
-          uhel: string | null
-          pocet: number | null
-          stmivani: string | null
-          poznamka: string | null
-          name: string
-          email: string
-          phone: string | null
-          handled: boolean
-          locale: string
-          ip_hash: string | null
-          status: string
-          quote_amount: number | null
-          quote_currency: string | null
-          quote_valid_until: string | null
-          quote_number: string | null
-          follow_up_at: string | null
-          updated_at: string
-          anonymized_at: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          rada?: string | null
-          model?: string | null
-          cct?: string | null
-          uhel?: string | null
-          pocet?: number | null
-          stmivani?: string | null
-          poznamka?: string | null
-          name: string
-          email: string
-          phone?: string | null
-          handled?: boolean
-          locale?: string
-          ip_hash?: string | null
-          status?: string
-          quote_amount?: number | null
-          quote_currency?: string | null
-          quote_valid_until?: string | null
-          quote_number?: string | null
-          follow_up_at?: string | null
-          updated_at?: string
-          anonymized_at?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          rada?: string | null
-          model?: string | null
-          cct?: string | null
-          uhel?: string | null
-          pocet?: number | null
-          stmivani?: string | null
-          poznamka?: string | null
-          name?: string
-          email?: string
-          phone?: string | null
-          handled?: boolean
-          locale?: string
-          ip_hash?: string | null
-          status?: string
-          quote_amount?: number | null
-          quote_currency?: string | null
-          quote_valid_until?: string | null
-          quote_number?: string | null
-          follow_up_at?: string | null
-          updated_at?: string
-          anonymized_at?: string | null
-          created_at?: string
-        }
-        Relationships: []
-      }
-      ledx_inquiry_event: {
-        Row: {
-          id: string
-          inquiry_id: string
-          type: string
-          body: string | null
-          meta: Json
-          author_id: string | null
-          author_email: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          inquiry_id: string
-          type: string
-          body?: string | null
-          meta?: Json
-          author_id?: string | null
-          author_email?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          inquiry_id?: string
-          type?: string
-          body?: string | null
-          meta?: Json
-          author_id?: string | null
-          author_email?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ledx_inquiry_event_inquiry_id_fkey"
-            columns: ["inquiry_id"]
-            isOneToOne: false
-            referencedRelation: "ledx_inquiry"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       address: {
         Row: {
           city: string | null
           company: string | null
           country: string
+          created_at: string
           customer_id: string
+          dic: string | null
           full_name: string | null
+          ico: string | null
           id: string
           is_default: boolean
+          label: string | null
           phone: string | null
           postal_code: string | null
           street: string | null
           type: Database["public"]["Enums"]["address_type"]
-          ico: string | null
-          dic: string | null
-          label: string | null
-          created_at: string
         }
         Insert: {
           city?: string | null
           company?: string | null
           country?: string
+          created_at?: string
           customer_id: string
+          dic?: string | null
           full_name?: string | null
+          ico?: string | null
           id?: string
           is_default?: boolean
+          label?: string | null
           phone?: string | null
           postal_code?: string | null
           street?: string | null
           type?: Database["public"]["Enums"]["address_type"]
-          ico?: string | null
-          dic?: string | null
-          label?: string | null
-          created_at?: string
         }
         Update: {
           city?: string | null
           company?: string | null
           country?: string
+          created_at?: string
           customer_id?: string
+          dic?: string | null
           full_name?: string | null
+          ico?: string | null
           id?: string
           is_default?: boolean
+          label?: string | null
           phone?: string | null
           postal_code?: string | null
           street?: string | null
           type?: Database["public"]["Enums"]["address_type"]
-          ico?: string | null
-          dic?: string | null
-          label?: string | null
-          created_at?: string
         }
         Relationships: [
           {
@@ -388,25 +191,25 @@ export type Database = {
           created_at: string
           customer_id: string | null
           id: string
+          reminder_sent_at: string | null
           session_id: string | null
           updated_at: string
-          reminder_sent_at: string | null
         }
         Insert: {
           created_at?: string
           customer_id?: string | null
           id?: string
+          reminder_sent_at?: string | null
           session_id?: string | null
           updated_at?: string
-          reminder_sent_at?: string | null
         }
         Update: {
           created_at?: string
           customer_id?: string | null
           id?: string
+          reminder_sent_at?: string | null
           session_id?: string | null
           updated_at?: string
-          reminder_sent_at?: string | null
         }
         Relationships: [
           {
@@ -517,6 +320,81 @@ export type Database = {
           },
         ]
       }
+      claim: {
+        Row: {
+          admin_note: string | null
+          bank_account: string | null
+          created_at: string
+          customer_id: string | null
+          email: string
+          id: string
+          items: string
+          locale: string
+          name: string
+          order_id: string | null
+          order_number: string
+          phone: string | null
+          reason: string | null
+          resolved_at: string | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          bank_account?: string | null
+          created_at?: string
+          customer_id?: string | null
+          email: string
+          id?: string
+          items: string
+          locale?: string
+          name: string
+          order_id?: string | null
+          order_number: string
+          phone?: string | null
+          reason?: string | null
+          resolved_at?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          bank_account?: string | null
+          created_at?: string
+          customer_id?: string | null
+          email?: string
+          id?: string
+          items?: string
+          locale?: string
+          name?: string
+          order_id?: string | null
+          order_number?: string
+          phone?: string | null
+          reason?: string | null
+          resolved_at?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer: {
         Row: {
           created_at: string
@@ -586,82 +464,58 @@ export type Database = {
         }
         Relationships: []
       }
-      newsletter_subscriber: {
+      gift_voucher: {
         Row: {
+          balance: number
+          code: string
           created_at: string
-          email: string
+          created_by: string | null
           id: string
-          is_confirmed: boolean
-          source: string | null
-          token: string | null
-          locale: string
-          confirmed_at: string | null
-          unsubscribed_at: string | null
-          discount_code_id: string | null
-          customer_id: string | null
+          message: string | null
+          note: string | null
+          order_id: string | null
+          recipient_email: string | null
+          recipient_name: string | null
+          status: string
+          updated_at: string
+          valid_to: string | null
+          value: number
         }
         Insert: {
+          balance: number
+          code: string
           created_at?: string
-          email: string
+          created_by?: string | null
           id?: string
-          is_confirmed?: boolean
-          source?: string | null
-          token?: string | null
-          locale?: string
-          confirmed_at?: string | null
-          unsubscribed_at?: string | null
-          discount_code_id?: string | null
-          customer_id?: string | null
+          message?: string | null
+          note?: string | null
+          order_id?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          status?: string
+          updated_at?: string
+          valid_to?: string | null
+          value: number
         }
         Update: {
+          balance?: number
+          code?: string
           created_at?: string
-          email?: string
+          created_by?: string | null
           id?: string
-          is_confirmed?: boolean
-          source?: string | null
-          token?: string | null
-          locale?: string
-          confirmed_at?: string | null
-          unsubscribed_at?: string | null
-          discount_code_id?: string | null
-          customer_id?: string | null
-        }
-        Relationships: []
-      }
-      order_event: {
-        Row: {
-          id: string
-          order_id: string
-          type: string
-          body: string | null
-          meta: Json
-          author_id: string | null
-          author_email: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          order_id: string
-          type: string
-          body?: string | null
-          meta?: Json
-          author_id?: string | null
-          author_email?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          order_id?: string
-          type?: string
-          body?: string | null
-          meta?: Json
-          author_id?: string | null
-          author_email?: string | null
-          created_at?: string
+          message?: string | null
+          note?: string | null
+          order_id?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          status?: string
+          updated_at?: string
+          valid_to?: string | null
+          value?: number
         }
         Relationships: [
           {
-            foreignKeyName: "order_event_order_id_fkey"
+            foreignKeyName: "gift_voucher_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "order"
@@ -669,84 +523,126 @@ export type Database = {
           },
         ]
       }
-      invoice: {
+      gift_voucher_redemption: {
         Row: {
-          id: string
-          number: string
-          type: string
-          order_id: string
-          related_invoice_id: string | null
-          issued_at: string
-          taxable_date: string
-          due_date: string | null
-          paid_at: string | null
-          currency: string
-          subtotal: number
-          vat_total: number
-          total: number
-          vat_breakdown: Json
-          exchange_rate: number | null
-          vat_total_czk: number | null
-          seller: Json
-          buyer: Json
-          items: Json
-          payment_method: string | null
-          variable_symbol: string | null
-          note: string | null
-          created_by: string | null
+          amount: number
+          amount_czk: number
           created_at: string
+          id: string
+          order_id: string
+          voucher_id: string
         }
         Insert: {
-          id?: string
-          number: string
-          type: string
-          order_id: string
-          related_invoice_id?: string | null
-          issued_at?: string
-          taxable_date?: string
-          due_date?: string | null
-          paid_at?: string | null
-          currency: string
-          subtotal: number
-          vat_total: number
-          total: number
-          vat_breakdown?: Json
-          exchange_rate?: number | null
-          vat_total_czk?: number | null
-          seller: Json
-          buyer: Json
-          items: Json
-          payment_method?: string | null
-          variable_symbol?: string | null
-          note?: string | null
-          created_by?: string | null
+          amount: number
+          amount_czk: number
           created_at?: string
+          id?: string
+          order_id: string
+          voucher_id: string
         }
         Update: {
-          id?: string
-          number?: string
-          type?: string
-          order_id?: string
-          related_invoice_id?: string | null
-          issued_at?: string
-          taxable_date?: string
-          due_date?: string | null
-          paid_at?: string | null
-          currency?: string
-          subtotal?: number
-          vat_total?: number
-          total?: number
-          vat_breakdown?: Json
-          exchange_rate?: number | null
-          vat_total_czk?: number | null
-          seller?: Json
-          buyer?: Json
-          items?: Json
-          payment_method?: string | null
-          variable_symbol?: string | null
-          note?: string | null
-          created_by?: string | null
+          amount?: number
+          amount_czk?: number
           created_at?: string
+          id?: string
+          order_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_voucher_redemption_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_voucher_redemption_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "gift_voucher"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice: {
+        Row: {
+          buyer: Json
+          created_at: string
+          created_by: string | null
+          currency: string
+          due_date: string | null
+          exchange_rate: number | null
+          id: string
+          issued_at: string
+          items: Json
+          note: string | null
+          number: string
+          order_id: string
+          paid_at: string | null
+          payment_method: string | null
+          related_invoice_id: string | null
+          seller: Json
+          subtotal: number
+          taxable_date: string
+          total: number
+          type: string
+          variable_symbol: string | null
+          vat_breakdown: Json
+          vat_total: number
+          vat_total_czk: number | null
+        }
+        Insert: {
+          buyer: Json
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          due_date?: string | null
+          exchange_rate?: number | null
+          id?: string
+          issued_at?: string
+          items: Json
+          note?: string | null
+          number: string
+          order_id: string
+          paid_at?: string | null
+          payment_method?: string | null
+          related_invoice_id?: string | null
+          seller: Json
+          subtotal: number
+          taxable_date?: string
+          total: number
+          type: string
+          variable_symbol?: string | null
+          vat_breakdown?: Json
+          vat_total: number
+          vat_total_czk?: number | null
+        }
+        Update: {
+          buyer?: Json
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          due_date?: string | null
+          exchange_rate?: number | null
+          id?: string
+          issued_at?: string
+          items?: Json
+          note?: string | null
+          number?: string
+          order_id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          related_invoice_id?: string | null
+          seller?: Json
+          subtotal?: number
+          taxable_date?: string
+          total?: number
+          type?: string
+          variable_symbol?: string | null
+          vat_breakdown?: Json
+          vat_total?: number
+          vat_total_czk?: number | null
         }
         Relationships: [
           {
@@ -767,73 +663,272 @@ export type Database = {
       }
       invoice_counter: {
         Row: {
+          last_number: number
           series: string
           year: number
-          last_number: number
         }
         Insert: {
+          last_number?: number
           series: string
           year: number
-          last_number?: number
         }
         Update: {
+          last_number?: number
           series?: string
           year?: number
-          last_number?: number
         }
         Relationships: []
       }
-      stock_alert: {
+      ledx_inquiry: {
         Row: {
-          id: string
-          product_id: string
-          variant_id: string | null
-          email: string
-          customer_id: string | null
-          locale: string
+          anonymized_at: string | null
+          cct: string | null
           created_at: string
-          notified_at: string | null
+          email: string
+          follow_up_at: string | null
+          handled: boolean
+          id: string
+          ip_hash: string | null
+          locale: string
+          model: string | null
+          name: string
+          phone: string | null
+          pocet: number | null
+          poznamka: string | null
+          quote_amount: number | null
+          quote_currency: string | null
+          quote_number: string | null
+          quote_valid_until: string | null
+          rada: string | null
+          status: string
+          stmivani: string | null
+          uhel: string | null
+          updated_at: string
         }
         Insert: {
-          id?: string
-          product_id: string
-          variant_id?: string | null
-          email: string
-          customer_id?: string | null
-          locale?: string
+          anonymized_at?: string | null
+          cct?: string | null
           created_at?: string
-          notified_at?: string | null
+          email: string
+          follow_up_at?: string | null
+          handled?: boolean
+          id?: string
+          ip_hash?: string | null
+          locale?: string
+          model?: string | null
+          name: string
+          phone?: string | null
+          pocet?: number | null
+          poznamka?: string | null
+          quote_amount?: number | null
+          quote_currency?: string | null
+          quote_number?: string | null
+          quote_valid_until?: string | null
+          rada?: string | null
+          status?: string
+          stmivani?: string | null
+          uhel?: string | null
+          updated_at?: string
         }
         Update: {
-          id?: string
-          product_id?: string
-          variant_id?: string | null
-          email?: string
-          customer_id?: string | null
-          locale?: string
+          anonymized_at?: string | null
+          cct?: string | null
           created_at?: string
-          notified_at?: string | null
+          email?: string
+          follow_up_at?: string | null
+          handled?: boolean
+          id?: string
+          ip_hash?: string | null
+          locale?: string
+          model?: string | null
+          name?: string
+          phone?: string | null
+          pocet?: number | null
+          poznamka?: string | null
+          quote_amount?: number | null
+          quote_currency?: string | null
+          quote_number?: string | null
+          quote_valid_until?: string | null
+          rada?: string | null
+          status?: string
+          stmivani?: string | null
+          uhel?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ledx_inquiry_event: {
+        Row: {
+          author_email: string | null
+          author_id: string | null
+          body: string | null
+          created_at: string
+          id: string
+          inquiry_id: string
+          meta: Json
+          type: string
+        }
+        Insert: {
+          author_email?: string | null
+          author_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          inquiry_id: string
+          meta?: Json
+          type: string
+        }
+        Update: {
+          author_email?: string | null
+          author_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          inquiry_id?: string
+          meta?: Json
+          type?: string
         }
         Relationships: [
           {
-            foreignKeyName: "stock_alert_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "ledx_inquiry_event_inquiry_id_fkey"
+            columns: ["inquiry_id"]
             isOneToOne: false
-            referencedRelation: "product"
+            referencedRelation: "ledx_inquiry"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      ledx_line: {
+        Row: {
+          created_at: string
+          detail_lead: string | null
+          detail_pills: Json
+          form_cct: Json
+          form_cct_fixed: string | null
+          form_models: Json
+          form_uhel: Json
+          id: string
+          images: Json
+          is_published: boolean
+          landing_desc: string | null
+          landing_pills: Json
+          models: Json
+          models_note: string | null
+          name: string
+          params: Json
+          slug: string
+          sort_order: number
+          subtitle: string | null
+          tagline: string | null
+          translations: Json
+          uses: Json
+          uses_title: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail_lead?: string | null
+          detail_pills?: Json
+          form_cct?: Json
+          form_cct_fixed?: string | null
+          form_models?: Json
+          form_uhel?: Json
+          id?: string
+          images?: Json
+          is_published?: boolean
+          landing_desc?: string | null
+          landing_pills?: Json
+          models?: Json
+          models_note?: string | null
+          name: string
+          params?: Json
+          slug: string
+          sort_order?: number
+          subtitle?: string | null
+          tagline?: string | null
+          translations?: Json
+          uses?: Json
+          uses_title?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail_lead?: string | null
+          detail_pills?: Json
+          form_cct?: Json
+          form_cct_fixed?: string | null
+          form_models?: Json
+          form_uhel?: Json
+          id?: string
+          images?: Json
+          is_published?: boolean
+          landing_desc?: string | null
+          landing_pills?: Json
+          models?: Json
+          models_note?: string | null
+          name?: string
+          params?: Json
+          slug?: string
+          sort_order?: number
+          subtitle?: string | null
+          tagline?: string | null
+          translations?: Json
+          uses?: Json
+          uses_title?: string | null
+        }
+        Relationships: []
+      }
+      newsletter_subscriber: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          customer_id: string | null
+          discount_code_id: string | null
+          email: string
+          id: string
+          is_confirmed: boolean
+          locale: string
+          source: string | null
+          token: string | null
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          discount_code_id?: string | null
+          email: string
+          id?: string
+          is_confirmed?: boolean
+          locale?: string
+          source?: string | null
+          token?: string | null
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          discount_code_id?: string | null
+          email?: string
+          id?: string
+          is_confirmed?: boolean
+          locale?: string
+          source?: string | null
+          token?: string | null
+          unsubscribed_at?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "stock_alert_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variant"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stock_alert_customer_id_fkey"
+            foreignKeyName: "newsletter_subscriber_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "newsletter_subscriber_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_code"
             referencedColumns: ["id"]
           },
         ]
@@ -842,6 +937,7 @@ export type Database = {
         Row: {
           admin_note: string | null
           billing_address: Json | null
+          carrier_shipment_id: string | null
           comgate_ref: string | null
           created_at: string
           currency: string
@@ -850,11 +946,15 @@ export type Database = {
           discount_code_id: string | null
           email: string
           id: string
+          label_printed_at: string | null
+          locale: string
           note: string | null
           number: string
           payment_fee: number
           payment_method: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
+          refunded_amount: number
+          refunded_at: string | null
           shipping: number
           shipping_address: Json | null
           shipping_method: string | null
@@ -862,20 +962,16 @@ export type Database = {
           subtotal: number
           total: number
           tracking_number: string | null
-          carrier_shipment_id: string | null
-          tracking_url: string | null
           tracking_status: string | null
-          label_printed_at: string | null
-          refunded_amount: number
-          refunded_at: string | null
+          tracking_url: string | null
           updated_at: string
-          locale: string
-          voucher_id: string | null
           voucher_amount: number
+          voucher_id: string | null
         }
         Insert: {
           admin_note?: string | null
           billing_address?: Json | null
+          carrier_shipment_id?: string | null
           comgate_ref?: string | null
           created_at?: string
           currency?: string
@@ -884,11 +980,15 @@ export type Database = {
           discount_code_id?: string | null
           email: string
           id?: string
+          label_printed_at?: string | null
+          locale?: string
           note?: string | null
           number: string
           payment_fee?: number
           payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          refunded_amount?: number
+          refunded_at?: string | null
           shipping?: number
           shipping_address?: Json | null
           shipping_method?: string | null
@@ -896,20 +996,16 @@ export type Database = {
           subtotal?: number
           total?: number
           tracking_number?: string | null
-          carrier_shipment_id?: string | null
-          tracking_url?: string | null
           tracking_status?: string | null
-          label_printed_at?: string | null
-          refunded_amount?: number
-          refunded_at?: string | null
+          tracking_url?: string | null
           updated_at?: string
-          locale?: string
-          voucher_id?: string | null
           voucher_amount?: number
+          voucher_id?: string | null
         }
         Update: {
           admin_note?: string | null
           billing_address?: Json | null
+          carrier_shipment_id?: string | null
           comgate_ref?: string | null
           created_at?: string
           currency?: string
@@ -918,11 +1014,15 @@ export type Database = {
           discount_code_id?: string | null
           email?: string
           id?: string
+          label_printed_at?: string | null
+          locale?: string
           note?: string | null
           number?: string
           payment_fee?: number
           payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          refunded_amount?: number
+          refunded_at?: string | null
           shipping?: number
           shipping_address?: Json | null
           shipping_method?: string | null
@@ -930,16 +1030,11 @@ export type Database = {
           subtotal?: number
           total?: number
           tracking_number?: string | null
-          carrier_shipment_id?: string | null
-          tracking_url?: string | null
           tracking_status?: string | null
-          label_printed_at?: string | null
-          refunded_amount?: number
-          refunded_at?: string | null
+          tracking_url?: string | null
           updated_at?: string
-          locale?: string
-          voucher_id?: string | null
           voucher_amount?: number
+          voucher_id?: string | null
         }
         Relationships: [
           {
@@ -954,6 +1049,54 @@ export type Database = {
             columns: ["discount_code_id"]
             isOneToOne: false
             referencedRelation: "discount_code"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "gift_voucher"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_event: {
+        Row: {
+          author_email: string | null
+          author_id: string | null
+          body: string | null
+          created_at: string
+          id: string
+          meta: Json
+          order_id: string
+          type: string
+        }
+        Insert: {
+          author_email?: string | null
+          author_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          meta?: Json
+          order_id: string
+          type: string
+        }
+        Update: {
+          author_email?: string | null
+          author_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          meta?: Json
+          order_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_event_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order"
             referencedColumns: ["id"]
           },
         ]
@@ -1067,11 +1210,15 @@ export type Database = {
           ean: string | null
           id: string
           is_featured: boolean
+          is_gift_voucher: boolean
           is_published: boolean
+          low_stock_notified_at: string | null
+          low_stock_threshold: number | null
           name: string
           name_i18n: Json | null
           price_czk: number
           price_eur: number | null
+          purchase_price_czk: number | null
           search_vector: unknown
           short_description: string | null
           short_description_i18n: Json
@@ -1080,9 +1227,6 @@ export type Database = {
           stock_qty: number
           updated_at: string
           vat_rate: number
-          low_stock_threshold: number | null
-          low_stock_notified_at: string | null
-          is_gift_voucher: boolean
         }
         Insert: {
           brand_id?: string | null
@@ -1095,11 +1239,15 @@ export type Database = {
           ean?: string | null
           id?: string
           is_featured?: boolean
+          is_gift_voucher?: boolean
           is_published?: boolean
+          low_stock_notified_at?: string | null
+          low_stock_threshold?: number | null
           name: string
           name_i18n?: Json | null
           price_czk?: number
           price_eur?: number | null
+          purchase_price_czk?: number | null
           search_vector?: unknown
           short_description?: string | null
           short_description_i18n?: Json
@@ -1108,9 +1256,6 @@ export type Database = {
           stock_qty?: number
           updated_at?: string
           vat_rate?: number
-          low_stock_threshold?: number | null
-          low_stock_notified_at?: string | null
-          is_gift_voucher?: boolean
         }
         Update: {
           brand_id?: string | null
@@ -1123,11 +1268,15 @@ export type Database = {
           ean?: string | null
           id?: string
           is_featured?: boolean
+          is_gift_voucher?: boolean
           is_published?: boolean
+          low_stock_notified_at?: string | null
+          low_stock_threshold?: number | null
           name?: string
           name_i18n?: Json | null
           price_czk?: number
           price_eur?: number | null
+          purchase_price_czk?: number | null
           search_vector?: unknown
           short_description?: string | null
           short_description_i18n?: Json
@@ -1136,9 +1285,6 @@ export type Database = {
           stock_qty?: number
           updated_at?: string
           vat_rate?: number
-          low_stock_threshold?: number | null
-          low_stock_notified_at?: string | null
-          is_gift_voucher?: boolean
         }
         Relationships: [
           {
@@ -1227,6 +1373,38 @@ export type Database = {
           },
         ]
       }
+      product_price_history: {
+        Row: {
+          id: string
+          price_czk: number
+          price_eur: number | null
+          product_id: string
+          recorded_at: string
+        }
+        Insert: {
+          id?: string
+          price_czk: number
+          price_eur?: number | null
+          product_id: string
+          recorded_at?: string
+        }
+        Update: {
+          id?: string
+          price_czk?: number
+          price_eur?: number | null
+          product_id?: string
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_upsell: {
         Row: {
           id: string
@@ -1246,7 +1424,22 @@ export type Database = {
           sort_order?: number
           upsell_product_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "product_upsell_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_upsell_upsell_product_id_fkey"
+            columns: ["upsell_product_id"]
+            isOneToOne: false
+            referencedRelation: "product"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_variant: {
         Row: {
@@ -1294,214 +1487,6 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "product"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      product_price_history: {
-        Row: {
-          id: string
-          product_id: string
-          price_czk: number
-          price_eur: number | null
-          recorded_at: string
-        }
-        Insert: {
-          id?: string
-          product_id: string
-          price_czk: number
-          price_eur?: number | null
-          recorded_at?: string
-        }
-        Update: {
-          id?: string
-          product_id?: string
-          price_czk?: number
-          price_eur?: number | null
-          recorded_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_price_history_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "product"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      gift_voucher: {
-        Row: {
-          id: string
-          code: string
-          value: number
-          balance: number
-          status: string
-          valid_to: string | null
-          order_id: string | null
-          recipient_name: string | null
-          recipient_email: string | null
-          message: string | null
-          note: string | null
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          code: string
-          value: number
-          balance: number
-          status?: string
-          valid_to?: string | null
-          order_id?: string | null
-          recipient_name?: string | null
-          recipient_email?: string | null
-          message?: string | null
-          note?: string | null
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          code?: string
-          value?: number
-          balance?: number
-          status?: string
-          valid_to?: string | null
-          order_id?: string | null
-          recipient_name?: string | null
-          recipient_email?: string | null
-          message?: string | null
-          note?: string | null
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "gift_voucher_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "order"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      gift_voucher_redemption: {
-        Row: {
-          id: string
-          voucher_id: string
-          order_id: string
-          amount_czk: number
-          amount: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          voucher_id: string
-          order_id: string
-          amount_czk: number
-          amount: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          voucher_id?: string
-          order_id?: string
-          amount_czk?: number
-          amount?: number
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "gift_voucher_redemption_voucher_id_fkey"
-            columns: ["voucher_id"]
-            isOneToOne: false
-            referencedRelation: "gift_voucher"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gift_voucher_redemption_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "order"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      claim: {
-        Row: {
-          id: string
-          type: string
-          status: string
-          order_number: string
-          order_id: string | null
-          customer_id: string | null
-          name: string
-          email: string
-          phone: string | null
-          items: string
-          reason: string | null
-          bank_account: string | null
-          locale: string
-          admin_note: string | null
-          resolved_at: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          type: string
-          status?: string
-          order_number: string
-          order_id?: string | null
-          customer_id?: string | null
-          name: string
-          email: string
-          phone?: string | null
-          items: string
-          reason?: string | null
-          bank_account?: string | null
-          locale?: string
-          admin_note?: string | null
-          resolved_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          type?: string
-          status?: string
-          order_number?: string
-          order_id?: string | null
-          customer_id?: string | null
-          name?: string
-          email?: string
-          phone?: string | null
-          items?: string
-          reason?: string | null
-          bank_account?: string | null
-          locale?: string
-          admin_note?: string | null
-          resolved_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "claim_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "order"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "claim_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customer"
             referencedColumns: ["id"]
           },
         ]
@@ -1565,9 +1550,9 @@ export type Database = {
           id: string
           is_active: boolean
           name_i18n: Json
+          pickup_point: boolean
           price_czk: number
           price_eur: number | null
-          pickup_point: boolean
           sort_order: number
         }
         Insert: {
@@ -1577,9 +1562,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           name_i18n?: Json
+          pickup_point?: boolean
           price_czk?: number
           price_eur?: number | null
-          pickup_point?: boolean
           sort_order?: number
         }
         Update: {
@@ -1589,12 +1574,131 @@ export type Database = {
           id?: string
           is_active?: boolean
           name_i18n?: Json
+          pickup_point?: boolean
           price_czk?: number
           price_eur?: number | null
-          pickup_point?: boolean
           sort_order?: number
         }
         Relationships: []
+      }
+      stock_alert: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          email: string
+          id: string
+          locale: string
+          notified_at: string | null
+          product_id: string
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          email: string
+          id?: string
+          locale?: string
+          notified_at?: string | null
+          product_id: string
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          email?: string
+          id?: string
+          locale?: string
+          notified_at?: string | null
+          product_id?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_alert_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_alert_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_alert_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variant"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_movement: {
+        Row: {
+          author: string | null
+          created_at: string
+          delta: number
+          id: string
+          note: string | null
+          order_id: string | null
+          product_id: string
+          qty_after: number | null
+          source: string | null
+          type: string
+          variant_id: string | null
+        }
+        Insert: {
+          author?: string | null
+          created_at?: string
+          delta: number
+          id?: string
+          note?: string | null
+          order_id?: string | null
+          product_id: string
+          qty_after?: number | null
+          source?: string | null
+          type: string
+          variant_id?: string | null
+        }
+        Update: {
+          author?: string | null
+          created_at?: string
+          delta?: number
+          id?: string
+          note?: string | null
+          order_id?: string | null
+          product_id?: string
+          qty_after?: number | null
+          source?: string | null
+          type?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movement_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movement_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movement_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variant"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wishlist_item: {
         Row: {
@@ -1639,30 +1743,44 @@ export type Database = {
           product_id: string | null
           sold: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "order_item_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
-      place_order: {
-        Args: { payload: Json }
-        Returns: string
-      }
       admin_edit_order_items: {
-        Args: { p_order_id: string; p_items: Json }
+        Args: { p_items: Json; p_order_id: string }
         Returns: undefined
       }
+      apply_stock_change: {
+        Args: {
+          p_author?: string
+          p_delta: number
+          p_note?: string
+          p_product_id: string
+          p_set_qty: number
+          p_source?: string
+          p_type: string
+          p_variant_id: string
+        }
+        Returns: number
+      }
+      cancel_unpaid_order: { Args: { p_order_id: string }; Returns: boolean }
+      cleanup_abandoned_carts: { Args: { p_days?: number }; Returns: number }
       next_invoice_number: {
         Args: { p_series: string; p_year: number }
         Returns: number
       }
-      cancel_unpaid_order: {
-        Args: { p_order_id: string }
-        Returns: boolean
-      }
-      cleanup_abandoned_carts: {
-        Args: { p_days?: number }
-        Returns: number
-      }
+      place_order: { Args: { payload: Json }; Returns: string }
+      stock_ctx: { Args: never; Returns: Json }
+      stock_ctx_type: { Args: { ctx: Json }; Returns: string }
     }
     Enums: {
       address_type: "billing" | "shipping"
@@ -1694,12 +1812,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1723,11 +1841,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1748,11 +1866,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1773,11 +1891,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1790,11 +1908,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

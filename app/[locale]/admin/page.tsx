@@ -117,7 +117,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
   ];
   const ops = [
     { label: "K vyřízení", value: pending.length, href: "/admin/orders", icon: ClipboardList, warn: pending.length > 0 },
-    { label: "Docházející sklad", value: lowStock.length, href: "/admin/products?stock=low", icon: AlertTriangle, warn: lowStock.length > 0 },
+    { label: "Docházející sklad", value: lowStock.length, href: "/admin/stock?status=low", icon: AlertTriangle, warn: lowStock.length > 0 },
     { label: "Opuštěné košíky (24 h+)", value: abandoned.length, sub: `${abandonedLoggedIn} přihlášených`, href: null, icon: ShoppingCart, warn: false },
     { label: "Nové reklamace", value: claimsRes.count ?? 0, href: "/admin/claims", icon: Package, warn: (claimsRes.count ?? 0) > 0 },
   ];
@@ -258,7 +258,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
                 {lowStock.slice(0, 10).map((p) => (
                   <tr key={p.id}>
                     <td className="px-5 py-2.5">
-                      <Link href={`/admin/products/${p.id}`} className="text-forest hover:underline">
+                      <Link href={`/admin/stock/${p.id}`} className="text-forest hover:underline">
                         {p.name}
                       </Link>
                       {p.sku && <span className="ml-2 font-mono text-xs text-gray-soft">{p.sku}</span>}

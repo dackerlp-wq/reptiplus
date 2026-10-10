@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
+import { applyStockChange } from "@/lib/admin/stock-rpc";
 import { createClient } from "@/lib/supabase/server";
 import { getCnbEurRate } from "@/lib/exchange-rate";
 import { sendOrderStatusEmail } from "@/lib/orders/notify";
@@ -82,7 +83,7 @@ function flashRedirect(
 }
 
 export async function saveProductAction(formData: FormData) {
-  await assertAdmin();
+  const admin = await assertAdminUser();
   const svc = createServiceClient();
 
   const id = str(formData, "id") || null;
@@ -103,6 +104,7 @@ export async function saveProductAction(formData: FormData) {
     price_eur: money(formData, "price_eur"),
     compare_at_czk: money(formData, "compare_at_czk"),
     compare_at_eur: money(formData, "compare_at_eur"),
+    purchase_price_czk: money(formData, "purchase_price_czk"),
     brand_id: str(formData, "brand_id") || null,
     category_id: str(formData, "category_id") || null,
     sku: str(formData, "sku") || null,
@@ -122,8 +124,23 @@ export async function saveProductAction(formData: FormData) {
 
   let productId = id;
   if (id) {
-    const { error } = await svc.from("product").update(payload).eq("id", id);
+    // Sklad se u existujícího produktu mění přes RPC (zapíše pohyb s autorem), zbytek běžným update.
+    const { stock_qty: newStock, ...rest } = payload;
+    const { data: prev } = await svc.from("product").select("stock_qty").eq("id", id).maybeSingle();
+    const { error } = await svc.from("product").update(rest).eq("id", id);
     if (error) flashRedirect(`/${locale}/admin/products/${id}`, "error", error.message);
+    if (prev && prev.stock_qty !== newStock) {
+      await applyStockChange(svc, {
+        p_product_id: id,
+        p_variant_id: null,
+        p_delta: 0,
+        p_set_qty: newStock,
+        p_type: "adj",
+        p_note: "Úprava v kartě produktu",
+        p_author: admin.email,
+        p_source: null,
+      });
+    }
   } else {
     const { data, error } = await svc
       .from("product")
@@ -145,7 +162,7 @@ export async function saveProductAction(formData: FormData) {
   }
   // Varianty (product_variant) — sync se zachováním ID existujících
   if (productId && formData.has("variants")) {
-    await syncProductVariants(svc, productId, str(formData, "variants"));
+    await syncProductVariants(svc, productId, str(formData, "variants"), admin.email);
   }
   // Upsell (product_upsell) — nahradit dle výběru
   if (productId && formData.has("upsell_present")) {
@@ -210,6 +227,7 @@ async function syncProductVariants(
   svc: ReturnType<typeof createServiceClient>,
   productId: string,
   raw: string,
+  author: string | null = null,
 ) {
   type I18nObj = { cs?: string; en?: string; de?: string };
   type VAttr = {
@@ -254,9 +272,10 @@ async function syncProductVariants(
 
   const { data: existing } = await svc
     .from("product_variant")
-    .select("id")
+    .select("id, stock_qty")
     .eq("product_id", productId);
   const existingIds = new Set((existing ?? []).map((e) => e.id));
+  const existingStock = new Map((existing ?? []).map((e) => [e.id, e.stock_qty ?? 0]));
   const keepIds = new Set<string>();
 
   for (let i = 0; i < variants.length; i++) {
@@ -297,7 +316,21 @@ async function syncProductVariants(
       sort_order: i,
     };
     if (v.id && existingIds.has(v.id)) {
-      await svc.from("product_variant").update(payload).eq("id", v.id);
+      // Sklad varianty přes RPC (pohyb s autorem), ostatní pole běžným update.
+      const { stock_qty: newStock, ...rest } = payload;
+      await svc.from("product_variant").update(rest).eq("id", v.id);
+      if (existingStock.get(v.id) !== newStock) {
+        await applyStockChange(svc, {
+          p_product_id: productId,
+          p_variant_id: v.id,
+          p_delta: 0,
+          p_set_qty: newStock,
+          p_type: "adj",
+          p_note: `Úprava varianty „${nameCs}“ v kartě produktu`,
+          p_author: author,
+          p_source: null,
+        });
+      }
       keepIds.add(v.id);
     } else {
       await svc.from("product_variant").insert(payload);
@@ -404,13 +437,19 @@ export async function deleteProductAction(formData: FormData) {
 
 /** Rychlá inline úprava skladu z tabulky. */
 export async function setProductStockAction(id: string, stock: number) {
-  await assertAdmin();
+  const admin = await assertAdminUser();
   if (!id) return;
   const v = Number.isFinite(stock) && stock >= 0 ? Math.floor(stock) : 0;
-  const { error } = await createServiceClient()
-    .from("product")
-    .update({ stock_qty: v })
-    .eq("id", id);
+  const { error } = await applyStockChange(createServiceClient(), {
+    p_product_id: id,
+    p_variant_id: null,
+    p_delta: 0,
+    p_set_qty: v,
+    p_type: "adj",
+    p_note: "Rychlá změna v tabulce produktů",
+    p_author: admin.email,
+    p_source: null,
+  });
   if (error) throw new Error(error.message);
   if (v > 0) await notifyStockAlerts(id);
   await checkLowStock([id]);
@@ -1429,6 +1468,16 @@ export async function saveShippingSettingsAction(fd: FormData) {
   await upsertSetting("shipping.settings", {
     freeFromCzk: money(fd, "freeFromCzk"),
     freeFromEur: money(fd, "freeFromEur"),
+  });
+}
+
+/** Sklad: limity pro stav „Ležák“ (dní bez prodeje) a „Pomalé“ (dní zásoby). */
+export async function saveStockSettingsAction(fd: FormData) {
+  const dead = parseInt(str(fd, "deadDays"), 10);
+  const slow = parseInt(str(fd, "slowDays"), 10);
+  await upsertSetting("stock.settings", {
+    deadDays: Number.isFinite(dead) && dead > 0 ? dead : 90,
+    slowDays: Number.isFinite(slow) && slow > 0 ? slow : 180,
   });
 }
 

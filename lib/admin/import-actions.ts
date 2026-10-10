@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { applyStockChange } from "@/lib/admin/stock-rpc";
+import { assertAdminUser } from "@/lib/admin/auth";
 import { checkLowStock } from "@/lib/stock-alerts/low-stock";
 import { notifyStockAlerts } from "@/lib/stock-alerts/notify";
 
@@ -154,7 +156,9 @@ export async function previewImportAction(_prev: ImportState, fd: FormData): Pro
 
 /** Krok 2: potvrzení náhledu → zápis skladu a cen, kontrola limitů a hlídání skladu. */
 export async function applyImportAction(_prev: ImportState, fd: FormData): Promise<ImportState> {
-  await assertAdmin();
+  const admin = await assertAdminUser();
+  const file = fd.get("file");
+  const fileName = file instanceof File ? file.name : "";
   const preview = await previewImportAction({ status: "idle" }, fd);
   if (preview.status !== "preview") return preview;
 
@@ -175,10 +179,29 @@ export async function applyImportAction(_prev: ImportState, fd: FormData): Promi
       skipped++;
       continue;
     }
-    const { error } =
-      r.target.kind === "product"
-        ? await svc.from("product").update(patch).eq("id", r.target.id)
-        : await svc.from("product_variant").update(patch).eq("id", r.target.id);
+    // Sklad jde přes RPC (pohyb typu „import“ s autorem), ceny běžným update.
+    const { stock_qty: newStock, ...prices } = patch;
+    let error: { message: string } | null = null;
+    if (Object.keys(prices).length > 0) {
+      const res =
+        r.target.kind === "product"
+          ? await svc.from("product").update(prices).eq("id", r.target.id)
+          : await svc.from("product_variant").update(prices).eq("id", r.target.id);
+      error = res.error;
+    }
+    if (!error && newStock != null && newStock !== r.target.stock) {
+      const res = await applyStockChange(svc, {
+        p_product_id: r.target.productId,
+        p_variant_id: r.target.kind === "variant" ? r.target.id : null,
+        p_delta: 0,
+        p_set_qty: newStock,
+        p_type: "import",
+        p_note: null,
+        p_author: admin.email,
+        p_source: fileName || "CSV import",
+      });
+      error = res.error;
+    }
     if (error) {
       skipped++;
       continue;

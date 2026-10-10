@@ -1,5 +1,6 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
+import { DEFAULT_STOCK_SETTINGS, type StockSettings } from "@/lib/admin/stock-stats";
 
 export type ShopContact = {
   name: string;
@@ -103,6 +104,13 @@ export async function getShippingSettings(): Promise<ShippingSettings> {
 /** Limit dopravy zdarma pro měnu (null = vypnuto). */
 export function freeShippingThreshold(s: ShippingSettings, currency: "CZK" | "EUR"): number | null {
   return currency === "CZK" ? s.freeFromCzk : s.freeFromEur;
+}
+
+/** Limity sekce Sklad (ležák / pomalé) — `app_setting` klíč `stock.settings`. */
+export async function getStockSettings(): Promise<StockSettings> {
+  const v = (await getContentI18n("stock.settings").catch(() => ({}))) as Record<string, unknown>;
+  const num = (x: unknown, d: number) => (typeof x === "number" && Number.isFinite(x) && x > 0 ? Math.round(x) : d);
+  return { deadDays: num(v.deadDays, DEFAULT_STOCK_SETTINGS.deadDays), slowDays: num(v.slowDays, DEFAULT_STOCK_SETTINGS.slowDays) };
 }
 
 export type NewsletterSettings = {

@@ -19,6 +19,7 @@ import {
   PackageX,
   Menu,
   X,
+  Warehouse,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -36,7 +37,8 @@ const GROUPS: Group[] = [
     { href: "/admin/inquiries", label: "Poptávky LEDX", icon: Lightbulb, badgeTone: "amber" },
   ],
   [
-    { href: "/admin/products", label: "Produkty", icon: Package, badgeTone: "gold" },
+    { href: "/admin/products", label: "Produkty", icon: Package },
+    { href: "/admin/stock", label: "Sklad", icon: Warehouse, badgeTone: "gold" },
     { href: "/admin/categories", label: "Kategorie", icon: FolderTree },
     { href: "/admin/brands", label: "Značky", icon: Tag },
     { href: "/admin/ledx", label: "LEDX řady", icon: Sparkles },
@@ -52,7 +54,7 @@ const GROUPS: Group[] = [
   [{ href: "/admin/settings", label: "Nastavení", icon: Settings }],
 ];
 
-/** Odznaky: `href → počet` (objednávky k vyřízení, nové reklamace, recenze ke schválení, docházející sklad, nové poptávky). */
+/** Odznaky: `href → počet` (objednávky k vyřízení, nové reklamace, recenze ke schválení, docházející sklad v sekci Sklad, nové poptávky). */
 export type AdminBadges = Record<string, number>;
 
 function useActive() {

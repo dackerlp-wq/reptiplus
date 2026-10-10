@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Layers } from "lucide-react";
+import { Box, Layers, Warehouse } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { saveProductAction } from "@/lib/admin/actions";
 import { pickI18n } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
@@ -35,6 +36,7 @@ type ProductRow = {
   price_eur: number | null;
   compare_at_czk: number | null;
   compare_at_eur: number | null;
+  purchase_price_czk?: number | null;
   stock_qty: number;
   low_stock_threshold?: number | null;
   category_id: string | null;
@@ -240,6 +242,21 @@ export function ProductForm({
                   ]}
                 />
               </>
+            )}
+          </div>
+
+          {/* Nákupní cena (pro hodnotu zásob a marži v sekci Sklad) */}
+          <div className={card}>
+            <p className={cardTitle}>Nákup</p>
+            <label className={label}>
+              <span className={legend}>Nákupní cena Kč (bez DPH, za kus)</span>
+              <input name="purchase_price_czk" inputMode="decimal" defaultValue={minor(product?.purchase_price_czk)} placeholder="nepovinné" className={input} />
+              <span className="text-xs text-gray-soft">Použije se pro hodnotu zásob v sekci Sklad. Bez ní se počítá prodejní cena bez DPH.</span>
+            </label>
+            {product && (
+              <Link href={`/admin/stock/${product.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-forest hover:underline">
+                <Warehouse className="size-4" /> Sklad a pohyby produktu
+              </Link>
             )}
           </div>
 
