@@ -100,11 +100,11 @@ type ProductRow = {
   low_stock_threshold: number | null;
   is_published: boolean;
   category: { name: string } | { name: string }[] | null;
-  product_variant: { id: string; name: string; sku: string | null; stock_qty: number }[] | null;
+  product_variant: { id: string; name: string; sku: string | null; stock_qty: number; price_czk: number | null }[] | null;
 };
 
 const PRODUCT_SELECT =
-  "id, name, sku, slug, price_czk, purchase_price_czk, vat_rate, stock_qty, low_stock_threshold, is_published, category:category_id(name), product_variant(id, name, sku, stock_qty)";
+  "id, name, sku, slug, price_czk, purchase_price_czk, vat_rate, stock_qty, low_stock_threshold, is_published, category:category_id(name), product_variant(id, name, sku, stock_qty, price_czk)";
 
 function buildRow(p: ProductRow, moves: MovementRow[], periodDays: number, settings: StockSettings, now: Date): StockProductRow {
   const variants: StockVariant[] = (p.product_variant ?? []).map((v) => ({ id: v.id, name: v.name, sku: v.sku, stock: v.stock_qty ?? 0 }));
@@ -194,11 +194,25 @@ export type StockMovementView = {
   createdAt: string;
 };
 
+/** Prodejnost jedné varianty za období (limit „docházející“ se bere z produktu). */
+export type StockVariantStat = StockVariant & {
+  sold: number;
+  lastSaleAt: string | null;
+  daysSinceSale: number | null;
+  lastInAt: string | null;
+  daysSinceIn: number | null;
+  daysOfStock: number | null;
+  status: StockStatus;
+  valueCzk: number;
+};
+
 export type StockProductDetail = {
   row: StockProductRow;
   movements: StockMovementView[];
   /** Stav zásoby na konci každého z posledních 12 týdnů. */
   history: number[];
+  /** Rozpad po variantách (prázdné u jednoduchého produktu). */
+  variantStats: StockVariantStat[];
 };
 
 /** Detail produktu: souhrn, pohyby (nejnovější první) a týdenní historie zásoby. */
@@ -251,7 +265,40 @@ export async function getProductStock(
     WEEKS,
     now,
   );
-  return { row, movements, history };
+
+  const periodFrom = now.getTime() - periodDays * 86400_000;
+  const variantStats: StockVariantStat[] = (p.product_variant ?? []).map((v) => {
+    let sold = 0;
+    let lastSaleAt: string | null = null;
+    let lastInAt: string | null = null;
+    for (const m of yearMoves) {
+      if (m.variant_id !== v.id) continue;
+      const q = soldQty(m);
+      if (q !== 0 && new Date(m.created_at).getTime() >= periodFrom) sold += q;
+      if (m.type === "sale" && (!lastSaleAt || m.created_at > lastSaleAt)) lastSaleAt = m.created_at;
+      if (isInbound(m) && (!lastInAt || m.created_at > lastInAt)) lastInAt = m.created_at;
+    }
+    sold = Math.max(0, sold);
+    const stock = v.stock_qty ?? 0;
+    const daysSinceSale = daysSince(lastSaleAt, now);
+    const price = v.price_czk ?? p.price_czk ?? 0;
+    return {
+      id: v.id,
+      name: v.name,
+      sku: v.sku,
+      stock,
+      sold,
+      lastSaleAt,
+      daysSinceSale,
+      lastInAt,
+      daysSinceIn: daysSince(lastInAt, now),
+      daysOfStock: daysOfStock(stock, sold, periodDays),
+      status: stockStatus({ stock, lowStockThreshold: p.low_stock_threshold, sold, periodDays, daysSinceSale }, settings),
+      valueCzk: stockValue(stock, price, p.purchase_price_czk, p.vat_rate ?? 21),
+    };
+  });
+
+  return { row, movements, history, variantStats };
 }
 
 export type MovementFilter = {

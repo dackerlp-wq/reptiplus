@@ -30,7 +30,7 @@ export default async function AdminStockDetailPage({
   const settings = await getStockSettings();
   const detail = await getProductStock(id, days, settings);
   if (!detail) notFound();
-  const { row, history } = detail;
+  const { row, history, variantStats } = detail;
 
   const typeFilter = sp.type ?? "";
   const groups: Record<string, string[]> = { sale: ["sale", "cancel", "edit"], in: ["in", "init", "import", "return"], adj: ["adj", "writeoff"] };
@@ -113,6 +113,50 @@ export default async function AdminStockDetailPage({
 
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-6">
+          {variantStats.length > 0 && (
+            <div className="rounded-xl border border-cream-dark bg-white">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-cream-dark px-4 py-3">
+                <h2 className="font-display text-lg font-semibold">Varianty</h2>
+                <span className="text-xs text-gray-soft">prodejnost za {days} dní · limit „docházející“ z produktu</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[11px] uppercase tracking-wide text-gray-soft">
+                      <th className="px-4 py-2 font-semibold">Varianta</th>
+                      <th className="px-3 py-2 text-right font-semibold">Skladem</th>
+                      <th className="px-3 py-2 text-right font-semibold">Prodáno</th>
+                      <th className="px-3 py-2 text-right font-semibold">Dní zásoby</th>
+                      <th className="px-3 py-2 text-right font-semibold">Poslední prodej</th>
+                      <th className="px-3 py-2 text-right font-semibold">Naskladněno</th>
+                      <th className="px-3 py-2 font-semibold">Stav</th>
+                      <th className="px-4 py-2 text-right font-semibold">Hodnota</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-cream-dark">
+                    {[...variantStats]
+                      .sort((a, b) => b.sold - a.sold || b.stock - a.stock)
+                      .map((v) => (
+                        <tr key={v.id}>
+                          <td className="px-4 py-2">
+                            <span className="font-semibold text-ink">{v.name}</span>
+                            {v.sku && <span className="ml-2 font-mono text-[11px] text-gray-soft">{v.sku}</span>}
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono tabular-nums">{v.stock}</td>
+                          <td className="px-3 py-2 text-right font-mono tabular-nums">{v.sold}</td>
+                          <td className="px-3 py-2 text-right font-mono tabular-nums">{v.daysOfStock == null ? "∞" : Math.round(v.daysOfStock)}</td>
+                          <td className={cn("whitespace-nowrap px-3 py-2 text-right", v.status === "dead" && "text-error")}>{ago(v.daysSinceSale)}</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-right text-gray-soft">{ago(v.daysSinceIn)}</td>
+                          <td className="px-3 py-2"><StockBadge status={v.status} /></td>
+                          <td className="px-4 py-2 text-right font-mono tabular-nums">{czk(v.valueCzk)}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div className="rounded-xl border border-cream-dark bg-white p-4">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-display text-lg font-semibold">Stav zásoby a prodeje po týdnech</h2>
