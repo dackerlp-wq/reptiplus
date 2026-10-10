@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Search, X } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { formatPrice } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,14 @@ import { STOCK_STATUS_LABEL, STOCK_STATUS_ORDER, type StockStatus } from "@/lib/
 import type { StockProductRow } from "@/lib/admin/stock";
 import { Sparkline, StockBadge } from "./stock-badge";
 
-type SortKey = "value" | "days" | "idle" | "sold" | "stock" | "status" | "name";
+type SortKey = "name" | "stock" | "sold" | "trend" | "days" | "idle" | "in" | "status" | "value";
+type SortDir = "asc" | "desc";
+
+/** Výchozí směr při prvním kliknutí na sloupec (čísla od nejvyššího, název a stav vzestupně). */
+const DEFAULT_DIR: Record<SortKey, SortDir> = {
+  name: "asc", stock: "desc", sold: "desc", trend: "desc", days: "desc", idle: "desc", in: "desc", status: "asc", value: "desc",
+};
+const trendSum = (w: number[]) => w.reduce((a, b) => a + b, 0);
 
 const czk = (minor: number) => formatPrice(minor, "cs");
 const ago = (d: number | null) => (d == null ? "—" : d === 0 ? "dnes" : d === 1 ? "včera" : `před ${d} dny`);
@@ -22,7 +29,16 @@ export function StockTable({ rows, periodDays, initialStatus = "" }: { rows: Sto
   const [cat, setCat] = useState("");
   const [status, setStatus] = useState<StockStatus | "">(isStatus(initialStatus) ? initialStatus : "");
   const [sort, setSort] = useState<SortKey>("status");
+  const [dir, setDir] = useState<SortDir>("asc");
   const [hidden, setHidden] = useState(false);
+
+  const toggleSort = (key: SortKey) => {
+    if (key === sort) setDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSort(key);
+      setDir(DEFAULT_DIR[key]);
+    }
+  };
 
   const categories = useMemo(
     () => Array.from(new Set(rows.map((r) => r.category).filter((c): c is string => !!c))).sort((a, b) => a.localeCompare(b, "cs")),
@@ -38,20 +54,32 @@ export function StockTable({ rows, periodDays, initialStatus = "" }: { rows: Sto
         (!status || r.status === status) &&
         (!needle || `${r.name} ${r.sku ?? ""}`.toLowerCase().includes(needle)),
     );
+    // ∞ / neznámé řadit vždy na konec bez ohledu na směr.
     const inf = (v: number | null) => (v == null ? Number.POSITIVE_INFINITY : v);
-    out.sort((a, b) => {
+    const cmp = (a: StockProductRow, b: StockProductRow): number => {
       switch (sort) {
-        case "value": return b.valueCzk - a.valueCzk;
-        case "days": return inf(b.daysOfStock) - inf(a.daysOfStock);
-        case "idle": return inf(b.daysSinceSale) - inf(a.daysSinceSale);
-        case "sold": return b.sold - a.sold;
-        case "stock": return b.stock - a.stock;
         case "name": return a.name.localeCompare(b.name, "cs");
+        case "stock": return a.stock - b.stock;
+        case "sold": return a.sold - b.sold;
+        case "trend": return trendSum(a.weekly) - trendSum(b.weekly);
+        case "days": return inf(a.daysOfStock) - inf(b.daysOfStock);
+        case "idle": return inf(a.daysSinceSale) - inf(b.daysSinceSale);
+        case "in": return inf(a.daysSinceIn) - inf(b.daysSinceIn);
+        case "value": return a.valueCzk - b.valueCzk;
         default: return STOCK_STATUS_ORDER[a.status] - STOCK_STATUS_ORDER[b.status] || b.valueCzk - a.valueCzk;
       }
+    };
+    out.sort((a, b) => {
+      const c = cmp(a, b);
+      if (c === 0) return a.name.localeCompare(b.name, "cs");
+      const unknownA = (sort === "days" && a.daysOfStock == null) || (sort === "idle" && a.daysSinceSale == null) || (sort === "in" && a.daysSinceIn == null);
+      const unknownB = (sort === "days" && b.daysOfStock == null) || (sort === "idle" && b.daysSinceSale == null) || (sort === "in" && b.daysSinceIn == null);
+      if (unknownA !== unknownB) return unknownA ? 1 : -1;
+      return dir === "asc" ? c : -c;
     });
     return out;
-  }, [rows, q, cat, status, sort, hidden]);
+  }, [rows, q, cat, status, sort, dir, hidden]);
+
 
   return (
     <div>
@@ -75,15 +103,6 @@ export function StockTable({ rows, periodDays, initialStatus = "" }: { rows: Sto
             <option key={s} value={s}>{STOCK_STATUS_LABEL[s]}</option>
           ))}
         </select>
-        <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={input}>
-          <option value="status">Řadit: stav (naléhavé první)</option>
-          <option value="value">Řadit: hodnota zásoby</option>
-          <option value="days">Řadit: dní zásoby</option>
-          <option value="idle">Řadit: nejdéle bez prodeje</option>
-          <option value="sold">Řadit: nejprodávanější</option>
-          <option value="stock">Řadit: skladem</option>
-          <option value="name">Řadit: název</option>
-        </select>
         <label className="flex items-center gap-2 text-sm text-gray-soft">
           <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} className="size-4 accent-forest" />
           i nepublikované
@@ -94,16 +113,16 @@ export function StockTable({ rows, periodDays, initialStatus = "" }: { rows: Sto
       <div className="overflow-x-auto rounded-xl border border-cream-dark bg-white">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-cream-dark text-left text-[11px] uppercase tracking-wide text-gray-soft">
-              <th className="px-3 py-2.5 font-semibold">Produkt</th>
-              <th className="px-3 py-2.5 text-right font-semibold">Skladem</th>
-              <th className="px-3 py-2.5 text-right font-semibold">Prodáno / {periodDays} d</th>
-              <th className="px-3 py-2.5 font-semibold">Trend 12 týdnů</th>
-              <th className="px-3 py-2.5 text-right font-semibold">Dní zásoby</th>
-              <th className="px-3 py-2.5 text-right font-semibold">Poslední prodej</th>
-              <th className="px-3 py-2.5 text-right font-semibold">Naskladněno</th>
-              <th className="px-3 py-2.5 font-semibold">Stav</th>
-              <th className="px-3 py-2.5 text-right font-semibold">Hodnota</th>
+            <tr className="border-b border-cream-dark text-left text-[11px] text-gray-soft">
+              <Th k="name" sort={sort} dir={dir} onToggle={toggleSort}>Produkt</Th>
+              <Th k="stock" right sort={sort} dir={dir} onToggle={toggleSort}>Skladem</Th>
+              <Th k="sold" right sort={sort} dir={dir} onToggle={toggleSort}>Prodáno / {periodDays} d</Th>
+              <Th k="trend" sort={sort} dir={dir} onToggle={toggleSort}>Trend 12 týdnů</Th>
+              <Th k="days" right sort={sort} dir={dir} onToggle={toggleSort}>Dní zásoby</Th>
+              <Th k="idle" right sort={sort} dir={dir} onToggle={toggleSort}>Poslední prodej</Th>
+              <Th k="in" right sort={sort} dir={dir} onToggle={toggleSort}>Naskladněno</Th>
+              <Th k="status" sort={sort} dir={dir} onToggle={toggleSort}>Stav</Th>
+              <Th k="value" right sort={sort} dir={dir} onToggle={toggleSort}>Hodnota</Th>
             </tr>
           </thead>
           <tbody className="divide-y divide-cream-dark">
@@ -133,6 +152,29 @@ export function StockTable({ rows, periodDays, initialStatus = "" }: { rows: Sto
         </table>
       </div>
     </div>
+  );
+}
+
+/** Záhlaví sloupce s řazením — klik přepne sloupec, další klik směr. */
+function Th({
+  k, sort, dir, onToggle, right, children,
+}: {
+  k: SortKey; sort: SortKey; dir: SortDir; onToggle: (k: SortKey) => void; right?: boolean; children: React.ReactNode;
+}) {
+  const active = sort === k;
+  const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <th className={cn("px-3 py-2.5 font-semibold", right && "text-right")} aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}>
+      <button
+        type="button"
+        onClick={() => onToggle(k)}
+        className={cn("inline-flex items-center gap-1 uppercase tracking-wide hover:text-ink", right && "flex-row-reverse", active && "text-forest")}
+        title="Řadit podle sloupce (další klik obrátí směr)"
+      >
+        {children}
+        <Icon className={cn("size-3", !active && "opacity-50")} />
+      </button>
+    </th>
   );
 }
 
