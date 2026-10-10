@@ -12,10 +12,8 @@ import { Sparkline, StockBadge } from "./stock-badge";
 type SortKey = "name" | "stock" | "sold" | "trend" | "days" | "idle" | "in" | "status" | "value";
 type SortDir = "asc" | "desc";
 
-/** Výchozí směr při prvním kliknutí na sloupec (čísla od nejvyššího, název a stav vzestupně). */
-const DEFAULT_DIR: Record<SortKey, SortDir> = {
-  name: "asc", stock: "desc", sold: "desc", trend: "desc", days: "desc", idle: "desc", in: "desc", status: "asc", value: "desc",
-};
+/** První klik na sloupec řadí sestupně (Z→A, od nejvyššího, od nejnaléhavějšího), druhý vzestupně. */
+const FIRST_CLICK_DIR: SortDir = "desc";
 const trendSum = (w: number[]) => w.reduce((a, b) => a + b, 0);
 
 const czk = (minor: number) => formatPrice(minor, "cs");
@@ -29,14 +27,14 @@ export function StockTable({ rows, periodDays, initialStatus = "" }: { rows: Sto
   const [cat, setCat] = useState("");
   const [status, setStatus] = useState<StockStatus | "">(isStatus(initialStatus) ? initialStatus : "");
   const [sort, setSort] = useState<SortKey>("status");
-  const [dir, setDir] = useState<SortDir>("asc");
+  const [dir, setDir] = useState<SortDir>("desc");
   const [hidden, setHidden] = useState(false);
 
   const toggleSort = (key: SortKey) => {
     if (key === sort) setDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
       setSort(key);
-      setDir(DEFAULT_DIR[key]);
+      setDir(FIRST_CLICK_DIR);
     }
   };
 
@@ -66,7 +64,8 @@ export function StockTable({ rows, periodDays, initialStatus = "" }: { rows: Sto
         case "idle": return inf(a.daysSinceSale) - inf(b.daysSinceSale);
         case "in": return inf(a.daysSinceIn) - inf(b.daysSinceIn);
         case "value": return a.valueCzk - b.valueCzk;
-        default: return STOCK_STATUS_ORDER[a.status] - STOCK_STATUS_ORDER[b.status] || b.valueCzk - a.valueCzk;
+        // Stav: „sestupně“ = nejnaléhavější první (Vyprodáno → … → Prodává se), v rámci stavu vyšší hodnota první.
+        default: return STOCK_STATUS_ORDER[b.status] - STOCK_STATUS_ORDER[a.status] || a.valueCzk - b.valueCzk;
       }
     };
     out.sort((a, b) => {
@@ -164,7 +163,7 @@ function Th({
   const active = sort === k;
   const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
   return (
-    <th className={cn("px-3 py-2.5 font-semibold", right && "text-right")} aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}>
+    <th className={cn("whitespace-nowrap px-3 py-2.5 font-semibold", right && "text-right")} aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}>
       <button
         type="button"
         onClick={() => onToggle(k)}
