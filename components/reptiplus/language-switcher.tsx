@@ -5,6 +5,7 @@ import { useTransition } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
+import { startNavigationProgress } from "@/components/reptiplus/navigation-progress";
 
 export function LanguageSwitcher() {
   const locale = useLocale();
@@ -16,6 +17,7 @@ export function LanguageSwitcher() {
     if (next === locale) return;
     // Přepne CELÝ web do jazyka (UI, obsah i měna se řídí locale).
     startTransition(() => {
+      startNavigationProgress();
       router.replace(pathname, { locale: next });
     });
   }

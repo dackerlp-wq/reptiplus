@@ -7,6 +7,7 @@ import { signOutAction } from "@/lib/auth/actions";
 import { Toaster, FlashToast } from "@/components/admin/toast";
 import { AdminSidebar, AdminMobileNav, type AdminBadges } from "@/components/admin/admin-nav";
 import { effectiveStock } from "@/lib/stock-alerts/low-stock";
+import { NavigationProgress } from "@/components/reptiplus/navigation-progress";
 
 
 export default async function AdminLayout({
@@ -39,6 +40,9 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-dvh bg-cream">
+      <Suspense fallback={null}>
+        <NavigationProgress />
+      </Suspense>
       {/* Horní lišta */}
       <header className="sticky top-0 z-40 border-b border-cream-dark bg-white">
         <div className="flex items-center gap-3 px-4 py-3">

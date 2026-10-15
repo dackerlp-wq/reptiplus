@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
+import { startNavigationProgress } from "@/components/reptiplus/navigation-progress";
 
 type Product = {
   slug: string;
@@ -108,10 +109,12 @@ export function SearchBar({
   };
   const goCategory = (slug: string) => {
     close();
+    startNavigationProgress();
     router.push(`/kategorie/${slug}`);
   };
   const goProduct = (slug: string) => {
     close();
+    startNavigationProgress();
     router.push(`/produkt/${slug}`);
   };
   const selectAt = (idx: number) => {
@@ -121,6 +124,7 @@ export function SearchBar({
   const submitSearch = () => {
     const query = q.trim();
     setOpen(false);
+    startNavigationProgress();
     router.push(query ? { pathname: "/produkty", query: { q: query } } : "/produkty");
   };
 

@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { toggleWishlistAction } from "@/lib/account/actions";
+import { startNavigationProgress } from "@/components/reptiplus/navigation-progress";
 
 /* Jeden dotaz na stránku: sdílená cache ID oblíbených (mění se jen přes toggle).
    Klíčem je cesta stránky — po přihlášení (soft navigace, modul zůstává v paměti)
@@ -73,6 +74,7 @@ export function WishlistButton({
       if ("error" in res) {
         if (res.error === "AUTH") {
           cache = null;
+          startNavigationProgress();
           router.push(`/prihlaseni?redirectTo=${encodeURIComponent(`/${locale}${pathname}`)}`);
         }
         return;

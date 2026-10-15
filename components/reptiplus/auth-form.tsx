@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { signInAction, signUpAction, signInWithGoogleAction, type AuthState } from "@/lib/auth/actions";
+import { startNavigationProgress } from "@/components/reptiplus/navigation-progress";
 
 const inputClass =
   "w-full rounded-lg border border-cream-dark bg-white px-3 py-2.5 text-sm outline-none focus:border-forest";
@@ -101,7 +102,7 @@ export function AuthForm({
         {t("or")}
         <span className="h-px flex-1 bg-cream-dark" />
       </div>
-      <form action={signInWithGoogleAction}>
+      <form action={signInWithGoogleAction} onSubmit={() => startNavigationProgress()}>
         <input type="hidden" name="redirectTo" value={redirectTo} />
         {error === "oauth" && (
           <p className="mb-3 rounded-lg bg-error/10 px-3 py-2 text-sm text-error">{t("oauthError")}</p>

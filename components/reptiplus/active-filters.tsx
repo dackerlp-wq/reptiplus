@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { X } from "lucide-react";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { startNavigationProgress } from "@/components/reptiplus/navigation-progress";
 import type { Locale } from "@/i18n/routing";
 import type { AttrFacet, BrandItem, CategoryItem } from "@/lib/queries";
 import { localeCurrency, pickI18n } from "@/lib/i18n";
@@ -34,7 +35,10 @@ export function ActiveFilters({
     const next = new URLSearchParams(params.toString());
     mutate(next);
     const qs = next.toString();
-    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname));
+    startTransition(() => {
+      startNavigationProgress();
+      router.replace(qs ? `${pathname}?${qs}` : pathname);
+    });
   };
 
   const chips: Chip[] = [];

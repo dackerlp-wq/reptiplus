@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Search, X, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { startNavigationProgress } from "@/components/reptiplus/navigation-progress";
 import type { Locale } from "@/i18n/routing";
 import type { AttrFacet, BrandItem, CategoryItem } from "@/lib/queries";
 import { localeCurrency, pickI18n } from "@/lib/i18n";
@@ -51,7 +52,10 @@ export function CatalogFilters({
     if (value) next.set(key, value);
     else next.delete(key);
     const qs = next.toString();
-    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname));
+    startTransition(() => {
+      startNavigationProgress();
+      router.replace(qs ? `${pathname}?${qs}` : pathname);
+    });
   };
 
   const commitPrice = () => {
@@ -63,7 +67,10 @@ export function CatalogFilters({
     if (tv) next.set("cena_do", tv);
     else next.delete("cena_do");
     const qs = next.toString();
-    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname));
+    startTransition(() => {
+      startNavigationProgress();
+      router.replace(qs ? `${pathname}?${qs}` : pathname);
+    });
   };
 
   const toggleAttr = (key: string, value: string, checked: boolean) => {
@@ -75,7 +82,10 @@ export function CatalogFilters({
     else existing.delete(token);
     existing.forEach((v) => next.append("attr", v));
     const qs = next.toString();
-    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname));
+    startTransition(() => {
+      startNavigationProgress();
+      router.replace(qs ? `${pathname}?${qs}` : pathname);
+    });
   };
   const activeAttrs = new Set(params.getAll("attr"));
 
@@ -88,11 +98,16 @@ export function CatalogFilters({
   const clearAll = () => {
     setFrom("");
     setTo("");
-    startTransition(() => router.replace(pathname));
+    startTransition(() => {
+      startNavigationProgress();
+      router.replace(pathname);
+    });
   };
 
   return (
-    <aside className="lg:sticky lg:top-24 lg:self-start">
+    // Připnutý panel smí být nejvýš na výšku okna — delší obsah (rozšířené filtry)
+    // se posouvá uvnitř panelu, ne až na konci stránky.
+    <aside className="lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">
       {/* Mobilní přepínač */}
       <button
         type="button"

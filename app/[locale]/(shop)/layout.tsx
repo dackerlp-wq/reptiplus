@@ -4,6 +4,8 @@ import { Footer } from "@/components/reptiplus/footer";
 import { CookieConsent } from "@/components/reptiplus/cookie-consent";
 import { AnalyticsGate } from "@/components/reptiplus/analytics-gate";
 import { getAnalyticsConfig } from "@/lib/settings";
+import { Suspense } from "react";
+import { NavigationProgress } from "@/components/reptiplus/navigation-progress";
 
 export default async function ShopLayout({
   children,
@@ -16,6 +18,9 @@ export default async function ShopLayout({
   const analytics = await getAnalyticsConfig();
   return (
     <div className="flex min-h-dvh flex-col">
+      <Suspense fallback={null}>
+        <NavigationProgress />
+      </Suspense>
       <Navbar locale={locale as Locale} />
       <main className="flex-1">{children}</main>
       <Footer />

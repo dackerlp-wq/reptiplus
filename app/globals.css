@@ -202,3 +202,23 @@
     }
   }
 }
+
+/* Lišta průběhu při přechodu mezi stránkami (components/reptiplus/navigation-progress.tsx). */
+@theme {
+  --animate-nav-progress: nav-progress 8s cubic-bezier(0.1, 0.6, 0.2, 1) forwards;
+  --animate-nav-done: nav-done 0.45s ease-out forwards;
+  @keyframes nav-progress {
+    0% { width: 0%; }
+    15% { width: 35%; }
+    50% { width: 70%; }
+    100% { width: 92%; }
+  }
+  @keyframes nav-done {
+    0% { width: 92%; opacity: 1; }
+    40% { width: 100%; opacity: 1; }
+    100% { width: 100%; opacity: 0; }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-nav-progress { animation-duration: 0.01s; width: 92%; }
+}
