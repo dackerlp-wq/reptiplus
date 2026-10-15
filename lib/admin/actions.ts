@@ -117,6 +117,7 @@ export async function saveProductAction(formData: FormData) {
     })(),
     is_published: formData.get("is_published") === "on",
     is_featured: formData.get("is_featured") === "on",
+    supplier_stock: formData.get("supplier_stock") === "on",
     vat_rate: [0, 12, 21].includes(parseInt(str(formData, "vat_rate") || "21", 10))
       ? parseInt(str(formData, "vat_rate") || "21", 10)
       : 21,

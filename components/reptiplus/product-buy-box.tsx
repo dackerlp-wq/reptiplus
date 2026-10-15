@@ -11,6 +11,7 @@ import type { Locale } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import { WishlistButton } from "./wishlist-button";
 import { StockAlertForm } from "./stock-alert-form";
+import { availabilityOf } from "@/lib/availability";
 
 export type BuyVariant = {
   id: string;
@@ -30,6 +31,7 @@ export function ProductBuyBox({
   basePrice,
   baseCompare,
   baseStock,
+  supplierStock = false,
   lowest30,
   variants,
   labels,
@@ -43,6 +45,8 @@ export function ProductBuyBox({
   basePrice: number;
   baseCompare: number | null;
   baseStock: number;
+  /** Skladem u dodavatele — objednat lze i při nulovém skladu. */
+  supplierStock?: boolean;
   lowest30?: number | null;
   variants: BuyVariant[];
   userEmail?: string;
@@ -52,6 +56,9 @@ export function ProductBuyBox({
     added: string;
     goToCart: string;
     outOfStock: string;
+    supplierStock: string;
+    inStock: string;
+    lowStock: string;
     lowest30: string;
   };
 }) {
@@ -63,7 +70,8 @@ export function ProductBuyBox({
   const price = sel ? sel.price : basePrice;
   const stock = sel ? sel.stock : baseStock;
   const off = discountPercent(price, baseCompare);
-  const out = stock <= 0;
+  const availability = availabilityOf(stock, supplierStock);
+  const out = availability === "out";
 
   const add = () =>
     start(async () => {
@@ -123,7 +131,7 @@ export function ProductBuyBox({
           </p>
           <div className="flex flex-wrap gap-2">
             {variants.map((v) => {
-              const vOut = v.stock <= 0;
+              const vOut = v.stock <= 0 && !supplierStock;
               return (
                 <button
                   key={v.id}
@@ -174,7 +182,24 @@ export function ProductBuyBox({
         </div>
       )}
 
-      <div className="mt-6 flex max-w-md flex-wrap gap-2">
+      {/* Dostupnost */}
+      <p
+        className={cn(
+          "mt-5 flex items-center gap-2 text-sm font-medium",
+          availability === "in" && "text-success",
+          availability === "low" && "text-amber",
+          availability === "supplier" && "text-forest",
+          availability === "out" && "text-error",
+        )}
+      >
+        <span className="size-2 rounded-full bg-current" />
+        {availability === "in" && labels.inStock}
+        {availability === "low" && labels.lowStock}
+        {availability === "supplier" && labels.supplierStock}
+        {availability === "out" && labels.outOfStock}
+      </p>
+
+      <div className="mt-4 flex max-w-md flex-wrap gap-2">
         {added ? (
           <Link
             href="/kosik"

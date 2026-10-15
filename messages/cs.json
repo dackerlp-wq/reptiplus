@@ -70,6 +70,7 @@
     "inStock": "Skladem",
     "lowStock": "Poslední kusy",
     "outOfStock": "Vyprodáno",
+    "supplierStock": "Skladem u dodavatele – dodání do 5 pracovních dnů",
     "parameters": "Parametry",
     "featured": "Doporučujeme",
     "added": "Přidáno",

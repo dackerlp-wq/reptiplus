@@ -20,7 +20,7 @@ export async function GET() {
           (u) => `<g:additional_image_link>${xmlEscape(u)}</g:additional_image_link>`,
         ),
         `<g:price>${priceStr(it.priceCzk)} CZK</g:price>`,
-        `<g:availability>${it.inStock ? "in_stock" : "out_of_stock"}</g:availability>`,
+        `<g:availability>${it.inStock ? "in_stock" : it.supplier ? "backorder" : "out_of_stock"}</g:availability>`,
         `<g:condition>new</g:condition>`,
         it.brand ? `<g:brand>${xmlEscape(it.brand)}</g:brand>` : "",
         it.ean ? `<g:gtin>${xmlEscape(it.ean)}</g:gtin>` : "",

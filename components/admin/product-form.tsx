@@ -38,6 +38,7 @@ type ProductRow = {
   compare_at_eur: number | null;
   purchase_price_czk?: number | null;
   stock_qty: number;
+  supplier_stock?: boolean;
   low_stock_threshold?: number | null;
   category_id: string | null;
   brand_id: string | null;
@@ -349,6 +350,15 @@ export function ProductForm({
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="is_featured" defaultChecked={product?.is_featured ?? false} className="size-4 accent-forest" />
               Doporučujeme
+            </label>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" name="supplier_stock" defaultChecked={product?.supplier_stock ?? false} className="mt-0.5 size-4 accent-forest" />
+              <span>
+                Skladem u dodavatele — dodání do 5 pracovních dnů
+                <span className="block text-xs text-gray-soft">
+                  Zákazník může objednat, i když je vlastní sklad na nule. Objednané kusy pak sklad ukáže v záporu, dokud je nenaskladníte.
+                </span>
+              </span>
             </label>
           </div>
 

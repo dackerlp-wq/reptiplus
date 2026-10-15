@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
+import { canOrder, orderCap } from "@/lib/availability";
 import { getCartId } from "@/lib/cart/cart";
 
 export type CartActionResult = { ok: boolean; error?: string };
@@ -19,12 +20,13 @@ export async function addToCartAction(
   // Produkt musí existovat, být publikovaný a skladem.
   const { data: product } = await svc
     .from("product")
-    .select("id, stock_qty, is_published")
+    .select("id, stock_qty, supplier_stock, is_published")
     .eq("id", productId)
     .maybeSingle();
   if (!product || !product.is_published) return { ok: false, error: "NOT_FOUND" };
 
-  // Sklad podle varianty (má-li ji), jinak podle produktu.
+  // Sklad podle varianty (má-li ji), jinak podle produktu. „Skladem u dodavatele“
+  // dovolí objednat i bez vlastního skladu (strop množství viz orderCap).
   let stock = product.stock_qty;
   if (variantId) {
     const { data: variant } = await svc
@@ -36,7 +38,8 @@ export async function addToCartAction(
     if (!variant) return { ok: false, error: "NOT_FOUND" };
     stock = variant.stock_qty;
   }
-  if (stock <= 0) return { ok: false, error: "OUT_OF_STOCK" };
+  if (!canOrder(stock, product.supplier_stock)) return { ok: false, error: "OUT_OF_STOCK" };
+  stock = orderCap(stock, product.supplier_stock);
 
   const cartId = await getCartId(true);
   if (!cartId) return { ok: false, error: "CART" };
@@ -93,7 +96,12 @@ export async function updateQtyAction(
     return { ok: true };
   }
 
-  let stock: number;
+  const { data: product } = await svc
+    .from("product")
+    .select("stock_qty, supplier_stock")
+    .eq("id", item.product_id)
+    .maybeSingle();
+  let stock = product?.stock_qty ?? 0;
   if (item.variant_id) {
     const { data: variant } = await svc
       .from("product_variant")
@@ -101,14 +109,8 @@ export async function updateQtyAction(
       .eq("id", item.variant_id)
       .maybeSingle();
     stock = variant?.stock_qty ?? 0;
-  } else {
-    const { data: product } = await svc
-      .from("product")
-      .select("stock_qty")
-      .eq("id", item.product_id)
-      .maybeSingle();
-    stock = product?.stock_qty ?? 0;
   }
+  stock = orderCap(stock, product?.supplier_stock ?? false);
   if (stock <= 0) {
     await svc.from("cart_item").delete().eq("id", itemId).eq("cart_id", cartId);
     revalidatePath("/", "layout");

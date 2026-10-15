@@ -185,6 +185,9 @@ a `product.is_gift_voucher` v DB zůstávají (RPC `place_order` je dál umí, a
   berou z kontextu `app.stock_ctx`, který nastavují RPC `place_order` (sale), `cancel_unpaid_order` (cancel), `admin_edit_order_items` (edit)
   a `apply_stock_change` (ruční změny z adminu — **každá změna skladu z aplikace jde přes `applyStockChange()` v `lib/admin/stock-rpc.ts`**,
   nikdy přímým update `stock_qty`; bez kontextu by se zapsala jako „adj“ bez autora). Prodeje před zavedením deníku jsou dopočítané z `order_item`.
+- „Skladem u dodavatele“ (`product.supplier_stock`, migrace `20261015_0001`): produkt lze objednat i při nulovém skladu (dodání do 5 pracovních dnů),
+  `place_order` / `admin_edit_order_items` u něj nevyžadují `stock_qty >= qty`, sklad jde do záporu (= kusy objednané u dodavatele). Dostupnost pro shop
+  (`in | low | supplier | out`, strop množství v košíku) počítá `lib/availability.ts`; text `Product.supplierStock`; feedy: Heureka/Zboží `DELIVERY_DATE` 5, Google `backorder`.
 - `product.low_stock_threshold` (null = nehlídat): `checkLowStock(productIds)` v `lib/stock-alerts/low-stock.ts` po objednávce, editaci položek, uložení produktu,
   inline změně skladu a CSV importu → jeden e-mail obchodu (`low_stock_notified_at`, reset po naskladnění nad limit). `effectiveStock()` = součet variant, jinak sklad produktu.
 - CSV import skladu a cen: `app/[locale]/admin/products/import` → `lib/admin/import-actions.ts` (náhled podle SKU produktu/varianty, pak zápis; prázdná buňka = beze změny).
@@ -204,6 +207,7 @@ fallbacky `COMGATE_MERCHANT|SECRET|TEST`, `PPL_CLIENT_ID|SECRET`, `PACKETA_API_P
 
 ## Konvence
 
+- Drobečková navigace kategorií (stránka kategorie i produktu, vč. JSON-LD) jde přes celý řetězec rodičů — `categoryAncestors()` v `lib/queries.ts`.
 - Nové stránky patří pod `app/[locale]/…` a musí v `generateMetadata` používat `localizedAlternates()` z `lib/seo.ts` (canonical + hreflang); JSON-LD přes `components/seo/json-ld.tsx`.
 - Vše, co obchází RLS nebo drží tajemství, importuje `"server-only"`.
 - Toasty v adminu: přesměrování s `?flash=saved|error&msg=…`, komponenta `components/admin/toast.tsx`.

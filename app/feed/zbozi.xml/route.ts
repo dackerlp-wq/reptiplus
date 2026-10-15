@@ -1,3 +1,4 @@
+import { SUPPLIER_DELIVERY_DAYS } from "@/lib/availability";
 import { getFeedItems, xmlEscape, priceStr } from "@/lib/feed/products";
 
 export const revalidate = 3600;
@@ -25,7 +26,7 @@ export async function GET() {
           : "",
         it.ean ? `<EAN>${xmlEscape(it.ean)}</EAN>` : "",
         it.sku ? `<PRODUCTNO>${xmlEscape(it.sku)}</PRODUCTNO>` : "",
-        `<DELIVERY_DATE>${it.inStock ? 0 : 7}</DELIVERY_DATE>`,
+        `<DELIVERY_DATE>${it.inStock ? 0 : it.supplier ? SUPPLIER_DELIVERY_DAYS : 7}</DELIVERY_DATE>`,
         it.groupId ? `<ITEMGROUP_ID>${xmlEscape(it.groupId)}</ITEMGROUP_ID>` : "",
         `</SHOPITEM>`,
       ];

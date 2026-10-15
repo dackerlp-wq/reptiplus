@@ -44,6 +44,8 @@ export type ProductListItem = {
   compare_at_czk: number | null;
   compare_at_eur: number | null;
   stock_qty: number;
+  /** Skladem u dodavatele — lze objednat i bez vlastního skladu (dodání do 5 pracovních dnů). */
+  supplier_stock: boolean;
   is_featured: boolean;
   brand: { name: string; slug: string } | null;
   image: { url: string; alt: string | null } | null; // primární obrázek
@@ -166,7 +168,7 @@ export async function getPriceRange(
 }
 
 const LIST_COLS =
-  "id,slug,name,name_i18n,short_description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured, brand:brand_id(name,slug), product_image(url,alt,sort_order), product_variant(price_czk,price_eur,stock_qty)";
+  "id,slug,name,name_i18n,short_description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,supplier_stock,is_featured, brand:brand_id(name,slug), product_image(url,alt,sort_order), product_variant(price_czk,price_eur,stock_qty)";
 
 export async function getProducts(opts?: {
   featured?: boolean;
@@ -228,7 +230,7 @@ export async function getProductBySlug(
   const { data } = await supabase
     .from("product")
     .select(
-      "id,slug,name,name_i18n,sku,short_description,short_description_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_featured,category_id, brand:brand_id(name,slug,logo_url,description_i18n), category:category_id(slug,name_i18n), product_attribute(key,value,key_i18n,value_i18n,sort_order), product_image(url,alt,sort_order), product_variant(id,name,name_i18n,sku,price_czk,price_eur,stock_qty,image_url,attributes,sort_order)",
+      "id,slug,name,name_i18n,sku,short_description,short_description_i18n,description,description_i18n,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,supplier_stock,is_featured,category_id, brand:brand_id(name,slug,logo_url,description_i18n), category:category_id(slug,name_i18n), product_attribute(key,value,key_i18n,value_i18n,sort_order), product_image(url,alt,sort_order), product_variant(id,name,name_i18n,sku,price_czk,price_eur,stock_qty,image_url,attributes,sort_order)",
     )
     .eq("slug", slug)
     .eq("is_published", true)
@@ -292,6 +294,18 @@ export async function getAllCategories(): Promise<CategoryItem[]> {
     .eq("is_published", true)
     .order("sort_order");
   return (data ?? []) as unknown as CategoryItem[];
+}
+
+/** Nadřazené kategorie od kořene k rodiči (pro drobečkovou navigaci); chrání před cyklem. */
+export function categoryAncestors(all: CategoryItem[], parentId: string | null): CategoryItem[] {
+  const byId = new Map(all.map((c) => [c.id, c]));
+  const chain: CategoryItem[] = [];
+  let cur = parentId ? byId.get(parentId) : undefined;
+  while (cur && chain.length < 10 && !chain.includes(cur)) {
+    chain.unshift(cur);
+    cur = cur.parent_id ? byId.get(cur.parent_id) : undefined;
+  }
+  return chain;
 }
 
 export async function getCategoryBySlug(
@@ -518,7 +532,7 @@ export async function getCatalog(
     if (!brand) return empty;
     query = query.eq("brand_id", brand.id);
   }
-  if (filters.inStock) query = query.gt("stock_qty", 0);
+  if (filters.inStock) query = query.or("stock_qty.gt.0,supplier_stock.eq.true");
   if (typeof filters.priceMin === "number")
     query = query.gte(priceCol, filters.priceMin);
   if (typeof filters.priceMax === "number")

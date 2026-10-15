@@ -12,6 +12,7 @@ import {
   pickI18n,
   priceForLocale,
 } from "@/lib/i18n";
+import { availabilityOf, canOrder } from "@/lib/availability";
 import { AddToCartButton } from "./add-to-cart-button";
 import { WishlistButton } from "./wishlist-button";
 
@@ -46,10 +47,20 @@ export async function ProductCard({
 
   const discount = hasVariants ? null : discountPercent(priceMinor, compareMinor);
 
-  const stockLabel =
-    stock <= 0 ? t("outOfStock") : stock <= 5 ? t("lowStock") : t("inStock");
-  const stockClass =
-    stock <= 0 ? "text-error" : stock <= 5 ? "text-amber" : "text-success";
+  const availability = availabilityOf(stock, product.supplier_stock);
+  const stockLabel = {
+    in: t("inStock"),
+    low: t("lowStock"),
+    supplier: t("supplierStock"),
+    out: t("outOfStock"),
+  }[availability];
+  const stockClass = {
+    in: "text-success",
+    low: "text-amber",
+    supplier: "text-forest",
+    out: "text-error",
+  }[availability];
+  const orderable = canOrder(stock, product.supplier_stock);
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-xl border border-cream-dark bg-white transition-[box-shadow,transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-forest/30 hover:shadow-lg">
@@ -120,7 +131,7 @@ export async function ProductCard({
         </div>
 
         {hasVariants ? (
-          stock > 0 ? (
+          orderable ? (
             <Link
               href={href}
               className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-forest-light"
@@ -137,7 +148,7 @@ export async function ProductCard({
             productId={product.id}
             label={t("addToCart")}
             goToCartLabel={t("goToCart")}
-            disabled={product.stock_qty <= 0}
+            disabled={!orderable}
           />
         )}
       </div>

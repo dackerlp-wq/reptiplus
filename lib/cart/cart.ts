@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { orderCap } from "@/lib/availability";
 import { localeCurrency, pickI18n, priceForLocale, compareForLocale } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 import type { I18n } from "@/lib/queries";
@@ -115,7 +116,7 @@ export async function getCart(locale: Locale): Promise<CartView> {
   const { data } = await svc
     .from("cart_item")
     .select(
-      "id, qty, variant_id, product:product_id(id,slug,name,name_i18n,sku,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,is_published,product_image(url,sort_order)), variant:variant_id(id,name,sku,price_czk,price_eur,stock_qty)",
+      "id, qty, variant_id, product:product_id(id,slug,name,name_i18n,sku,price_czk,price_eur,compare_at_czk,compare_at_eur,stock_qty,supplier_stock,is_published,product_image(url,sort_order)), variant:variant_id(id,name,sku,price_czk,price_eur,stock_qty)",
     )
     .eq("cart_id", cartId)
     .order("added_at");
@@ -135,6 +136,7 @@ export async function getCart(locale: Locale): Promise<CartView> {
       compare_at_czk: number | null;
       compare_at_eur: number | null;
       stock_qty: number;
+      supplier_stock: boolean;
       is_published: boolean;
       product_image: { url: string; sort_order: number }[] | null;
     } | null;
@@ -168,7 +170,7 @@ export async function getCart(locale: Locale): Promise<CartView> {
     const compareAt = compareForLocale(r.product, locale);
 
     // Sklad podle varianty (má-li ji), jinak podle produktu.
-    const effectiveStock = r.variant ? r.variant.stock_qty : r.product.stock_qty;
+    const effectiveStock = orderCap(r.variant ? r.variant.stock_qty : r.product.stock_qty, r.product.supplier_stock);
     const qty = Math.min(r.qty, effectiveStock);
     if (qty <= 0) continue;
 
@@ -266,10 +268,10 @@ export async function mergeGuestCartOnLogin(userId: string): Promise<void> {
       for (const gi of guestItems as CartRow[]) {
         const { data: prod } = await svc
           .from("product")
-          .select("stock_qty")
+          .select("stock_qty, supplier_stock")
           .eq("id", gi.product_id)
           .maybeSingle();
-        const stock = prod?.stock_qty ?? 0;
+        const stock = orderCap(prod?.stock_qty ?? 0, prod?.supplier_stock ?? false);
         if (stock <= 0) continue;
 
         const match = existingRows.find(

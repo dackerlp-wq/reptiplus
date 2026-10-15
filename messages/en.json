@@ -70,6 +70,7 @@
     "inStock": "In stock",
     "lowStock": "Low stock",
     "outOfStock": "Sold out",
+    "supplierStock": "In stock at supplier – delivery within 5 business days",
     "parameters": "Specifications",
     "featured": "Featured",
     "added": "Added",

@@ -70,6 +70,7 @@
     "inStock": "Auf Lager",
     "lowStock": "Wenige verfügbar",
     "outOfStock": "Ausverkauft",
+    "supplierStock": "Beim Lieferanten auf Lager – Lieferung innerhalb von 5 Werktagen",
     "parameters": "Technische Daten",
     "featured": "Empfohlen",
     "added": "Hinzugefügt",

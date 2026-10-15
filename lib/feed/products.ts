@@ -20,6 +20,8 @@ export type FeedItem = {
   sku: string | null;
   ean: string | null;
   inStock: boolean;
+  /** Není skladem, ale lze objednat od dodavatele (dodání do 5 pracovních dnů). */
+  supplier: boolean;
 };
 
 const plain = (html: string) =>
@@ -64,7 +66,7 @@ export async function getFeedItems(): Promise<FeedItem[]> {
     svc
       .from("product")
       .select(
-        "id, slug, name_i18n, description_i18n, short_description_i18n, sku, ean, price_czk, stock_qty, category_id, brand:brand_id(name), product_image(url,sort_order), product_variant(id,name_i18n,sku,price_czk,stock_qty,sort_order)",
+        "id, slug, name_i18n, description_i18n, short_description_i18n, sku, ean, price_czk, stock_qty, supplier_stock, category_id, brand:brand_id(name), product_image(url,sort_order), product_variant(id,name_i18n,sku,price_czk,stock_qty,sort_order)",
       )
       .eq("is_published", true),
     svc.from("category").select("id,name_i18n,parent_id"),
@@ -98,6 +100,7 @@ export async function getFeedItems(): Promise<FeedItem[]> {
       brand,
       categoryText,
       ean: p.ean,
+      supplier: p.supplier_stock === true,
     };
 
     if (variants.length > 0) {

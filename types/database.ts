@@ -1225,6 +1225,7 @@ export type Database = {
           sku: string | null
           slug: string
           stock_qty: number
+          supplier_stock: boolean
           updated_at: string
           vat_rate: number
         }
@@ -1254,6 +1255,7 @@ export type Database = {
           sku?: string | null
           slug: string
           stock_qty?: number
+          supplier_stock?: boolean
           updated_at?: string
           vat_rate?: number
         }
@@ -1283,6 +1285,7 @@ export type Database = {
           sku?: string | null
           slug?: string
           stock_qty?: number
+          supplier_stock?: boolean
           updated_at?: string
           vat_rate?: number
         }

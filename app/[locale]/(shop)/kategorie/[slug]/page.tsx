@@ -5,6 +5,7 @@ import { ChevronRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import {
+  categoryAncestors,
   getAllCategories,
   getCatalog,
   getCategoryBySlug,
@@ -104,6 +105,11 @@ export default async function CategoryPage({
   const name = pickI18n(category.name_i18n, locale, category.name);
   const description = pickI18n(category.description_i18n, locale, "");
   const subcategories = allCategories.filter((c) => c.parent_id === category.id);
+  // Nadřazené kategorie (od kořene) pro drobečkovou navigaci.
+  const ancestors = categoryAncestors(allCategories, category.parent_id ?? null).map((c) => ({
+    slug: c.slug,
+    name: pickI18n(c.name_i18n, locale, c.name),
+  }));
 
   const breadcrumbLd = {
     "@context": "https://schema.org",
@@ -111,6 +117,7 @@ export default async function CategoryPage({
     itemListElement: [
       { name: "Reptiplus", item: absoluteUrl(`/${locale}`) },
       { name: nav("categories"), item: absoluteUrl(`/${locale}/kategorie`) },
+      ...ancestors.map((a) => ({ name: a.name, item: absoluteUrl(`/${locale}/kategorie/${a.slug}`) })),
       { name, item: absoluteUrl(`/${locale}/kategorie/${slug}`) },
     ].map((c, i) => ({
       "@type": "ListItem",
@@ -124,11 +131,19 @@ export default async function CategoryPage({
     <section className="mx-auto max-w-7xl px-4 py-10">
       <JsonLd data={breadcrumbLd} />
       {/* Breadcrumb */}
-      <nav className="mb-6 flex items-center gap-1.5 text-sm text-gray-soft">
+      <nav aria-label="Breadcrumb" className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-gray-soft">
         <Link href="/kategorie" className="hover:text-forest">
           {nav("categories")}
         </Link>
-        <ChevronRight className="size-4" />
+        {ancestors.map((a) => (
+          <span key={a.slug} className="contents">
+            <ChevronRight className="size-4 shrink-0" />
+            <Link href={`/kategorie/${a.slug}`} className="hover:text-forest">
+              {a.name}
+            </Link>
+          </span>
+        ))}
+        <ChevronRight className="size-4 shrink-0" />
         <span className="text-ink">{name}</span>
       </nav>
 

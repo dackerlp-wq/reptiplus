@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Truck, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ChevronRight, Truck, ShieldCheck } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { ProductGallery } from "@/components/reptiplus/product-gallery";
 import { ProductBuyBox } from "@/components/reptiplus/product-buy-box";
@@ -9,7 +9,7 @@ import { ProductReviews } from "@/components/reptiplus/product-reviews";
 import { ProductCard } from "@/components/reptiplus/product-card";
 import { UpsellList } from "@/components/reptiplus/upsell-list";
 import type { Locale } from "@/i18n/routing";
-import type { ProductListItem } from "@/lib/queries";
+import { categoryAncestors, getAllCategories, type ProductListItem } from "@/lib/queries";
 import {
   getProductBySlug,
   getRelatedProducts,
@@ -76,14 +76,24 @@ export default async function ProductPage({
   if (!product) notFound();
 
   const supabase = await createClient();
-  const [reviewsData, { data: authData }, related, upsell, lowest30] =
+  const [reviewsData, { data: authData }, related, upsell, lowest30, allCategories] =
     await Promise.all([
       getProductReviews(product.id),
       supabase.auth.getUser(),
       getRelatedProducts(product.id, product.category_id, 4),
       getUpsellProducts(product.id, 4),
       getLowestPrice30d(product.id),
+      getAllCategories(),
     ]);
+  // Řetězec kategorií (kořen → … → kategorie produktu) pro drobečkovou navigaci.
+  const categoryChain = product.category_id
+    ? [...categoryAncestors(allCategories, product.category_id), ...allCategories.filter((c) => c.id === product.category_id)]
+    : [];
+  const categoryCrumbs = (categoryChain.length > 0
+    ? categoryChain.map((c) => ({ slug: c.slug, name: pickI18n(c.name_i18n, locale, c.name) }))
+    : product.category
+      ? [{ slug: product.category.slug, name: pickI18n(product.category.name_i18n, locale) }]
+      : []);
 
   // Přihlášený zákazník, který produkt koupil → recenze se zveřejní bez schvalování.
   const purchased = authData.user ? await hasPurchasedProduct(authData.user.id, product.id) : false;
@@ -161,7 +171,9 @@ export default async function ProductPage({
     product.stock_qty > 0 || product.variants.some((v) => v.stock_qty > 0);
   const availability = inStock
     ? "https://schema.org/InStock"
-    : "https://schema.org/OutOfStock";
+    : product.supplier_stock
+      ? "https://schema.org/BackOrder"
+      : "https://schema.org/OutOfStock";
   const ldImages = product.images.map((i) => i.url);
   const offer =
     buyVariants.length > 0
@@ -211,14 +223,7 @@ export default async function ProductPage({
   const crumbs = [
     { name: "Reptiplus", item: absoluteUrl(`/${locale}`) },
     { name: catalogName, item: absoluteUrl(`/${locale}/produkty`) },
-    ...(product.category
-      ? [
-          {
-            name: pickI18n(product.category.name_i18n, locale),
-            item: absoluteUrl(`/${locale}/kategorie/${product.category.slug}`),
-          },
-        ]
-      : []),
+    ...categoryCrumbs.map((c) => ({ name: c.name, item: absoluteUrl(`/${locale}/kategorie/${c.slug}`) })),
     { name, item: canonical },
   ];
   const breadcrumbLd = {
@@ -247,12 +252,21 @@ export default async function ProductPage({
         }}
         currency={currency}
       />
-      <Link
-        href="/produkty"
-        className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-gray-soft transition-colors hover:text-forest"
-      >
-        <ArrowLeft className="size-4" /> {t("backToCatalog")}
-      </Link>
+      <nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center gap-1.5 text-sm text-gray-soft">
+        <Link href="/produkty" className="inline-flex items-center gap-2 font-medium transition-colors hover:text-forest">
+          <ArrowLeft className="size-4" /> {catalogName}
+        </Link>
+        {categoryCrumbs.map((c) => (
+          <span key={c.slug} className="contents">
+            <ChevronRight className="size-4 shrink-0" />
+            <Link href={`/kategorie/${c.slug}`} className="hover:text-forest">
+              {c.name}
+            </Link>
+          </span>
+        ))}
+        <ChevronRight className="size-4 shrink-0" />
+        <span className="truncate text-ink">{name}</span>
+      </nav>
 
       {/* Horní část — galerie + nákup */}
       <div className="grid gap-10 lg:grid-cols-2">
@@ -286,6 +300,7 @@ export default async function ProductPage({
               basePrice={priceMinor}
               baseCompare={compareMinor}
               baseStock={product.stock_qty}
+              supplierStock={product.supplier_stock}
               lowest30={isCzk ? lowest30.czk : lowest30.eur}
               variants={buyVariants}
               userEmail={authData.user?.email ?? undefined}
@@ -295,6 +310,9 @@ export default async function ProductPage({
                 added: t("added"),
                 goToCart: t("goToCart"),
                 outOfStock: t("outOfStock"),
+                supplierStock: t("supplierStock"),
+                inStock: t("inStock"),
+                lowStock: t("lowStock"),
                 lowest30: t("lowest30d"),
               }}
             />
