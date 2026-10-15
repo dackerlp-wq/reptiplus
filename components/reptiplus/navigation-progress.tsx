@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Loader2 } from "lucide-react";
 
 /** Událost, kterou vyvolají klientské komponenty (filtry) při změně URL přes router. */
 const START_EVENT = "rp-navigation-start";
@@ -23,6 +25,16 @@ export function NavigationProgress() {
   const searchParams = useSearchParams();
   const navKey = `${pathname}?${searchParams?.toString() ?? ""}`;
   const [started, setStarted] = useState<{ key: string; id: number } | null>(null);
+  const t = useTranslations("Nav");
+  const running = !!started && started.key === navKey;
+
+  // Během načítání: obsah stránky se jemně ztlumí (CSS podle atributu na <html>) a kurzor ukáže průběh.
+  useEffect(() => {
+    const el = document.documentElement;
+    if (running) el.setAttribute("data-navigating", "");
+    else el.removeAttribute("data-navigating");
+    return () => el.removeAttribute("data-navigating");
+  }, [running]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -57,17 +69,35 @@ export function NavigationProgress() {
   }, [navKey]);
 
   if (!started) return null;
-  const running = started.key === navKey;
   return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-[3px]"
-      style={{ top: "env(safe-area-inset-top, 0px)" }}
-    >
+    <>
       <div
-        key={`${started.id}-${running ? "run" : "done"}`}
-        className={running ? "h-full bg-forest-light animate-nav-progress" : "h-full bg-forest-light animate-nav-done"}
-      />
-    </div>
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-[3px]"
+        style={{ top: "env(safe-area-inset-top, 0px)" }}
+      >
+        <div
+          key={`${started.id}-${running ? "run" : "done"}`}
+          className={
+            running
+              ? "h-full bg-forest-light shadow-[0_0_8px_var(--color-forest-light)] animate-nav-progress"
+              : "h-full bg-forest-light shadow-[0_0_8px_var(--color-forest-light)] animate-nav-done"
+          }
+        />
+      </div>
+      {running && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed inset-x-0 z-[100] flex justify-center animate-nav-pill"
+          style={{ top: "calc(env(safe-area-inset-top, 0px) + 5.25rem)" }}
+        >
+          <span className="inline-flex items-center gap-2 rounded-full border border-cream-dark bg-white/95 px-3.5 py-1.5 text-xs font-medium text-charcoal shadow-md backdrop-blur-sm">
+            <Loader2 className="size-3.5 animate-spin text-forest" />
+            {t("loading")}
+          </span>
+        </div>
+      )}
+    </>
   );
 }

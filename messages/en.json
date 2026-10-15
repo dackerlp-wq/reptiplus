@@ -15,7 +15,8 @@
     "contact": "Contact",
     "claim": "Claims",
     "withdrawal": "Returns",
-    "shipping": "Shipping & payment"
+    "shipping": "Shipping & payment",
+    "loading": "Loading…"
   },
   "Cookies": {
     "title": "Cookies",

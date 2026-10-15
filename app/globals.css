@@ -219,6 +219,20 @@
     100% { width: 100%; opacity: 0; }
   }
 }
+@theme {
+  /* Pilulka „Načítám…“ se ukáže až po chvilce, ať u rychlých přechodů nebliká. */
+  --animate-nav-pill: nav-pill 0.25s ease-out 0.35s both;
+  @keyframes nav-pill {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+/* Během načítání nové stránky se obsah jemně ztlumí a kurzor ukáže průběh. */
+html[data-navigating] { cursor: progress; }
+html[data-navigating] main { opacity: 0.55; transition: opacity 0.3s ease 0.3s; }
+main { transition: opacity 0.15s ease; }
 @media (prefers-reduced-motion: reduce) {
   .animate-nav-progress { animation-duration: 0.01s; width: 92%; }
+  .animate-nav-pill { animation-duration: 0.01s; }
+  html[data-navigating] main { transition: none; }
 }
