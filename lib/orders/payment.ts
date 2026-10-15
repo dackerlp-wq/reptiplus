@@ -5,6 +5,7 @@ import { sendOrderStatusEmail } from "@/lib/orders/notify";
 import { getInvoicesForOrder, issueInvoiceForOrder, markInvoicePaid } from "@/lib/invoices/issue";
 import { invoiceFileName, renderInvoicePdf } from "@/lib/invoices/pdf";
 import type { TablesUpdate } from "@/types/database";
+import { syncOrderStatus } from "@/lib/ecomail/sync";
 
 /**
  * Přijetí platby: označí objednávku jako zaplacenou, vystaví fakturu
@@ -53,6 +54,9 @@ export async function markOrderPaid(
   } catch (e) {
     console.error("[order] faktura po zaplacení selhala:", e);
   }
+
+  // Ecomail: transakce objednávky jako dokončená (pokud je napojení zapnuté).
+  await syncOrderStatus(orderId, "completed");
 
   if (opts.notify === false) return;
   await sendOrderStatusEmail(

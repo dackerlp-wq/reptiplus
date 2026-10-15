@@ -11,6 +11,7 @@ import { markOrderPaid } from "@/lib/orders/payment";
 import { afterRefund } from "@/lib/orders/refund";
 import { logOrderEvent } from "@/lib/orders/events";
 import { sendOrderConfirmation } from "@/lib/orders/confirmation";
+import { syncOrderCreated } from "@/lib/ecomail/sync";
 import { assertAdminUser } from "@/lib/admin/auth";
 import { notifyStockAlerts } from "@/lib/stock-alerts/notify";
 import { checkLowStock } from "@/lib/stock-alerts/low-stock";
@@ -1229,6 +1230,7 @@ export async function createManualOrderAction(fd: FormData) {
   // Volitelně poslat zákazníkovi potvrzení (s platebními údaji u převodu).
   if (fd.get("notify") === "on" && ord) {
     await sendOrderConfirmation(ord.id, { notifyShop: false, author: admin.email });
+    await syncOrderCreated(ord.id);
   }
 
   // Volitelně rovnou označit jako zaplacenou (platba na prodejně / převodem)

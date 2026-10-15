@@ -8,6 +8,7 @@ import { getCnbEurRate } from "@/lib/exchange-rate";
 import { formatPrice } from "@/lib/i18n";
 import { siteUrl } from "@/lib/seo";
 import type { Locale } from "@/i18n/routing";
+import { syncNewsletterSubscriber, syncUnsubscribe } from "@/lib/ecomail/sync";
 
 export function safeLocale(v: string | null | undefined): Locale {
   return v === "en" || v === "de" ? v : "cs";
@@ -137,6 +138,8 @@ export async function confirmSubscription(token: string): Promise<{ ok: boolean;
     unsubscribeUrl: unsubscribeUrl(token),
   });
   await sendMail({ to: sub.email, ...mail });
+  // Ecomail (pokud je napojený): kontakt do seznamu se štítkem „newsletter“.
+  await syncNewsletterSubscriber({ email: sub.email, locale, source: sub.source });
   return { ok: true, locale };
 }
 
@@ -145,6 +148,8 @@ export async function unsubscribeByToken(token: string): Promise<{ ok: boolean; 
   const { data: sub } = await svc.from("newsletter_subscriber").select("id, locale").eq("token", token).maybeSingle();
   if (!sub) return { ok: false, locale: "cs" };
   await svc.from("newsletter_subscriber").update({ unsubscribed_at: new Date().toISOString(), is_confirmed: false }).eq("id", sub.id);
+  const { data: row } = await svc.from("newsletter_subscriber").select("email").eq("id", sub.id).maybeSingle();
+  if (row?.email) await syncUnsubscribe(row.email);
   return { ok: true, locale: safeLocale(sub.locale) };
 }
 
@@ -180,4 +185,5 @@ export async function unsubscribeByEmail(email: string): Promise<void> {
     .update({ unsubscribed_at: new Date().toISOString(), is_confirmed: false })
     .ilike("email", email)
     .is("unsubscribed_at", null);
+  await syncUnsubscribe(email);
 }

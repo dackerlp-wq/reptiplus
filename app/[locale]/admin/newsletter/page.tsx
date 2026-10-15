@@ -5,6 +5,10 @@ import { cn } from "@/lib/utils";
 import { ToastForm } from "@/components/admin/toast";
 import { Hint } from "@/components/admin/hint";
 import { deleteSubscriberAction, unsubscribeSubscriberAction } from "@/lib/admin/newsletter-actions";
+import { syncEcomailAction } from "@/lib/admin/ecomail-actions";
+import { ecomailEnabled, getEcomailConfig } from "@/lib/ecomail/client";
+import { getLocale } from "next-intl/server";
+import { RefreshCw } from "lucide-react";
 
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", { dateStyle: "medium", timeStyle: "short" });
 const select =
@@ -26,6 +30,8 @@ const STATUS_META: Record<Status, { label: string; cls: string; icon: typeof Mai
 
 export default async function AdminNewsletterPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
+  const [ecomail, locale] = await Promise.all([getEcomailConfig(), getLocale()]);
+  const ecomailOn = ecomailEnabled(ecomail);
   const status = sp.status ?? "confirmed";
   const q = (sp.q ?? "").trim();
 
@@ -74,19 +80,35 @@ export default async function AdminNewsletterPage({ searchParams }: { searchPara
           <h1 className="font-display text-3xl font-bold">Newsletter</h1>
           <p className="mt-1 text-sm text-gray-soft">{counts.confirmed} aktivních odběratelů</p>
         </div>
-        <a
-          href={exportHref}
-          className="inline-flex items-center gap-2 rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm font-medium text-charcoal hover:border-forest hover:text-forest"
-        >
-          <Download className="size-4" /> Export CSV
-        </a>
+        <div className="flex flex-wrap items-center gap-2">
+          {ecomailOn && (
+            <form action={syncEcomailAction}>
+              <input type="hidden" name="locale" value={locale} />
+              <button
+                type="submit"
+                title="Nahraje všechny potvrzené odběratele do seznamu v Ecomailu a odhlášené odhlásí (bezpečné opakovat)"
+                className="inline-flex items-center gap-2 rounded-lg border border-forest px-3 py-2 text-sm font-semibold text-forest hover:bg-forest hover:text-white"
+              >
+                <RefreshCw className="size-4" /> Synchronizovat do Ecomailu
+              </button>
+            </form>
+          )}
+          <a
+            href={exportHref}
+            className="inline-flex items-center gap-2 rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm font-medium text-charcoal hover:border-forest hover:text-forest"
+          >
+            <Download className="size-4" /> Export CSV
+          </a>
+        </div>
       </div>
 
       <div className="mb-4">
         <Hint>
           Odběr funguje jako double opt-in: po přihlášení dostane zákazník potvrzovací e-mail, po potvrzení uvítací
-          e-mail s jednorázovým slevovým kódem (výše slevy v Nastavení → Obchod). Do rozesílky (Ecomail, Mailchimp…)
-          exportuj jen záložku „Potvrzení“.
+          e-mail s jednorázovým slevovým kódem (výše slevy v Nastavení → Obchod).{" "}
+          {ecomailOn
+            ? "Potvrzení odběratelé se automaticky přidávají do Ecomailu, odhlášení se propisuje oběma směry; tlačítko vpravo nahraje všechny najednou."
+            : "Napojení na Ecomail (automatické přidávání odběratelů) zapnete v Nastavení → Integrace."}
         </Hint>
       </div>
 

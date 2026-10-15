@@ -5,6 +5,10 @@ import { Hint } from "@/components/admin/hint";
 import { ToastForm } from "@/components/admin/toast";
 import { getInvoiceSettings } from "@/lib/invoices/issue";
 import { getStockSettings } from "@/lib/settings";
+import { getLocale } from "next-intl/server";
+import { getEcomailConfig } from "@/lib/ecomail/client";
+import { saveEcomailAction, testEcomailAction } from "@/lib/admin/ecomail-actions";
+import { siteUrl } from "@/lib/seo";
 import { saveInvoiceSettingsAction } from "@/lib/admin/invoice-actions";
 import {
   saveGeneralAction,
@@ -62,6 +66,8 @@ export default async function AdminSettingsPage() {
 
   const invoiceSettings = await getInvoiceSettings();
   const stockSettings = await getStockSettings();
+  const ecomail = await getEcomailConfig();
+  const locale = await getLocale();
   const { data: counterRows } = await svc
     .from("invoice_counter")
     .select("series, last_number")
@@ -373,6 +379,68 @@ export default async function AdminSettingsPage() {
             </label>
             <button className={saveBtn}>Uložit AI klíč</button>
           </ToastForm>
+
+          <div className={`${card} space-y-4`}>
+            <ToastForm action={saveEcomailAction} className="space-y-3">
+              <div>
+                <h2 className="font-display text-lg font-semibold">Ecomail</h2>
+                <p className="text-sm text-gray-soft">
+                  Potvrzení odběratelé newsletteru se automaticky přidávají do seznamu v Ecomailu (štítek „newsletter“),
+                  odhlášení se propisuje oběma směry. Volitelně i zákazníci z objednávek (štítek „zakaznik“) a objednávky
+                  jako transakce pro segmentaci podle útraty. Postup: <code>docs/ECOMAIL.md</code>.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-1.5">
+                  <span className={legend}>API klíč</span>
+                  <input name="apiKey" type="password" defaultValue={ecomail.apiKey} placeholder="z Ecomailu: Správa účtu → Integrace → API" className={input} />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={legend}>ID seznamu kontaktů</span>
+                  <input name="listId" inputMode="numeric" defaultValue={ecomail.listId ?? ""} placeholder="např. 1" className={input} />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={legend}>Název obchodu v transakcích</span>
+                  <input name="shopName" defaultValue={ecomail.shopName} className={input} />
+                </label>
+              </div>
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" name="syncCustomers" defaultChecked={ecomail.syncCustomers} className="mt-0.5 size-4 accent-forest" />
+                <span>
+                  Přidávat zákazníky z objednávek do seznamu (štítek „zakaznik“)
+                  <span className="block text-xs text-gray-soft">
+                    Zákazník, který nepotvrdil newsletter, dostane v Ecomailu jen štítek „zakaznik“ — kampaně mu posílejte jen v rámci oprávněného zájmu
+                    (vlastní podobné zboží, s možností odhlášení) a segmentujte podle štítků.
+                  </span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" name="sendTransactions" defaultChecked={ecomail.sendTransactions} className="mt-0.5 size-4 accent-forest" />
+                <span>
+                  Posílat objednávky jako transakce
+                  <span className="block text-xs text-gray-soft">
+                    Částka, položky a kategorie u kontaktu; stav pending → completed po zaplacení, canceled při stornu. Umožní segmenty „utratil přes…“ a automatizace po nákupu.
+                  </span>
+                </span>
+              </label>
+              <button className={saveBtn}>Uložit Ecomail</button>
+            </ToastForm>
+            <div className="flex flex-wrap items-center gap-3 border-t border-cream-dark pt-4">
+              <form action={testEcomailAction}>
+                <input type="hidden" name="locale" value={locale} />
+                <button className="rounded-lg border border-forest px-4 py-2 text-sm font-semibold text-forest hover:bg-forest hover:text-white">
+                  Otestovat spojení
+                </button>
+              </form>
+              <span className="text-xs text-gray-soft">Ověří klíč a vypíše seznamy v účtu. Hromadné nahrání odběratelů je v sekci Newsletter.</span>
+            </div>
+            {ecomail.webhookToken && (
+              <div className="rounded-lg bg-cream px-3 py-2 text-xs text-gray-soft">
+                <span className="font-semibold text-charcoal">Webhook pro odhlášení z Ecomailu</span> (Ecomail → Správa účtu → Integrace → Webhook, vložte URL):
+                <code className="mt-1 block select-all break-all font-mono text-[11px] text-ink">{`${siteUrl()}/api/ecomail/webhook?t=${ecomail.webhookToken}`}</code>
+              </div>
+            )}
+          </div>
 
           <ToastForm action={saveAnalyticsAction} className={`${card} space-y-3`}>
             <div>

@@ -56,7 +56,7 @@ Seed dat: `supabase/seed.sql`, `supabase/seed_admin.sql`.
 ### Route groups
 - `app/[locale]/(shop)/` — veřejný obchod (české slugy: `kategorie`, `produkt`, `kosik`, `pokladna`, `objednavka`, `ucet`, …). Layout přidává Navbar, Footer, cookie lištu a `AnalyticsGate`.
 - `app/[locale]/admin/` — administrace, layout volá `requireAdmin()` (`lib/admin/auth.ts`): role `admin`/`staff` ze sloupce `customer.role`.
-- `app/api/` — route handlers: `comgate/webhook` (platební PUSH), `cron/cleanup-carts` (chráněno `CRON_SECRET`), `admin/translate` (AI překlad), `admin/orders/*/label` (štítky PDF), `invoices/[id]` (PDF dokladu), `admin/invoices/export`, `admin/inquiries/export`, `admin/newsletter/export`, `newsletter/confirm|unsubscribe` (tokenové odkazy z e-mailu),
+- `app/api/` — route handlers: `comgate/webhook` (platební PUSH), `cron/cleanup-carts` (chráněno `CRON_SECRET`), `admin/translate` (AI překlad), `admin/orders/*/label` (štítky PDF), `invoices/[id]` (PDF dokladu), `admin/invoices/export`, `admin/inquiries/export`, `admin/newsletter/export`, `newsletter/confirm|unsubscribe` (tokenové odkazy z e-mailu), `ecomail/webhook` (odhlášení z Ecomailu),
   `wishlist` (ID oblíbených), `search`, `exchange-rate`.
 - `app/feed/*.xml` — Heureka / Zboží / Google feed, `revalidate = 3600`; stejně `app/sitemap.ts`.
 
@@ -105,7 +105,7 @@ Všechny tabulky mají RLS zapnuté. Typy z DB: `types/database.ts` (generované
 ### Nastavení obchodu (`app_setting`)
 Tabulka key/value JSONB, čtená přes `lib/settings.ts` service klientem. Klíče: `shop.general`,
 `legal.terms|privacy|claims`, `content.about`, `content.shipping` (volný text stránky Doprava a platba), `integrations.comgate|ppl|zasilkovna|analytics|ai`, `ledx.page`, `invoices.settings`,
-`shipping.settings`, `newsletter.settings`.
+`shipping.settings`, `newsletter.settings`, `stock.settings`, `integrations.ecomail`.
 Integrace (Comgate, PPL, Zásilkovna) berou přihlašovací údaje primárně z `app_setting`, s fallbackem na env.
 
 ### Vzhled
@@ -153,6 +153,10 @@ Export CSV: `app/api/admin/inquiries/export/route.ts`.
   `unsubscribeByToken`; z účtu s ověřeným e-mailem `confirmSubscriptionForEmail` bez potvrzovacího kroku). Formulář na homepage `components/reptiplus/newsletter-form.tsx`
   (akce `lib/newsletter/actions.ts`, oznámení `?newsletter=confirmed|unsubscribed|invalid` čte klientsky). Odběratel = `confirmed_at` vyplněné a `unsubscribed_at` null.
   Výše slevy / min. objednávka / platnost v `app_setting` `newsletter.settings` (Nastavení → Obchod). Admin: `app/[locale]/admin/newsletter` + CSV export.
+- Ecomail (`lib/ecomail/client.ts` API v2, `lib/ecomail/sync.ts` nikdy nevyhazuje; nastavení `integrations.ecomail`, postup `docs/ECOMAIL.md`):
+  potvrzený odběratel → kontakt se štítkem `newsletter` (`confirmSubscription`), odhlášení oběma směry (webhook `app/api/ecomail/webhook?t=<token>`),
+  volitelně zákazníci z objednávek (štítek `zakaznik`, `syncOrderCreated` v pokladně i ruční objednávce) a transakce (pending → completed v `markOrderPaid`,
+  canceled v `sendOrderStatusEmail`). Hromadná synchronizace: admin Newsletter → „Synchronizovat do Ecomailu“ (`lib/admin/ecomail-actions.ts`).
 - Pevné slevy a min. objednávka jsou v Kč; pro EUR košík je `validateDiscount` přepočítá kurzem ČNB.
 - Kontakt: `app/[locale]/(shop)/kontakt` (údaje z `shop.general` vč. `openingHours`, formulář `components/reptiplus/contact-form.tsx` → `lib/contact/actions.ts`:
   e-mail obchodu s reply-to, potvrzení zákazníkovi, u čísla objednávky i záznam do `order_event`).

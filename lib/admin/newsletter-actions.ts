@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { syncUnsubscribe } from "@/lib/ecomail/sync";
 
 async function assertAdmin() {
   const supabase = await createClient();
@@ -20,11 +21,14 @@ export async function unsubscribeSubscriberAction(fd: FormData) {
   const id = String(fd.get("id") ?? "");
   if (!id) throw new Error("Chybí ID");
   const svc = createServiceClient();
-  const { error } = await svc
+  const { data: row, error } = await svc
     .from("newsletter_subscriber")
     .update({ is_confirmed: false, unsubscribed_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .select("email")
+    .maybeSingle();
   if (error) throw new Error(error.message);
+  if (row?.email) await syncUnsubscribe(row.email);
   revalidatePath("/admin/newsletter");
 }
 
@@ -34,7 +38,8 @@ export async function deleteSubscriberAction(fd: FormData) {
   const id = String(fd.get("id") ?? "");
   if (!id) throw new Error("Chybí ID");
   const svc = createServiceClient();
-  const { error } = await svc.from("newsletter_subscriber").delete().eq("id", id);
+  const { data: row, error } = await svc.from("newsletter_subscriber").delete().eq("id", id).select("email").maybeSingle();
   if (error) throw new Error(error.message);
+  if (row?.email) await syncUnsubscribe(row.email);
   revalidatePath("/admin/newsletter");
 }

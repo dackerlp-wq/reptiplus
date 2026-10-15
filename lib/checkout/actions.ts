@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCart, getCartId } from "@/lib/cart/cart";
 import { localeCurrency } from "@/lib/i18n";
+import { syncOrderCreated } from "@/lib/ecomail/sync";
 import { freeShippingThreshold, getShippingSettings } from "@/lib/settings";
 import { validateDiscount, type DiscountError } from "@/lib/checkout/discount";
 import { createComgatePayment } from "@/lib/comgate/client";
@@ -297,6 +298,7 @@ export async function createOrderAction(
       if (created) {
         await logOrderEvent(created.id, "system", "Objednávka vytvořena v pokladně.", { source: "checkout", locale });
         await sendOrderConfirmation(created.id, { notifyShop: true });
+        await syncOrderCreated(created.id);
       }
       // Hlídání docházejícího skladu (limit na produktu) — nikdy nevyhazuje.
       await checkLowStock(items.map((i) => i.product_id));
