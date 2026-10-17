@@ -137,3 +137,52 @@ Segment je uložený filtr kontaktů v Ecomailu. Staví se z podmínek na štít
 - Vánoční dárky LEDX: `jazyk` = `cs`, bez `ledx-poptavka`, klikači.
 
 Doporučení k názvům: jednotný tvar „CZ · Zákazníci · Spící 90“, jeden segment na jeden účel. Ke každé kampani přidat vyloučení „Čerstvě nakoupili“ a „Noví odběratelé“.
+
+## 6. Jak segmenty používat
+
+Segmenty jsou založené (27 segmentů k 17. 10. 2026). Používají se na třech místech: jako příjemci kampaně, jako vyloučení z kampaně a jako podmínka v automatizaci. Segment se počítá živě, při každém použití se do něj vezmou kontakty, které podmínku splňují právě teď.
+
+### V kampani
+
+1. Kampaně → Nová kampaň → v kroku **Příjemci** zvolte seznam „První seznam“ a místo „všichni“ vyberte **segment**. Lze vybrat více segmentů, kontakt pak stačí mít v jednom z nich.
+2. Ve stejném kroku přidejte **vyloučení**: segmenty, kterým e-mail nemá přijít. Standardně vždy „Čerstvě nakoupili“ a „Noví odběratelé“, u akcí navíc „Čeká na zboží“.
+3. Ecomail ukáže výsledný počet příjemců. Když je nula nebo podezřele málo, zkontrolujte podmínky segmentu v Kontakty → Segmenty.
+4. Jazyk: v této chvíli jsou v seznamu jen české kontakty, přesto do příjemců vždy přidejte „CZ odběratelé“ jako první podmínku. Až přibudou EN a DE kontakty, budou mít vlastní segmenty a nebudou dostávat češtinu.
+
+### V automatizaci
+
+- **Podmínka „je v segmentu“** rozdělí průběh na dvě větve. Příklad: po události `order_shipped` větev „Recenzenti“ dostane poděkování bez žádosti o recenzi, ostatní dostanou žádost.
+- **Vstupní podmínka** omezí, kdo do automatizace vůbec vstoupí. Příklad: oživení spustí jen kontakt v segmentu „Spící 90 dní“.
+- **Čekání na podmínku**: krok „Čekat, dokud není v segmentu“ pozdrží e-mail, dokud kontakt nesplní podmínku, například dokud nebude v „Zákazníci“ (první nákup).
+
+### Co komu posílat
+
+| Segment | Co posílat | Jak často | Co vyloučit |
+| --- | --- | --- | --- |
+| CZ odběratelé | Hlavní měsíční newsletter | 1× měsíčně | Noví odběratelé, Čerstvě nakoupili |
+| Zákazníci | Novinky v sortimentu, věrnostní nabídky | 1× měsíčně | Čerstvě nakoupili |
+| Noví zákazníci | Tipy k první objednávce, doporučení doplňků | Jednou, 2 týdny po nákupu | Recenzenti |
+| Stálí zákazníci | Předpremiéry, poděkování, kód k výročí | Podle příležitosti | Čeká na zboží |
+| VIP | Osobní nabídky, Black Friday o den dřív | Max. 1× za 2 měsíce navíc k newsletteru | |
+| Velký nákup | Terária, LEDX osvětlení, vybavení | Při nové řadě | Čerstvě nakoupili |
+| Drobní nakupující | Spotřební zboží, balíčky, doprava zdarma od částky | 1× za 2 měsíce | |
+| Osvětlení, Terária, Kaše pro plazy, Vitamíny a minerály, Substráty | Tematické kampaně: sezónní rady a zboží z dané kategorie, blok produktů z feedu omezený na `custom_label_0` = slug kategorie | Podle kalendáře, 1× za 1 až 2 měsíce na téma | Čerstvě nakoupili |
+| Spící 90 dní | Oživení: novinky, pak kód | 2 e-maily s odstupem 14 dní | Čeká na zboží |
+| Ztracení 180 dní | Poslední nabídka, pak útlum frekvence | Jednou | |
+| Výročí prvního nákupu | Poděkování s kódem | Jednou ročně | |
+| Čeká na zboží, Čerstvě nakoupili, Noví odběratelé | Nic, slouží k vyloučení | | |
+| Aktivní čtenáři, Klikači | Vše, co má prodávat; sem posílejte akční nabídky nejdřív | | |
+| Vlažní | Jiný předmět, kratší e-mail, méně často | Max. 1× měsíčně | |
+| Neaktivní | „Chcete odběr zachovat?“, bez reakce po 30 dnech odhlásit | 1× za čtvrt roku | |
+| Prohlíželi, nekoupili; Měli košík | Připomenutí produktu nebo košíku ručně, dokud neběží automatizace | 1× týdně výběr | Čerstvě nakoupili |
+| Recenzenti | Poděkování, žádost o fotku do galerie | Podle příležitosti | |
+| Bez recenze po nákupu | Žádost o recenzi s odkazem na přihlášení | 1× za 2 měsíce | |
+| Čekají na naskladnění | Kampaň po velkém naskladnění, alternativy | Při naskladnění | |
+
+### Na co dát pozor teď na začátku
+
+- Segmenty „Neaktivní“ a „Noví odběratelé“ dnes obsahují všechny kontakty, protože z Ecomailu ještě nic neodešlo. Segmenty podle zapojení (Aktivní čtenáři, Klikači, Vlažní, Neaktivní) začnou dávat smysl až po dvou až třech kampaních.
+- Segmenty podle útraty a počtu objednávek berou jen objednávky odběratelů novinek. Zákazník bez souhlasu v Ecomailu není, i kdyby nakoupil desetkrát.
+- Počty v segmentech se přepočítávají průběžně. Po objednávce se kontakt přesune mezi segmenty do minuty.
+- Jeden kontakt může být ve více segmentech najednou. Při odesílání dostane e-mail jen jednou, Ecomail duplicity sloučí.
+- Vyloučení má přednost před zařazením. Kontakt v „Zákazníci“ i v „Čerstvě nakoupili“ e-mail nedostane, pokud je druhý segment ve vyloučení.
