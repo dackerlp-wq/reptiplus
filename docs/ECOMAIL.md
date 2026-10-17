@@ -46,8 +46,11 @@ Logika je v `upsertContact()` v `lib/ecomail/sync.ts`: každé volání znovu sp
   (`setUserId` z layoutu), **zobrazení produktu** (`ViewProduct`, `components/reptiplus/ecomail-basket.tsx`), obsah košíku na stránce košíku
   (i prázdný) a po objednávce spárování s e-mailem + prázdný košík — základ pro automatizace „opuštěný košík“ a „prohlížel, nekoupil“.
 - V adminu Newsletter sloupec „Ecomail“ ukazuje, zda byl odběratel do seznamu odeslán (`newsletter_subscriber.ecomail_synced_at`).
-- **Produktový feed** pro dynamický obsah e-mailů a doporučení: v Ecomailu → Produktové feedy → přidat `https://reptiplus.cz/feed/google.xml`
-  (formát Google Merchant; EN varianta `https://reptiplus.eu/feed/google.xml`).
+- **Produktový feed** pro dynamický obsah e-mailů a doporučení: v Ecomailu → Produktové feedy → přidat `https://reptiplus.cz/feed/ecomail.xml`
+  (formát Google Merchant, `app/feed/ecomail.xml`). Oproti Google feedu je **jedna položka na produkt** (varianty sloučené, cena „od“, dostupnost
+  souhrnně), bez položek za 0 Kč, a navíc `custom_label_0` = slug kořenové kategorie (stejný jako štítky `zajem-<slug>` → bloky „produkty z vaší
+  kategorie“), `custom_label_1` = název kořenové kategorie, `custom_label_2` = cena v EUR, `custom_label_3` = počet variant. Feed se obnovuje každou hodinu;
+  v Ecomailu nastavte aktualizaci denně (nebo `GET /feeds/{id}/refresh` přes API).
 
 ## 3) Webhook (odhlášení z Ecomailu → odhlásit i u nás)
 
@@ -71,7 +74,7 @@ Zpracovávají se události `list_unsubscribe` a `link_unsubscribe`; ostatní (d
 1. **Odesílací doména** `reptiplus.cz` je založená (API `POST /domains`). V Ecomailu: e-mail vpravo nahoře → **Domény** → `reptiplus.cz` →
    „Zobrazit ověřovací údaje“ → do DNS přidat TXT `ecomail._domainkey` (DKIM, hodnota z Ecomailu) a TXT `_dmarc` = `v=DMARC1; p=none;`,
    pak „Kontrola nastavení“. SPF si Ecomail hlídá sám (volitelně `include:sparkpostmail.com`). Bez ověření jdou kampaně do spamu.
-2. **Produktový feed** (viz 2b).
+2. **Produktový feed** `https://reptiplus.cz/feed/ecomail.xml` (viz 2b); produkty s cenou 0 Kč ve feedu nejsou — doplňte ceny v adminu.
 3. **Automatizace** (Automatizace → Nová): uvítání po přihlášení (spouštěč: přidání do seznamu; náš vlastní uvítací e-mail se slevou pak vypnout
    v Nastavení → Obchod, aby nechodil dvakrát), opuštěný košík (spouštěč: košík bez objednávky po 2–24 h), poděkování / péče po nákupu
    (událost `order_delivered` nebo `order_shipped`), žádost o recenzi (`order_delivered` + 10 dní, podmínka: štítek `recenzent` chybí),

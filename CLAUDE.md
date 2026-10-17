@@ -58,7 +58,8 @@ Seed dat: `supabase/seed.sql`, `supabase/seed_admin.sql`.
 - `app/[locale]/admin/` — administrace, layout volá `requireAdmin()` (`lib/admin/auth.ts`): role `admin`/`staff` ze sloupce `customer.role`.
 - `app/api/` — route handlers: `comgate/webhook` (platební PUSH), `cron/cleanup-carts` (chráněno `CRON_SECRET`), `admin/translate` (AI překlad), `admin/orders/*/label` (štítky PDF), `invoices/[id]` (PDF dokladu), `admin/invoices/export`, `admin/inquiries/export`, `admin/newsletter/export`, `newsletter/confirm|unsubscribe` (tokenové odkazy z e-mailu), `ecomail/webhook` (odhlášení z Ecomailu),
   `wishlist` (ID oblíbených), `search`, `exchange-rate`.
-- `app/feed/*.xml` — Heureka / Zboží / Google feed, `revalidate = 3600`; stejně `app/sitemap.ts`.
+- `app/feed/*.xml` — Heureka / Zboží / Google feed + `ecomail.xml` (jedna položka na produkt, `lib/feed/group.ts`), společný builder `lib/feed/products.ts`
+  (položky za 0 Kč se vynechávají), `revalidate = 3600`; stejně `app/sitemap.ts`.
 
 ### Supabase klienti (tři, nezaměňovat)
 - `lib/supabase/server.ts` `createClient()` — SSR klient s cookies, respektuje RLS. Server Components, Server Actions, route handlers. Zjištění identity uživatele **vždy** odtud (`auth.getUser()`), nikdy z klientských dat.

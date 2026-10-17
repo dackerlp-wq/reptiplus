@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { pickI18n } from "@/lib/i18n";
 import type { I18n } from "@/lib/queries";
 import { absoluteUrl } from "@/lib/seo";
+import { rootCategoryResolver, type RootCategory } from "@/lib/ecomail/profile";
 
 export type FeedItem = {
   /** ITEM_ID / g:id — id varianty, nebo produktu (bez variant). */
@@ -10,13 +11,18 @@ export type FeedItem = {
   /** ITEMGROUP_ID / g:item_group_id — id produktu, má-li varianty. */
   groupId: string | null;
   name: string;
+  /** Název produktu bez varianty (pro feedy seskupené po produktu). */
+  productName: string;
   description: string;
   url: string;
   imageUrl: string | null;
   extraImages: string[];
   priceCzk: number; // minor units, včetně DPH
+  priceEur: number | null; // minor units, včetně DPH
   brand: string | null;
   categoryText: string; // "Kategorie | Podkategorie"
+  /** Kořenová kategorie (slug odpovídá štítkům zájmů `zajem-<slug>` v Ecomailu). */
+  rootCategory: RootCategory | null;
   sku: string | null;
   ean: string | null;
   inStock: boolean;
@@ -53,26 +59,32 @@ function buildCategoryPaths(cats: CatRow[]): Map<string, string> {
 
 type VariantRow = {
   id: string;
+  name: string;
   name_i18n: I18n;
   sku: string | null;
   price_czk: number | null;
+  price_eur: number | null;
   stock_qty: number;
 };
 
-/** Všechny publikované produkty (a jejich varianty) normalizované pro XML feedy. */
-export async function getFeedItems(): Promise<FeedItem[]> {
+/**
+ * Všechny publikované produkty (a jejich varianty) normalizované pro XML feedy.
+ * Položky bez ceny (0 Kč) se vynechávají — Google, Heureka i Ecomail je odmítají / zobrazují „0 Kč“.
+ */
+export async function getFeedItems(opts: { includeZeroPrice?: boolean } = {}): Promise<FeedItem[]> {
   const svc = createServiceClient();
   const [{ data: products }, { data: cats }] = await Promise.all([
     svc
       .from("product")
       .select(
-        "id, slug, name_i18n, description_i18n, short_description_i18n, sku, ean, price_czk, stock_qty, supplier_stock, category_id, brand:brand_id(name), product_image(url,sort_order), product_variant(id,name_i18n,sku,price_czk,stock_qty,sort_order)",
+        "id, slug, name_i18n, description_i18n, short_description_i18n, sku, ean, price_czk, price_eur, stock_qty, supplier_stock, category_id, brand:brand_id(name), product_image(url,sort_order), product_variant(id,name,name_i18n,sku,price_czk,price_eur,stock_qty,sort_order)",
       )
       .eq("is_published", true),
-    svc.from("category").select("id,name_i18n,parent_id"),
+    svc.from("category").select("id,slug,name,name_i18n,parent_id"),
   ]);
 
   const paths = buildCategoryPaths((cats ?? []) as CatRow[]);
+  const rootOf = rootCategoryResolver((cats ?? []) as { id: string; slug: string; name: string; parent_id: string | null }[]);
   const items: FeedItem[] = [];
 
   for (const p of products ?? []) {
@@ -90,9 +102,11 @@ export async function getFeedItems(): Promise<FeedItem[]> {
     const brand =
       (p.brand as { name: string } | null)?.name ?? null;
     const categoryText = p.category_id ? (paths.get(p.category_id) ?? "") : "";
-    const variants = (p.product_variant as VariantRow[]) ?? [];
+    const variants = [...((p.product_variant as VariantRow[]) ?? [])].sort((a, b) => (a as { sort_order?: number }).sort_order! - (b as { sort_order?: number }).sort_order!);
 
     const base = {
+      productName: name,
+      rootCategory: rootOf(p.category_id ?? null),
       description,
       url,
       imageUrl,
@@ -105,13 +119,15 @@ export async function getFeedItems(): Promise<FeedItem[]> {
 
     if (variants.length > 0) {
       for (const v of variants) {
-        const vName = pickI18n(v.name_i18n as I18n, "cs");
+        // Název varianty bývá jen v základním sloupci `name` (bez překladů) → fallback.
+        const vName = pickI18n(v.name_i18n as I18n, "cs", v.name);
         items.push({
           ...base,
           id: v.id,
           groupId: p.id,
           name: vName ? `${name} – ${vName}` : name,
-          priceCzk: v.price_czk ?? p.price_czk,
+          priceCzk: v.price_czk || p.price_czk,
+          priceEur: v.price_eur || p.price_eur || null,
           sku: v.sku ?? p.sku,
           inStock: v.stock_qty > 0,
         });
@@ -123,13 +139,14 @@ export async function getFeedItems(): Promise<FeedItem[]> {
         groupId: null,
         name,
         priceCzk: p.price_czk,
+        priceEur: p.price_eur || null,
         sku: p.sku,
         inStock: p.stock_qty > 0,
       });
     }
   }
 
-  return items;
+  return opts.includeZeroPrice ? items : items.filter((it) => it.priceCzk > 0);
 }
 
 /** Escape textu pro XML. */
