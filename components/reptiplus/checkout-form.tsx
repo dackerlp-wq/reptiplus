@@ -219,6 +219,13 @@ export function CheckoutForm({
               className={input}
             />
           </label>
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="newsletter" className="mt-0.5 size-4 accent-forest" />
+            <span>
+              <span className="text-ink">{t("newsletterOptIn")}</span>
+              <span className="block text-xs text-gray-soft">{t("newsletterOptInHint")}</span>
+            </span>
+          </label>
           {!loggedIn && (
             <div className="space-y-3 rounded-lg border border-cream-dark bg-paper p-3">
               <label className="flex items-start gap-2 text-sm">

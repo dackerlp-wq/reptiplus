@@ -229,7 +229,9 @@
     "loginHint": "Předvyplníme adresy a objednávku uvidíte v účtu.",
     "createAccount": "Vytvořit účet s touto objednávkou",
     "accountPassword": "Heslo k účtu (min. 6 znaků)",
-    "createAccountHint": "Účet založíme na e-mail výše. Objednávky, adresy a oblíbené pak najdete ve svém účtu."
+    "createAccountHint": "Účet založíme na e-mail výše. Objednávky, adresy a oblíbené pak najdete ve svém účtu.",
+    "newsletterOptIn": "Chci dostávat novinky a slevy e-mailem",
+    "newsletterOptInHint": "Občas pošleme tipy pro chov a akce. Odhlásit se dá kdykoli odkazem v e-mailu."
   },
   "OrderConfirm": {
     "title": "Děkujeme za objednávku!",

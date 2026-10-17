@@ -22,8 +22,18 @@ webhook `app/api/ecomail/webhook/route.ts`, admin akce `lib/admin/ecomail-action
 | Zaplaceno (`markOrderPaid`) | transakce → `completed` |
 | Storno / vrácení (vč. automatického storna nezaplacených) | transakce → `canceled` |
 
-Štítky se v Ecomailu přepisují celé: zákazník, který je i odběratelem, dostane při hromadné synchronizaci oba (`newsletter`, `zakaznik`).
-Při jednotlivém přidání z objednávky se posílá jen `zakaznik` — pokud chcete štítky kombinovat trvale, segmentujte raději podle pole `newsletter=ano`.
+Štítky se v Ecomailu přepisují celé, proto se vždy počítají z našich dat: odběratel newsletteru dostane `newsletter`, zákazník s nestornovanou
+objednávkou `zakaznik` (jen při zapnutém přepínači), kdo je obojí, dostane oba.
+
+## 2b) Souhlas v pokladně a sledování webu
+
+- V pokladně je zaškrtávátko „Chci dostávat novinky a slevy e-mailem“ (výchozí nezaškrtnuté). Přihlášený zákazník s ověřeným e-mailem se přihlásí
+  rovnou (uvítací e-mail se slevou), host dostane potvrzovací e-mail (double opt-in). Zdroj `checkout`.
+- **Sledování webu**: v Nastavení → Integrace → Ecomail vyplňte „Sledování webu — ID účtu“ (část adresy před `.ecomailapp.cz`). Měřicí kód
+  (`lib/ecomail/tracker.ts`) se načte jen po souhlasu s marketingovými cookies, posílá zobrazení stránek, identitu z parametru `ecmid`
+  v odkazech kampaní, obsah košíku na stránce košíku (i prázdný) a po objednávce spáruje návštěvníka s e-mailem a vyprázdní košík —
+  to je základ pro automatizaci „opuštěný košík“ v Ecomailu. CSP povoluje `d70shl7vidtft.cloudfront.net` (skript `ecmtr-2.4.2.js`, dle kódu v Ecomailu → Správa účtu → Integrace) a `d2dpiwfhf3tz0r.cloudfront.net` (kolektor).
+- V adminu Newsletter sloupec „Ecomail“ ukazuje, zda byl odběratel do seznamu odeslán (`newsletter_subscriber.ecomail_synced_at`).
 
 ## 3) Webhook (odhlášení z Ecomailu → odhlásit i u nás)
 

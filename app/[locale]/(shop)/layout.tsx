@@ -4,6 +4,7 @@ import { Footer } from "@/components/reptiplus/footer";
 import { CookieConsent } from "@/components/reptiplus/cookie-consent";
 import { AnalyticsGate } from "@/components/reptiplus/analytics-gate";
 import { getAnalyticsConfig } from "@/lib/settings";
+import { getEcomailConfig } from "@/lib/ecomail/client";
 import { Suspense } from "react";
 import { NavigationProgress } from "@/components/reptiplus/navigation-progress";
 
@@ -15,7 +16,7 @@ export default async function ShopLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const analytics = await getAnalyticsConfig();
+  const [analytics, ecomail] = await Promise.all([getAnalyticsConfig(), getEcomailConfig()]);
   return (
     <div className="flex min-h-dvh flex-col">
       <Suspense fallback={null}>
@@ -29,6 +30,7 @@ export default async function ShopLayout({
         ga4={analytics.ga4 || undefined}
         sklik={analytics.sklik || undefined}
         metaPixel={analytics.metaPixel || undefined}
+        ecomailAppId={ecomail.trackingAppId || undefined}
       />
     </div>
   );

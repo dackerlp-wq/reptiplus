@@ -36,6 +36,32 @@ function logErr(where: string, e: unknown) {
   else console.error(`[ecomail] ${where}:`, e);
 }
 
+/** Štítky se v Ecomailu přepisují celé → spočítat je z našich dat (odběratel newsletteru? zákazník?). */
+async function tagsFor(email: string, c: { syncCustomers: boolean }, assume: { newsletter?: boolean; customer?: boolean } = {}): Promise<string[]> {
+  const svc = createServiceClient();
+  const tags: string[] = [];
+  let isNewsletter = assume.newsletter ?? false;
+  let isCustomer = assume.customer ?? false;
+  if (!isNewsletter) {
+    const { data } = await svc.from("newsletter_subscriber").select("confirmed_at, unsubscribed_at").ilike("email", email).maybeSingle();
+    isNewsletter = !!data?.confirmed_at && !data.unsubscribed_at;
+  }
+  if (!isCustomer && c.syncCustomers) {
+    const { count } = await svc.from("order").select("id", { count: "exact", head: true }).ilike("email", email).neq("status", "cancelled");
+    isCustomer = (count ?? 0) > 0;
+  }
+  if (isNewsletter) tags.push(TAG_NEWSLETTER);
+  if (isCustomer && c.syncCustomers) tags.push(TAG_CUSTOMER);
+  return tags;
+}
+
+async function markSynced(email: string) {
+  await createServiceClient()
+    .from("newsletter_subscriber")
+    .update({ ecomail_synced_at: new Date().toISOString() })
+    .ilike("email", email);
+}
+
 /** Potvrzený odběratel newsletteru → kontakt v seznamu se štítkem „newsletter“. */
 export async function syncNewsletterSubscriber(input: { email: string; locale: string; source?: string | null; fullName?: string | null }): Promise<boolean> {
   try {
@@ -47,12 +73,13 @@ export async function syncNewsletterSubscriber(input: { email: string; locale: s
         email: input.email,
         ...splitName(input.fullName),
         source: `reptiplus-${input.source ?? "web"}`,
-        tags: [TAG_NEWSLETTER],
+        tags: await tagsFor(input.email, c, { newsletter: true }),
         custom_fields: { jazyk: input.locale, newsletter: "ano" },
         status: 1,
       },
       { resubscribe: true, triggerAutomations: true },
     );
+    await markSynced(input.email);
     return true;
   } catch (e) {
     logErr("subscribe", e);
@@ -168,7 +195,7 @@ export async function syncOrderCreated(orderId: string): Promise<void> {
         zip: a.postal_code || undefined,
         country: a.country || undefined,
         source: "reptiplus-objednavka",
-        tags: [TAG_CUSTOMER],
+        tags: await tagsFor(o.email, c, { customer: true }),
         custom_fields: {
           jazyk: o.locale,
           posledni_objednavka: o.created_at.slice(0, 10),
@@ -249,18 +276,31 @@ export async function bulkSyncToEcomail(): Promise<BulkSyncResult> {
       const one = Array.isArray(cu) ? cu[0] : cu;
       return one?.full_name ?? null;
     };
+    // Zákazníci (e-maily nestornovaných objednávek) kvůli kombinaci štítků.
+    const customerEmails = new Set<string>();
+    if (c.syncCustomers) {
+      const { data: oe } = await svc.from("order").select("email").neq("status", "cancelled").limit(20000);
+      for (const o of oe ?? []) customerEmails.add(o.email.toLowerCase());
+    }
     const subscribed = await subscribeBulk(
       c,
       confirmed.map((s) => ({
         email: s.email,
         ...splitName(nameOf(s)),
         source: `reptiplus-${s.source ?? "web"}`,
-        tags: [TAG_NEWSLETTER],
+        tags: customerEmails.has(s.email.toLowerCase()) ? [TAG_NEWSLETTER, TAG_CUSTOMER] : [TAG_NEWSLETTER],
         custom_fields: { jazyk: s.locale, newsletter: "ano" },
         status: 1 as const,
       })),
       { resubscribe: true },
     );
+    if (confirmed.length > 0) {
+      await svc
+        .from("newsletter_subscriber")
+        .update({ ecomail_synced_at: new Date().toISOString() })
+        .not("confirmed_at", "is", null)
+        .is("unsubscribed_at", null);
+    }
     let unsubCount = 0;
     for (const s of unsubscribed) {
       try {

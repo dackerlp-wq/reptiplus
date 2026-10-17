@@ -8,6 +8,7 @@ import type { Locale } from "@/i18n/routing";
 import { createServiceClient } from "@/lib/supabase/service";
 import { formatPrice } from "@/lib/i18n";
 import { PurchaseTracker } from "@/components/reptiplus/track";
+import { EcomailBasket } from "@/components/reptiplus/ecomail-basket";
 import { getShopContact } from "@/lib/settings";
 import { getInvoicesForOrder } from "@/lib/invoices/issue";
 import { variableSymbolForOrder } from "@/lib/orders/vs";
@@ -116,6 +117,7 @@ export default async function OrderConfirmPage({
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-14">
+      <EcomailBasket products={[]} email={order.email} />
       <PurchaseTracker
         order={{
           number: order.number,

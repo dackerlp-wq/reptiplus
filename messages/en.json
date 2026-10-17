@@ -229,7 +229,9 @@
     "loginHint": "We will pre-fill your addresses and you will see the order in your account.",
     "createAccount": "Create an account with this order",
     "accountPassword": "Account password (min. 6 characters)",
-    "createAccountHint": "We will create the account for the e-mail above. Orders, addresses and favourites will then be in your account."
+    "createAccountHint": "We will create the account for the e-mail above. Orders, addresses and favourites will then be in your account.",
+    "newsletterOptIn": "Send me news and discounts by e-mail",
+    "newsletterOptInHint": "Occasional care tips and offers. Unsubscribe any time via the link in the e-mail."
   },
   "OrderConfirm": {
     "title": "Thank you for your order!",

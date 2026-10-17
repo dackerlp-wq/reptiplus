@@ -403,6 +403,13 @@ export default async function AdminSettingsPage() {
                   <span className={legend}>Název obchodu v transakcích</span>
                   <input name="shopName" defaultValue={ecomail.shopName} className={input} />
                 </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={legend}>Sledování webu — ID účtu</span>
+                  <input name="trackingAppId" defaultValue={ecomail.trackingAppId} placeholder="část adresy před .ecomailapp.cz, např. reptiplus" className={input} />
+                  <span className="text-xs text-gray-soft">
+                    Načte měřicí kód Ecomailu (jen po souhlasu s marketingovými cookies): návštěvy z kampaní, obsah košíku pro automatizaci „opuštěný košík“. Prázdné = vypnuto.
+                  </span>
+                </label>
               </div>
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" name="syncCustomers" defaultChecked={ecomail.syncCustomers} className="mt-0.5 size-4 accent-forest" />

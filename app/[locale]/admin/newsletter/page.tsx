@@ -38,7 +38,7 @@ export default async function AdminNewsletterPage({ searchParams }: { searchPara
   const svc = createServiceClient();
   let query = svc
     .from("newsletter_subscriber")
-    .select("id, email, locale, source, created_at, confirmed_at, unsubscribed_at, discount_code_id, customer_id")
+    .select("id, email, locale, source, created_at, confirmed_at, unsubscribed_at, discount_code_id, customer_id, ecomail_synced_at")
     .order("created_at", { ascending: false });
   if (status === "confirmed") query = query.not("confirmed_at", "is", null).is("unsubscribed_at", null);
   else if (status === "pending") query = query.is("confirmed_at", null).is("unsubscribed_at", null);
@@ -166,6 +166,7 @@ export default async function AdminNewsletterPage({ searchParams }: { searchPara
                 <th className="px-4 py-3 font-semibold">Zdroj</th>
                 <th className="px-4 py-3 font-semibold">Přihlášen</th>
                 <th className="px-4 py-3 font-semibold">Slevový kód</th>
+                {ecomailOn && <th className="px-4 py-3 font-semibold">Ecomail</th>}
                 <th className="px-2 py-3" />
               </tr>
             </thead>
@@ -205,6 +206,17 @@ export default async function AdminNewsletterPage({ searchParams }: { searchPara
                         <span className="text-gray-soft">—</span>
                       )}
                     </td>
+                    {ecomailOn && (
+                      <td className="px-4 py-3 text-xs">
+                        {r.ecomail_synced_at ? (
+                          <span className="text-success" title={`Odesláno ${dateFmt.format(new Date(r.ecomail_synced_at))}`}>v seznamu</span>
+                        ) : st === "confirmed" ? (
+                          <span className="text-gold">neodesláno</span>
+                        ) : (
+                          <span className="text-gray-soft">—</span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-2 py-3">
                       <div className="flex items-center justify-end gap-1">
                         {st !== "unsubscribed" && (

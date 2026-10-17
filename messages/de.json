@@ -229,7 +229,9 @@
     "loginHint": "Wir füllen Ihre Adressen vor und Sie sehen die Bestellung in Ihrem Konto.",
     "createAccount": "Mit dieser Bestellung ein Konto erstellen",
     "accountPassword": "Passwort für das Konto (mind. 6 Zeichen)",
-    "createAccountHint": "Wir erstellen das Konto für die oben angegebene E-Mail. Bestellungen, Adressen und Favoriten finden Sie dann in Ihrem Konto."
+    "createAccountHint": "Wir erstellen das Konto für die oben angegebene E-Mail. Bestellungen, Adressen und Favoriten finden Sie dann in Ihrem Konto.",
+    "newsletterOptIn": "Ich möchte Neuigkeiten und Rabatte per E-Mail erhalten",
+    "newsletterOptInHint": "Gelegentlich Pflegetipps und Aktionen. Abmeldung jederzeit über den Link in der E-Mail."
   },
   "OrderConfirm": {
     "title": "Danke für Ihre Bestellung!",

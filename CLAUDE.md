@@ -157,6 +157,9 @@ Export CSV: `app/api/admin/inquiries/export/route.ts`.
   potvrzený odběratel → kontakt se štítkem `newsletter` (`confirmSubscription`), odhlášení oběma směry (webhook `app/api/ecomail/webhook?t=<token>`),
   volitelně zákazníci z objednávek (štítek `zakaznik`, `syncOrderCreated` v pokladně i ruční objednávce) a transakce (pending → completed v `markOrderPaid`,
   canceled v `sendOrderStatusEmail`). Hromadná synchronizace: admin Newsletter → „Synchronizovat do Ecomailu“ (`lib/admin/ecomail-actions.ts`).
+  Štítky se přepisují celé → `tagsFor()` je počítá z našich dat; `newsletter_subscriber.ecomail_synced_at` = odesláno. Souhlas s novinkami v pokladně
+  (`newsletter=on` → `confirmSubscriptionForEmail` / `requestSubscription`). Sledování webu `lib/ecomail/tracker.ts` (ecotrack, jen po marketingovém
+  souhlasu přes `AnalyticsGate`, `trackingAppId`), košík a identita přes `components/reptiplus/ecomail-basket.tsx`; CSP má cloudfront domény Ecomailu.
 - Pevné slevy a min. objednávka jsou v Kč; pro EUR košík je `validateDiscount` přepočítá kurzem ČNB.
 - Kontakt: `app/[locale]/(shop)/kontakt` (údaje z `shop.general` vč. `openingHours`, formulář `components/reptiplus/contact-form.tsx` → `lib/contact/actions.ts`:
   e-mail obchodu s reply-to, potvrzení zákazníkovi, u čísla objednávky i záznam do `order_event`).

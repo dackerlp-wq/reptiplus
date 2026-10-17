@@ -30,6 +30,7 @@ export async function saveEcomailAction(fd: FormData): Promise<void> {
     syncCustomers: fd.get("syncCustomers") === "on",
     sendTransactions: fd.get("sendTransactions") === "on",
     webhookToken: prev.webhookToken || randomBytes(18).toString("hex"),
+    trackingAppId: str(fd, "trackingAppId").toLowerCase().replace(/[^a-z0-9-]/g, ""),
   };
   const { error } = await createServiceClient()
     .from("app_setting")

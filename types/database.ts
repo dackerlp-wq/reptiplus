@@ -882,6 +882,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           discount_code_id: string | null
+          ecomail_synced_at: string | null
           email: string
           id: string
           is_confirmed: boolean
@@ -895,6 +896,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           discount_code_id?: string | null
+          ecomail_synced_at?: string | null
           email: string
           id?: string
           is_confirmed?: boolean
@@ -908,6 +910,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           discount_code_id?: string | null
+          ecomail_synced_at?: string | null
           email?: string
           id?: string
           is_confirmed?: boolean

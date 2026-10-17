@@ -8,6 +8,8 @@ import { getCart } from "@/lib/cart/cart";
 import { formatPrice, localeCurrency } from "@/lib/i18n";
 import { freeShippingThreshold, getShippingSettings } from "@/lib/settings";
 import { CartItemControls } from "@/components/reptiplus/cart-item-controls";
+import { EcomailBasket } from "@/components/reptiplus/ecomail-basket";
+import { siteUrl } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -32,9 +34,18 @@ export default async function CartPage({
   const freeFrom = freeShippingThreshold(shippingSettings, localeCurrency[locale]);
   const freeLeft = freeFrom != null ? Math.max(0, freeFrom - cart.subtotal) : null;
 
+  const basket = cart.lines.map((l) => ({
+    productId: l.productId,
+    name: l.variantName ? `${l.name} – ${l.variantName}` : l.name,
+    price: Math.round(l.unitPrice) / 100,
+    url: `${siteUrl()}/${locale}/produkt/${l.slug}`,
+    img_url: l.imageUrl ?? undefined,
+  }));
+
   if (cart.lines.length === 0) {
     return (
       <section className="mx-auto max-w-3xl px-4 py-20 text-center">
+        <EcomailBasket products={[]} />
         <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full bg-paper">
           <ShoppingCart className="size-7 text-forest-light/50" />
         </div>
@@ -52,6 +63,7 @@ export default async function CartPage({
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-12">
+      <EcomailBasket products={basket} />
       <h1 className="mb-8 font-display text-4xl font-bold">{t("title")}</h1>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">

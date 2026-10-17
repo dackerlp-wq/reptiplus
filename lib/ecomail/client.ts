@@ -19,6 +19,8 @@ export type EcomailConfig = {
   sendTransactions: boolean;
   /** Tajný token v URL webhooku (odhlášení z Ecomailu → odhlásit i u nás). */
   webhookToken: string;
+  /** ID účtu pro sledování webu (část adresy před .ecomailapp.cz); prázdné = skript se nenačítá. */
+  trackingAppId: string;
 };
 
 export async function getEcomailConfig(): Promise<EcomailConfig> {
@@ -37,6 +39,7 @@ export async function getEcomailConfig(): Promise<EcomailConfig> {
     syncCustomers: v.syncCustomers === true,
     sendTransactions: v.sendTransactions === true,
     webhookToken: typeof v.webhookToken === "string" ? v.webhookToken : "",
+    trackingAppId: typeof v.trackingAppId === "string" ? v.trackingAppId.trim().toLowerCase().replace(/[^a-z0-9-]/g, "") : "",
   };
 }
 

@@ -8,6 +8,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getCart, getCartId } from "@/lib/cart/cart";
 import { localeCurrency } from "@/lib/i18n";
 import { syncOrderCreated } from "@/lib/ecomail/sync";
+import { confirmSubscriptionForEmail, requestSubscription } from "@/lib/newsletter/service";
 import { freeShippingThreshold, getShippingSettings } from "@/lib/settings";
 import { validateDiscount, type DiscountError } from "@/lib/checkout/discount";
 import { createComgatePayment } from "@/lib/comgate/client";
@@ -298,6 +299,18 @@ export async function createOrderAction(
       if (created) {
         await logOrderEvent(created.id, "system", "Objednávka vytvořena v pokladně.", { source: "checkout", locale });
         await sendOrderConfirmation(created.id, { notifyShop: true });
+        // Souhlas s novinkami v pokladně: ověřený účet rovnou, host přes potvrzovací e-mail (double opt-in).
+        if (fd.get("newsletter") === "on") {
+          try {
+            if (user?.email && user.email_confirmed_at && user.email.toLowerCase() === email.toLowerCase()) {
+              await confirmSubscriptionForEmail(email, locale, user.id);
+            } else {
+              await requestSubscription(email, locale, { source: "checkout", customerId: customerId || null });
+            }
+          } catch (e) {
+            console.error("[checkout] newsletter opt-in selhal:", e);
+          }
+        }
         await syncOrderCreated(created.id);
       }
       // Hlídání docházejícího skladu (limit na produktu) — nikdy nevyhazuje.
