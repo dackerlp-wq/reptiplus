@@ -14,7 +14,9 @@ webhook `app/api/ecomail/webhook/route.ts`, admin akce `lib/admin/ecomail-action
 ## 2) Co se posílá automaticky
 
 Kdo smí do seznamu: **potvrzený odběratel newsletteru vždy** (souhlas). Ostatní — zákazníci z objednávek, poptávky LEDX, hlídání skladu —
-**jen při zapnutém přepínači** „Přidávat i kontakty bez souhlasu“ (oprávněný zájem; zásady ochrany údajů tento účel uvádějí od 17. 10. 2026).
+**jen při zapnutém přepínači** „Přidávat i kontakty bez souhlasu“ (oprávněný zájem). **Rozhodnutí majitele 17. 10. 2026: přepínač zůstává vypnutý,
+kontakty bez souhlasu se nepoužívají**; zásady ochrany údajů proto obchodní sdělení z oprávněného zájmu neuvádějí (Ecomail jako zpracovatel a sledování
+webu po souhlasu v nich jsou).
 Logika je v `upsertContact()` v `lib/ecomail/sync.ts`: každé volání znovu spočítá štítky i profil z našich dat (Ecomail štítky přepisuje celé).
 
 | Událost u nás | Ecomail |
