@@ -88,6 +88,8 @@ Co nedělat automatizací: e-mail o naskladnění hlídaného zboží posílá e
 
 Segment = uložený filtr kontaktů. Založte je v Ecomail → Kontakty → Segmenty, používejte v kampaních i podmínkách automatizací.
 
+Ecomail žádný segment nevytvoří sám a e-shop je neumí založit přes API. K 17. 10. 2026 v účtu žádný není, založte je ručně podle tabulky: Kontakty → Segmenty → Nový segment → podmínka na štítek nebo vlastní pole → uložit. Štítky a pole už na kontaktech jsou, segment se naplní okamžitě.
+
 | Segment | Podmínky | K čemu |
 | --- | --- | --- |
 | CZ odběratelé | `jazyk` = `cs` | Základ pro každou českou kampaň |
@@ -95,7 +97,7 @@ Segment = uložený filtr kontaktů. Založte je v Ecomail → Kontakty → Segm
 | DE odběratelé | `jazyk` = `de` | Německé kampaně |
 | Zákazníci | štítek `zakaznik` | Novinky, věrnostní nabídky |
 | Zájemci bez nákupu | štítek `newsletter` a ne `zakaznik` | Vzdělávací obsah, první nákup |
-| Osvětlení, Terária, Krmiva, … | štítek `zajem-osvetleni`, `zajem-teraria`, `zajem-krmiva` | Tematické kampaně; názvy štítků podle hlavních kategorií e-shopu |
+| Osvětlení, Terária, Kaše pro plazy, Vitamíny a minerály, Substráty | štítek `zajem-osvetleni`, `zajem-teraria`, `zajem-kase-pro-plazy`, `zajem-vitaminy-a-mineraly`, `zajem-substraty` (jeden segment na štítek) | Tematické kampaně; názvy štítků = hlavní kategorie e-shopu, při nové hlavní kategorii přibude nový štítek |
 | VIP | `celkova_utrata_czk` větší než 5 000 | Předpremiéry, osobní nabídky |
 | Spící zákazníci | štítek `zakaznik` a `posledni_objednavka` dříve než před 120 dny | Oživení |
 | Čeká na zboží | štítek `hlidani-skladu` | Kampaň po velkém naskladnění |
@@ -127,13 +129,13 @@ Orientační plán, jeden hlavní newsletter měsíčně, k tomu automatizace b�
 | Měsíc | Téma | Segment |
 | --- | --- | --- |
 | Leden | Kontrola topení a osvětlení po Vánocích, výměna UV zářivek (po 6–12 měsících ztrácejí výkon) | Osvětlení, Zákazníci |
-| Únor | Příprava na jaro: konec zimování, krmení, vitamíny | Krmiva, Zákazníci |
+| Únor | Příprava na jaro: konec zimování, krmení, vitamíny | Kaše pro plazy, Vitamíny a minerály, Zákazníci |
 | Březen | Jarní úklid terária: substráty, dezinfekce, dekorace | Terária |
 | Duben | Výstavy a burzy, nové přírůstky: startovací sety pro začátečníky | Zájemci bez nákupu |
 | Květen | Letní teploty: termostaty, větrání, hydratace | Všichni CZ/EN/DE |
 | Červen | Dovolená: automatické krmení, časovače, kontrola na dálku | Zákazníci |
 | Červenec | Letní akce, doprava zdarma od částky | Všichni |
-| Srpen | Zpět do rutiny: krmný hmyz, doplňky, kalcium | Krmiva |
+| Srpen | Zpět do rutiny: krmný hmyz, doplňky, kalcium | Kaše pro plazy, Vitamíny a minerály |
 | Září | Topná sezóna začíná: topné kameny, kabely, žárovky, termostaty | Osvětlení, Terária |
 | Říjen | Zimování: kdo ano, kdo ne, jak připravit | Zákazníci |
 | Listopad | Black Friday nebo vlastní „Terarijní pátek“, dárkový průvodce | Všichni, VIP předem |
