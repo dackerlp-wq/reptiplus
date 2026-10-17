@@ -157,9 +157,13 @@ Export CSV: `app/api/admin/inquiries/export/route.ts`.
   potvrzený odběratel → kontakt se štítkem `newsletter` (`confirmSubscription`), odhlášení oběma směry (webhook `app/api/ecomail/webhook?t=<token>`),
   volitelně zákazníci z objednávek (štítek `zakaznik`, `syncOrderCreated` v pokladně i ruční objednávce) a transakce (pending → completed v `markOrderPaid`,
   canceled v `sendOrderStatusEmail`). Hromadná synchronizace: admin Newsletter → „Synchronizovat do Ecomailu“ (`lib/admin/ecomail-actions.ts`).
-  Štítky se přepisují celé → `tagsFor()` je počítá z našich dat; `newsletter_subscriber.ecomail_synced_at` = odesláno. Souhlas s novinkami v pokladně
+  Jádro `upsertContact()`: kdo smí do seznamu (odběratel vždy, ostatní jen při `syncCustomers`), štítky (`newsletter`, `zakaznik`, `zajem-<kořenová kategorie>`,
+  `recenzent`, `hlidani-skladu`, `ledx-poptavka`) a profil (čistá fce `lib/ecomail/profile.ts`, pole `pocet_objednavek`, `celkova_utrata_czk`, `posledni_objednavka_stav`…)
+  se vždy přepočítají z našich dat; události přes `POST tracker/events` (`order_<stav>` ze `sendOrderStatusEmail`, `review_left`, `stock_alert_created`,
+  `inquiry_<stav>`, `product_viewed` u přihlášených přes `after()`). `newsletter_subscriber.ecomail_synced_at` = odesláno. Souhlas s novinkami v pokladně
   (`newsletter=on` → `confirmSubscriptionForEmail` / `requestSubscription`). Sledování webu `lib/ecomail/tracker.ts` (ecotrack, jen po marketingovém
-  souhlasu přes `AnalyticsGate`, `trackingAppId`), košík a identita přes `components/reptiplus/ecomail-basket.tsx`; CSP má cloudfront domény Ecomailu.
+  souhlasu přes `AnalyticsGate`, `trackingAppId`, identita přihlášeného z layoutu), košík / zobrazení produktu přes `components/reptiplus/ecomail-basket.tsx`;
+  CSP má cloudfront domény Ecomailu. Produkce: klíč, seznam 1, app ID `reptiplus`, webhook i odesílací doména založené 17. 10. 2026.
 - Pevné slevy a min. objednávka jsou v Kč; pro EUR košík je `validateDiscount` přepočítá kurzem ČNB.
 - Kontakt: `app/[locale]/(shop)/kontakt` (údaje z `shop.general` vč. `openingHours`, formulář `components/reptiplus/contact-form.tsx` → `lib/contact/actions.ts`:
   e-mail obchodu s reply-to, potvrzení zákazníkovi, u čísla objednávky i záznam do `order_event`).

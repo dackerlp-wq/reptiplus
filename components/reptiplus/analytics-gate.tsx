@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { getConsent } from "./cookie-consent";
-import { loadEcomailTracker, trackEcomailPageView } from "@/lib/ecomail/tracker";
+import { identifyEcomail, loadEcomailTracker, trackEcomailPageView } from "@/lib/ecomail/tracker";
 
 /**
  * Načte měřicí skripty (GA4, Sklik retargeting, Meta Pixel) — ale výhradně
@@ -105,12 +105,15 @@ export function AnalyticsGate({
   sklik,
   metaPixel,
   ecomailAppId,
+  ecomailUserEmail,
 }: {
   ga4?: string;
   sklik?: string;
   metaPixel?: string;
   /** Ecomail sledování webu (marketing). */
   ecomailAppId?: string;
+  /** E-mail přihlášeného zákazníka → spárování návštěvy s kontaktem (opuštěný košík i bez prokliku z kampaně). */
+  ecomailUserEmail?: string;
 }) {
   const pathname = usePathname();
   const loaded = useRef({ ga4: false, pixel: false, sklik: false, ecomail: false });
@@ -138,11 +141,12 @@ export function AnalyticsGate({
         loadEcomailTracker(ecomailAppId);
         loaded.current.ecomail = true;
       }
+      if (loaded.current.ecomail && ecomailUserEmail) identifyEcomail(ecomailUserEmail);
     };
     apply();
     window.addEventListener(CHANGE_EVENT, apply);
     return () => window.removeEventListener(CHANGE_EVENT, apply);
-  }, [ga4, sklik, metaPixel, ecomailAppId]);
+  }, [ga4, sklik, metaPixel, ecomailAppId, ecomailUserEmail]);
 
   // Pageview při SPA navigaci (první načtení řeší samotné snippety).
   const firstRun = useRef(true);

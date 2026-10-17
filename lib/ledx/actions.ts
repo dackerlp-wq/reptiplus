@@ -7,6 +7,7 @@ import { getShopContact } from "@/lib/settings";
 import { sendMail } from "@/lib/email/client";
 import { ledxInquiryConfirmationEmail } from "@/lib/email/templates";
 import { routing, type Locale } from "@/i18n/routing";
+import { syncInquiry } from "@/lib/ecomail/sync";
 
 export type InquiryState =
   | { status: "idle" }
@@ -119,6 +120,9 @@ export async function submitLedxInquiry(
     console.error("[ledx] uložení poptávky selhalo:", error.message);
     return { status: "error", error: "SERVER" };
   }
+
+  // Ecomail: kontakt se štítkem „ledx-poptavka“ + událost (best-effort, nikdy nevyhazuje)
+  await syncInquiry({ email, name, phone: row.phone, locale, status: "new", model: row.model, rada: row.rada });
 
   // 5) E-maily (uložení už proběhlo, e-maily jsou best-effort)
   const contact = await getShopContact().catch(() => null);

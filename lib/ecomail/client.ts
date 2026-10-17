@@ -172,3 +172,16 @@ export async function updateTransaction(apiKey: string, transaction: EcomailTran
 export async function deleteTransaction(apiKey: string, orderId: string) {
   return ecomailRequest(apiKey, "DELETE", `tracker/transaction/${encodeURIComponent(orderId)}/delete`);
 }
+
+/** Vlastní událost u kontaktu (spouští automatizace „událost“); kontakt musí v Ecomailu existovat. */
+export type EcomailEvent = {
+  email: string;
+  category: string;
+  action: string;
+  label?: string;
+  property?: string;
+  value?: string | Record<string, unknown> | unknown[];
+};
+export async function trackEvent(apiKey: string, event: EcomailEvent) {
+  return ecomailRequest(apiKey, "POST", "tracker/events", { event });
+}

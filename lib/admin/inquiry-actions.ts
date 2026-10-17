@@ -14,6 +14,7 @@ import {
 } from "@/lib/ledx/inquiry-status";
 import type { Locale } from "@/i18n/routing";
 import type { Json, TablesUpdate } from "@/types/database";
+import { syncInquiry } from "@/lib/ecomail/sync";
 
 const str = (fd: FormData, k: string, max = 5000) =>
   String(fd.get(k) ?? "").trim().slice(0, max);
@@ -39,6 +40,11 @@ async function logEvent(
     author_email: admin.email,
   });
   if (error) console.error("[inquiry] zápis události selhal:", error.message);
+}
+
+/** Ecomail: stav poptávky do profilu kontaktu + událost `inquiry_<stav>` (nikdy nevyhazuje). */
+async function syncInquiryContact(inq: { email: string; name: string; phone: string | null; locale: string; model: string | null; rada: string | null; created_at: string }, status: string) {
+  await syncInquiry({ email: inq.email, name: inq.name, phone: inq.phone, locale: inq.locale, status, model: inq.model, rada: inq.rada, createdAt: inq.created_at });
 }
 
 function revalidate() {
@@ -73,6 +79,7 @@ export async function setInquiryStatusAction(fd: FormData) {
   if (error) throw new Error(error.message);
 
   await logEvent(id, admin, "status", null, { from: inq.status, to: status });
+  await syncInquiryContact(inq, status);
   revalidate();
 }
 
@@ -123,7 +130,10 @@ export async function saveInquiryQuoteAction(fd: FormData) {
     valid_until: validUntil,
     number,
   });
-  if (statusChange) await logEvent(id, admin, "status", null, { from: inq.status, to: "quoted" });
+  if (statusChange) {
+    await logEvent(id, admin, "status", null, { from: inq.status, to: "quoted" });
+    await syncInquiryContact(inq, "quoted");
+  }
   revalidate();
 }
 

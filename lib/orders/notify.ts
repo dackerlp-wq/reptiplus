@@ -7,7 +7,7 @@ import { getShopContact } from "@/lib/settings";
 import { pickI18n } from "@/lib/i18n";
 import { logOrderEvent } from "@/lib/orders/events";
 import type { Locale } from "@/i18n/routing";
-import { syncOrderStatus } from "@/lib/ecomail/sync";
+import { syncOrderStage } from "@/lib/ecomail/sync";
 
 export type OrderForNotify = {
   id?: string;
@@ -70,8 +70,8 @@ export async function sendOrderStatusEmail(
   status: string,
   opts: { attachments?: MailAttachment[]; invoiceAttached?: boolean; author?: string | null } = {},
 ): Promise<boolean> {
-  // Ecomail: storno / vrácení → transakce jako zrušená (nikdy nevyhazuje).
-  if ((status === "cancelled" || status === "refunded") && order.id) await syncOrderStatus(order.id, "canceled");
+  // Ecomail: stav do profilu kontaktu + událost `order_<stav>`; storno / vrácení i transakce jako zrušená (nikdy nevyhazuje).
+  if (order.id) await syncOrderStage(order.id, status);
   try {
     const locale = orderLocale(order);
     const [orderUrl, carrierLabel, replyTo] = await Promise.all([

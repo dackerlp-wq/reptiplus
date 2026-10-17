@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import { identifyEcomail, trackEcomailBasket, whenEcomailReady, type EcomailBasketProduct } from "@/lib/ecomail/tracker";
+import {
+  identifyEcomail,
+  trackEcomailBasket,
+  trackEcomailProductView,
+  whenEcomailReady,
+  type EcomailBasketProduct,
+  type EcomailViewedProduct,
+} from "@/lib/ecomail/tracker";
 
 /**
  * Pošle Ecomailu obsah košíku (stránka košíku) nebo prázdný košík a identitu
@@ -16,5 +23,14 @@ export function EcomailBasket({ products, email }: { products: EcomailBasketProd
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, email]);
+  return null;
+}
+
+/** Zobrazení produktu pro Ecomail (automatizace „prohlížel, nekoupil“, doporučení). */
+export function EcomailProductView({ product }: { product: EcomailViewedProduct }) {
+  useEffect(() => {
+    whenEcomailReady(() => trackEcomailProductView(product));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.productId]);
   return null;
 }

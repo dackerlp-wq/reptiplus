@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { hasPurchasedProduct } from "@/lib/reviews/queries";
+import { syncReviewCreated } from "@/lib/ecomail/sync";
 
 export type ReviewState =
   | { status: "idle" }
@@ -46,6 +47,9 @@ export async function submitReviewAction(
     is_approved: verified,
   });
   if (error) return { status: "error", error: "SERVER" };
+
+  // Ecomail: štítek „recenzent“ + událost (nikdy nevyhazuje).
+  if (user.email) await syncReviewCreated({ email: user.email, productId, rating });
 
   revalidatePath("/", "layout");
   return { status: "ok", published: verified };

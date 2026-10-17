@@ -7,6 +7,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { addToCartAction } from "@/lib/cart/actions";
 import { confirmSubscriptionForEmail, requestSubscription, unsubscribeByEmail } from "@/lib/newsletter/service";
 import { routing, type Locale } from "@/i18n/routing";
+import { syncStockAlert } from "@/lib/ecomail/sync";
 
 export type AccountState = { ok?: boolean; error?: string; message?: string } | undefined;
 
@@ -278,5 +279,7 @@ export async function subscribeStockAlertAction(_prev: StockAlertState, fd: Form
     console.error("[stock-alert] uložení selhalo:", error.message);
     return { status: "error", error: "SERVER" };
   }
+  // Ecomail: štítek „hlidani-skladu“ + událost (jen při zapnutém přepínači / odběrateli; nikdy nevyhazuje).
+  await syncStockAlert({ email, locale, productId, variantId });
   return { status: "ok" };
 }

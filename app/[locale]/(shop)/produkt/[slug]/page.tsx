@@ -27,6 +27,9 @@ import {
 import { absoluteUrl, localizedAlternates } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ViewItemTracker } from "@/components/reptiplus/track";
+import { EcomailProductView } from "@/components/reptiplus/ecomail-basket";
+import { syncProductViewed } from "@/lib/ecomail/sync";
+import { after } from "next/server";
 
 const plain = (html: string) =>
   html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
@@ -237,9 +240,24 @@ export default async function ProductPage({
     })),
   };
 
+  // Ecomail: zobrazení produktu — anonymně přes JS tracker (po souhlasu), u přihlášeného i serverová událost u kontaktu.
+  const ecomailProduct = {
+    productId: product.id,
+    name,
+    price: priceMinor / 100,
+    url: canonical,
+    img_url: product.images[0]?.url,
+    category: categoryCrumbs[categoryCrumbs.length - 1]?.name,
+  };
+  const viewerEmail = authData.user?.email;
+  if (viewerEmail) {
+    after(() => syncProductViewed({ email: viewerEmail, productId: product.id, name, price: priceMinor / 100, currency, url: canonical, category: ecomailProduct.category ?? null }));
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
       <JsonLd data={[productLd, breadcrumbLd]} />
+      <EcomailProductView product={ecomailProduct} />
       <ViewItemTracker
         item={{
           id: product.id,

@@ -386,8 +386,10 @@ export default async function AdminSettingsPage() {
                 <h2 className="font-display text-lg font-semibold">Ecomail</h2>
                 <p className="text-sm text-gray-soft">
                   Potvrzení odběratelé newsletteru se automaticky přidávají do seznamu v Ecomailu (štítek „newsletter“),
-                  odhlášení se propisuje oběma směry. Volitelně i zákazníci z objednávek (štítek „zakaznik“) a objednávky
-                  jako transakce pro segmentaci podle útraty. Postup: <code>docs/ECOMAIL.md</code>.
+                  odhlášení se propisuje oběma směry. U každého kontaktu se počítá profil (počet objednávek, útrata, poslední
+                  objednávka a její stav, top kategorie), štítky zájmů podle kořenových kategorií („zajem-…“), „recenzent“,
+                  „hlidani-skladu“, „ledx-poptavka“ a události (objednávka vytvořena / odeslána / doručena, recenze, poptávka,
+                  zobrazení produktu) pro automatizace. Volitelně objednávky jako transakce. Postup: <code>docs/ECOMAIL.md</code>.
                 </p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -407,17 +409,19 @@ export default async function AdminSettingsPage() {
                   <span className={legend}>Sledování webu — ID účtu</span>
                   <input name="trackingAppId" defaultValue={ecomail.trackingAppId} placeholder="část adresy před .ecomailapp.cz, např. reptiplus" className={input} />
                   <span className="text-xs text-gray-soft">
-                    Načte měřicí kód Ecomailu (jen po souhlasu s marketingovými cookies): návštěvy z kampaní, obsah košíku pro automatizaci „opuštěný košík“. Prázdné = vypnuto.
+                    Načte měřicí kód Ecomailu (jen po souhlasu s marketingovými cookies): návštěvy z kampaní, zobrazené produkty, obsah košíku a identita
+                    přihlášeného zákazníka pro automatizace „opuštěný košík“ a „prohlížel, nekoupil“. Prázdné = vypnuto.
                   </span>
                 </label>
               </div>
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" name="syncCustomers" defaultChecked={ecomail.syncCustomers} className="mt-0.5 size-4 accent-forest" />
                 <span>
-                  Přidávat zákazníky z objednávek do seznamu (štítek „zakaznik“)
+                  Přidávat i kontakty bez souhlasu s newsletterem (zákazníci z objednávek, poptávky LEDX, hlídání skladu)
                   <span className="block text-xs text-gray-soft">
-                    Zákazník, který nepotvrdil newsletter, dostane v Ecomailu jen štítek „zakaznik“ — kampaně mu posílejte jen v rámci oprávněného zájmu
-                    (vlastní podobné zboží, s možností odhlášení) a segmentujte podle štítků.
+                    Oprávněný zájem: takovému kontaktu posílejte jen nabídky vlastního podobného zboží s možností odhlášení a segmentujte podle štítků
+                    („zakaznik“, „ledx-poptavka“, „hlidani-skladu“; odběratelé mají navíc „newsletter“). Zásady ochrany údajů už tento účel uvádějí.
+                    Vypnuto = do Ecomailu jdou jen potvrzení odběratelé (jejich profil a události se posílají vždy).
                   </span>
                 </span>
               </label>

@@ -84,3 +84,13 @@ export function whenEcomailReady(fn: () => void, tries = 20): void {
   if (tries <= 0) return;
   window.setTimeout(() => whenEcomailReady(fn, tries - 1), 250);
 }
+
+export type EcomailViewedProduct = EcomailBasketProduct & { category?: string };
+
+/** Zobrazení produktu (stejná struktura jako košík; Ecomail ji páruje s kontaktem podle `ecmid` / setUserId). */
+export function trackEcomailProductView(product: EcomailViewedProduct): void {
+  window.ecotrack?.("trackUnstructEvent", {
+    schema: "",
+    data: { action: "ViewProduct", products: [product] },
+  });
+}
