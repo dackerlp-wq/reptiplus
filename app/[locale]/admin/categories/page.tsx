@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { deleteCategoryAction } from "@/lib/admin/actions";
 import { ToastForm } from "@/components/admin/toast";
 import { pickI18n } from "@/lib/i18n";
+import { CategoryIcon } from "@/lib/category-icons";
 
 export default async function AdminCategoriesPage({
   params,
@@ -15,7 +16,7 @@ export default async function AdminCategoriesPage({
   const svc = createServiceClient();
   const { data } = await svc
     .from("category")
-    .select("id,name,name_i18n,slug,parent_id,is_published,sort_order")
+    .select("id,name,name_i18n,slug,parent_id,is_published,sort_order,icon,icon_url")
     .order("sort_order");
   const cats = data ?? [];
   const nameOf = (id: string | null) =>
@@ -47,8 +48,11 @@ export default async function AdminCategoriesPage({
             {cats.map((c) => (
               <tr key={c.id} className="border-b border-cream last:border-0">
                 <td className="px-4 py-3 font-medium text-ink">
-                  {c.parent_id ? "— " : ""}
-                  {pickI18n(c.name_i18n as Record<string, string>, locale, c.name)}
+                  <span className="flex items-center gap-2">
+                    {c.parent_id ? "— " : ""}
+                    <CategoryIcon icon={c.icon} iconUrl={c.icon_url} className="size-4 shrink-0 text-forest" />
+                    {pickI18n(c.name_i18n as Record<string, string>, locale, c.name)}
+                  </span>
                 </td>
                 <td className="px-4 py-3 text-gray-soft">{nameOf(c.parent_id)}</td>
                 <td className="px-4 py-3">

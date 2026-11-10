@@ -17,6 +17,7 @@ import { notifyStockAlerts } from "@/lib/stock-alerts/notify";
 import { checkLowStock } from "@/lib/stock-alerts/low-stock";
 import { refundComgatePayment } from "@/lib/comgate/client";
 import { pickI18n } from "@/lib/i18n";
+import { isCategoryIconKey } from "@/lib/category-icons";
 import { LEDX_PAGE_SETTING, normalizeLedxPage } from "@/lib/ledx/content";
 
 async function assertAdmin() {
@@ -755,6 +756,13 @@ export async function removeBrandLogoAction(
 }
 
 /* ── Kategorie ─────────────────────────────────────────────────────────── */
+const MAX_ICON_BYTES = 512 * 1024;
+const CATEGORY_ICON_TYPES: Record<string, string> = {
+  "image/svg+xml": "svg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
 export async function saveCategoryAction(formData: FormData) {
   await assertAdmin();
   const svc = createServiceClient();
@@ -762,7 +770,29 @@ export async function saveCategoryAction(formData: FormData) {
   const locale = str(formData, "locale") || "cs";
   const name = i18n(formData, "name");
   const description = i18n(formData, "description");
+  const back = `/${locale}/admin/categories/${id ?? "new"}`;
+
+  // Ikona: předpřipravená (klíč) + případně vlastní obrázek, který má přednost.
+  const iconKey = str(formData, "icon");
+  let iconUrl: string | null = str(formData, "icon_url_keep") || null;
+  if (iconUrl && !/^https:\/\//.test(iconUrl)) iconUrl = null;
+  const iconFile = formData.get("icon_file");
+  if (iconFile instanceof File && iconFile.size > 0) {
+    if (!CATEGORY_ICON_TYPES[iconFile.type])
+      flashRedirect(back, "error", "Ikona musí být SVG, PNG nebo WebP.");
+    if (iconFile.size > MAX_ICON_BYTES)
+      flashRedirect(back, "error", "Ikona může mít nejvýš 512 kB.");
+    const path = `category-icons/${crypto.randomUUID()}.${CATEGORY_ICON_TYPES[iconFile.type]}`;
+    const { error: upErr } = await svc.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, iconFile, { contentType: iconFile.type, upsert: false });
+    if (upErr) flashRedirect(back, "error", `Nahrání ikony selhalo: ${upErr.message}`);
+    iconUrl = svc.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
+  }
+
   const payload = {
+    icon: isCategoryIconKey(iconKey) ? iconKey : null,
+    icon_url: iconUrl,
     slug: str(formData, "slug"),
     name: name.cs,
     name_i18n: name,
@@ -775,12 +805,7 @@ export async function saveCategoryAction(formData: FormData) {
   const { error } = id
     ? await svc.from("category").update(payload).eq("id", id)
     : await svc.from("category").insert(payload);
-  if (error)
-    flashRedirect(
-      `/${locale}/admin/categories/${id ?? "new"}`,
-      "error",
-      error.message,
-    );
+  if (error) flashRedirect(back, "error", error.message);
   revalidatePath("/", "layout");
   flashRedirect(`/${locale}/admin/categories`, "saved");
 }

@@ -115,6 +115,8 @@ export type CategoryItem = {
   name_i18n: I18n;
   description_i18n?: I18n;
   parent_id?: string | null;
+  icon?: string | null;
+  icon_url?: string | null;
 };
 
 export type BrandItem = { id: string; slug: string; name: string };
@@ -278,7 +280,7 @@ export async function getRootCategories(): Promise<CategoryItem[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("category")
-    .select("id,slug,name,name_i18n,sort_order")
+    .select("id,slug,name,name_i18n,sort_order,icon,icon_url")
     .is("parent_id", null)
     .eq("is_published", true)
     .order("sort_order");
@@ -290,7 +292,7 @@ export async function getAllCategories(): Promise<CategoryItem[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("category")
-    .select("id,slug,name,name_i18n,parent_id,sort_order")
+    .select("id,slug,name,name_i18n,parent_id,sort_order,icon,icon_url")
     .eq("is_published", true)
     .order("sort_order");
   return (data ?? []) as unknown as CategoryItem[];
@@ -376,6 +378,8 @@ export async function getBrands(): Promise<BrandItem[]> {
 export type MenuCategory = {
   slug: string;
   name: string;
+  icon: string | null;
+  iconUrl: string | null;
   subcategories: { slug: string; name: string }[];
   product: {
     slug: string;
@@ -391,7 +395,7 @@ export async function getMenuData(locale: Locale): Promise<MenuCategory[]> {
   const [{ data: cats }, { data: prods }] = await Promise.all([
     supabase
       .from("category")
-      .select("id,slug,name,name_i18n,parent_id,sort_order")
+      .select("id,slug,name,name_i18n,parent_id,sort_order,icon,icon_url")
       .eq("is_published", true)
       .order("sort_order"),
     supabase
@@ -408,6 +412,8 @@ export async function getMenuData(locale: Locale): Promise<MenuCategory[]> {
     name: string;
     name_i18n: I18n;
     parent_id: string | null;
+    icon: string | null;
+    icon_url: string | null;
   }[];
   type ProdRow = {
     slug: string;
@@ -439,6 +445,8 @@ export async function getMenuData(locale: Locale): Promise<MenuCategory[]> {
       return {
         slug: root.slug,
         name: pickI18n(root.name_i18n, locale, root.name),
+        icon: root.icon,
+        iconUrl: root.icon_url,
         subcategories: subs.map((s) => ({
           slug: s.slug,
           name: pickI18n(s.name_i18n, locale, s.name),

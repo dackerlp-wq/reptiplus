@@ -5,6 +5,7 @@ import type { Locale } from "@/i18n/routing";
 import { getAllCategories } from "@/lib/queries";
 import { pickI18n } from "@/lib/i18n";
 import { localizedAlternates } from "@/lib/seo";
+import { CategoryIcon } from "@/lib/category-icons";
 
 export async function generateMetadata({
   params,
@@ -46,8 +47,11 @@ export default async function CategoriesPage({
             >
               <Link
                 href={`/kategorie/${parent.slug}`}
-                className="font-display text-xl font-semibold text-ink transition-colors hover:text-forest"
+                className="flex items-center gap-3 font-display text-xl font-semibold text-ink transition-colors hover:text-forest"
               >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-forest/10 text-forest">
+                  <CategoryIcon icon={parent.icon} iconUrl={parent.icon_url} className="size-5" />
+                </span>
                 {pickI18n(parent.name_i18n, locale, parent.name)}
               </Link>
               {children.length > 0 && (

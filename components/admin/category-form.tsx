@@ -3,6 +3,7 @@ import { pickI18n } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 import type { CategoryItem } from "@/lib/queries";
 import { LangFields } from "@/components/admin/lang-fields";
+import { CategoryIconPicker } from "@/components/admin/category-icon-picker";
 
 const input =
   "w-full rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm outline-none focus:border-forest";
@@ -16,6 +17,8 @@ type Row = {
   parent_id: string | null;
   sort_order: number;
   is_published: boolean;
+  icon?: string | null;
+  icon_url?: string | null;
 };
 
 export function CategoryForm({
@@ -72,6 +75,8 @@ export function CategoryForm({
           Publikováno
         </label>
       </div>
+
+      <CategoryIconPicker icon={category?.icon ?? null} iconUrl={category?.icon_url ?? null} />
 
       <button type="submit" className="rounded-lg bg-forest px-6 py-2.5 text-sm font-semibold text-white hover:bg-forest-light">
         Uložit

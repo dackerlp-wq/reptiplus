@@ -219,6 +219,8 @@ fallbacky `COMGATE_MERCHANT|SECRET|TEST`, `PPL_CLIENT_ID|SECRET`, `PACKETA_API_P
 
 ## Konvence
 
+- Ikony kategorií: `category.icon` (klíč z `lib/category-icons.tsx` — existující klíče neměnit) nebo `category.icon_url` (vlastní SVG/PNG/WebP v bucketu `products/category-icons/`, má přednost);
+  vykresluje `CategoryIcon` (vlastní obrázek jako CSS maska → barva textu), výběr v adminu `components/admin/category-icon-picker.tsx`.
 - Drobečková navigace kategorií (stránka kategorie i produktu, vč. JSON-LD) jde přes celý řetězec rodičů — `categoryAncestors()` v `lib/queries.ts`.
 - Nové stránky patří pod `app/[locale]/…` a musí v `generateMetadata` používat `localizedAlternates()` z `lib/seo.ts` (canonical + hreflang); JSON-LD přes `components/seo/json-ld.tsx`.
 - Vše, co obchází RLS nebo drží tajemství, importuje `"server-only"`.

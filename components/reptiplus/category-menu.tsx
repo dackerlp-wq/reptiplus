@@ -1,15 +1,11 @@
 "use client";
 
-import { useState, type ComponentType, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Image from "next/image";
 import {
   ChevronRight,
   ChevronDown,
   Leaf,
-  Lightbulb,
-  Box,
-  Utensils,
-  Pill,
   Info,
   Menu as MenuIcon,
   X,
@@ -18,15 +14,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type { MenuCategory } from "@/lib/queries";
 import { cn } from "@/lib/utils";
-
-// Piktogramy podle slugu kategorie (fallback = lístek).
-const ICONS: Record<string, ComponentType<{ className?: string }>> = {
-  osvetleni: Lightbulb,
-  teraria: Box,
-  "kase-pro-plazy": Utensils,
-  "vitaminy-a-mineraly": Pill,
-};
-const iconFor = (slug: string) => ICONS[slug] ?? Leaf;
+import { CategoryIcon } from "@/lib/category-icons";
 
 export function CategoryMenu({
   categories,
@@ -70,7 +58,6 @@ export function CategoryMenu({
         <div className="flex min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden group-data-[compact]:max-lg:[mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)]">
         <div className="mx-auto flex items-center gap-1">
           {categories.map((cat) => {
-            const Icon = iconFor(cat.slug);
             return (
               <div key={cat.slug} onMouseEnter={() => setActive(cat.slug)}>
                 <Link
@@ -84,7 +71,7 @@ export function CategoryMenu({
                   )}
                 >
                   {/* V kompaktní liště na užších obrazovkách bez ikon — ať se vše vejde. */}
-                  <Icon className="size-5 shrink-0 group-data-[compact]:max-xl:hidden" />
+                  <CategoryIcon icon={cat.icon} iconUrl={cat.iconUrl} className="size-5 shrink-0 group-data-[compact]:max-xl:hidden" />
                   {cat.name}
                 </Link>
               </div>
@@ -128,7 +115,6 @@ export function CategoryMenu({
       {mobileOpen && (
         <div className="border-t border-cream-dark bg-white md:hidden">
           {categories.map((cat) => {
-            const Icon = iconFor(cat.slug);
             const hasSubs = cat.subcategories.length > 0;
             const open = expanded === cat.slug;
             return (
@@ -139,7 +125,7 @@ export function CategoryMenu({
                     onClick={closeMobile}
                     className="flex flex-1 items-center gap-3 px-4 py-3.5 font-semibold text-charcoal transition-colors hover:text-forest active:bg-cream"
                   >
-                    <Icon className="size-5 shrink-0 text-forest" />
+                    <CategoryIcon icon={cat.icon} iconUrl={cat.iconUrl} className="size-5 shrink-0 text-forest" />
                     {cat.name}
                   </Link>
                   {hasSubs && (
