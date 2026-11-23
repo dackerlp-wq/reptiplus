@@ -47,7 +47,7 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 
 - [x] **9f. Náležitosti pro Comgate** — obchodní podmínky (vč. odstavce o Comgate, odstoupení, výjimky), reklamační řád a zásady zpracování osobních údajů vloženy do adminu (Nastavení → Právní, česky; EN/DE přes AI překlad), loga Visa/Mastercard/Apple Pay/Google Pay/Comgate v patičce, stránka `/doprava-a-platba` generovaná z metod dopravy a platby, domény `www.*` přesměrované (308) s certifikátem.
 - [x] **9g. Comgate — dokončení platby** — stav platby se ověřuje přes `/status` i při návratu zákazníka z brány (nečeká se jen na webhook), webhook páruje objednávku podle `refId` z Comgate a kontroluje částku/měnu, při nedostupném `/status` vrací 503 (Comgate notifikaci zopakuje); tlačítko „Zaplatit znovu" na stránce objednávky (zrušená platba / chyba brány) založí nový pokus (`lib/checkout/pay-again.ts`); zaplacení staršího pokusu se taky započítá. Logika v `lib/orders/comgate.ts`, testy `tests/unit/comgate-sync.test.ts`.
-- [x] **9h. Výběr metody Comgate v pokladně** — karta, Apple Pay, Google Pay, online bankovní převod a zaplatit později jako samostatné volby (jen metody povolené v Comgate pro měnu košíku), předvybraná metoda na bráně; Apple Pay jen v Safari / zařízení Apple. Testy `tests/unit/comgate-methods.test.ts`.
+- [x] **9h. Výběr metody Comgate v pokladně** — karta, Apple Pay, Google Pay, online bankovní převod a zaplatit později jako samostatné volby (jen metody povolené v Comgate pro měnu košíku), předvybraná metoda na bráně; Apple Pay ve všech prohlížečích (mimo Safari přes QR kód v iPhonu). Testy `tests/unit/comgate-methods.test.ts`.
 
 ## Fáze 6 — Provoz / technika
 - [ ] **16. Monitoring chyb** (Sentry).

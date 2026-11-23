@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import { Loader2, Tag, Check, MapPin, Building2, Landmark, Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -19,17 +19,6 @@ type Option = { code: string; name: string; fee: number; pickup?: boolean };
 export type PaymentOption = Option & { variant?: string; hint?: string };
 
 const payKey = (o: PaymentOption) => (o.variant ? `${o.code}|${o.variant}` : o.code);
-
-/** Apple Pay na webu umí jen Safari na zařízeních Apple → jinde volbu skrýt. */
-const noopSubscribe = () => () => {};
-function canApplePay(): boolean {
-  const w = window as unknown as { ApplePaySession?: { canMakePayments?: () => boolean } };
-  try {
-    return Boolean(w.ApplePaySession?.canMakePayments?.());
-  } catch {
-    return false;
-  }
-}
 
 function PaymentIcon({ variant }: { variant?: string }) {
   const img = (src: string, alt: string) => (
@@ -151,8 +140,8 @@ export function CheckoutForm({
   const t = useTranslations("Checkout");
 
   const [shipping, setShipping] = useState(shippingOptions[0]?.code ?? "");
-  const applePay = useSyncExternalStore(noopSubscribe, canApplePay, () => false);
-  const visiblePayments = paymentOptions.filter((o) => o.variant !== "APPLEPAY_REDIRECT" || applePay);
+  // Apple Pay se nabízí všude: mimo Safari ho brána Comgate řeší QR kódem pro iPhone.
+  const visiblePayments = paymentOptions;
   const [payment, setPayment] = useState(paymentOptions[0] ? payKey(paymentOptions[0]) : "");
   const selectedPayment =
     visiblePayments.find((o) => payKey(o) === payment) ?? visiblePayments[0];
