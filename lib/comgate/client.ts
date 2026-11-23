@@ -59,6 +59,8 @@ export type CreatePaymentInput = {
   fullName?: string;
   /** Jazyk brány (cs/en/de/sk…). */
   lang?: string;
+  /** Předvybraná metoda na bráně (`method` u /create), výchozí ALL. */
+  method?: string;
   urlPaid: string;
   urlPending: string;
   urlCancelled: string;
@@ -82,7 +84,7 @@ export async function createComgatePayment(
     curr: input.curr,
     label: input.label.slice(0, 16),
     refId: input.refId,
-    method: "ALL",
+    method: input.method || "ALL",
     email: input.email,
     prepareOnly: "true",
     lang: input.lang ?? "cs",
@@ -208,4 +210,65 @@ export async function getComgatePayment(transId: string): Promise<ComgatePayment
 /** Zkratka: jen stav platby (PAID|CANCELLED|PENDING|AUTHORIZED) nebo null. */
 export async function getComgateStatus(transId: string): Promise<string | null> {
   return (await getComgatePayment(transId))?.status ?? null;
+}
+
+/* ── Platební metody pro výběr v pokladně ─────────────────────────────── */
+
+/**
+ * Varianty platby přes Comgate, které nabízíme rovnou v pokladně.
+ * Hodnota = parametr `method` pro /create (předvybere metodu na bráně).
+ * `ALL` = brána nabídne vše (fallback, „Zaplatit znovu").
+ */
+export const COMGATE_VARIANTS = ["CARD_ALL", "APPLEPAY_REDIRECT", "GOOGLEPAY_REDIRECT", "BANK_ONLY", "LATER_ALL", "ALL"] as const;
+export type ComgateVariant = (typeof COMGATE_VARIANTS)[number];
+
+export function isComgateVariant(v: string): v is ComgateVariant {
+  return (COMGATE_VARIANTS as readonly string[]).includes(v);
+}
+
+type MethodsCacheEntry = { at: number; variants: ComgateVariant[] | null };
+const methodsCache = new Map<string, MethodsCacheEntry>();
+const METHODS_TTL = 10 * 60_000;
+
+/**
+ * Které varianty má obchod v Comgate povolené (přes /methods, filtrované měnou).
+ * Výsledek se drží 10 minut v paměti instance. Při chybě vrací null → pokladna
+ * nabídne jen obecnou platbu přes bránu (`ALL`).
+ */
+export async function getComgateVariants(curr: string): Promise<ComgateVariant[] | null> {
+  const hit = methodsCache.get(curr);
+  if (hit && Date.now() - hit.at < METHODS_TTL) return hit.variants;
+
+  const cfg = await getComgateConfig();
+  if (!cfg) return null;
+  let variants: ComgateVariant[] | null = null;
+  try {
+    const body = new URLSearchParams({
+      merchant: cfg.merchant,
+      secret: cfg.secret,
+      type: "json",
+      curr,
+    });
+    const res = await fetch(`${BASE}/methods`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      cache: "no-store",
+      signal: AbortSignal.timeout(4000),
+    });
+    const json = (await res.json()) as { methods?: { id?: string }[] };
+    const ids = (json.methods ?? []).map((m) => String(m.id ?? ""));
+    if (ids.length > 0) {
+      variants = [];
+      if (ids.some((id) => id.startsWith("CARD_"))) variants.push("CARD_ALL");
+      if (ids.includes("APPLEPAY_REDIRECT")) variants.push("APPLEPAY_REDIRECT");
+      if (ids.includes("GOOGLEPAY_REDIRECT")) variants.push("GOOGLEPAY_REDIRECT");
+      if (ids.some((id) => id.startsWith("BANK_"))) variants.push("BANK_ONLY");
+      if (ids.some((id) => id.startsWith("LATER_"))) variants.push("LATER_ALL");
+    }
+  } catch (e) {
+    console.error("[comgate] načtení platebních metod selhalo:", e);
+  }
+  methodsCache.set(curr, { at: Date.now(), variants });
+  return variants;
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { Loader2, Tag, Check, MapPin, Building2 } from "lucide-react";
+import { useActionState, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Loader2, Tag, Check, MapPin, Building2, Landmark, Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { formatPrice } from "@/lib/i18n";
@@ -14,6 +14,43 @@ import {
 } from "@/lib/checkout/actions";
 
 type Option = { code: string; name: string; fee: number; pickup?: boolean };
+
+/** Platební volba; u Comgate i `variant` = předvybraná metoda na bráně (CARD_ALL, APPLEPAY_REDIRECT…). */
+export type PaymentOption = Option & { variant?: string; hint?: string };
+
+const payKey = (o: PaymentOption) => (o.variant ? `${o.code}|${o.variant}` : o.code);
+
+/** Apple Pay na webu umí jen Safari na zařízeních Apple → jinde volbu skrýt. */
+const noopSubscribe = () => () => {};
+function canApplePay(): boolean {
+  const w = window as unknown as { ApplePaySession?: { canMakePayments?: () => boolean } };
+  try {
+    return Boolean(w.ApplePaySession?.canMakePayments?.());
+  } catch {
+    return false;
+  }
+}
+
+function PaymentIcon({ variant }: { variant?: string }) {
+  const img = (src: string, alt: string) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} className="h-5 w-auto" />
+  );
+  switch (variant) {
+    case "CARD_ALL":
+      return <span className="flex items-center gap-1">{img("/payments/visa.svg", "Visa")}{img("/payments/mastercard.svg", "Mastercard")}</span>;
+    case "APPLEPAY_REDIRECT":
+      return img("/payments/apple-pay.svg", "Apple Pay");
+    case "GOOGLEPAY_REDIRECT":
+      return img("/payments/google-pay.svg", "Google Pay");
+    case "BANK_ONLY":
+      return <Landmark className="size-5 text-forest" />;
+    case "LATER_ALL":
+      return <Clock className="size-5 text-forest" />;
+    default:
+      return null;
+  }
+}
 
 export type SavedAddress = {
   id: string;
@@ -103,7 +140,7 @@ export function CheckoutForm({
   locale: Locale;
   subtotal: number;
   shippingOptions: Option[];
-  paymentOptions: Option[];
+  paymentOptions: PaymentOption[];
   /** Limit dopravy zdarma v minor units (null = vypnuto); ceny dopravy už jsou přepočtené ze serveru. */
   freeShippingFrom?: number | null;
   defaultEmail: string;
@@ -114,7 +151,11 @@ export function CheckoutForm({
   const t = useTranslations("Checkout");
 
   const [shipping, setShipping] = useState(shippingOptions[0]?.code ?? "");
-  const [payment, setPayment] = useState(paymentOptions[0]?.code ?? "");
+  const applePay = useSyncExternalStore(noopSubscribe, canApplePay, () => false);
+  const visiblePayments = paymentOptions.filter((o) => o.variant !== "APPLEPAY_REDIRECT" || applePay);
+  const [payment, setPayment] = useState(paymentOptions[0] ? payKey(paymentOptions[0]) : "");
+  const selectedPayment =
+    visiblePayments.find((o) => payKey(o) === payment) ?? visiblePayments[0];
   const [billingSame, setBillingSame] = useState(true);
   const [createAccount, setCreateAccount] = useState(false);
 
@@ -174,7 +215,7 @@ export function CheckoutForm({
   >(createOrderAction, undefined);
 
   const shippingFee = shippingOptions.find((o) => o.code === shipping)?.fee ?? 0;
-  const paymentFee = paymentOptions.find((o) => o.code === payment)?.fee ?? 0;
+  const paymentFee = selectedPayment?.fee ?? 0;
   const discount = discountState.status === "ok" ? discountState.amount : 0;
   const total = Math.max(0, subtotal + shippingFee + paymentFee - discount);
 
@@ -188,7 +229,8 @@ export function CheckoutForm({
       <form id="checkout-form" action={submitOrder} className="space-y-8">
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="shipping_method" value={shipping} />
-        <input type="hidden" name="payment_method" value={payment} />
+        <input type="hidden" name="payment_method" value={selectedPayment?.code ?? ""} />
+        <input type="hidden" name="comgate_method" value={selectedPayment?.variant ?? ""} />
         <input type="hidden" name="billing_same" value={billingSame ? "on" : "off"} />
         {discountState.status === "ok" && (
           <input type="hidden" name="discount_code" value={discountState.code} />
@@ -397,13 +439,15 @@ export function CheckoutForm({
         {/* Platba */}
         <section className="space-y-3 rounded-xl border border-cream-dark bg-white p-5">
           <h2 className="font-display text-lg font-semibold">{t("paymentMethod")}</h2>
-          {paymentOptions.map((o) => (
+          {visiblePayments.map((o) => (
             <OptionRow
-              key={o.code}
+              key={payKey(o)}
               name="pay"
-              checked={payment === o.code}
-              onSelect={() => setPayment(o.code)}
+              checked={selectedPayment ? payKey(selectedPayment) === payKey(o) : false}
+              onSelect={() => setPayment(payKey(o))}
               title={o.name}
+              hint={o.hint}
+              icon={o.variant ? <PaymentIcon variant={o.variant} /> : undefined}
               price={feeLabel(o.fee)}
             />
           ))}
@@ -526,12 +570,16 @@ function OptionRow({
   onSelect,
   title,
   price,
+  hint,
+  icon,
 }: {
   name: string;
   checked: boolean;
   onSelect: () => void;
   title: string;
   price: string;
+  hint?: string;
+  icon?: ReactNode;
 }) {
   return (
     <label
@@ -546,7 +594,11 @@ function OptionRow({
         onChange={onSelect}
         className="size-4 accent-forest"
       />
-      <span className="flex-1 font-medium text-ink">{title}</span>
+      <span className="flex flex-1 flex-col">
+        <span className="font-medium text-ink">{title}</span>
+        {hint && <span className="text-xs text-gray-soft">{hint}</span>}
+      </span>
+      {icon && <span className="flex shrink-0 items-center">{icon}</span>}
       <span className="font-mono text-gray-soft">{price}</span>
     </label>
   );

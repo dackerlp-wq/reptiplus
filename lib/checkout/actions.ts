@@ -12,6 +12,7 @@ import { confirmSubscriptionForEmail, requestSubscription } from "@/lib/newslett
 import { freeShippingThreshold, getShippingSettings } from "@/lib/settings";
 import { validateDiscount, type DiscountError } from "@/lib/checkout/discount";
 import { startComgatePayment } from "@/lib/orders/comgate";
+import { isComgateVariant, type ComgateVariant } from "@/lib/comgate/client";
 import { sendOrderConfirmation } from "@/lib/orders/confirmation";
 import { logOrderEvent } from "@/lib/orders/events";
 import { checkLowStock } from "@/lib/stock-alerts/low-stock";
@@ -191,6 +192,9 @@ export async function createOrderAction(
   const paymentProvider = String(
     (payRow as unknown as Record<string, unknown>).provider ?? "",
   );
+  // Varianta Comgate vybraná v pokladně (Apple Pay, Google Pay, karta, banka) — jen z whitelistu.
+  const comgateMethodRaw = s(fd, "comgate_method");
+  const comgateMethod: ComgateVariant = isComgateVariant(comgateMethodRaw) ? comgateMethodRaw : "ALL";
 
   // 4) Sleva (znovu ověřená na serveru)
   let discountId: string | null = null;
@@ -374,6 +378,7 @@ export async function createOrderAction(
               fullName: ship.full_name,
               locale,
               siteUrl,
+              method: comgateMethod,
             })
           : null;
         redirect(gatewayUrl ?? `/${locale}/objednavka/${orderNumber}?platba=chyba`);

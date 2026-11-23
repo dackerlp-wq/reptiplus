@@ -231,7 +231,21 @@
     "accountPassword": "Heslo k účtu (min. 6 znaků)",
     "createAccountHint": "Účet založíme na e-mail výše. Objednávky, adresy a oblíbené pak najdete ve svém účtu.",
     "newsletterOptIn": "Chci dostávat novinky a slevy e-mailem",
-    "newsletterOptInHint": "Občas pošleme tipy pro chov a akce. Odhlásit se dá kdykoli odkazem v e-mailu."
+    "newsletterOptInHint": "Občas pošleme tipy pro chov a akce. Odhlásit se dá kdykoli odkazem v e-mailu.",
+    "comgate": {
+      "CARD_ALL": "Platební karta",
+      "CARD_ALL_hint": "Visa, Mastercard — okamžitě přes zabezpečenou bránu Comgate",
+      "APPLEPAY_REDIRECT": "Apple Pay",
+      "APPLEPAY_REDIRECT_hint": "Rychlá platba přes Apple Pay",
+      "GOOGLEPAY_REDIRECT": "Google Pay",
+      "GOOGLEPAY_REDIRECT_hint": "Rychlá platba přes Google Pay",
+      "BANK_ONLY": "Online bankovní převod",
+      "BANK_ONLY_hint": "Platební tlačítko vaší banky — platba je připsaná okamžitě",
+      "LATER_ALL": "Zaplatit později",
+      "LATER_ALL_hint": "Twisto, Skip Pay nebo PlatímPak — zaplatíte až po doručení",
+      "ALL": "Online platba",
+      "ALL_hint": "Karta, Apple Pay, Google Pay nebo bankovní tlačítko"
+    }
   },
   "OrderConfirm": {
     "title": "Děkujeme za objednávku!",

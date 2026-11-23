@@ -231,7 +231,21 @@
     "accountPassword": "Passwort für das Konto (mind. 6 Zeichen)",
     "createAccountHint": "Wir erstellen das Konto für die oben angegebene E-Mail. Bestellungen, Adressen und Favoriten finden Sie dann in Ihrem Konto.",
     "newsletterOptIn": "Ich möchte Neuigkeiten und Rabatte per E-Mail erhalten",
-    "newsletterOptInHint": "Gelegentlich Pflegetipps und Aktionen. Abmeldung jederzeit über den Link in der E-Mail."
+    "newsletterOptInHint": "Gelegentlich Pflegetipps und Aktionen. Abmeldung jederzeit über den Link in der E-Mail.",
+    "comgate": {
+      "CARD_ALL": "Kreditkarte / Debitkarte",
+      "CARD_ALL_hint": "Visa, Mastercard — sofort über das sichere Comgate-Gateway",
+      "APPLEPAY_REDIRECT": "Apple Pay",
+      "APPLEPAY_REDIRECT_hint": "Schnell bezahlen mit Apple Pay",
+      "GOOGLEPAY_REDIRECT": "Google Pay",
+      "GOOGLEPAY_REDIRECT_hint": "Schnell bezahlen mit Google Pay",
+      "BANK_ONLY": "Online-Banküberweisung",
+      "BANK_ONLY_hint": "Zahlungsbutton Ihrer Bank — sofort gutgeschrieben",
+      "LATER_ALL": "Später bezahlen",
+      "LATER_ALL_hint": "Bezahlen nach Lieferung (nur für tschechische Kunden)",
+      "ALL": "Online-Zahlung",
+      "ALL_hint": "Karte, Apple Pay, Google Pay oder Bank-Button"
+    }
   },
   "OrderConfirm": {
     "title": "Danke für Ihre Bestellung!",

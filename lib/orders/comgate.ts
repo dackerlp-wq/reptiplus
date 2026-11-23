@@ -1,6 +1,6 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
-import { createComgatePayment, getComgatePayment } from "@/lib/comgate/client";
+import { createComgatePayment, getComgatePayment, type ComgateVariant } from "@/lib/comgate/client";
 import { markOrderPaid } from "@/lib/orders/payment";
 import { logOrderEvent } from "@/lib/orders/events";
 
@@ -20,6 +20,8 @@ export type StartPaymentInput = {
   locale: string;
   /** Absolutní URL webu (doména, kde zákazník nakupuje). */
   siteUrl: string;
+  /** Předvybraná metoda na bráně (Apple Pay, Google Pay, karta…), výchozí ALL. */
+  method?: ComgateVariant;
 };
 
 /**
@@ -38,6 +40,7 @@ export async function startComgatePayment(input: StartPaymentInput): Promise<str
       email: input.email,
       fullName: input.fullName,
       lang: input.locale,
+      method: input.method ?? "ALL",
       urlPaid: `${back}?platba=uspech`,
       urlPending: `${back}?platba=probiha`,
       urlCancelled: `${back}?platba=zruseno`,
@@ -53,6 +56,7 @@ export async function startComgatePayment(input: StartPaymentInput): Promise<str
       status: "created",
       source: "comgate",
       trans_id: pay.transId,
+      method: input.method ?? "ALL",
     });
     return pay.redirect;
   } catch (e) {

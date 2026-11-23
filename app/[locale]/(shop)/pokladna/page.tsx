@@ -7,7 +7,8 @@ import { getCart } from "@/lib/cart/cart";
 import { getShippingMethods, getPaymentMethods } from "@/lib/queries";
 import { freeShippingThreshold, getPacketaApiKey, getShippingSettings } from "@/lib/settings";
 import { localeCurrency, pickI18n } from "@/lib/i18n";
-import { CheckoutForm } from "@/components/reptiplus/checkout-form";
+import { CheckoutForm, type PaymentOption } from "@/components/reptiplus/checkout-form";
+import { getComgateVariants } from "@/lib/comgate/client";
 import { BeginCheckoutTracker } from "@/components/reptiplus/track";
 
 export async function generateMetadata({
@@ -62,11 +63,25 @@ export default async function CheckoutPage({
     fee: freeShipping ? 0 : ((currency === "CZK" ? m.price_czk : m.price_eur) ?? 0),
     pickup: m.pickup_point,
   }));
-  const paymentOptions = payment.map((m) => ({
-    code: m.code,
-    name: pickI18n(m.name_i18n, locale),
-    fee: (currency === "CZK" ? m.fee_czk : m.fee_eur) ?? 0,
-  }));
+  // Comgate se rozbalí na jednotlivé volby (karta, Apple Pay, Google Pay, banka, později)
+  // podle metod povolených v Comgate pro danou měnu; bez odpovědi Comgate zůstane jedna obecná volba.
+  const comgateVariants = payment.some((m) => m.provider === "comgate")
+    ? await getComgateVariants(currency)
+    : null;
+  const paymentOptions: PaymentOption[] = payment.flatMap((m): PaymentOption[] => {
+    const base = {
+      code: m.code,
+      name: pickI18n(m.name_i18n, locale),
+      fee: (currency === "CZK" ? m.fee_czk : m.fee_eur) ?? 0,
+    };
+    if (m.provider !== "comgate" || !comgateVariants?.length) return [base];
+    return comgateVariants.map((v) => ({
+      ...base,
+      name: t(`comgate.${v}`),
+      hint: t(`comgate.${v}_hint`),
+      variant: v,
+    }));
+  });
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-12">
