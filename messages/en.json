@@ -258,7 +258,8 @@
     "invoice": "Invoice",
     "creditNote": "Credit note",
     "claimLink": "Make a claim",
-    "withdrawalLink": "Return within 14 days"
+    "withdrawalLink": "Return within 14 days",
+    "payAgain": "Pay again"
   },
   "ResetPassword": {
     "title": "Reset password",

@@ -92,7 +92,8 @@ export async function createComgatePayment(
     url_cancelled: input.urlCancelled,
   });
   if (cfg.test) body.set("test", "true");
-  if (input.fullName) body.set("fullName", input.fullName);
+  // fullName je podle aktuální dokumentace povinný → fallback na e-mail.
+  body.set("fullName", (input.fullName || input.email).slice(0, 255));
 
   const res = await fetch(`${BASE}/create`, {
     method: "POST",
@@ -162,22 +163,50 @@ export async function refundComgatePayment(
   return { ok: true };
 }
 
-/** Ověří skutečný stav platby přes /status. Vrací PAID|CANCELLED|PENDING|AUTHORIZED nebo null. */
-export async function getComgateStatus(transId: string): Promise<string | null> {
+export type ComgatePaymentStatus = {
+  /** PAID | CANCELLED | PENDING | AUTHORIZED */
+  status: string;
+  /** Reference obchodníka = číslo objednávky. */
+  refId: string;
+  /** Částka v minor units. */
+  price: number;
+  curr: string;
+};
+
+/**
+ * Ověří skutečný stav platby přes /status. Protože se volá s naším
+ * merchant/secret, úspěšná odpověď zároveň dokazuje, že platba patří nám.
+ * Vrací null při chybě (síť, neznámá transakce, nenakonfigurováno).
+ */
+export async function getComgatePayment(transId: string): Promise<ComgatePaymentStatus | null> {
   const cfg = await getComgateConfig();
-  if (!cfg) return null;
+  if (!cfg || !transId) return null;
   const body = new URLSearchParams({
     merchant: cfg.merchant,
     secret: cfg.secret,
     transId,
   });
-  const res = await fetch(`${BASE}/status`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-    cache: "no-store",
-  });
-  const p = new URLSearchParams(await res.text());
-  if (p.get("code") !== "0") return null;
-  return p.get("status");
+  try {
+    const res = await fetch(`${BASE}/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      cache: "no-store",
+    });
+    const p = new URLSearchParams(await res.text());
+    if (p.get("code") !== "0" || !p.get("status")) return null;
+    return {
+      status: p.get("status") ?? "",
+      refId: p.get("refId") ?? "",
+      price: Number(p.get("price") ?? 0),
+      curr: p.get("curr") ?? "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Zkratka: jen stav platby (PAID|CANCELLED|PENDING|AUTHORIZED) nebo null. */
+export async function getComgateStatus(transId: string): Promise<string | null> {
+  return (await getComgatePayment(transId))?.status ?? null;
 }

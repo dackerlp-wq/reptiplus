@@ -11,7 +11,7 @@ import { syncOrderCreated } from "@/lib/ecomail/sync";
 import { confirmSubscriptionForEmail, requestSubscription } from "@/lib/newsletter/service";
 import { freeShippingThreshold, getShippingSettings } from "@/lib/settings";
 import { validateDiscount, type DiscountError } from "@/lib/checkout/discount";
-import { createComgatePayment } from "@/lib/comgate/client";
+import { startComgatePayment } from "@/lib/orders/comgate";
 import { sendOrderConfirmation } from "@/lib/orders/confirmation";
 import { logOrderEvent } from "@/lib/orders/events";
 import { checkLowStock } from "@/lib/stock-alerts/low-stock";
@@ -364,28 +364,18 @@ export async function createOrderAction(
       // redirect() musí být MIMO try/catch — vyhazuje interní NEXT_REDIRECT,
       // který by se jinak chytil do catch a přesměrování by se zrušilo.
       if (paymentProvider === "comgate" && total > 0) {
-        let gatewayUrl: string | null = null;
-        try {
-          const pay = await createComgatePayment({
-            price: total,
-            curr: currency,
-            refId: orderNumber,
-            label: orderNumber,
-            email,
-            fullName: ship.full_name,
-            lang: locale,
-            urlPaid: `${siteUrl}/${locale}/objednavka/${orderNumber}?platba=uspech`,
-            urlPending: `${siteUrl}/${locale}/objednavka/${orderNumber}?platba=probiha`,
-            urlCancelled: `${siteUrl}/${locale}/objednavka/${orderNumber}?platba=zruseno`,
-          });
-          await svc
-            .from("order")
-            .update({ comgate_ref: pay.transId })
-            .eq("number", orderNumber);
-          gatewayUrl = pay.redirect;
-        } catch (e) {
-          console.error("[checkout] Comgate se nepodařilo založit platbu:", e);
-        }
+        const gatewayUrl = created
+          ? await startComgatePayment({
+              orderId: created.id,
+              number: orderNumber,
+              total,
+              currency,
+              email,
+              fullName: ship.full_name,
+              locale,
+              siteUrl,
+            })
+          : null;
         redirect(gatewayUrl ?? `/${locale}/objednavka/${orderNumber}?platba=chyba`);
       }
 

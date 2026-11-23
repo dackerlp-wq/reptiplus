@@ -258,7 +258,8 @@
     "invoice": "Rechnung",
     "creditNote": "Gutschrift",
     "claimLink": "Reklamieren",
-    "withdrawalLink": "Innerhalb von 14 Tagen zurückgeben"
+    "withdrawalLink": "Innerhalb von 14 Tagen zurückgeben",
+    "payAgain": "Erneut bezahlen"
   },
   "ResetPassword": {
     "title": "Passwort zurücksetzen",

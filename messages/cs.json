@@ -258,7 +258,8 @@
     "invoice": "Faktura",
     "creditNote": "Dobropis",
     "claimLink": "Reklamovat zboží",
-    "withdrawalLink": "Vrátit zboží do 14 dnů"
+    "withdrawalLink": "Vrátit zboží do 14 dnů",
+    "payAgain": "Zaplatit znovu"
   },
   "ResetPassword": {
     "title": "Obnova hesla",

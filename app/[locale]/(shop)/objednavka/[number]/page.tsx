@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Package, FileText, Truck, ExternalLink } from "lucide-react";
+import { CheckCircle2, Package, FileText, Truck, ExternalLink, CreditCard } from "lucide-react";
 import { ReorderButton } from "@/components/reptiplus/reorder-button";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -12,6 +12,8 @@ import { EcomailBasket } from "@/components/reptiplus/ecomail-basket";
 import { getShopContact } from "@/lib/settings";
 import { getInvoicesForOrder } from "@/lib/invoices/issue";
 import { variableSymbolForOrder } from "@/lib/orders/vs";
+import { syncComgateTransaction } from "@/lib/orders/comgate";
+import { payAgainAction } from "@/lib/checkout/pay-again";
 
 export async function generateMetadata({
   params,
@@ -50,7 +52,7 @@ export default async function OrderConfirmPage({
   ]);
 
   const svc = createServiceClient();
-  const { data: order } = await svc
+  const { data: fetched } = await svc
     .from("order")
     .select(
       "id, number, email, status, payment_status, comgate_ref, subtotal, shipping, discount, total, currency, payment_method, payment_fee, shipping_method, shipping_address, note, created_at, tracking_number, tracking_url, order_item(id,product_id,name,sku,unit_price,qty,line_total)",
@@ -58,7 +60,23 @@ export default async function OrderConfirmPage({
     .eq("number", number)
     .maybeSingle();
 
-  if (!order) notFound();
+  if (!fetched) notFound();
+  let order = fetched;
+
+  // Návrat z platební brány: webhook může dorazit až po zákazníkovi → stav ověřit
+  // přímo u Comgate (idempotentní, při zaplacení vystaví fakturu a pošle e-mail).
+  if (order.comgate_ref && order.payment_status !== "paid" && order.status === "new") {
+    const res = await syncComgateTransaction(order.comgate_ref);
+    if (res === "paid" || res === "failed") {
+      order = { ...order, payment_status: res };
+    }
+  }
+
+  // Lze zaplatit znovu? (online metoda, nezaplaceno, objednávka nezrušená)
+  const { data: payMethod } = order.payment_method
+    ? await svc.from("payment_method").select("provider").eq("code", order.payment_method).maybeSingle()
+    : { data: null };
+  const isOnlineMethod = payMethod?.provider === "comgate";
 
   const isBank = order.payment_method === "bank" || order.payment_method === "bank_transfer";
   const [shop, invoices] = await Promise.all([
@@ -77,7 +95,7 @@ export default async function OrderConfirmPage({
     : [];
 
   // Stav platby → hláška a barva banneru.
-  const online = Boolean(order.comgate_ref);
+  const online = Boolean(order.comgate_ref) || isOnlineMethod;
   const payTone: "ok" | "warn" | "err" | "info" =
     order.payment_status === "paid"
       ? "ok"
@@ -98,6 +116,12 @@ export default async function OrderConfirmPage({
             : isBank
               ? t("payBank")
               : t("payOther");
+  const canPayAgain =
+    isOnlineMethod &&
+    order.status === "new" &&
+    order.payment_status !== "paid" &&
+    (order.total ?? 0) > 0 &&
+    (payTone === "err" || payTone === "warn");
   const payToneCls: Record<typeof payTone, string> = {
     ok: "border-success/30 bg-success/10",
     warn: "border-amber/40 bg-amber/10",
@@ -146,6 +170,15 @@ export default async function OrderConfirmPage({
       {/* Stav / instrukce k platbě */}
       <div className={`mb-6 rounded-xl border p-5 text-sm text-charcoal ${payToneCls[payTone]}`}>
         {payMsg}
+        {canPayAgain && (
+          <form action={payAgainAction} className="mt-3">
+            <input type="hidden" name="number" value={order.number} />
+            <input type="hidden" name="locale" value={locale} />
+            <button className="inline-flex items-center gap-2 rounded-lg bg-forest px-4 py-2 text-sm font-semibold text-cream transition hover:bg-forest/90">
+              <CreditCard className="size-4" /> {t("payAgain")}
+            </button>
+          </form>
+        )}
         {payTone === "info" && bankRows.length > 0 && (
           <dl className="mt-3 grid gap-x-4 gap-y-1 sm:grid-cols-[auto_1fr]">
             {bankRows.map(([k, v]) => (
