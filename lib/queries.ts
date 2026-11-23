@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getComgateConfig } from "@/lib/comgate/client";
 import {
   compareForLocale,
   discountPercent,
@@ -360,9 +361,12 @@ export async function getPaymentMethods(): Promise<PaymentMethodItem[]> {
     .from("payment_method")
     .select("id,code,name_i18n,provider,fee_czk,fee_eur,sort_order")
     .eq("is_active", true)
-    .neq("provider", "comgate")
     .order("sort_order");
-  return (data ?? []) as unknown as PaymentMethodItem[];
+  const methods = (data ?? []) as unknown as PaymentMethodItem[];
+  // Comgate nabízet jen s vyplněnými klíči (Nastavení → Integrace), jinak by platba selhala.
+  if (!methods.some((m) => m.provider === "comgate")) return methods;
+  const comgateReady = Boolean(await getComgateConfig());
+  return comgateReady ? methods : methods.filter((m) => m.provider !== "comgate");
 }
 
 export async function getBrands(): Promise<BrandItem[]> {
