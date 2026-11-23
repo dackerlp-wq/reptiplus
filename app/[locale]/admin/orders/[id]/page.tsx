@@ -539,7 +539,11 @@ export default async function OrderDetailPage({
               </span>
             </p>
           )}
-          {refundable > 0 ? (
+          {isOnlinePayment && order.payment_status !== "paid" && refunded === 0 ? (
+            <p className="text-sm text-gray-soft">
+              Platba přes Comgate není zaplacená — není co vracet.
+            </p>
+          ) : refundable > 0 ? (
             <ToastForm
               action={refundOrderAction}
               success="Vratka zpracována"

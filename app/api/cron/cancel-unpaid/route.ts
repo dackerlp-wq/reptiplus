@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { logOrderEvent } from "@/lib/orders/events";
 import { sendOrderStatusEmail } from "@/lib/orders/notify";
+import { syncComgateTransaction } from "@/lib/orders/comgate";
 
 /** Po kolika hodinách bez platby se karetní objednávka zruší a sklad vrátí. */
 const UNPAID_HOURS = 24;
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
   const cutoff = new Date(Date.now() - UNPAID_HOURS * 3600_000).toISOString();
   const { data: orders, error } = await svc
     .from("order")
-    .select("id, number, email, currency, locale, tracking_number, tracking_url, shipping_method")
+    .select("id, number, email, currency, locale, tracking_number, tracking_url, shipping_method, comgate_ref")
     .eq("status", "new")
     .in("payment_status", ["pending", "failed"])
     .in("payment_method", codes)
@@ -35,7 +36,18 @@ export async function GET(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   let cancelled = 0;
+  let paidLate = 0;
   for (const o of orders ?? []) {
+    // Pojistka proti ztracenému webhooku: před stornem ověřit stav přímo u Comgate.
+    // Zaplacené označit jako zaplacené; když Comgate neodpovídá, raději nerušit (zkusí se zítra).
+    if (o.comgate_ref) {
+      const res = await syncComgateTransaction(o.comgate_ref);
+      if (res === "paid") {
+        paidLate++;
+        continue;
+      }
+      if (res === "unverified") continue;
+    }
     const { data: done, error: rpcErr } = await svc.rpc("cancel_unpaid_order", { p_order_id: o.id });
     if (rpcErr) {
       console.error("[cron] zrušení objednávky selhalo:", o.number, rpcErr.message);
@@ -50,5 +62,5 @@ export async function GET(request: NextRequest) {
     });
     await sendOrderStatusEmail(o, "cancelled");
   }
-  return NextResponse.json({ cancelled, checked: orders?.length ?? 0 });
+  return NextResponse.json({ cancelled, paidLate, checked: orders?.length ?? 0 });
 }

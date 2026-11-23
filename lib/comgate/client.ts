@@ -119,12 +119,12 @@ export type RefundResult =
 
 /**
  * Vrátí (refunduje) část nebo celou částku platby přes Comgate /refund.
- * `amount` je v minor units (haléře / eurocenty). `curr` musí odpovídat platbě.
+ * `amount` je v minor units (haléře / eurocenty) v měně původní platby —
+ * měnu Comgate nebere jako parametr, vrací se vždy v měně platby.
  */
 export async function refundComgatePayment(
   transId: string,
   amount: number,
-  curr: string,
 ): Promise<RefundResult> {
   const cfg = await getComgateConfig();
   if (!cfg) return { ok: false, error: "Comgate není nakonfigurován." };
@@ -137,7 +137,6 @@ export async function refundComgatePayment(
     secret: cfg.secret,
     transId,
     amount: String(amount),
-    curr,
   });
   if (cfg.test) body.set("test", "true");
 

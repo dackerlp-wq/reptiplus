@@ -1298,14 +1298,18 @@ export async function refundOrderAction(fd: FormData) {
     );
   }
 
-  // Online platba přes Comgate → skutečná refundace přes bránu.
+  // Online platba přes Comgate → skutečná refundace přes bránu (jen u zaplacené platby).
   if (order.comgate_ref) {
-    const res = await refundComgatePayment(
-      order.comgate_ref,
-      amount,
-      order.currency,
-    );
-    if (!res.ok) throw new Error(res.error);
+    if (order.payment_status !== "paid") {
+      throw new Error("Platba přes Comgate není zaplacená — není co vracet.");
+    }
+    const res = await refundComgatePayment(order.comgate_ref, amount);
+    if (!res.ok) {
+      // Toast v produkci zobrazí jen obecnou chybu → důvod zapsat do historie objednávky.
+      await logOrderEvent(id, "refund", `Refundace přes Comgate selhala: ${res.error}`, { status: "error", amount, currency: order.currency }, admin.email);
+      revalidatePath("/", "layout");
+      throw new Error(res.error);
+    }
   }
 
   const newRefunded = already + amount;
