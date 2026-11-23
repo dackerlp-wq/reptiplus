@@ -20,6 +20,7 @@ import {
   Menu,
   X,
   Warehouse,
+  BarChart3,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,10 @@ type Group = Item[];
 
 /** Ploché menu seřazené podle četnosti práce, skupiny jen oddělené čarou. */
 const GROUPS: Group[] = [
-  [{ href: "/admin", label: "Přehled", icon: LayoutDashboard }],
+  [
+    { href: "/admin", label: "Přehled", icon: LayoutDashboard },
+    { href: "/admin/analytics", label: "Analytika", icon: BarChart3 },
+  ],
   [
     { href: "/admin/orders", label: "Objednávky", icon: ShoppingBag, badgeTone: "amber" },
     { href: "/admin/invoices", label: "Faktury", icon: FileText },

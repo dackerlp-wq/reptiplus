@@ -32,6 +32,7 @@ Značky: `[ ]` čeká · `[~]` rozpracováno · `[x]` hotovo.
 ## Fáze 4 — Sklad & dashboard
 - [x] **10. Sklad** — limit docházejícího skladu na produktu + e-mail obchodu (jednou, reset po naskladnění), CSV import skladu a cen podle SKU s náhledem (Produkty → Import CSV), přehled docházejících na dashboardu. Historie pohybů a hromadná úprava zatím ne.
 - [x] **11. Dashboard** — období 7/30/90/365 dní, tržby (zaplacené, EUR kurzem ČNB) s porovnáním s předchozím obdobím, počet objednávek, průměrná objednávka, konverze košíků (orientační), graf po dnech/měsících, nejprodávanější produkty, docházející sklad, opuštěné košíky, nové reklamace, objednávky k vyřízení. Migrace `20260912_0005`.
+- [x] **11b. Analytika** — samostatná stránka `/admin/analytics`: tržby (i bez DPH), objednávky, průměr/medián, kusy, hrubá marže, slevy, vratky, storna, nezaplacené, doba do zaplacení/odeslání, tržby v čase, heatmapa nákupů, rozpady (platba, metoda na bráně, doprava, země, jazyk, stav), zákazníci (noví/vracející se, opakovaný nákup, hodnota zákazníka, top zákazníci), produkty, kategorie, značky, slevové kódy, marketing (registrace, newsletter, recenze, hlídání skladu, opuštěné košíky, reklamace, LEDX poptávky).
 
 ## Fáze 5 — Zákazník / UX
 - [x] **12. Oblíbené (wishlist)** — srdíčko na kartě i v detailu (`components/reptiplus/wishlist-button.tsx`, ID přes `/api/wishlist`), seznam v účtu.

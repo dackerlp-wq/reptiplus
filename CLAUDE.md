@@ -205,6 +205,10 @@ a `product.is_gift_voucher` v DB zůstávají (RPC `place_order` je dál umí, a
 - CSV import skladu a cen: `app/[locale]/admin/products/import` → `lib/admin/import-actions.ts` (náhled podle SKU produktu/varianty, pak zápis; prázdná buňka = beze změny).
 - Dashboard `app/[locale]/admin/page.tsx`: období 7/30/90/365 dní (`?period=`), čisté výpočty v `lib/admin/stats.ts` (tržby jen `payment_status=paid` a ne storno,
   EUR kurzem ČNB, porovnání s předchozím obdobím, sloupce po dnech/měsících, top produkty, konverze košíků orientačně = objednávky / (objednávky + košíky vzniklé v období)).
+- Analytika `app/[locale]/admin/analytics/page.tsx` (menu pod Přehledem): období 7/30/90/365 dní / letos / vše (`?period=`), čisté výpočty `lib/admin/analytics.ts`
+  (testy `tests/unit/analytics.test.ts`): souhrn vč. tržby bez DPH, mediánu, marže z `purchase_price_czk`, slev, vratek, storen; tržby v čase, heatmapa den × hodina (Praha),
+  rozpady platba / metoda na bráně (z `order_event` meta `method`) / doprava / země / jazyk / stav, zákazníci (noví vs vracející se podle e-mailu, opakovaný nákup, LTV),
+  produkty / kořenové kategorie / značky, slevové kódy, doba do zaplacení a odeslání (z `order_event`), registrace, newsletter, recenze, hlídání skladu, reklamace, poptávky LEDX.
 - Recenze: `review.verified_purchase` se nastavuje při vložení (service klient) podle objednávek zákazníka se stavem paid/processing/shipped/delivered nebo zaplacených.
 
 ### Analytika a souhlas
