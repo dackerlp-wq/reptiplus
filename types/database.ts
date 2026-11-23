@@ -1462,6 +1462,7 @@ export type Database = {
           name_i18n: Json
           price_czk: number | null
           price_eur: number | null
+          purchase_price_czk: number | null
           product_id: string
           sku: string | null
           sort_order: number
@@ -1475,6 +1476,7 @@ export type Database = {
           name_i18n?: Json
           price_czk?: number | null
           price_eur?: number | null
+          purchase_price_czk?: number | null
           product_id: string
           sku?: string | null
           sort_order?: number
@@ -1488,6 +1490,7 @@ export type Database = {
           name_i18n?: Json
           price_czk?: number | null
           price_eur?: number | null
+          purchase_price_czk?: number | null
           product_id?: string
           sku?: string | null
           sort_order?: number

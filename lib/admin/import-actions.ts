@@ -24,8 +24,18 @@ export type ImportRow = {
   stock: number | null;
   priceCzk: number | null; // minor units
   priceEur: number | null;
+  purchaseCzk: number | null; // nákupní cena bez DPH, minor units
   /** Co bylo nalezeno podle SKU. */
-  target: { kind: "product" | "variant"; id: string; productId: string; name: string; stock: number; priceCzk: number | null; priceEur: number | null } | null;
+  target: {
+    kind: "product" | "variant";
+    id: string;
+    productId: string;
+    name: string;
+    stock: number;
+    priceCzk: number | null;
+    priceEur: number | null;
+    purchaseCzk: number | null;
+  } | null;
   error: string | null;
 };
 
@@ -35,7 +45,7 @@ export type ImportState =
   | { status: "done"; updated: number; skipped: number }
   | { status: "error"; message: string };
 
-const HEADER_ALIASES: Record<string, keyof Pick<ImportRow, "sku" | "stock" | "priceCzk" | "priceEur">> = {
+const HEADER_ALIASES: Record<string, keyof Pick<ImportRow, "sku" | "stock" | "priceCzk" | "priceEur" | "purchaseCzk">> = {
   sku: "sku",
   kod: "sku",
   kód: "sku",
@@ -52,6 +62,15 @@ const HEADER_ALIASES: Record<string, keyof Pick<ImportRow, "sku" | "stock" | "pr
   price_eur: "priceEur",
   cena_eur: "priceEur",
   eur: "priceEur",
+  purchase_price_czk: "purchaseCzk",
+  purchase_price: "purchaseCzk",
+  purchase: "purchaseCzk",
+  nakup: "purchaseCzk",
+  nákup: "purchaseCzk",
+  nakupni_cena: "purchaseCzk",
+  nákupní_cena: "purchaseCzk",
+  nakupka: "purchaseCzk",
+  nákupka: "purchaseCzk",
 };
 
 function detectDelimiter(text: string): string {
@@ -94,16 +113,19 @@ const parseMoney = (v: string): number | null => {
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : NaN;
 };
 
-/** Rozparsuje CSV (hlavička: sku; stock; price_czk; price_eur — pořadí libovolné, česky i anglicky). */
+/** Rozparsuje CSV (hlavička: sku; stock; price_czk; price_eur; nakupni_cena — pořadí libovolné, česky i anglicky). */
 export async function parseImportCsv(text: string): Promise<{ rows: Omit<ImportRow, "target">[]; delimiter: string; error?: string }> {
   const clean = text.replace(/^﻿/, "");
   const lines = clean.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length < 2) return { rows: [], delimiter: ";", error: "Soubor neobsahuje hlavičku a aspoň jeden řádek dat." };
   const d = detectDelimiter(clean);
-  const header = splitLine(lines[0], d).map((h) => HEADER_ALIASES[h.toLowerCase().replace(/[^a-z_čá]/g, "")] ?? null);
+  // Hlavička: malá písmena, bez diakritiky, mezery → podtržítko („Nákupní cena“ → nakupni_cena).
+  const norm = (h: string) =>
+    h.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, "_").replace(/[^a-z_]/g, "");
+  const header = splitLine(lines[0], d).map((h) => HEADER_ALIASES[norm(h)] ?? null);
   if (!header.includes("sku")) return { rows: [], delimiter: d, error: "Chybí sloupec „sku“ (kód produktu / varianty)." };
-  if (!header.includes("stock") && !header.includes("priceCzk") && !header.includes("priceEur")) {
-    return { rows: [], delimiter: d, error: "Chybí sloupec se skladem (stock / sklad) nebo cenou (price_czk / price_eur)." };
+  if (!header.includes("stock") && !header.includes("priceCzk") && !header.includes("priceEur") && !header.includes("purchaseCzk")) {
+    return { rows: [], delimiter: d, error: "Chybí sloupec se skladem (stock / sklad), cenou (price_czk / price_eur) nebo nákupní cenou (nakupni_cena)." };
   }
   const rows = lines.slice(1).map((line, i) => {
     const cells = splitLine(line, d);
@@ -115,11 +137,14 @@ export async function parseImportCsv(text: string): Promise<{ rows: Omit<ImportR
     const stock = parseInt0(get("stock"));
     const priceCzk = parseMoney(get("priceCzk"));
     const priceEur = parseMoney(get("priceEur"));
+    const purchaseCzk = parseMoney(get("purchaseCzk"));
     let error: string | null = null;
     if (!sku) error = "Prázdné SKU";
     else if (Number.isNaN(stock)) error = "Neplatný sklad";
     else if (Number.isNaN(priceCzk) || Number.isNaN(priceEur)) error = "Neplatná cena";
-    return { line: i + 2, sku, stock: Number.isNaN(stock) ? null : stock, priceCzk: Number.isNaN(priceCzk) ? null : priceCzk, priceEur: Number.isNaN(priceEur) ? null : priceEur, error };
+    else if (Number.isNaN(purchaseCzk)) error = "Neplatná nákupní cena";
+    const ok = (v: number | null) => (Number.isNaN(v) ? null : v);
+    return { line: i + 2, sku, stock: ok(stock), priceCzk: ok(priceCzk), priceEur: ok(priceEur), purchaseCzk: ok(purchaseCzk), error };
   });
   return { rows, delimiter: d };
 }
@@ -137,15 +162,18 @@ export async function previewImportAction(_prev: ImportState, fd: FormData): Pro
   const svc = createServiceClient();
   const skus = Array.from(new Set(parsed.rows.map((r) => r.sku).filter(Boolean)));
   const [{ data: products }, { data: variants }] = await Promise.all([
-    svc.from("product").select("id, sku, name, stock_qty, price_czk, price_eur").in("sku", skus),
-    svc.from("product_variant").select("id, sku, name, product_id, stock_qty, price_czk, price_eur, product:product_id(name)").in("sku", skus),
+    svc.from("product").select("id, sku, name, stock_qty, price_czk, price_eur, purchase_price_czk").in("sku", skus),
+    svc
+      .from("product_variant")
+      .select("id, sku, name, product_id, stock_qty, price_czk, price_eur, purchase_price_czk, product:product_id(name)")
+      .in("sku", skus),
   ]);
   const bySku = new Map<string, ImportRow["target"]>();
-  for (const p of products ?? []) if (p.sku) bySku.set(p.sku.toLowerCase(), { kind: "product", id: p.id, productId: p.id, name: p.name, stock: p.stock_qty, priceCzk: p.price_czk, priceEur: p.price_eur });
+  for (const p of products ?? []) if (p.sku) bySku.set(p.sku.toLowerCase(), { kind: "product", id: p.id, productId: p.id, name: p.name, stock: p.stock_qty, priceCzk: p.price_czk, priceEur: p.price_eur, purchaseCzk: p.purchase_price_czk });
   for (const v of variants ?? []) {
     if (!v.sku) continue;
     const parent = (v as unknown as { product: { name: string } | null }).product;
-    bySku.set(v.sku.toLowerCase(), { kind: "variant", id: v.id, productId: v.product_id, name: `${parent?.name ?? ""} – ${v.name}`, stock: v.stock_qty, priceCzk: v.price_czk, priceEur: v.price_eur });
+    bySku.set(v.sku.toLowerCase(), { kind: "variant", id: v.id, productId: v.product_id, name: `${parent?.name ?? ""} – ${v.name}`, stock: v.stock_qty, priceCzk: v.price_czk, priceEur: v.price_eur, purchaseCzk: v.purchase_price_czk });
   }
   const rows: ImportRow[] = parsed.rows.map((r) => {
     const target = bySku.get(r.sku.toLowerCase()) ?? null;
@@ -171,10 +199,11 @@ export async function applyImportAction(_prev: ImportState, fd: FormData): Promi
       skipped++;
       continue;
     }
-    const patch: { stock_qty?: number; price_czk?: number; price_eur?: number } = {};
+    const patch: { stock_qty?: number; price_czk?: number; price_eur?: number; purchase_price_czk?: number } = {};
     if (r.stock != null) patch.stock_qty = r.stock;
     if (r.priceCzk != null) patch.price_czk = r.priceCzk;
     if (r.priceEur != null) patch.price_eur = r.priceEur;
+    if (r.purchaseCzk != null) patch.purchase_price_czk = r.purchaseCzk;
     if (Object.keys(patch).length === 0) {
       skipped++;
       continue;

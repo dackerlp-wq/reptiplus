@@ -246,6 +246,7 @@ async function syncProductVariants(
     sku?: string;
     price_czk?: string;
     price_eur?: string;
+    purchase_price_czk?: string;
     stock_qty?: string;
     image_url?: string | null;
     attributes?: VAttr[];
@@ -313,6 +314,7 @@ async function syncProductVariants(
       sku: v.sku?.trim() || null,
       price_czk: toMinor(v.price_czk),
       price_eur: toMinor(v.price_eur),
+      purchase_price_czk: toMinor(v.purchase_price_czk),
       stock_qty: toStock(v.stock_qty),
       image_url: typeof v.image_url === "string" && v.image_url ? v.image_url : null,
       attributes: attrs as never,

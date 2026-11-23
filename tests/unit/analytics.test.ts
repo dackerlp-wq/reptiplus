@@ -9,9 +9,12 @@ import {
   fulfillment,
   heatmap,
   median,
+  missingCostRows,
+  productRows,
   rootCategory,
   type AOrder,
   type CategoryInfo,
+  type CostCtx,
   type ProductInfo,
 } from "@/lib/admin/analytics";
 
@@ -49,6 +52,7 @@ const products = new Map<string, ProductInfo>([
   ["p1", { categoryId: "c2", brandId: "b1", purchasePriceCzk: 50000 }],
   ["p2", { categoryId: null, brandId: null, purchasePriceCzk: null }],
 ]);
+const ctx = (vatPayer = false, variantCost = new Map<string, number>()): CostCtx => ({ products, variantCost, vatPayer });
 
 describe("období", () => {
   it("Vše začíná první objednávkou a nemá srovnání", () => {
@@ -74,7 +78,7 @@ describe("souhrn", () => {
       order({ status: "cancelled", payment_status: "failed" }),
       order({ created_at: "2026-10-01T00:00:00Z" }), // mimo období
     ];
-    const s = aSummary(orders, R, null, products, false);
+    const s = aSummary(orders, R, null, ctx());
     expect(s.revenue).toBe(400000);
     expect(s.paidOrders).toBe(2);
     expect(s.ordersAll).toBe(4);
@@ -94,7 +98,7 @@ describe("souhrn", () => {
       ],
       total: 242000,
     });
-    const s = aSummary([o], R, null, products, true);
+    const s = aSummary([o], R, null, ctx(true));
     expect(s.revenueNet).toBe(200000);
     expect(s.margin).toBe(50000); // 100 000 bez DPH − 50 000 nákup
     expect(s.marginRate).toBe(50);
@@ -102,7 +106,7 @@ describe("souhrn", () => {
   });
 
   it("EUR se přepočítá kurzem", () => {
-    const s = aSummary([order({ currency: "EUR", total: 1000, items: [] })], R, 25, products, false);
+    const s = aSummary([order({ currency: "EUR", total: 1000, items: [] })], R, 25, ctx());
     expect(s.revenue).toBe(25000);
   });
 });
@@ -154,7 +158,7 @@ describe("kategorie, slevy, vyřízení", () => {
 
   it("kořenová kategorie", () => {
     expect(rootCategory("c2", cats)).toEqual({ id: "c1", name: "Výživa" });
-    const rows = categoryRows([order(), order({ items: [{ product_id: "p2", variant_id: null, name: "B", qty: 2, line_total: 1000, vat_rate: 21 }] })], R, null, products, cats);
+    const rows = categoryRows([order(), order({ items: [{ product_id: "p2", variant_id: null, name: "B", qty: 2, line_total: 1000, vat_rate: 21 }] })], R, null, ctx(), cats);
     expect(rows.map((r) => r.name)).toEqual(["Výživa", "Bez kategorie"]);
   });
 
@@ -177,5 +181,52 @@ describe("kategorie, slevy, vyřízení", () => {
     expect(f.hoursToPaid).toBe(2);
     expect(f.hoursToShipped).toBe(24);
     expect(f.gatewayMethods[0]).toMatchObject({ key: "APPLEPAY_REDIRECT", orders: 1, share: 100 });
+  });
+});
+
+describe("nákupní ceny a marže", () => {
+  it("nákupní cena varianty má přednost před produktem", () => {
+    const o = order({
+      total: 242000,
+      items: [
+        { product_id: "p1", variant_id: "v-big", name: "Tonic – 1000 g", qty: 1, line_total: 121000, vat_rate: 21 },
+        { product_id: "p1", variant_id: "v-small", name: "Tonic – 100 g", qty: 1, line_total: 121000, vat_rate: 21 },
+      ],
+    });
+    // v-big 80 000, v-small bez vlastní → produkt 50 000; neplátce DPH
+    const s = aSummary([o], R, null, ctx(false, new Map([["v-big", 80000]])));
+    expect(s.margin).toBe(242000 - 80000 - 50000);
+    const rows = productRows([o], R, null, ctx(false, new Map([["v-big", 80000]])));
+    expect(rows[0]).toMatchObject({ key: "p1", qty: 2, margin: 112000, partialCost: false });
+  });
+
+  it("chybějící nákupní ceny a neúplná marže", () => {
+    const orders = [
+      order({ items: [{ product_id: "p2", variant_id: null, name: "B", qty: 3, line_total: 30000, vat_rate: 21 }], total: 30000 }),
+      order(),
+    ];
+    const missing = missingCostRows(orders, R, null, ctx());
+    expect(missing.map((r) => r.key)).toEqual(["p2"]);
+    expect(missing[0].qty).toBe(3);
+    const rows = productRows(orders, R, null, ctx());
+    expect(rows.find((r) => r.key === "p2")!.margin).toBeNull();
+    expect(rows.find((r) => r.key === "p1")!.margin).toBe(71000);
+  });
+});
+
+import { marginOf } from "@/lib/admin/margin";
+
+describe("náhled marže ve formuláři", () => {
+  it("plátce DPH: z ceny bez DPH", () => {
+    const m = marginOf(121, 50, 21, true)!;
+    expect(m.net).toBeCloseTo(100);
+    expect(m.margin).toBeCloseTo(50);
+    expect(m.pct).toBe(50);
+    expect(m.markup).toBe(100);
+  });
+  it("neplátce a chybějící hodnoty", () => {
+    expect(marginOf(121, 50, 21, false)!.margin).toBe(71);
+    expect(marginOf(null, 50, 21, false)).toBeNull();
+    expect(marginOf(100, null, 21, false)).toBeNull();
   });
 });

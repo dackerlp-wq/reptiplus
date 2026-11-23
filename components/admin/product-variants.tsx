@@ -27,6 +27,8 @@ export type VariantRow = {
   sku: string;
   price_czk: string;
   price_eur: string;
+  /** Nákupní cena Kč bez DPH; prázdná = nákupní cena produktu. */
+  purchase_price_czk: string;
   stock_qty: string;
   image_url: string;
   attributes: VariantAttrRow[];
@@ -47,6 +49,7 @@ export function emptyVariant(): VariantRow {
     sku: "",
     price_czk: "",
     price_eur: "",
+    purchase_price_czk: "",
     stock_qty: "0",
     image_url: "",
     attributes: [],
@@ -107,6 +110,7 @@ export function ProductVariants({ initial }: { initial: VariantRow[] }) {
       sku: r.sku,
       price_czk: r.price_czk,
       price_eur: r.price_eur,
+      purchase_price_czk: r.purchase_price_czk,
       stock_qty: r.stock_qty,
       image_url: r.image_url || null,
       attributes: r.attributes
@@ -325,7 +329,7 @@ export function ProductVariants({ initial }: { initial: VariantRow[] }) {
               </div>
 
               {/* Pole */}
-              <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_0.6fr]">
+              <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_0.8fr_0.6fr]">
                 <label className="flex flex-col gap-1">
                   <span className={legend}>Název ({lang.toUpperCase()})</span>
                   <input
@@ -360,6 +364,17 @@ export function ProductVariants({ initial }: { initial: VariantRow[] }) {
                     value={row.price_eur}
                     onChange={(e) => setStr(i, "price_eur", e.target.value)}
                     placeholder="—"
+                    className={input}
+                  />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className={legend}>Nákup Kč</span>
+                  <input
+                    inputMode="decimal"
+                    value={row.purchase_price_czk}
+                    onChange={(e) => setStr(i, "purchase_price_czk", e.target.value)}
+                    placeholder="jako produkt"
+                    title="Nákupní cena za kus bez DPH. Prázdné = nákupní cena produktu."
                     className={input}
                   />
                 </label>

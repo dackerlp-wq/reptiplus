@@ -31,11 +31,13 @@ import {
   fulfillment,
   heatmap,
   isAPeriodKey,
+  missingCostRows,
   productRows,
   type AEvent,
   type AOrder,
   type ARow,
   type CategoryInfo,
+  type CostCtx,
   type ProductInfo,
   type Slice,
 } from "@/lib/admin/analytics";
@@ -170,7 +172,17 @@ function SliceBars({ rows, label }: { rows: Slice[]; label: (key: string) => str
 }
 
 /** Tabulka produktů / kategorií / značek. */
-function RowsTable({ rows, limit = 10, linkProducts = false }: { rows: ARow[]; limit?: number; linkProducts?: boolean }) {
+function RowsTable({
+  rows,
+  limit = 10,
+  linkProducts = false,
+  showMargin = true,
+}: {
+  rows: ARow[];
+  limit?: number;
+  linkProducts?: boolean;
+  showMargin?: boolean;
+}) {
   if (rows.length === 0) return <Empty>Zatím žádné zaplacené objednávky v období.</Empty>;
   const total = rows.reduce((s, r) => s + r.revenue, 0);
   return (
@@ -182,6 +194,7 @@ function RowsTable({ rows, limit = 10, linkProducts = false }: { rows: ARow[]; l
           <th className="pb-2 text-right">Obj.</th>
           <th className="pb-2 text-right">Tržba</th>
           <th className="pb-2 text-right">Podíl</th>
+          {showMargin && <th className="pb-2 text-right">Marže</th>}
         </tr>
       </thead>
       <tbody className="divide-y divide-cream-dark">
@@ -200,6 +213,14 @@ function RowsTable({ rows, limit = 10, linkProducts = false }: { rows: ARow[]; l
             <td className="py-2 text-right font-mono text-gray-soft">{num(r.orders)}</td>
             <td className="py-2 text-right font-mono">{czk(r.revenue)}</td>
             <td className="py-2 text-right font-mono text-xs text-gray-soft">{pctFmt(total ? Math.round((r.revenue / total) * 1000) / 10 : null)}</td>
+            {showMargin && (
+              <td
+                className={cn("py-2 text-right font-mono text-xs", r.margin == null ? "text-gray-soft" : r.margin < 0 ? "text-error" : "text-ink")}
+                title={r.partialCost ? "Část prodejů nemá nákupní cenu — marže je jen za položky s ní." : undefined}
+              >
+                {r.margin == null ? "—" : `${czk(r.margin)} · ${pctFmt(r.marginPct)}${r.partialCost ? " *" : ""}`}
+              </td>
+            )}
           </tr>
         ))}
       </tbody>
@@ -227,6 +248,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   const [
     ordersRes,
     productsRes,
+    variantsRes,
     categoriesRes,
     brandsRes,
     payRes,
@@ -250,6 +272,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
       .order("created_at", { ascending: true })
       .limit(20000),
     svc.from("product").select("id, category_id, brand_id, purchase_price_czk, is_published").limit(5000),
+    svc.from("product_variant").select("id, purchase_price_czk").not("purchase_price_czk", "is", null).limit(20000),
     svc.from("category").select("id, name, parent_id").limit(1000),
     svc.from("brand").select("id, name").limit(1000),
     svc.from("payment_method").select("code, name_i18n"),
@@ -312,6 +335,11 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   const products = new Map<string, ProductInfo>(
     (productsRes.data ?? []).map((p) => [p.id, { categoryId: p.category_id, brandId: p.brand_id, purchasePriceCzk: p.purchase_price_czk }]),
   );
+  const ctx: CostCtx = {
+    products,
+    variantCost: new Map((variantsRes.data ?? []).map((v) => [v.id, v.purchase_price_czk as number])),
+    vatPayer,
+  };
   const cats = new Map<string, CategoryInfo>((categoriesRes.data ?? []).map((c) => [c.id, { name: c.name, parentId: c.parent_id }]));
   const brands = new Map<string, string>((brandsRes.data ?? []).map((b) => [b.id, b.name]));
   const payNames = new Map((payRes.data ?? []).map((m) => [m.code, pickI18n(m.name_i18n as Record<string, string> | null, "cs")]));
@@ -319,17 +347,19 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   const codeNames = new Map((codesRes.data ?? []).map((d) => [d.id, d.code]));
 
   /* Výpočty */
-  const sum = aSummary(orders, current, eurRate, products, vatPayer);
-  const prev = previous ? aSummary(orders, previous, eurRate, products, vatPayer) : null;
+  const sum = aSummary(orders, current, eurRate, ctx);
+  const prev = previous ? aSummary(orders, previous, eurRate, ctx) : null;
   const d = (a: number, b: number | undefined) => (prev && b !== undefined ? deltaPct(a, b) : undefined);
   const buckets = bucketize(orders, current, eurRate);
   const heat = heatmap(orders, current);
   const heatMax = Math.max(1, ...heat.flat());
   const cust = customerStats(orders, current, eurRate);
-  const prodRows = productRows(orders, current, eurRate);
+  const prodRows = productRows(orders, current, eurRate, ctx);
+  const missing = missingCostRows(orders, current, eurRate, ctx);
+  const byMargin = prodRows.filter((r) => r.margin != null).sort((a, b) => (b.margin ?? 0) - (a.margin ?? 0));
   const byQty = [...prodRows].sort((a, b) => b.qty - a.qty);
-  const catRows = categoryRows(orders, current, eurRate, products, cats);
-  const brRows = brandRows(orders, current, eurRate, products, brands);
+  const catRows = categoryRows(orders, current, eurRate, ctx, cats);
+  const brRows = brandRows(orders, current, eurRate, ctx, brands);
   const discRows = discountRows(orders, current, eurRate);
   const ful = fulfillment(orders, events, current);
   const soldIds = new Set(prodRows.map((r) => r.key));
@@ -560,6 +590,29 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         </Card>
         <Card title="Značky">
           <RowsTable rows={brRows} limit={15} />
+        </Card>
+        <Card title="Nejvyšší marže" note="jen produkty s nákupní cenou · * = marže jen z části prodejů">
+          {byMargin.length === 0 ? (
+            <Empty>Zatím žádný prodaný produkt s vyplněnou nákupní cenou.</Empty>
+          ) : (
+            <RowsTable rows={byMargin} linkProducts />
+          )}
+        </Card>
+        <Card title="Chybí nákupní cena" note="prodávané v období — doplň a marže bude přesná">
+          {missing.length === 0 ? (
+            <Empty>Všechny prodané produkty mají nákupní cenu. 👍</Empty>
+          ) : (
+            <>
+              <RowsTable rows={missing} limit={15} linkProducts showMargin={false} />
+              <p className="mt-3 text-xs text-gray-soft">
+                Nákupní ceny jde vyplnit v kartě produktu (i u jednotlivých variant), nebo hromadně přes{" "}
+                <Link href="/admin/products/import" className="text-forest hover:underline">
+                  import CSV
+                </Link>{" "}
+                se sloupcem <code>nakupni_cena</code>.
+              </p>
+            </>
+          )}
         </Card>
       </div>
 

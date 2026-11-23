@@ -100,11 +100,13 @@ type ProductRow = {
   low_stock_threshold: number | null;
   is_published: boolean;
   category: { name: string } | { name: string }[] | null;
-  product_variant: { id: string; name: string; sku: string | null; stock_qty: number; price_czk: number | null }[] | null;
+  product_variant:
+    | { id: string; name: string; sku: string | null; stock_qty: number; price_czk: number | null; purchase_price_czk: number | null }[]
+    | null;
 };
 
 const PRODUCT_SELECT =
-  "id, name, sku, slug, price_czk, purchase_price_czk, vat_rate, stock_qty, low_stock_threshold, is_published, category:category_id(name), product_variant(id, name, sku, stock_qty, price_czk)";
+  "id, name, sku, slug, price_czk, purchase_price_czk, vat_rate, stock_qty, low_stock_threshold, is_published, category:category_id(name), product_variant(id, name, sku, stock_qty, price_czk, purchase_price_czk)";
 
 function buildRow(p: ProductRow, moves: MovementRow[], periodDays: number, settings: StockSettings, now: Date): StockProductRow {
   const variants: StockVariant[] = (p.product_variant ?? []).map((v) => ({ id: v.id, name: v.name, sku: v.sku, stock: v.stock_qty ?? 0 }));
@@ -149,7 +151,16 @@ function buildRow(p: ProductRow, moves: MovementRow[], periodDays: number, setti
     daysSinceIn: daysSince(lastInAt, now),
     daysOfStock: daysOfStock(stock, Math.max(0, sold), periodDays),
     status: stockStatus({ stock, lowStockThreshold: p.low_stock_threshold, sold: Math.max(0, sold), periodDays, daysSinceSale }, settings),
-    valueCzk: stockValue(stock, p.price_czk ?? 0, p.purchase_price_czk, p.vat_rate ?? 21),
+    // S variantami: součet po variantách (vlastní cena / nákupní cena varianty, jinak produktu).
+    valueCzk:
+      (p.product_variant ?? []).length > 0
+        ? (p.product_variant ?? []).reduce(
+            (sum, v) =>
+              sum +
+              stockValue(Math.max(0, v.stock_qty ?? 0), v.price_czk ?? p.price_czk ?? 0, v.purchase_price_czk ?? p.purchase_price_czk, p.vat_rate ?? 21),
+            0,
+          )
+        : stockValue(stock, p.price_czk ?? 0, p.purchase_price_czk, p.vat_rate ?? 21),
   };
 }
 
@@ -294,7 +305,7 @@ export async function getProductStock(
       daysSinceIn: daysSince(lastInAt, now),
       daysOfStock: daysOfStock(stock, sold, periodDays),
       status: stockStatus({ stock, lowStockThreshold: p.low_stock_threshold, sold, periodDays, daysSinceSale }, settings),
-      valueCzk: stockValue(stock, price, p.purchase_price_czk, p.vat_rate ?? 21),
+      valueCzk: stockValue(stock, price, v.purchase_price_czk ?? p.purchase_price_czk, p.vat_rate ?? 21),
     };
   });
 

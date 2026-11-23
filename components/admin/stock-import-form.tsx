@@ -65,6 +65,7 @@ export function StockImportForm() {
                   <th className="px-3 py-2 text-right">Sklad</th>
                   <th className="px-3 py-2 text-right">Cena Kč</th>
                   <th className="px-3 py-2 text-right">Cena €</th>
+                  <th className="px-3 py-2 text-right">Nákup Kč</th>
                   <th className="px-3 py-2">Stav</th>
                 </tr>
               </thead>
@@ -85,6 +86,10 @@ export function StockImportForm() {
                     <td className="px-3 py-2 text-right font-mono">
                       {r.target && <span className="text-gray-soft">{money(r.target.priceEur)} → </span>}
                       {r.priceEur != null ? money(r.priceEur) : <span className="text-gray-soft">beze změny</span>}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono">
+                      {r.target && <span className="text-gray-soft">{money(r.target.purchaseCzk)} → </span>}
+                      {r.purchaseCzk != null ? money(r.purchaseCzk) : <span className="text-gray-soft">beze změny</span>}
                     </td>
                     <td className="px-3 py-2 text-xs">{r.error ? <span className="text-error">{r.error}</span> : <span className="text-success">OK</span>}</td>
                   </tr>

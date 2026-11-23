@@ -202,11 +202,14 @@ a `product.is_gift_voucher` v DB zůstávají (RPC `place_order` je dál umí, a
   (`in | low | supplier | out`, strop množství v košíku) počítá `lib/availability.ts`; text `Product.supplierStock`; feedy: Heureka/Zboží `DELIVERY_DATE` 5, Google `backorder`.
 - `product.low_stock_threshold` (null = nehlídat): `checkLowStock(productIds)` v `lib/stock-alerts/low-stock.ts` po objednávce, editaci položek, uložení produktu,
   inline změně skladu a CSV importu → jeden e-mail obchodu (`low_stock_notified_at`, reset po naskladnění nad limit). `effectiveStock()` = součet variant, jinak sklad produktu.
-- CSV import skladu a cen: `app/[locale]/admin/products/import` → `lib/admin/import-actions.ts` (náhled podle SKU produktu/varianty, pak zápis; prázdná buňka = beze změny).
+- CSV import skladu, cen a nákupních cen: `app/[locale]/admin/products/import` → `lib/admin/import-actions.ts` (náhled podle SKU produktu/varianty, pak zápis; prázdná buňka = beze změny;
+  hlavička se normalizuje bez diakritiky, nákupní cena = `nakupni_cena` / `nakup` / `purchase_price_czk`).
+- Nákupní cena: produkt (`purchase_price_czk`) i varianta (migrace `20261123_0001`, prázdná = produktu); karta produktu ukazuje živý náhled marže (`marginOf()` v `lib/admin/margin.ts`,
+  u plátce DPH z ceny bez DPH). Hodnota zásob u produktů s variantami = součet po variantách.
 - Dashboard `app/[locale]/admin/page.tsx`: období 7/30/90/365 dní (`?period=`), čisté výpočty v `lib/admin/stats.ts` (tržby jen `payment_status=paid` a ne storno,
   EUR kurzem ČNB, porovnání s předchozím obdobím, sloupce po dnech/měsících, top produkty, konverze košíků orientačně = objednávky / (objednávky + košíky vzniklé v období)).
 - Analytika `app/[locale]/admin/analytics/page.tsx` (menu pod Přehledem): období 7/30/90/365 dní / letos / vše (`?period=`), čisté výpočty `lib/admin/analytics.ts`
-  (testy `tests/unit/analytics.test.ts`): souhrn vč. tržby bez DPH, mediánu, marže z `purchase_price_czk`, slev, vratek, storen; tržby v čase, heatmapa den × hodina (Praha),
+  (testy `tests/unit/analytics.test.ts`): souhrn vč. tržby bez DPH, mediánu, marže (nákupní cena varianty `product_variant.purchase_price_czk`, jinak produktu `product.purchase_price_czk` — `unitCost()`), slev, vratek, storen; marže po produktech / kategoriích / značkách, seznam prodávaných produktů bez nákupní ceny; tržby v čase, heatmapa den × hodina (Praha),
   rozpady platba / metoda na bráně (z `order_event` meta `method`) / doprava / země / jazyk / stav, zákazníci (noví vs vracející se podle e-mailu, opakovaný nákup, LTV),
   produkty / kořenové kategorie / značky, slevové kódy, doba do zaplacení a odeslání (z `order_event`), registrace, newsletter, recenze, hlídání skladu, reklamace, poptávky LEDX.
 - Recenze: `review.verified_purchase` se nastavuje při vložení (service klient) podle objednávek zákazníka se stavem paid/processing/shipped/delivered nebo zaplacených.

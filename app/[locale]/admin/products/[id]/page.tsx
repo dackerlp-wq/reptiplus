@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { getAllCategories, getBrands } from "@/lib/queries";
 import { createServiceClient } from "@/lib/supabase/service";
+import { getShopContact } from "@/lib/settings";
 import { ProductForm } from "@/components/admin/product-form";
 import { ProductImages } from "@/components/admin/product-images";
 
@@ -13,6 +14,8 @@ export default async function EditProductPage({
   params: Promise<{ locale: Locale; id: string }>;
 }) {
   const { locale, id } = await params;
+  // Plátce DPH (DIČ v Nastavení) → marže z ceny bez DPH.
+  const vatPayer = Boolean((await getShopContact().catch(() => null))?.dic);
   const svc = createServiceClient();
   const [
     { data: product },
@@ -41,7 +44,7 @@ export default async function EditProductPage({
   const { data: variantRows } = await svc
     .from("product_variant")
     .select(
-      "id, name, name_i18n, sku, price_czk, price_eur, stock_qty, image_url, attributes, sort_order",
+      "id, name, name_i18n, sku, price_czk, price_eur, purchase_price_czk, stock_qty, image_url, attributes, sort_order",
     )
     .eq("product_id", id)
     .order("sort_order");
@@ -86,6 +89,7 @@ export default async function EditProductPage({
     sku: v.sku ?? "",
     price_czk: money(v.price_czk),
     price_eur: money(v.price_eur),
+    purchase_price_czk: money(v.purchase_price_czk),
     stock_qty: String(v.stock_qty ?? 0),
     image_url: v.image_url ?? "",
     attributes: (Array.isArray(v.attributes) ? (v.attributes as VAttr[]) : []).map(
@@ -108,6 +112,7 @@ export default async function EditProductPage({
         Upravit produkt
       </h1>
       <ProductForm
+        vatPayer={vatPayer}
         product={product as never}
         categories={categories}
         brands={brands}

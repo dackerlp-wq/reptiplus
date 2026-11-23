@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { getAllCategories, getBrands } from "@/lib/queries";
 import { createServiceClient } from "@/lib/supabase/service";
+import { getShopContact } from "@/lib/settings";
 import { ProductForm } from "@/components/admin/product-form";
 import { NewProductImages } from "@/components/admin/new-product-images";
 
@@ -12,6 +13,8 @@ export default async function NewProductPage({
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
+  // Plátce DPH (DIČ v Nastavení) → marže z ceny bez DPH.
+  const vatPayer = Boolean((await getShopContact().catch(() => null))?.dic);
   const svc = createServiceClient();
   const [categories, brands, { data: allAttrs }, { data: allProds }] =
     await Promise.all([
@@ -41,6 +44,7 @@ export default async function NewProductPage({
       </Link>
       <h1 className="mb-8 font-display text-3xl font-bold">Nový produkt</h1>
       <ProductForm
+        vatPayer={vatPayer}
         categories={categories}
         brands={brands}
         locale={locale}

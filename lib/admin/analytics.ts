@@ -38,6 +38,27 @@ export type AOrder = {
 };
 
 export type ProductInfo = { categoryId: string | null; brandId: string | null; purchasePriceCzk: number | null };
+
+/** Nákupní ceny: varianta má přednost, jinak produkt. Haléře bez DPH za kus. */
+export type CostCtx = {
+  products: Map<string, ProductInfo>;
+  variantCost: Map<string, number>;
+  vatPayer: boolean;
+};
+
+export function unitCost(it: Pick<AItem, "product_id" | "variant_id">, ctx: Pick<CostCtx, "products" | "variantCost">): number | null {
+  if (it.variant_id) {
+    const v = ctx.variantCost.get(it.variant_id);
+    if (v != null) return v;
+  }
+  return it.product_id ? (ctx.products.get(it.product_id)?.purchasePriceCzk ?? null) : null;
+}
+
+/** Podíl slevy objednávky připadající na zboží (sleva se rozpočítá poměrně). */
+function discountShareOf(o: AOrder): number {
+  const goods = o.items.reduce((s, i) => s + i.line_total, 0);
+  return goods > 0 ? Math.min(1, o.discount / goods) : 0;
+}
 export type CategoryInfo = { name: string; parentId: string | null };
 
 /* ── Období ─────────────────────────────────────────────────────────────── */
@@ -116,13 +137,8 @@ export type ASummary = {
   marginCoverage: number | null; // % tržby zboží, u které známe nákupní cenu
 };
 
-export function aSummary(
-  orders: AOrder[],
-  r: Range,
-  eurRate: number | null,
-  products: Map<string, ProductInfo>,
-  vatPayer: boolean,
-): ASummary {
+export function aSummary(orders: AOrder[], r: Range, eurRate: number | null, ctx: CostCtx): ASummary {
+  const { vatPayer } = ctx;
   let revenue = 0,
     revenueNet = 0,
     all = 0,
@@ -167,18 +183,17 @@ export function aSummary(
     fees += c(o.payment_fee);
     refunds += c(o.refunded_amount);
     // Tržba bez DPH: zboží po sazbách, doprava a poplatek 21 %, sleva poměrně.
-    const goods = o.items.reduce((s, i) => s + i.line_total, 0);
-    const discountShare = goods > 0 ? Math.min(1, o.discount / goods) : 0;
+    const discountShare = discountShareOf(o);
     let orderNet = net(c(o.shipping + o.payment_fee), 21, vatPayer);
     for (const it of o.items) {
       items += it.qty;
       const lineNet = net(c(Math.round(it.line_total * (1 - discountShare))), it.vat_rate, vatPayer);
       orderNet += lineNet;
       goodsNet += lineNet;
-      const info = it.product_id ? products.get(it.product_id) : undefined;
-      if (info?.purchasePriceCzk != null) {
+      const cost = unitCost(it, ctx);
+      if (cost != null) {
         knownGoodsNet += lineNet;
-        knownCost += info.purchasePriceCzk * it.qty;
+        knownCost += cost * it.qty;
       }
     }
     revenueNet += orderNet;
@@ -350,37 +365,95 @@ export function customerStats(allOrders: AOrder[], r: Range, eurRate: number | n
 
 /* ── Produkty, kategorie, značky ───────────────────────────────────────── */
 
-export type ARow = { key: string; name: string; qty: number; revenue: number; orders: number };
+export type ARow = {
+  key: string;
+  name: string;
+  qty: number;
+  revenue: number;
+  orders: number;
+  /** Hrubá marže u položek se známou nákupní cenou (null = žádná známá). */
+  margin: number | null;
+  marginPct: number | null;
+  /** Část tržby bez nákupní ceny → marže je neúplná. */
+  partialCost: boolean;
+};
+
+type RowAcc = ARow & { _o: Set<string>; _knownNet: number; _cost: number; _unknown: boolean };
 
 function itemRows(
   orders: AOrder[],
   r: Range,
   eurRate: number | null,
   keyOf: (it: AItem) => { key: string; name: string } | null,
+  ctx?: CostCtx,
 ): ARow[] {
-  const acc = new Map<string, ARow & { _o: Set<string> }>();
+  const acc = new Map<string, RowAcc>();
   for (const o of orders) {
     if (!inRange(o.created_at, r) || !isRevenueOrder(o)) continue;
+    const share = discountShareOf(o);
     for (const it of o.items) {
       const k = keyOf(it);
       if (!k) continue;
-      const row = acc.get(k.key) ?? { key: k.key, name: k.name, qty: 0, revenue: 0, orders: 0, _o: new Set<string>() };
+      const row: RowAcc = acc.get(k.key) ?? {
+        key: k.key,
+        name: k.name,
+        qty: 0,
+        revenue: 0,
+        orders: 0,
+        margin: null,
+        marginPct: null,
+        partialCost: false,
+        _o: new Set<string>(),
+        _knownNet: 0,
+        _cost: 0,
+        _unknown: false,
+      };
       row.qty += it.qty;
-      row.revenue += toCzk(it.line_total, o.currency, eurRate);
+      const lineCzk = toCzk(it.line_total, o.currency, eurRate);
+      row.revenue += lineCzk;
       row._o.add(o.id);
+      if (ctx) {
+        const cost = unitCost(it, ctx);
+        if (cost != null) {
+          row._knownNet += net(Math.round(lineCzk * (1 - share)), it.vat_rate, ctx.vatPayer);
+          row._cost += cost * it.qty;
+        } else row._unknown = true;
+      }
       acc.set(k.key, row);
     }
   }
   return Array.from(acc.values())
-    .map(({ _o, ...row }) => ({ ...row, orders: _o.size }))
+    .map(({ _o, _knownNet, _cost, _unknown, ...row }) => {
+      const margin = _knownNet > 0 ? _knownNet - _cost : null;
+      return {
+        ...row,
+        orders: _o.size,
+        margin,
+        marginPct: margin != null ? pct(margin, _knownNet) : null,
+        partialCost: margin != null && _unknown,
+      };
+    })
     .sort((a, b) => b.revenue - a.revenue);
 }
 
-export function productRows(orders: AOrder[], r: Range, eurRate: number | null): ARow[] {
-  return itemRows(orders, r, eurRate, (it) => ({
-    key: it.product_id ?? `name:${it.name}`,
-    name: it.name.split(" – ")[0],
-  }));
+export function productRows(orders: AOrder[], r: Range, eurRate: number | null, ctx?: CostCtx): ARow[] {
+  return itemRows(
+    orders,
+    r,
+    eurRate,
+    (it) => ({
+      key: it.product_id ?? `name:${it.name}`,
+      name: it.name.split(" – ")[0],
+    }),
+    ctx,
+  );
+}
+
+/** Prodávané produkty (zaplacené v období), u kterých chybí nákupní cena (u produktu i prodané varianty). */
+export function missingCostRows(orders: AOrder[], r: Range, eurRate: number | null, ctx: CostCtx): ARow[] {
+  return itemRows(orders, r, eurRate, (it) =>
+    it.product_id && unitCost(it, ctx) == null ? { key: it.product_id, name: it.name.split(" – ")[0] } : null,
+  );
 }
 
 /** Kořenová kategorie produktu (přes parent_id). */
@@ -399,26 +472,38 @@ export function categoryRows(
   orders: AOrder[],
   r: Range,
   eurRate: number | null,
-  products: Map<string, ProductInfo>,
+  ctx: CostCtx,
   cats: Map<string, CategoryInfo>,
 ): ARow[] {
-  return itemRows(orders, r, eurRate, (it) => {
-    const root = rootCategory(it.product_id ? (products.get(it.product_id)?.categoryId ?? null) : null, cats);
-    return root ? { key: root.id, name: root.name } : { key: "none", name: "Bez kategorie" };
-  });
+  return itemRows(
+    orders,
+    r,
+    eurRate,
+    (it) => {
+      const root = rootCategory(it.product_id ? (ctx.products.get(it.product_id)?.categoryId ?? null) : null, cats);
+      return root ? { key: root.id, name: root.name } : { key: "none", name: "Bez kategorie" };
+    },
+    ctx,
+  );
 }
 
 export function brandRows(
   orders: AOrder[],
   r: Range,
   eurRate: number | null,
-  products: Map<string, ProductInfo>,
+  ctx: CostCtx,
   brands: Map<string, string>,
 ): ARow[] {
-  return itemRows(orders, r, eurRate, (it) => {
-    const b = it.product_id ? products.get(it.product_id)?.brandId : null;
-    return b && brands.has(b) ? { key: b, name: brands.get(b)! } : { key: "none", name: "Bez značky" };
-  });
+  return itemRows(
+    orders,
+    r,
+    eurRate,
+    (it) => {
+      const b = it.product_id ? ctx.products.get(it.product_id)?.brandId : null;
+      return b && brands.has(b) ? { key: b, name: brands.get(b)! } : { key: "none", name: "Bez značky" };
+    },
+    ctx,
+  );
 }
 
 /* ── Slevové kódy ──────────────────────────────────────────────────────── */

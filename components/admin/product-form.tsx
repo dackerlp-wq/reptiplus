@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Box, Layers, Warehouse } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { marginOf } from "@/lib/admin/margin";
 import { saveProductAction } from "@/lib/admin/actions";
 import { pickI18n } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
@@ -62,6 +63,7 @@ export function ProductForm({
   imagesSlot,
   allProducts = [],
   upsellIds = [],
+  vatPayer = false,
 }: {
   product?: ProductRow;
   categories: CategoryItem[];
@@ -74,6 +76,8 @@ export function ProductForm({
   imagesSlot?: React.ReactNode;
   allProducts?: { id: string; name: string }[];
   upsellIds?: string[];
+  /** Obchod je plátce DPH (DIČ v Nastavení) → marže z ceny bez DPH. */
+  vatPayer?: boolean;
 }) {
   const n = product?.name_i18n ?? {};
   const sd = product?.short_description_i18n ?? {};
@@ -249,11 +253,13 @@ export function ProductForm({
           {/* Nákupní cena (pro hodnotu zásob a marži v sekci Sklad) */}
           <div className={card}>
             <p className={cardTitle}>Nákup</p>
-            <label className={label}>
-              <span className={legend}>Nákupní cena Kč (bez DPH, za kus)</span>
-              <input name="purchase_price_czk" inputMode="decimal" defaultValue={minor(product?.purchase_price_czk)} placeholder="nepovinné" className={input} />
-              <span className="text-xs text-gray-soft">Použije se pro hodnotu zásob v sekci Sklad. Bez ní se počítá prodejní cena bez DPH.</span>
-            </label>
+            <PurchasePriceField
+              initialPurchase={minor(product?.purchase_price_czk)}
+              initialPrice={minor(product?.price_czk)}
+              initialVat={String(product?.vat_rate ?? 21)}
+              vatPayer={vatPayer}
+              hasVariants={variants.length > 0}
+            />
             {product && (
               <Link href={`/admin/stock/${product.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-forest hover:underline">
                 <Warehouse className="size-4" /> Sklad a pohyby produktu
@@ -368,5 +374,84 @@ export function ProductForm({
         </div>
       </div>
     </form>
+  );
+}
+
+/* ── Nákupní cena + živý náhled marže ──────────────────────────────────── */
+
+const parseKc = (v: string): number | null => {
+  const n = parseFloat(v.replace(/\s/g, "").replace(",", "."));
+  return Number.isFinite(n) && n >= 0 ? n : null;
+};
+const fmtKc = (v: number) =>
+  new Intl.NumberFormat("cs-CZ", { style: "currency", currency: "CZK", maximumFractionDigits: 2 }).format(v);
+
+function PurchasePriceField({
+  initialPurchase,
+  initialPrice,
+  initialVat,
+  vatPayer,
+  hasVariants,
+}: {
+  initialPurchase: string;
+  initialPrice: string;
+  initialVat: string;
+  vatPayer: boolean;
+  hasVariants: boolean;
+}) {
+  const [purchase, setPurchase] = useState(initialPurchase);
+  const [price, setPrice] = useState(initialPrice);
+  const [vat, setVat] = useState(initialVat);
+
+  // Cena a sazba DPH jsou jinde ve formuláři (neřízená pole) → poslouchat změny celého formuláře.
+  const watchForm = (el: HTMLDivElement | null) => {
+    const form = el?.closest("form");
+    if (!form) return;
+    const onChange = (e: Event) => {
+      const t = e.target as HTMLInputElement | HTMLSelectElement;
+      if (t.name === "price_czk") setPrice(t.value);
+      if (t.name === "vat_rate") setVat(t.value);
+    };
+    form.addEventListener("input", onChange);
+    form.addEventListener("change", onChange);
+    return () => {
+      form.removeEventListener("input", onChange);
+      form.removeEventListener("change", onChange);
+    };
+  };
+
+  const m = marginOf(parseKc(price), parseKc(purchase), Number(vat) || 0, vatPayer);
+  const tone = m == null ? "" : m.margin < 0 ? "text-error" : m.pct < 20 ? "text-earth" : "text-success";
+
+  return (
+    <div ref={watchForm} className="flex flex-col gap-1.5">
+      <label className="flex flex-col gap-1.5">
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-soft">Nákupní cena Kč (bez DPH, za kus)</span>
+        <input
+          name="purchase_price_czk"
+          inputMode="decimal"
+          value={purchase}
+          onChange={(e) => setPurchase(e.target.value)}
+          placeholder="nepovinné"
+          className="w-full rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm outline-none focus:border-forest"
+        />
+      </label>
+      {m ? (
+        <p className="text-sm">
+          Marže <span className={`font-mono font-semibold ${tone}`}>{fmtKc(m.margin)}</span> na kus ·{" "}
+          <span className={`font-mono font-semibold ${tone}`}>{String(m.pct).replace(".", ",")} %</span> z ceny
+          {vatPayer ? ` bez DPH (${fmtKc(m.net)})` : ""}
+          {m.markup != null && <span className="text-gray-soft"> · přirážka {String(m.markup).replace(".", ",")} %</span>}
+        </p>
+      ) : (
+        <p className="text-xs text-gray-soft">
+          {parseKc(purchase) == null ? "Vyplň nákupní cenu a uvidíš marži." : "Pro výpočet marže vyplň prodejní cenu Kč."}
+        </p>
+      )}
+      <p className="text-xs text-gray-soft">
+        Používá se pro marži v Analytice a hodnotu zásob ve Skladu.
+        {hasVariants && " Varianty s jinou nákupní cenou ji mají vlastní (sloupec „Nákup Kč“ u variant), prázdná = tato cena."}
+      </p>
+    </div>
   );
 }
