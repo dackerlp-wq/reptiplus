@@ -13,7 +13,8 @@ Infrastruktura:
 - Vercel: projekt `reptiplus` (`prj_9fSGoOlyRzybaaJv5g92puOknsnw`, tým `team_5syHQcguxaekOGMAp7ikxARv`), nasazuje automaticky po pushi na `main`.
   Domény `reptiplus.cz` / `.eu` / `.shop`. Crony ve `vercel.json` (všechny chráněné `CRON_SECRET`): `/api/cron/cleanup-carts` (mazání starých hostovských košíků),
   `/api/cron/cancel-unpaid` (storno nezaplacených karetních objednávek po 24 h, RPC `cancel_unpaid_order` vrací sklad, e-mail zákazníkovi),
-  `/api/cron/abandoned-carts` (připomínka opuštěného košíku přihlášeným po 24–72 h, jednou na košík — `cart.reminder_sent_at`, jazyk z poslední objednávky).
+  `/api/cron/abandoned-carts` (připomínka opuštěného košíku přihlášeným po 24–72 h, jednou na košík — `cart.reminder_sent_at`, jazyk z poslední objednávky),
+  `/api/cron/packeta-status` (stav odeslaných zásilek Zásilkovny přes `packetStatus` → `order.tracking_status`, doručené → `delivered` + e-mail, vrácené/zrušené → e-mail obchodu; logika `lib/shipping/packeta-sync.ts`, ručně tlačítko „Aktualizovat stav“ v detailu objednávky).
 - Supabase: projekt „Reptiplus“ `duaihkobtgfzprufqjmh` (eu-west-1, Postgres 17). Storage bucket `products` pro obrázky.
 
 ## Příkazy

@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { createShipmentForOrder, carrierForOrder } from "@/lib/shipping";
 import { assertAdminUser } from "@/lib/admin/auth";
 import { afterShipmentCreated } from "@/lib/orders/shipment";
+import { syncPacketaOrder, SYNC_ORDER_COLUMNS } from "@/lib/shipping/packeta-sync";
 
 async function assertAdmin() {
   const supabase = await createClient();
@@ -148,5 +149,23 @@ export async function resetShipmentAction(fd: FormData) {
       tracking_status: null,
     } as never)
     .eq("id", id);
+  revalidatePath("/", "layout");
+}
+
+/** Ručně načte aktuální stav zásilky ze Zásilkovny (jinak to dělá denní cron). */
+export async function refreshPacketaStatusAction(fd: FormData) {
+  const admin = await assertAdminUser();
+  const id = String(fd.get("id") ?? "");
+  if (!id) return;
+  const svc = createServiceClient();
+  const { data: order } = await svc.from("order").select(SYNC_ORDER_COLUMNS).eq("id", id).maybeSingle();
+  if (!order || (await carrierForOrder(order.shipping_method)) !== "zasilkovna") return;
+  const res = await syncPacketaOrder(order as never, admin.email);
+  if (res === "error") {
+    await svc
+      .from("order")
+      .update({ tracking_status: "Chyba: stav zásilky se nepodařilo načíst ze Zásilkovny" } as never)
+      .eq("id", id);
+  }
   revalidatePath("/", "layout");
 }

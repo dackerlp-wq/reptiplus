@@ -319,7 +319,9 @@ export default async function AdminSettingsPage() {
               <h2 className="font-display text-lg font-semibold">Zásilkovna (Packeta)</h2>
               <p className="text-sm text-gray-soft">
                 Výdejní místa a doručení. API klíč a heslo najdeš v Klientské
-                sekci Zásilkovny → Nastavení → API.
+                sekci Zásilkovny → Nastavení → API. Stačí vložit API heslo,
+                klíč se doplní sám (je to jeho prvních 16 znaků). Stav odeslaných
+                zásilek se kontroluje automaticky jednou denně.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">

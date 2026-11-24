@@ -13,6 +13,7 @@ import {
   Receipt,
   RotateCcw,
   Mail,
+  RefreshCw,
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
@@ -21,6 +22,7 @@ import { updateOrderAction, refundOrderAction } from "@/lib/admin/actions";
 import {
   createShipmentAction,
   resetShipmentAction,
+  refreshPacketaStatusAction,
 } from "@/lib/admin/shipping-actions";
 import { carrierForOrder } from "@/lib/shipping";
 import { ToastForm } from "@/components/admin/toast";
@@ -432,6 +434,14 @@ export default async function OrderDetailPage({
                   >
                     <Printer className="size-4" /> Tisk štítku
                   </a>
+                  {carrier === "zasilkovna" && (
+                    <form action={refreshPacketaStatusAction}>
+                      <input type="hidden" name="id" value={order.id} />
+                      <button className="inline-flex items-center gap-1.5 rounded-lg border border-cream-dark px-3 py-2 text-sm text-ink hover:border-forest hover:text-forest">
+                        <RefreshCw className="size-4" /> Aktualizovat stav
+                      </button>
+                    </form>
+                  )}
                   <form action={resetShipmentAction}>
                     <input type="hidden" name="id" value={order.id} />
                     <button className="rounded-lg border border-cream-dark px-3 py-2 text-sm text-gray-soft hover:border-error hover:text-error">

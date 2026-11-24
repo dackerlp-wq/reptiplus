@@ -163,3 +163,43 @@ export async function getPacketaLabel(packetId: string): Promise<LabelResult> {
   if (!pdfBase64) return { ok: false, error: "Zásilkovna nevrátila PDF štítku." };
   return { ok: true, data: { pdfBase64 } };
 }
+
+/** Stav zásilky z Packeta API (`packetStatus`). */
+export type PacketaStatus = {
+  /** Číselný kód stavu (7 = doručeno, 10 = vráceno odesílateli, 11 = zrušeno…). */
+  code: number;
+  /** Strojový název stavu (např. `delivered`). */
+  codeText: string;
+  /** Lidsky čitelný popis stavu od Zásilkovny. */
+  text: string;
+  /** Kdy stav nastal (ISO řetězec od Zásilkovny). */
+  at: string | null;
+};
+
+export async function getPacketaStatus(packetId: string): Promise<CarrierResult<PacketaStatus>> {
+  const cfg = await getConfig();
+  if (!cfg) return { ok: false, error: "Zásilkovna není nakonfigurována." };
+
+  const xml = `<packetStatus><apiPassword>${esc(cfg.apiPassword)}</apiPassword><packetId>${esc(packetId)}</packetId></packetStatus>`;
+  let resp: string;
+  try {
+    resp = await postXml(xml);
+  } catch (e) {
+    return { ok: false, error: `Zásilkovna nedostupná: ${String(e)}` };
+  }
+  if (tag(resp, "status") !== "ok") {
+    const fault = tag(resp, "string") || tag(resp, "fault") || "neznámá chyba";
+    return { ok: false, error: `Stav zásilky se nepodařilo zjistit: ${fault}` };
+  }
+  const code = Number(tag(resp, "statusCode") ?? NaN);
+  if (!Number.isFinite(code)) return { ok: false, error: "Zásilkovna nevrátila stav zásilky." };
+  return {
+    ok: true,
+    data: {
+      code,
+      codeText: tag(resp, "codeText") ?? "",
+      text: tag(resp, "statusText") ?? "",
+      at: tag(resp, "dateTime"),
+    },
+  };
+}

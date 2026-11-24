@@ -1544,9 +1544,11 @@ export async function savePplAction(fd: FormData) {
   });
 }
 export async function saveZasilkovnaAction(fd: FormData) {
+  const apiPassword = str(fd, "apiPassword");
   await upsertSetting("integrations.zasilkovna", {
-    apiKey: str(fd, "apiKey"),
-    apiPassword: str(fd, "apiPassword"),
+    // API klíč (pro widget) je u Zásilkovny prvních 16 znaků API hesla → doplní se sám.
+    apiKey: str(fd, "apiKey") || apiPassword.slice(0, 16),
+    apiPassword,
     eshopId: str(fd, "eshopId"),
     homeCarrierId: str(fd, "homeCarrierId"),
   });
