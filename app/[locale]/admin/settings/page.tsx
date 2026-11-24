@@ -1,7 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { SHIP_COUNTRIES } from "@/lib/shipping/price";
 import { AdminTabs } from "@/components/admin/admin-tabs";
-import { Link } from "@/i18n/navigation";
+import { ShippingAdmin } from "@/components/admin/shipping-admin";
 import { LangFields } from "@/components/admin/lang-fields";
 import { Hint } from "@/components/admin/hint";
 import { ToastForm } from "@/components/admin/toast";
@@ -74,7 +74,7 @@ export default async function AdminSettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-5xl">
       <h1 className="mb-6 font-display text-3xl font-bold">Nastavení</h1>
 
       <AdminTabs
@@ -502,15 +502,7 @@ export default async function AdminSettingsPage() {
 
         {/* ── Doprava ────────────────────────────────────────────── */}
         <div className="space-y-4">
-          <div className={`${card} space-y-2`}>
-            <h2 className="font-display text-lg font-semibold">Ceny a způsoby dopravy</h2>
-            <p className="text-sm text-gray-soft">
-              Způsoby dopravy, ceny podle země a hmotnosti, doprava zdarma a krabice pro balení jsou v samostatné sekci.
-            </p>
-            <Link href="/admin/shipping" className="inline-flex rounded-lg bg-forest px-4 py-2 text-sm font-semibold text-white hover:bg-forest-light">
-              Otevřít Dopravu
-            </Link>
-          </div>
+          <ShippingAdmin />
           <ToastForm action={saveShippingContentAction} className={`${card} space-y-4`}>
             <div>
               <h2 className="font-display text-lg font-semibold">Stránka „Doprava a platba“</h2>
