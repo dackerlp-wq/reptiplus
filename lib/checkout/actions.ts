@@ -1,7 +1,7 @@
 "use server";
 
 import { itemsWeightKg } from "@/lib/shipping/weight";
-import { shippingPriceFor } from "@/lib/shipping/price";
+import { isShipCountry, shippingPriceFor } from "@/lib/shipping/price";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
@@ -156,7 +156,7 @@ export async function createOrderAction(
 
   const { data: shipRow } = await svc
     .from("shipping_method")
-    .select("code, pickup_point, price_czk, price_eur, heavy_from_kg, heavy_price_czk, heavy_price_eur")
+    .select("code, pickup_point, price_czk, price_eur, heavy_from_kg, heavy_price_czk, heavy_price_eur, country_prices")
     .eq("code", shippingCode)
     .eq("is_active", true)
     .maybeSingle();
@@ -165,19 +165,24 @@ export async function createOrderAction(
   const freeFrom = freeShippingThreshold(await getShippingSettings(), currency);
   // Cena podle hmotnosti košíku (product.weight_kg) — stejně jako v pokladně.
   const weightKg = await itemsWeightKg(cart.lines.map((l) => ({ productId: l.productId, qty: l.qty })));
-  const shippingFee =
-    freeFrom != null && cart.subtotal >= freeFrom ? 0 : shippingPriceFor(shipRow, weightKg, currency);
 
   // Výdejní místo (Zásilkovna) — povinné, pokud metoda vyžaduje pickup.
   const requiresPickup =
     (shipRow as unknown as { pickup_point?: boolean }).pickup_point === true;
   const pickupId = s(fd, "pickup_point_id");
   if (requiresPickup && !pickupId) return { error: "PICKUP" };
+  // Cílová země: u výdejního místa země pobočky (z widgetu), jinak dodací adresa. Jen doručované země.
+  const pickupCountry = s(fd, "pickup_point_country").toUpperCase();
+  const destCountry = requiresPickup ? pickupCountry || String(ship.country ?? "CZ") : String(ship.country ?? "CZ");
+  if (!isShipCountry(destCountry)) return { error: "SHIPPING" };
+  const shippingFee =
+    freeFrom != null && cart.subtotal >= freeFrom ? 0 : shippingPriceFor(shipRow, weightKg, currency, destCountry);
   if (requiresPickup) {
     Object.assign(ship, {
       pickup_point_id: pickupId,
       pickup_point_name: s(fd, "pickup_point_name"),
       pickup_point_address: s(fd, "pickup_point_address"),
+      ...(pickupCountry ? { pickup_point_country: pickupCountry } : {}),
       // Výdejní místo externího dopravce: pickup_point_id = ID dopravce, tohle = kód místa u dopravce.
       ...(s(fd, "pickup_carrier_point") ? { pickup_carrier_point: s(fd, "pickup_carrier_point") } : {}),
     });

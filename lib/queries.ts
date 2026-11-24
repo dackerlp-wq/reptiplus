@@ -335,6 +335,8 @@ export type ShippingMethodItem = {
   heavy_from_kg: number | null;
   heavy_price_czk: number | null;
   heavy_price_eur: number | null;
+  /** Vlastní ceny pro jiné země než CZ (`{"SK": {price_czk, …}}`). */
+  country_prices: unknown;
   pickup_point: boolean;
 };
 
@@ -352,7 +354,7 @@ export async function getShippingMethods(): Promise<ShippingMethodItem[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("shipping_method")
-    .select("id,code,name_i18n,carrier,price_czk,price_eur,heavy_from_kg,heavy_price_czk,heavy_price_eur,pickup_point,sort_order")
+    .select("id,code,name_i18n,carrier,price_czk,price_eur,heavy_from_kg,heavy_price_czk,heavy_price_eur,country_prices,pickup_point,sort_order")
     .eq("is_active", true)
     .order("sort_order");
   return (data ?? []) as unknown as ShippingMethodItem[];

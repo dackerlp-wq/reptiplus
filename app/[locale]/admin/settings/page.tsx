@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import { SHIP_COUNTRIES } from "@/lib/shipping/price";
 import { AdminTabs } from "@/components/admin/admin-tabs";
 import { LangFields } from "@/components/admin/lang-fields";
 import { Hint } from "@/components/admin/hint";
@@ -744,7 +745,33 @@ function ShippingCard({ m }: { m?: any }) {
             <input name="heavy_price_eur" inputMode="decimal" defaultValue={minor(m?.heavy_price_eur)} className={input} />
           </label>
         </div>
+        {SHIP_COUNTRIES.filter((c) => c !== "CZ").map((c) => {
+          const cp = (m?.country_prices?.[c] ?? {}) as Record<string, number | null>;
+          return (
+            <fieldset key={c} className="space-y-2 rounded-lg border border-cream-dark p-3">
+              <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-gray-soft">
+                Cena pro {c === "SK" ? "Slovensko" : c} (prázdné = stejná jako výše)
+              </legend>
+              <div className="grid gap-3 sm:grid-cols-4">
+                {(
+                  [
+                    ["price_czk", "Kč"],
+                    ["price_eur", "€"],
+                    ["heavy_price_czk", "Nad limit Kč"],
+                    ["heavy_price_eur", "Nad limit €"],
+                  ] as const
+                ).map(([k, l]) => (
+                  <label key={k} className="flex flex-col gap-1.5">
+                    <span className={legend}>{l}</span>
+                    <input name={`cp_${c}_${k}`} inputMode="decimal" defaultValue={minor(cp[k])} className={input} />
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          );
+        })}
         <p className="text-xs text-gray-soft">
+          Cena pro zemi platí podle země výdejního místa, u doručení domů podle dodací adresy.
           Nepovinné. Hmotnost košíku se počítá z hmotnosti produktů (karta produktu → Nákup); produkty bez hmotnosti se nepočítají.
         </p>
         <label className="flex items-center gap-2 text-sm">

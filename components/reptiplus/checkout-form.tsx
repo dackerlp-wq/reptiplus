@@ -13,7 +13,14 @@ import {
   type OrderState,
 } from "@/lib/checkout/actions";
 
-type Option = { code: string; name: string; fee: number; pickup?: boolean };
+type Option = {
+  code: string;
+  name: string;
+  fee: number;
+  /** Cena podle cílové země (CZ/SK); chybí = jedna cena (`fee`), např. doprava zdarma. */
+  feeByCountry?: Record<string, number>;
+  pickup?: boolean;
+};
 
 /** Platební volba; u Comgate i `variant` = předvybraná metoda na bráně (CARD_ALL, APPLEPAY_REDIRECT…). */
 export type PaymentOption = Option & { variant?: string; hint?: string };
@@ -60,7 +67,7 @@ export type SavedAddress = {
 type AddressDefaults = Partial<Record<"full_name" | "street" | "city" | "postal_code" | "country" | "phone", string | null>>;
 
 /** `id` = ID pobočky Zásilkovny, u výdejního místa externího dopravce ID dopravce + `carrierPointId`. */
-type PickupPoint = { id: string; name: string; address: string; carrierPointId?: string };
+type PickupPoint = { id: string; name: string; address: string; carrierPointId?: string; country?: string };
 
 /** URL Packeta widgetu v6 (výdejní místa Zásilkovny). */
 const PACKETA_WIDGET_URL = "https://widget.packeta.com/v6/www/js/library.js";
@@ -77,6 +84,8 @@ type PacketaPoint = {
   street?: string;
   city?: string;
   zip?: string;
+  /** Země pobočky, malými písmeny („cz", „sk"). */
+  country?: string;
   formatedValue?: string;
 };
 
@@ -158,6 +167,12 @@ export function CheckoutForm({
   const defaultShip = savedAddresses.find((a) => a.type === "shipping" && a.is_default) ?? savedAddresses.find((a) => a.type === "shipping") ?? savedAddresses[0];
   const defaultBill = savedAddresses.find((a) => a.type === "billing" && a.is_default) ?? savedAddresses.find((a) => a.type === "billing");
   const [shipSel, setShipSel] = useState<string>(defaultShip?.id ?? "new");
+  // Země dodací adresy — určuje cenu dopravy na adresu (u výdejního místa rozhoduje země pobočky).
+  const [shipCountry, setShipCountry] = useState<string>(defaultShip?.country ?? "CZ");
+  const selectShipAddress = (id: string) => {
+    setShipSel(id);
+    setShipCountry(savedAddresses.find((a) => a.id === id)?.country ?? "CZ");
+  };
   const [billSel, setBillSel] = useState<string>(defaultBill?.id ?? "new");
   const shipAddr = savedAddresses.find((a) => a.id === shipSel) ?? null;
   const billAddr = savedAddresses.find((a) => a.id === billSel) ?? null;
@@ -193,6 +208,7 @@ export function CheckoutForm({
               name: point.name ?? point.place ?? `#${id}`,
               address,
               carrierPointId: external ? String(point.carrierPickupPointId) : undefined,
+              country: point.country ? String(point.country).toUpperCase() : undefined,
             });
           }
         },
@@ -214,7 +230,12 @@ export function CheckoutForm({
     FormData
   >(createOrderAction, undefined);
 
-  const shippingFee = shippingOptions.find((o) => o.code === shipping)?.fee ?? 0;
+  // Cena dopravy podle cílové země: výdejní místo → země pobočky, jinak země dodací adresy.
+  const feeFor = (o: Option) => {
+    const dest = o.pickup && o.code === shipping && pickupPoint?.country ? pickupPoint.country : shipCountry;
+    return o.feeByCountry?.[dest] ?? o.fee;
+  };
+  const shippingFee = selectedShipping ? feeFor(selectedShipping) : 0;
   const paymentFee = selectedPayment?.fee ?? 0;
   const discount = discountState.status === "ok" ? discountState.amount : 0;
   const total = Math.max(0, subtotal + shippingFee + paymentFee - discount);
@@ -304,9 +325,9 @@ export function CheckoutForm({
         <section className="space-y-4 rounded-xl border border-cream-dark bg-white p-5">
           <h2 className="font-display text-lg font-semibold">{t("shippingAddress")}</h2>
           {savedAddresses.length > 0 && (
-            <SavedAddressPicker name="ship_saved" addresses={savedAddresses} value={shipSel} onChange={setShipSel} t={t} />
+            <SavedAddressPicker name="ship_saved" addresses={savedAddresses} value={shipSel} onChange={selectShipAddress} t={t} />
           )}
-          <AddressFields key={`ship-${shipSel}`} prefix="shipping" t={t} required defaults={shipAddr ?? undefined} />
+          <AddressFields key={`ship-${shipSel}`} prefix="shipping" t={t} required defaults={shipAddr ?? undefined} onCountryChange={setShipCountry} />
           {loggedIn && shipSel === "new" && (
             <label className="flex items-center gap-2.5 text-sm text-ink">
               <input type="checkbox" name="save_shipping" className="size-4 accent-forest" />
@@ -381,7 +402,7 @@ export function CheckoutForm({
                 if (!o.pickup) setPickupPoint(null);
               }}
               title={o.name}
-              price={feeLabel(o.fee)}
+              price={feeLabel(feeFor(o))}
             />
           ))}
 
@@ -427,6 +448,9 @@ export function CheckoutForm({
             <>
               <input type="hidden" name="pickup_point_id" value={pickupPoint.id} />
               <input type="hidden" name="pickup_point_name" value={pickupPoint.name} />
+              {pickupPoint.country && (
+                <input type="hidden" name="pickup_point_country" value={pickupPoint.country} />
+              )}
               {pickupPoint.carrierPointId && (
                 <input type="hidden" name="pickup_carrier_point" value={pickupPoint.carrierPointId} />
               )}
@@ -662,11 +686,13 @@ function AddressFields({
   t,
   required,
   defaults,
+  onCountryChange,
 }: {
   prefix: "shipping" | "billing";
   t: ReturnType<typeof useTranslations>;
   required?: boolean;
   defaults?: AddressDefaults;
+  onCountryChange?: (country: string) => void;
 }) {
   const d = defaults ?? {};
   return (
@@ -689,7 +715,12 @@ function AddressFields({
       </label>
       <label className={label}>
         <span className={legend}>{t("country")}</span>
-        <select name={`${prefix}_country`} defaultValue={d.country ?? "CZ"} className={input}>
+        <select
+          name={`${prefix}_country`}
+          defaultValue={d.country ?? "CZ"}
+          onChange={(e) => onCountryChange?.(e.target.value)}
+          className={input}
+        >
           <option value="CZ">{t("countryCZ")}</option>
           <option value="SK">{t("countrySK")}</option>
         </select>

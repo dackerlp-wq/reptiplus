@@ -1562,6 +1562,7 @@ export type Database = {
       }
       shipping_method: {
         Row: {
+          country_prices: Json
           carrier: Database["public"]["Enums"]["carrier"]
           code: string
           created_at: string
@@ -1577,6 +1578,7 @@ export type Database = {
           sort_order: number
         }
         Insert: {
+          country_prices?: Json
           carrier?: Database["public"]["Enums"]["carrier"]
           code: string
           created_at?: string
@@ -1592,6 +1594,7 @@ export type Database = {
           sort_order?: number
         }
         Update: {
+          country_prices?: Json
           carrier?: Database["public"]["Enums"]["carrier"]
           code?: string
           created_at?: string

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartWeightKg, shippingPriceFor } from "@/lib/shipping/price";
+import { cartWeightKg, shippingPriceFor, shippingPricesByCountry } from "@/lib/shipping/price";
 
 const pickup = { price_czk: 9900, price_eur: 390, heavy_from_kg: 5, heavy_price_czk: 19900, heavy_price_eur: 790 };
 
@@ -19,5 +19,22 @@ describe("cena dopravy podle hmotnosti", () => {
     expect(shippingPriceFor({ price_czk: 9900, price_eur: null }, 30, "CZK")).toBe(9900);
     expect(shippingPriceFor({ price_czk: 9900, price_eur: null }, 30, "EUR")).toBe(0);
     expect(shippingPriceFor({ ...pickup, heavy_price_eur: null }, 30, "EUR")).toBe(390);
+  });
+});
+
+describe("cena dopravy podle země", () => {
+  const m = {
+    ...pickup,
+    country_prices: { SK: { price_czk: 11900, price_eur: 490, heavy_price_czk: 22900 } },
+  };
+  it("pro zemi s vlastní cenou ji použije, chybějící pole převezme ze základu", () => {
+    expect(shippingPriceFor(m, 1, "CZK", "SK")).toBe(11900);
+    expect(shippingPriceFor(m, 8, "CZK", "sk")).toBe(22900);
+    expect(shippingPriceFor(m, 8, "EUR", "SK")).toBe(790);
+  });
+  it("CZ a země bez vlastní ceny mají základní cenu", () => {
+    expect(shippingPriceFor(m, 1, "CZK", "CZ")).toBe(9900);
+    expect(shippingPriceFor(m, 1, "CZK", null)).toBe(9900);
+    expect(shippingPricesByCountry(m, 1, "CZK")).toEqual({ CZ: 9900, SK: 11900 });
   });
 });

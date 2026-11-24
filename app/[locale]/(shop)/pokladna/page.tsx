@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCart } from "@/lib/cart/cart";
 import { getShippingMethods, getPaymentMethods } from "@/lib/queries";
 import { itemsWeightKg } from "@/lib/shipping/weight";
-import { shippingPriceFor } from "@/lib/shipping/price";
+import { shippingPriceFor, shippingPricesByCountry } from "@/lib/shipping/price";
 import { freeShippingThreshold, getPacketaApiKey, getShippingSettings } from "@/lib/settings";
 import { localeCurrency, pickI18n } from "@/lib/i18n";
 import { CheckoutForm, type PaymentOption } from "@/components/reptiplus/checkout-form";
@@ -64,7 +64,9 @@ export default async function CheckoutPage({
   const shippingOptions = shipping.map((m) => ({
     code: m.code,
     name: pickI18n(m.name_i18n, locale),
-    fee: freeShipping ? 0 : shippingPriceFor(m, weightKg, currency),
+    fee: freeShipping ? 0 : shippingPriceFor(m, weightKg, currency, "CZ"),
+    // Cena podle cílové země (u výdejního místa země pobočky) — pokladna ji přepíná podle volby zákazníka.
+    feeByCountry: freeShipping ? undefined : shippingPricesByCountry(m, weightKg, currency),
     pickup: m.pickup_point,
   }));
   // Comgate se rozbalí na jednotlivé volby (karta, Apple Pay, Google Pay, banka, později)

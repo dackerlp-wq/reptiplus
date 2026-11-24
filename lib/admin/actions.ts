@@ -1,5 +1,6 @@
 "use server";
 
+import { SHIP_COUNTRIES } from "@/lib/shipping/price";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -1779,6 +1780,19 @@ export async function saveShippingMethodAction(fd: FormData) {
     })(),
     heavy_price_czk: money(fd, "heavy_price_czk"),
     heavy_price_eur: money(fd, "heavy_price_eur"),
+    // Ceny pro jiné země než CZ (pole cp_<ZEMĚ>_<sloupec>); prázdná pole = základní cena.
+    country_prices: Object.fromEntries(
+      SHIP_COUNTRIES.filter((c) => c !== "CZ")
+        .map((c) => {
+          const cp = Object.fromEntries(
+            (["price_czk", "price_eur", "heavy_price_czk", "heavy_price_eur"] as const)
+              .map((k) => [k, money(fd, `cp_${c}_${k}`)] as const)
+              .filter(([, v]) => v != null),
+          );
+          return [c, cp] as const;
+        })
+        .filter(([, cp]) => Object.keys(cp).length > 0),
+    ),
     is_active: fd.get("is_active") === "on",
     pickup_point: fd.get("pickup_point") === "on",
     sort_order: parseInt(str(fd, "sort_order") || "0", 10),
