@@ -10,11 +10,12 @@ vi.mock("@/lib/supabase/service", () => ({
   }),
 }));
 
-import { getPacketaStatus, packetaFault, cleanPhone, splitStreet, homeCarrierFor } from "@/lib/shipping/packeta";
+import { getPacketaStatus, packetaFault, cleanPhone, splitStreet, homeCarrierFor, packetaCurrencyFor, convertAmount } from "@/lib/shipping/packeta";
 import { packetaStatusLabel } from "@/lib/shipping/packeta-sync";
 
 vi.mock("@/lib/orders/notify", () => ({ sendOrderStatusEmail: vi.fn() }));
 vi.mock("@/lib/orders/events", () => ({ logOrderEvent: vi.fn() }));
+vi.mock("@/lib/exchange-rate", () => ({ getCnbEurRate: async () => ({ rate: 25, date: "" }) }));
 
 describe("Zásilkovna — stav zásilky", () => {
   beforeEach(() => vi.unstubAllGlobals());
@@ -70,6 +71,18 @@ describe("Zásilkovna — stav zásilky", () => {
     expect(homeCarrierFor(undefined)).toBe("106");
     expect(homeCarrierFor("CZ", "999")).toBe("999");
     expect(homeCarrierFor("SK", "999")).toBe("131");
-    expect(homeCarrierFor("DE")).toBeNull();
+    expect(homeCarrierFor("DE")).toBe("6373");
+    expect(homeCarrierFor("AT")).toBe("6830");
+    expect(homeCarrierFor("PL")).toBe("1406");
+    expect(homeCarrierFor("HU")).toBeNull();
+  });
+
+  it("měna zásilky podle země a přepočet kurzem", () => {
+    expect(packetaCurrencyFor("CZ")).toBe("CZK");
+    expect(packetaCurrencyFor("sk")).toBe("EUR");
+    expect(packetaCurrencyFor("PL")).toBe("EUR");
+    expect(convertAmount(250, "CZK", "EUR", 25)).toBe(10);
+    expect(convertAmount(10, "EUR", "CZK", 25)).toBe(250);
+    expect(convertAmount(10, "EUR", "EUR", 25)).toBe(10);
   });
 });

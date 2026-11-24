@@ -695,6 +695,23 @@ function MethodShell({
   );
 }
 
+const COUNTRY_NAME: Record<string, string> = { CZ: "Česko", SK: "Slovensko", DE: "Německo", AT: "Rakousko", PL: "Polsko" };
+
+/** Výběr zemí, kde se doprava / platba nabízí (nic nezaškrtnuto = všude). */
+function CountryChecks({ value }: { value?: string[] | null }) {
+  return (
+    <fieldset className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+      <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-soft">Nabízet pro země (nic = všude)</legend>
+      {SHIP_COUNTRIES.map((c) => (
+        <label key={c} className="flex items-center gap-1.5">
+          <input type="checkbox" name="countries" value={c} defaultChecked={value?.includes(c) ?? false} className="size-4 accent-forest" />
+          {COUNTRY_NAME[c] ?? c}
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+
 function ShippingCard({ m }: { m?: any }) {
   return (
     <MethodShell id={m?.id} deleteAction={deleteShippingMethodAction}>
@@ -750,7 +767,7 @@ function ShippingCard({ m }: { m?: any }) {
           return (
             <fieldset key={c} className="space-y-2 rounded-lg border border-cream-dark p-3">
               <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-gray-soft">
-                Cena pro {c === "SK" ? "Slovensko" : c} (prázdné = stejná jako výše)
+                Cena pro {COUNTRY_NAME[c] ?? c} (prázdné = stejná jako výše)
               </legend>
               <div className="grid gap-3 sm:grid-cols-4">
                 {(
@@ -774,6 +791,7 @@ function ShippingCard({ m }: { m?: any }) {
           Cena pro zemi platí podle země výdejního místa, u doručení domů podle dodací adresy.
           Nepovinné. Hmotnost košíku se počítá z hmotnosti produktů (karta produktu → Nákup); produkty bez hmotnosti se nepočítají.
         </p>
+        <CountryChecks value={m?.countries} />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="pickup_point" defaultChecked={m?.pickup_point ?? false} className="size-4 accent-forest" />
           Výdejní místo (spustí Zásilkovna widget v pokladně)
@@ -818,6 +836,7 @@ function PaymentCard({ m }: { m?: any }) {
             Aktivní
           </label>
         </div>
+        <CountryChecks value={m?.countries} />
         <button className={saveBtn}>{m ? "Uložit" : "Přidat"}</button>
       </ToastForm>
     </MethodShell>

@@ -53,6 +53,12 @@ const i18n = (fd: FormData, base: string) => ({
   de: str(fd, `${base}_de`),
 });
 
+/** Zaškrtnuté země (pole `countries`); všechny nebo žádná = null (nabízet všude). */
+const countriesOf = (fd: FormData): string[] | null => {
+  const picked = SHIP_COUNTRIES.filter((c) => fd.getAll("countries").includes(c));
+  return picked.length === 0 || picked.length === SHIP_COUNTRIES.length ? null : picked;
+};
+
 /** Zaznamená cenu do historie, jen pokud se liší od poslední (pro „cena za 30 dní"). */
 async function recordPriceIfChanged(
   svc: ReturnType<typeof createServiceClient>,
@@ -1780,6 +1786,7 @@ export async function saveShippingMethodAction(fd: FormData) {
     })(),
     heavy_price_czk: money(fd, "heavy_price_czk"),
     heavy_price_eur: money(fd, "heavy_price_eur"),
+    countries: countriesOf(fd),
     // Ceny pro jiné země než CZ (pole cp_<ZEMĚ>_<sloupec>); prázdná pole = základní cena.
     country_prices: Object.fromEntries(
       SHIP_COUNTRIES.filter((c) => c !== "CZ")
@@ -1822,6 +1829,7 @@ export async function savePaymentMethodAction(fd: FormData) {
     provider: (str(fd, "provider") || "comgate") as never,
     fee_czk: money(fd, "fee_czk") ?? 0,
     fee_eur: money(fd, "fee_eur"),
+    countries: countriesOf(fd),
     is_active: fd.get("is_active") === "on",
     sort_order: parseInt(str(fd, "sort_order") || "0", 10),
   };

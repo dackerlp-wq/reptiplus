@@ -1,7 +1,7 @@
 "use server";
 
 import { itemsWeightKg } from "@/lib/shipping/weight";
-import { isShipCountry, shippingPriceFor } from "@/lib/shipping/price";
+import { availableIn, FREE_SHIPPING_COUNTRIES, isShipCountry, shippingPriceFor } from "@/lib/shipping/price";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
@@ -156,7 +156,7 @@ export async function createOrderAction(
 
   const { data: shipRow } = await svc
     .from("shipping_method")
-    .select("code, pickup_point, price_czk, price_eur, heavy_from_kg, heavy_price_czk, heavy_price_eur, country_prices")
+    .select("code, pickup_point, price_czk, price_eur, heavy_from_kg, heavy_price_czk, heavy_price_eur, country_prices, countries")
     .eq("code", shippingCode)
     .eq("is_active", true)
     .maybeSingle();
@@ -174,9 +174,11 @@ export async function createOrderAction(
   // Cílová země: u výdejního místa země pobočky (z widgetu), jinak dodací adresa. Jen doručované země.
   const pickupCountry = s(fd, "pickup_point_country").toUpperCase();
   const destCountry = requiresPickup ? pickupCountry || String(ship.country ?? "CZ") : String(ship.country ?? "CZ");
-  if (!isShipCountry(destCountry)) return { error: "SHIPPING" };
+  if (!isShipCountry(destCountry) || !availableIn(shipRow, destCountry)) return { error: "SHIPPING" };
   const shippingFee =
-    freeFrom != null && cart.subtotal >= freeFrom ? 0 : shippingPriceFor(shipRow, weightKg, currency, destCountry);
+    freeFrom != null && cart.subtotal >= freeFrom && FREE_SHIPPING_COUNTRIES.includes(destCountry)
+      ? 0
+      : shippingPriceFor(shipRow, weightKg, currency, destCountry);
   if (requiresPickup) {
     Object.assign(ship, {
       pickup_point_id: pickupId,
@@ -190,11 +192,13 @@ export async function createOrderAction(
 
   const { data: payRow } = await svc
     .from("payment_method")
-    .select(`code, provider, ${feeCol}`)
+    .select(`code, provider, countries, ${feeCol}`)
     .eq("code", paymentCode)
     .eq("is_active", true)
     .maybeSingle();
   if (!payRow) return { error: "PAYMENT" };
+  // Platba musí být dostupná pro cílovou zemi (dobírka jen CZ/SK).
+  if (!availableIn(payRow as { countries?: string[] | null }, destCountry)) return { error: "PAYMENT" };
   const paymentFee =
     (payRow as unknown as Record<string, number | null>)[feeCol] ?? 0;
   const paymentProvider = String(

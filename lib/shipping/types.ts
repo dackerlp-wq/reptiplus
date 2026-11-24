@@ -14,6 +14,8 @@ export type ShipmentRecipient = {
   phone?: string;
   /** ID výdejního místa (Zásilkovna PUDO), pokud zákazník zvolil pobočku. */
   pickupPointId?: string;
+  /** Země výdejního místa (z widgetu); u výdejního místa určuje měnu zásilky. */
+  pickupCountry?: string;
   /** Kód výdejního místa externího dopravce (pak je pickupPointId = ID dopravce). */
   carrierPickupPoint?: string;
 };

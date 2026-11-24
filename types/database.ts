@@ -1173,6 +1173,7 @@ export type Database = {
       }
       payment_method: {
         Row: {
+          countries: string[] | null
           code: string
           created_at: string
           fee_czk: number
@@ -1184,6 +1185,7 @@ export type Database = {
           sort_order: number
         }
         Insert: {
+          countries?: string[] | null
           code: string
           created_at?: string
           fee_czk?: number
@@ -1195,6 +1197,7 @@ export type Database = {
           sort_order?: number
         }
         Update: {
+          countries?: string[] | null
           code?: string
           created_at?: string
           fee_czk?: number
@@ -1562,6 +1565,7 @@ export type Database = {
       }
       shipping_method: {
         Row: {
+          countries: string[] | null
           country_prices: Json
           carrier: Database["public"]["Enums"]["carrier"]
           code: string
@@ -1578,6 +1582,7 @@ export type Database = {
           sort_order: number
         }
         Insert: {
+          countries?: string[] | null
           country_prices?: Json
           carrier?: Database["public"]["Enums"]["carrier"]
           code: string
@@ -1594,6 +1599,7 @@ export type Database = {
           sort_order?: number
         }
         Update: {
+          countries?: string[] | null
           country_prices?: Json
           carrier?: Database["public"]["Enums"]["carrier"]
           code?: string

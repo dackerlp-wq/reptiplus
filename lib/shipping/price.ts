@@ -1,7 +1,16 @@
 /** Cena dopravy podle cílové země a hmotnosti košíku (čisté funkce, bez server-only — pokladna, server i testy). */
 
 /** Země, kam obchod doručuje (pořadí = pořadí v pokladně). Základní cena metody platí pro CZ a pro země bez vlastní ceny. */
-export const SHIP_COUNTRIES = ["CZ", "SK"] as const;
+export const SHIP_COUNTRIES = ["CZ", "SK", "DE", "AT", "PL"] as const;
+
+/** Doprava zdarma (od částky v nastavení) platí jen pro tyto země — do zahraničí je doprava drahá. */
+export const FREE_SHIPPING_COUNTRIES: readonly string[] = ["CZ", "SK"];
+
+/** Je metoda (doprava / platba) dostupná pro zemi? `countries` null/prázdné = všude. */
+export function availableIn(m: { countries?: string[] | null }, country: string | null | undefined): boolean {
+  if (!m.countries || m.countries.length === 0) return true;
+  return m.countries.includes((country || "CZ").toUpperCase());
+}
 export type ShipCountry = (typeof SHIP_COUNTRIES)[number];
 
 export const isShipCountry = (c: unknown): c is ShipCountry =>
@@ -60,9 +69,12 @@ export function shippingPricesByCountry(
   m: ShippingPriceMethod,
   weightKg: number,
   currency: "CZK" | "EUR",
+  freeShipping = false,
 ): Record<ShipCountry, number> {
-  return Object.fromEntries(SHIP_COUNTRIES.map((c) => [c, shippingPriceFor(m, weightKg, currency, c)])) as Record<
-    ShipCountry,
-    number
-  >;
+  return Object.fromEntries(
+    SHIP_COUNTRIES.map((c) => [
+      c,
+      freeShipping && FREE_SHIPPING_COUNTRIES.includes(c) ? 0 : shippingPriceFor(m, weightKg, currency, c),
+    ]),
+  ) as Record<ShipCountry, number>;
 }

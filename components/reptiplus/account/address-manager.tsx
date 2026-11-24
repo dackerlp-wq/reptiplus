@@ -92,6 +92,9 @@ export function AddressForm({
           <select name="country" defaultValue={address?.country ?? "CZ"} className={input}>
             <option value="CZ">{tc("countryCZ")}</option>
             <option value="SK">{tc("countrySK")}</option>
+            <option value="DE">{tc("countryDE")}</option>
+            <option value="AT">{tc("countryAT")}</option>
+            <option value="PL">{tc("countryPL")}</option>
           </select>
         </label>
         <label className={field}>

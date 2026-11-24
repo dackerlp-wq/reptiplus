@@ -82,6 +82,7 @@ async function buildInput(order: OrderRow): Promise<ShipmentInput> {
       phone: a.phone ?? "",
       pickupPointId: a.pickup_point_id ?? undefined,
       carrierPickupPoint: a.pickup_carrier_point ?? undefined,
+      pickupCountry: a.pickup_point_id ? (a.pickup_point_country ?? undefined) : undefined,
     },
     weightKg: await orderWeightKg(order.id),
     codMinor,

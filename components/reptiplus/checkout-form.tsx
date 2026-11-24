@@ -19,6 +19,8 @@ type Option = {
   fee: number;
   /** Cena podle cílové země (CZ/SK); chybí = jedna cena (`fee`), např. doprava zdarma. */
   feeByCountry?: Record<string, number>;
+  /** Země, kde se možnost nabízí (null/chybí = všude). */
+  countries?: string[] | null;
   pickup?: boolean;
 };
 
@@ -68,6 +70,19 @@ type AddressDefaults = Partial<Record<"full_name" | "street" | "city" | "postal_
 
 /** `id` = ID pobočky Zásilkovny, u výdejního místa externího dopravce ID dopravce + `carrierPointId`. */
 type PickupPoint = { id: string; name: string; address: string; carrierPointId?: string; country?: string };
+
+/**
+ * Výdejní místa, která máme v ceníku Zásilkovny (a ceny pro jejich země):
+ * Z-Pointy a Z-BOXy v CZ, Z-Pointy v SK a PL, v Německu výdejní místa Hermes (dopravce 6828).
+ * Bez seznamu by widget ukázal vše povolené v účtu, i dopravce, se kterými nepočítáme.
+ */
+const PACKETA_VENDORS = [
+  { country: "cz" },
+  { country: "cz", group: "zbox" },
+  { country: "sk" },
+  { country: "pl" },
+  { carrierId: "6828" },
+];
 
 /** URL Packeta widgetu v6 (výdejní místa Zásilkovny). */
 const PACKETA_WIDGET_URL = "https://widget.packeta.com/v6/www/js/library.js";
@@ -155,11 +170,7 @@ export function CheckoutForm({
   const t = useTranslations("Checkout");
 
   const [shipping, setShipping] = useState(shippingOptions[0]?.code ?? "");
-  // Apple Pay se nabízí všude: mimo Safari ho brána Comgate řeší QR kódem pro iPhone.
-  const visiblePayments = paymentOptions;
   const [payment, setPayment] = useState(paymentOptions[0] ? payKey(paymentOptions[0]) : "");
-  const selectedPayment =
-    visiblePayments.find((o) => payKey(o) === payment) ?? visiblePayments[0];
   const [billingSame, setBillingSame] = useState(true);
   const [createAccount, setCreateAccount] = useState(false);
 
@@ -182,8 +193,19 @@ export function CheckoutForm({
   const [pickupPoint, setPickupPoint] = useState<PickupPoint | null>(null);
   const [pickupOpening, setPickupOpening] = useState(false);
 
-  const selectedShipping = shippingOptions.find((o) => o.code === shipping);
+  // Cílová země: u výdejního místa země vybrané pobočky, jinak země dodací adresy.
+  const destCountry = (code: string) =>
+    shippingOptions.find((o) => o.code === code)?.pickup && pickupPoint?.country ? pickupPoint.country : shipCountry;
+  const offeredIn = (o: { countries?: string[] | null }, country: string) =>
+    !o.countries || o.countries.length === 0 || o.countries.includes(country);
+  // Doprava se nabízí podle země dodací adresy (např. do Rakouska jen doručení domů).
+  const visibleShipping = shippingOptions.filter((o) => offeredIn(o, shipCountry));
+  const selectedShipping = visibleShipping.find((o) => o.code === shipping) ?? visibleShipping[0];
   const needsPickup = selectedShipping?.pickup === true;
+  // Apple Pay se nabízí všude: mimo Safari ho brána Comgate řeší QR kódem pro iPhone. Dobírka jen kde je povolená.
+  const visiblePayments = paymentOptions.filter((o) => offeredIn(o, destCountry(selectedShipping?.code ?? "")));
+  const selectedPayment =
+    visiblePayments.find((o) => payKey(o) === payment) ?? visiblePayments[0];
 
   const openPacketaWidget = async () => {
     if (!packetaApiKey) return;
@@ -212,7 +234,7 @@ export function CheckoutForm({
             });
           }
         },
-        { language: locale, country: "cz,sk", appIdentity: "reptiplus" },
+        { language: locale, vendors: PACKETA_VENDORS, appIdentity: "reptiplus" },
       );
     } catch {
       /* skript se nenačetl — tlačítko zůstane k dispozici pro další pokus */
@@ -231,10 +253,7 @@ export function CheckoutForm({
   >(createOrderAction, undefined);
 
   // Cena dopravy podle cílové země: výdejní místo → země pobočky, jinak země dodací adresy.
-  const feeFor = (o: Option) => {
-    const dest = o.pickup && o.code === shipping && pickupPoint?.country ? pickupPoint.country : shipCountry;
-    return o.feeByCountry?.[dest] ?? o.fee;
-  };
+  const feeFor = (o: Option) => o.feeByCountry?.[destCountry(o.code)] ?? o.fee;
   const shippingFee = selectedShipping ? feeFor(selectedShipping) : 0;
   const paymentFee = selectedPayment?.fee ?? 0;
   const discount = discountState.status === "ok" ? discountState.amount : 0;
@@ -249,7 +268,7 @@ export function CheckoutForm({
       {/* Formulář */}
       <form id="checkout-form" action={submitOrder} className="space-y-8">
         <input type="hidden" name="locale" value={locale} />
-        <input type="hidden" name="shipping_method" value={shipping} />
+        <input type="hidden" name="shipping_method" value={selectedShipping?.code ?? ""} />
         <input type="hidden" name="payment_method" value={selectedPayment?.code ?? ""} />
         <input type="hidden" name="comgate_method" value={selectedPayment?.variant ?? ""} />
         <input type="hidden" name="billing_same" value={billingSame ? "on" : "off"} />
@@ -392,11 +411,11 @@ export function CheckoutForm({
               {freeShippingActive ? t("freeShipping") : t("freeShippingFrom", { amount: fmt(freeShippingFrom) })}
             </p>
           )}
-          {shippingOptions.map((o) => (
+          {visibleShipping.map((o) => (
             <OptionRow
               key={o.code}
               name="ship"
-              checked={shipping === o.code}
+              checked={selectedShipping?.code === o.code}
               onSelect={() => {
                 setShipping(o.code);
                 if (!o.pickup) setPickupPoint(null);
@@ -723,6 +742,9 @@ function AddressFields({
         >
           <option value="CZ">{t("countryCZ")}</option>
           <option value="SK">{t("countrySK")}</option>
+          <option value="DE">{t("countryDE")}</option>
+          <option value="AT">{t("countryAT")}</option>
+          <option value="PL">{t("countryPL")}</option>
         </select>
       </label>
       <label className={label}>

@@ -337,6 +337,8 @@ export type ShippingMethodItem = {
   heavy_price_eur: number | null;
   /** Vlastní ceny pro jiné země než CZ (`{"SK": {price_czk, …}}`). */
   country_prices: unknown;
+  /** Země, kde se doprava nabízí (null = všude). */
+  countries: string[] | null;
   pickup_point: boolean;
 };
 
@@ -347,6 +349,8 @@ export type PaymentMethodItem = {
   provider: string;
   fee_czk: number;
   fee_eur: number | null;
+  /** Země, kde se platba nabízí (null = všude) — dobírka jen CZ/SK. */
+  countries: string[] | null;
 };
 
 /** Aktivní dopravní metody (RLS: public read jen is_active=true). */
@@ -354,7 +358,7 @@ export async function getShippingMethods(): Promise<ShippingMethodItem[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("shipping_method")
-    .select("id,code,name_i18n,carrier,price_czk,price_eur,heavy_from_kg,heavy_price_czk,heavy_price_eur,country_prices,pickup_point,sort_order")
+    .select("id,code,name_i18n,carrier,price_czk,price_eur,heavy_from_kg,heavy_price_czk,heavy_price_eur,country_prices,countries,pickup_point,sort_order")
     .eq("is_active", true)
     .order("sort_order");
   return (data ?? []) as unknown as ShippingMethodItem[];
@@ -365,7 +369,7 @@ export async function getPaymentMethods(): Promise<PaymentMethodItem[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("payment_method")
-    .select("id,code,name_i18n,provider,fee_czk,fee_eur,sort_order")
+    .select("id,code,name_i18n,provider,fee_czk,fee_eur,countries,sort_order")
     .eq("is_active", true)
     .order("sort_order");
   const methods = (data ?? []) as unknown as PaymentMethodItem[];

@@ -66,7 +66,9 @@ export default async function CheckoutPage({
     name: pickI18n(m.name_i18n, locale),
     fee: freeShipping ? 0 : shippingPriceFor(m, weightKg, currency, "CZ"),
     // Cena podle cílové země (u výdejního místa země pobočky) — pokladna ji přepíná podle volby zákazníka.
-    feeByCountry: freeShipping ? undefined : shippingPricesByCountry(m, weightKg, currency),
+    // Doprava zdarma jen pro FREE_SHIPPING_COUNTRIES.
+    feeByCountry: shippingPricesByCountry(m, weightKg, currency, freeShipping),
+    countries: m.countries,
     pickup: m.pickup_point,
   }));
   // Comgate se rozbalí na jednotlivé volby (karta, Apple Pay, Google Pay, banka, později)
@@ -79,6 +81,7 @@ export default async function CheckoutPage({
       code: m.code,
       name: pickI18n(m.name_i18n, locale),
       fee: (currency === "CZK" ? m.fee_czk : m.fee_eur) ?? 0,
+      countries: m.countries,
     };
     if (m.provider !== "comgate" || !comgateVariants?.length) return [base];
     return comgateVariants.map((v) => ({

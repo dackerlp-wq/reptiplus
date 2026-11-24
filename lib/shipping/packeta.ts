@@ -1,5 +1,6 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
+import { getCnbEurRate } from "@/lib/exchange-rate";
 import {
   type CarrierResult,
   type LabelResult,
@@ -28,10 +29,23 @@ type PacketaConfig = {
 };
 
 /**
- * ID dopravců „Zásilkovna domů" podle cílové země
- * (docs.packeta.com → Destination country → Carrier overview: CZ 106, SK 131).
+ * Dopravce pro doručení na adresu podle cílové země — ty, které má Reptiplus v ceníku
+ * (docs.packeta.com → Destination country → Carrier overview):
+ * CZ Zásilkovna domů 106, SK Packeta Home 131, DE Hermes HD 6373, AT DPD HD 6830, PL DPD HD 1406.
  */
-const HOME_CARRIER: Record<string, string> = { CZ: "106", SK: "131" };
+const HOME_CARRIER: Record<string, string> = { CZ: "106", SK: "131", DE: "6373", AT: "6830", PL: "1406" };
+
+/** Měna dobírky a hodnoty podle cílové země (PL: EUR — v účtu Zásilkovny musí být povolený převod EUR pro Polsko). */
+export const packetaCurrencyFor = (country: string | undefined): "CZK" | "EUR" =>
+  (country || "CZ").toUpperCase() === "CZ" ? "CZK" : "EUR";
+
+/** Převod částky (hlavní jednotky) mezi CZK a EUR kurzem ČNB. */
+export function convertAmount(amount: number, from: string, to: string, eurRate: number): number {
+  if (from === to) return amount;
+  if (from === "CZK" && to === "EUR") return amount / eurRate;
+  if (from === "EUR" && to === "CZK") return amount * eurRate;
+  return amount;
+}
 
 export function homeCarrierFor(country: string | undefined, czOverride?: string): string | null {
   const c = (country || "CZ").toUpperCase();
@@ -138,9 +152,23 @@ export async function createPacketaShipment(
   const name = cleanName(split.name);
   const surname = cleanName(split.surname);
   if (!name || !surname) return { ok: false, error: "Chybí jméno a příjmení příjemce." };
-  const value = Math.min(toMajor(input.valueMinor), MAX_VALUE[input.currency] ?? Infinity);
-  // Dobírka v CZK musí být celé číslo.
-  const cod = input.currency === "CZK" ? Math.round(toMajor(input.codMinor)) : toMajor(input.codMinor);
+  // Měna podle cílové země (u výdejního místa země pobočky); částky z objednávky se přepočtou kurzem ČNB.
+  const destCountry = r.pickupCountry || r.country || "CZ";
+  const currency = packetaCurrencyFor(destCountry);
+  let rate = 1;
+  if (currency !== input.currency) {
+    const cnb = await getCnbEurRate();
+    if (!cnb) return { ok: false, error: "Nepodařilo se načíst kurz ČNB pro přepočet měny zásilky." };
+    rate = cnb.rate;
+  }
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const value = Math.min(
+    round2(convertAmount(toMajor(input.valueMinor), input.currency, currency, rate)),
+    MAX_VALUE[currency] ?? Infinity,
+  );
+  // Dobírka v CZK musí být celé číslo, v EUR na centy.
+  const codRaw = convertAmount(toMajor(input.codMinor), input.currency, currency, rate);
+  const cod = currency === "CZK" ? Math.round(codRaw) : round2(codRaw);
   const phone = cleanPhone(r.phone);
   if (!r.email && !phone) return { ok: false, error: "Chybí e-mail i platný telefon příjemce." };
   const addr = splitStreet(r.street);
@@ -164,7 +192,7 @@ export async function createPacketaShipment(
     phone ? `<phone>${esc(phone)}</phone>` : "",
     `<cod>${cod}</cod>`,
     `<value>${value}</value>`,
-    `<currency>${esc(input.currency)}</currency>`,
+    `<currency>${currency}</currency>`,
     `<weight>${input.weightKg}</weight>`,
     cfg.eshopId ? `<eshop>${esc(cfg.eshopId)}</eshop>` : "",
     isPudo
