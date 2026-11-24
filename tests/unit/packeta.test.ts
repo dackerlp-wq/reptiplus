@@ -10,7 +10,7 @@ vi.mock("@/lib/supabase/service", () => ({
   }),
 }));
 
-import { getPacketaStatus, packetaFault, cleanPhone, splitStreet } from "@/lib/shipping/packeta";
+import { getPacketaStatus, packetaFault, cleanPhone, splitStreet, homeCarrierFor } from "@/lib/shipping/packeta";
 import { packetaStatusLabel } from "@/lib/shipping/packeta-sync";
 
 vi.mock("@/lib/orders/notify", () => ({ sendOrderStatusEmail: vi.fn() }));
@@ -62,5 +62,14 @@ describe("Zásilkovna — stav zásilky", () => {
     expect(splitStreet("Dlouhá 12/3")).toEqual({ street: "Dlouhá", houseNumber: "12/3" });
     expect(splitStreet("Náměstí Míru 1a")).toEqual({ street: "Náměstí Míru", houseNumber: "1a" });
     expect(splitStreet("Lhota")).toEqual({ street: "Lhota", houseNumber: "" });
+  });
+
+  it("dopravce pro doručení domů podle země", () => {
+    expect(homeCarrierFor("CZ")).toBe("106");
+    expect(homeCarrierFor("sk")).toBe("131");
+    expect(homeCarrierFor(undefined)).toBe("106");
+    expect(homeCarrierFor("CZ", "999")).toBe("999");
+    expect(homeCarrierFor("SK", "999")).toBe("131");
+    expect(homeCarrierFor("DE")).toBeNull();
   });
 });

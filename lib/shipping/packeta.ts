@@ -23,9 +23,21 @@ const ENDPOINT = "https://www.zasilkovna.cz/api/rest";
 type PacketaConfig = {
   apiPassword: string;
   eshopId: string;
-  /** ID dopravce pro doručení na adresu (home delivery). Pro PUDO se nepoužije. */
+  /** ID dopravce pro doručení na adresu v ČR (výchozí 106). Pro PUDO se nepoužije. */
   homeCarrierId: string;
 };
+
+/**
+ * ID dopravců „Zásilkovna domů" podle cílové země
+ * (docs.packeta.com → Destination country → Carrier overview: CZ 106, SK 131).
+ */
+const HOME_CARRIER: Record<string, string> = { CZ: "106", SK: "131" };
+
+export function homeCarrierFor(country: string | undefined, czOverride?: string): string | null {
+  const c = (country || "CZ").toUpperCase();
+  if (c === "CZ" && czOverride) return czOverride;
+  return HOME_CARRIER[c] ?? null;
+}
 
 async function getConfig(): Promise<PacketaConfig | null> {
   try {
@@ -135,12 +147,9 @@ export async function createPacketaShipment(
 
   // PUDO (výdejní místo) → addressId; jinak doručení na adresu → homeCarrierId + adresa.
   const isPudo = Boolean(r.pickupPointId);
-  if (!isPudo && !cfg.homeCarrierId) {
-    return {
-      ok: false,
-      error:
-        "Chybí ID dopravce pro doručení na adresu (homeCarrierId v nastavení Zásilkovny). Pro výdejní místa není potřeba.",
-    };
+  const homeCarrier = isPudo ? null : homeCarrierFor(r.country, cfg.homeCarrierId);
+  if (!isPudo && !homeCarrier) {
+    return { ok: false, error: `Doručení na adresu do země ${r.country ?? "?"} Zásilkovnou není podporováno.` };
   }
 
   if (!isPudo && !addr.houseNumber) {
@@ -162,7 +171,7 @@ export async function createPacketaShipment(
       ? `<addressId>${esc(r.pickupPointId!)}</addressId>` +
         (r.carrierPickupPoint ? `<carrierPickupPoint>${esc(r.carrierPickupPoint)}</carrierPickupPoint>` : "")
       : [
-          `<addressId>${esc(cfg.homeCarrierId)}</addressId>`,
+          `<addressId>${esc(homeCarrier!)}</addressId>`,
           `<street>${esc(clip(addr.street))}</street>`,
           `<houseNumber>${esc(clip(addr.houseNumber, 16))}</houseNumber>`,
           `<city>${esc(clip(r.city))}</city>`,

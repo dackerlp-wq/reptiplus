@@ -261,6 +261,7 @@
     "discount": "Discount",
     "total": "Total",
     "deliveryTo": "Delivery to",
+    "pickupPoint": "Pick-up point",
     "continueShopping": "Continue shopping",
     "bankAccount": "Account number",
     "iban": "IBAN",

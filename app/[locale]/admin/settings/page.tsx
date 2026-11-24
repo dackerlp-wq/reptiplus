@@ -339,16 +339,16 @@ export default async function AdminSettingsPage() {
               </label>
             </div>
             <label className="flex flex-col gap-1.5">
-              <span className={legend}>ID dopravce — doručení na adresu</span>
+              <span className={legend}>ID dopravce — doručení na adresu v ČR (nepovinné)</span>
               <input
                 name="homeCarrierId"
                 defaultValue={String(zas.homeCarrierId ?? "")}
-                placeholder="např. 106 (Zásilkovna domů CZ)"
+                placeholder="106"
                 className={input}
               />
               <span className="text-xs text-gray-soft">
-                Potřeba jen pro doručení na adresu; pro výdejní místa se
-                nevyplňuje. ID zjistíš z ceníku / nastavení Zásilkovny.
+                Nech prázdné — doručení domů jde automaticky přes „Zásilkovna domů“
+                (ČR 106, SK 131). Vyplň jen, pokud ti Zásilkovna přidělila jiného dopravce.
               </span>
             </label>
             <button className={saveBtn}>Uložit Zásilkovnu</button>

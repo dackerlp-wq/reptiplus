@@ -83,6 +83,10 @@ type Addr = {
   postal_code?: string;
   country?: string;
   phone?: string;
+  pickup_point_id?: string;
+  pickup_point_name?: string;
+  pickup_point_address?: string;
+  pickup_carrier_point?: string;
 } | null;
 
 type EventMeta = Record<string, string | number | boolean | null | undefined>;
@@ -405,6 +409,22 @@ export default async function OrderDetailPage({
                 <span className="text-xs text-gray-soft">({CARRIER_LABEL[carrier]})</span>
               )}
             </p>
+            {(() => {
+              const sa = order.shipping_address as Addr;
+              if (!sa?.pickup_point_id) return null;
+              return (
+                <div className="rounded-lg bg-paper px-3 py-2 text-sm">
+                  <p className="text-xs text-gray-soft">Výdejní místo</p>
+                  <p className="font-semibold text-ink">{sa.pickup_point_name || "—"}</p>
+                  {sa.pickup_point_address && <p className="text-xs text-gray-soft">{sa.pickup_point_address}</p>}
+                  <p className="font-mono text-xs text-gray-soft">
+                    {sa.pickup_carrier_point
+                      ? `Externí dopravce ${sa.pickup_point_id} · místo ${sa.pickup_carrier_point}`
+                      : `ID ${sa.pickup_point_id}`}
+                  </p>
+                </div>
+              );
+            })()}
 
             {order.carrier_shipment_id ? (
               <div className="space-y-2.5">

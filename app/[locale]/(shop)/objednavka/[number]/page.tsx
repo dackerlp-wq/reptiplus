@@ -137,6 +137,8 @@ export default async function OrderConfirmPage({
     city?: string;
     postal_code?: string;
     country?: string;
+    pickup_point_name?: string;
+    pickup_point_address?: string;
   } | null;
 
   return (
@@ -298,6 +300,22 @@ export default async function OrderConfirmPage({
             <br />
             {addr.postal_code} {addr.city}, {addr.country}
           </p>
+          {addr.pickup_point_name && (
+            <>
+              <p className="mb-1 mt-4 text-xs font-semibold uppercase tracking-wide text-gray-soft">
+                {t("pickupPoint")}
+              </p>
+              <p className="text-ink">
+                {addr.pickup_point_name}
+                {addr.pickup_point_address && (
+                  <>
+                    <br />
+                    {addr.pickup_point_address}
+                  </>
+                )}
+              </p>
+            </>
+          )}
         </div>
       )}
 

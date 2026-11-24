@@ -99,7 +99,16 @@ export type OrderAddress = {
   postal_code?: string;
   country?: string;
   phone?: string;
+  pickup_point_id?: string;
+  pickup_point_name?: string;
+  pickup_point_address?: string;
 } | null;
+
+/** Výdejní místo jako jeden řádek („Z-BOX Kladno, Náměstí 1, Kladno"), jinak null. */
+export function pickupPointText(a: OrderAddress): string | null {
+  if (!a?.pickup_point_name) return null;
+  return [a.pickup_point_name, a.pickup_point_address].filter(Boolean).join(", ");
+}
 
 export type OrderEmailData = {
   number: string;
@@ -138,6 +147,7 @@ const COPY = {
     discount: "Sleva",
     total: "Celkem",
     delivery: "Doručovací adresa",
+    pickupPoint: "Výdejní místo",
     billing: "Fakturační adresa",
     shippingMethod: "Doprava",
     paymentMethod: "Platba",
@@ -170,6 +180,7 @@ const COPY = {
     discount: "Discount",
     total: "Total",
     delivery: "Delivery address",
+    pickupPoint: "Pick-up point",
     billing: "Billing address",
     shippingMethod: "Shipping",
     paymentMethod: "Payment",
@@ -202,6 +213,7 @@ const COPY = {
     discount: "Rabatt",
     total: "Gesamt",
     delivery: "Lieferadresse",
+    pickupPoint: "Abholstelle",
     billing: "Rechnungsadresse",
     shippingMethod: "Versand",
     paymentMethod: "Zahlung",
@@ -310,6 +322,8 @@ export function orderConfirmationEmail(d: OrderEmailData): {
   const meta: [string, string][] = [];
   if (d.shippingMethodLabel) meta.push([c.shippingMethod, d.shippingMethodLabel]);
   if (d.paymentMethodLabel) meta.push([c.paymentMethod, d.paymentMethodLabel]);
+  const pickup = pickupPointText(d.shippingAddress);
+  if (pickup) meta.push([c.pickupPoint, pickup]);
 
   const sameAddress = !d.billingAddress || addressText(d.billingAddress) === addressText(d.shippingAddress);
 
@@ -343,6 +357,7 @@ ${footerRow(d.locale)}`;
     ...(d.discount > 0 ? [`${c.discount}: −${money(d.discount, d.locale)}`] : []),
     `${c.total}: ${money(d.total, d.locale)}`,
     "",
+    ...(pickup ? [`${c.pickupPoint}: ${pickup}`] : []),
     `${c.delivery}: ${addressText(d.shippingAddress)}`,
     ...(!sameAddress ? [`${c.billing}: ${addressText(d.billingAddress ?? null)}`] : []),
     ...(d.note ? ["", `${c.note}: ${d.note}`] : []),
@@ -369,6 +384,8 @@ export function newOrderNotificationEmail(d: OrderEmailData): {
     ["Doprava", `${d.shippingMethodLabel ?? "—"} (${money(d.shipping, d.locale)})`],
     ["Jazyk", d.locale.toUpperCase()],
   ];
+  const pickup = pickupPointText(d.shippingAddress);
+  if (pickup) meta.push(["Výdejní místo", `${pickup}${d.shippingAddress?.pickup_point_id ? ` (ID ${d.shippingAddress.pickup_point_id})` : ""}`]);
   if (d.shippingAddress?.phone) meta.push(["Telefon", d.shippingAddress.phone]);
   if (d.discount > 0) meta.push(["Sleva", `−${money(d.discount, d.locale)}`]);
 
