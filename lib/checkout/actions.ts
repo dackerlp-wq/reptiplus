@@ -177,6 +177,8 @@ export async function createOrderAction(
       pickup_point_id: pickupId,
       pickup_point_name: s(fd, "pickup_point_name"),
       pickup_point_address: s(fd, "pickup_point_address"),
+      // Výdejní místo externího dopravce: pickup_point_id = ID dopravce, tohle = kód místa u dopravce.
+      ...(s(fd, "pickup_carrier_point") ? { pickup_carrier_point: s(fd, "pickup_carrier_point") } : {}),
     });
   }
 

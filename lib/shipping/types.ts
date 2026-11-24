@@ -14,6 +14,8 @@ export type ShipmentRecipient = {
   phone?: string;
   /** ID výdejního místa (Zásilkovna PUDO), pokud zákazník zvolil pobočku. */
   pickupPointId?: string;
+  /** Kód výdejního místa externího dopravce (pak je pickupPointId = ID dopravce). */
+  carrierPickupPoint?: string;
 };
 
 export type ShipmentInput = {
@@ -26,6 +28,8 @@ export type ShipmentInput = {
   /** Hodnota zásilky v minor units (pro pojištění/celní). */
   valueMinor: number;
   currency: string; // CZK | EUR
+  /** Jazyk objednávky (odkaz na sledování). */
+  locale?: string;
 };
 
 export type ShipmentResult = {

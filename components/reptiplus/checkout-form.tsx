@@ -59,13 +59,19 @@ export type SavedAddress = {
 
 type AddressDefaults = Partial<Record<"full_name" | "street" | "city" | "postal_code" | "country" | "phone", string | null>>;
 
-type PickupPoint = { id: string; name: string; address: string };
+/** `id` = ID pobočky Zásilkovny, u výdejního místa externího dopravce ID dopravce + `carrierPointId`. */
+type PickupPoint = { id: string; name: string; address: string; carrierPointId?: string };
 
 /** URL Packeta widgetu v6 (výdejní místa Zásilkovny). */
 const PACKETA_WIDGET_URL = "https://widget.packeta.com/v6/www/js/library.js";
 
 type PacketaPoint = {
-  id: number | string;
+  /** Jen u vlastních míst Zásilkovny (pickupPointType "internal"). */
+  id?: number | string;
+  pickupPointType?: "internal" | "external";
+  /** Jen u výdejních míst externích dopravců. */
+  carrierId?: number | string;
+  carrierPickupPointId?: string;
   name?: string;
   place?: string;
   street?: string;
@@ -173,19 +179,24 @@ export function CheckoutForm({
         packetaApiKey,
         (point) => {
           if (point) {
+            const external = point.pickupPointType === "external";
+            const id = external ? point.carrierId : point.id;
+            if (id === undefined || id === null || id === "") return;
+            if (external && !point.carrierPickupPointId) return;
             const address =
               point.formatedValue ??
               [point.street, point.zip, point.city]
                 .filter(Boolean)
                 .join(", ");
             setPickupPoint({
-              id: String(point.id),
-              name: point.name ?? point.place ?? `#${point.id}`,
+              id: String(id),
+              name: point.name ?? point.place ?? `#${id}`,
               address,
+              carrierPointId: external ? String(point.carrierPickupPointId) : undefined,
             });
           }
         },
-        { language: locale, country: "cz,sk" },
+        { language: locale, country: "cz,sk", appIdentity: "reptiplus" },
       );
     } catch {
       /* skript se nenačetl — tlačítko zůstane k dispozici pro další pokus */
@@ -416,6 +427,9 @@ export function CheckoutForm({
             <>
               <input type="hidden" name="pickup_point_id" value={pickupPoint.id} />
               <input type="hidden" name="pickup_point_name" value={pickupPoint.name} />
+              {pickupPoint.carrierPointId && (
+                <input type="hidden" name="pickup_carrier_point" value={pickupPoint.carrierPointId} />
+              )}
               <input
                 type="hidden"
                 name="pickup_point_address"

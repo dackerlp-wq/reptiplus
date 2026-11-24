@@ -66,6 +66,9 @@ async function postXml(body: string): Promise<string> {
   return res.text();
 }
 
+const trackingLang = (locale?: string): string =>
+  locale === "en" || locale === "de" ? locale : "cs";
+
 /** Rozdělí "Jan Novák" na jméno a příjmení (Packeta chce zvlášť). */
 function splitName(full: string): { name: string; surname: string } {
   const parts = full.trim().split(/\s+/);
@@ -106,7 +109,8 @@ export async function createPacketaShipment(
     `<weight>${input.weightKg}</weight>`,
     cfg.eshopId ? `<eshop>${esc(cfg.eshopId)}</eshop>` : "",
     isPudo
-      ? `<addressId>${esc(r.pickupPointId!)}</addressId>`
+      ? `<addressId>${esc(r.pickupPointId!)}</addressId>` +
+        (r.carrierPickupPoint ? `<carrierPickupPoint>${esc(r.carrierPickupPoint)}</carrierPickupPoint>` : "")
       : [
           `<addressId>${esc(cfg.homeCarrierId)}</addressId>`,
           `<street>${esc(r.street ?? "")}</street>`,
@@ -138,7 +142,8 @@ export async function createPacketaShipment(
     data: {
       shipmentId: id,
       trackingNumber: barcode,
-      trackingUrl: `https://tracking.packeta.com/cs/?id=${encodeURIComponent(barcode)}`,
+      // Sledování podle ID zásilky (docs.packeta.com → Packet tracking), v jazyce objednávky.
+      trackingUrl: `https://tracking.packeta.com/${trackingLang(input.locale)}/?id=${encodeURIComponent(id)}`,
     },
   };
 }

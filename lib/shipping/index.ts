@@ -27,6 +27,7 @@ type OrderRow = {
   shipping_method: string | null;
   payment_method: string | null;
   shipping_address: Record<string, string> | null;
+  locale?: string | null;
 };
 
 /** Zjistí dopravce objednávky (z její shipping_method → shipping_method.carrier). */
@@ -70,11 +71,13 @@ async function buildInput(order: OrderRow): Promise<ShipmentInput> {
       email: order.email ?? "",
       phone: a.phone ?? "",
       pickupPointId: a.pickup_point_id ?? undefined,
+      carrierPickupPoint: a.pickup_carrier_point ?? undefined,
     },
     weightKg: 1,
     codMinor,
     valueMinor: order.total,
     currency: order.currency,
+    locale: order.locale ?? undefined,
   };
 }
 

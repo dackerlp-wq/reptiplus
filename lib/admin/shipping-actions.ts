@@ -34,7 +34,7 @@ export async function createShipmentAction(fd: FormData) {
   const { data: order } = await svc
     .from("order")
     .select(
-      "id, number, email, total, currency, shipping_method, payment_method, shipping_address, carrier_shipment_id",
+      "id, number, email, total, currency, locale, shipping_method, payment_method, shipping_address, carrier_shipment_id",
     )
     .eq("id", id)
     .maybeSingle();
@@ -89,7 +89,7 @@ export async function bulkCreateShipmentsAction(
   const { data: orders } = await svc
     .from("order")
     .select(
-      "id, number, email, total, currency, shipping_method, payment_method, shipping_address, carrier_shipment_id",
+      "id, number, email, total, currency, locale, shipping_method, payment_method, shipping_address, carrier_shipment_id",
     )
     .in("id", ids);
 
