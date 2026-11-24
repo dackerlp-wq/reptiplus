@@ -30,6 +30,8 @@ export type ShipmentInput = {
   /** Hodnota zásilky v minor units (pro pojištění/celní). */
   valueMinor: number;
   currency: string; // CZK | EUR
+  /** Skutečné rozměry balíku v cm (z balení); chybí = výchozí rozměry z nastavení. */
+  sizeCm?: { length: number; width: number; height: number };
   /** Jazyk objednávky (odkaz na sledování). */
   locale?: string;
 };

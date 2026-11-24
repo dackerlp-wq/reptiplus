@@ -185,6 +185,8 @@ export async function createOrderAction(
       pickup_point_name: s(fd, "pickup_point_name"),
       pickup_point_address: s(fd, "pickup_point_address"),
       ...(pickupCountry ? { pickup_point_country: pickupCountry } : {}),
+      // Z-BOX má přísnější rozměry — panel balení podle toho kontroluje balík.
+      ...(s(fd, "pickup_point_group") ? { pickup_point_group: s(fd, "pickup_point_group").slice(0, 20) } : {}),
       // Výdejní místo externího dopravce: pickup_point_id = ID dopravce, tohle = kód místa u dopravce.
       ...(s(fd, "pickup_carrier_point") ? { pickup_carrier_point: s(fd, "pickup_carrier_point") } : {}),
     });

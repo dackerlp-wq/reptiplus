@@ -78,6 +78,11 @@ Všechny tabulky mají RLS zapnuté. Typy z DB: `types/database.ts` (generované
 - Košík: cookie `rp_cart` + tabulky `cart`/`cart_item`; hostový košík se po přihlášení sloučí (`lib/cart/cart.ts`).
 - Objednávka: `lib/checkout/actions.ts` → `place_order` (ukládá `locale`, názvy položek vč. varianty, `vat_rate`) → `sendOrderConfirmation()` → případně Comgate platba (`startComgatePayment()` v `lib/orders/comgate.ts`, API `lib/comgate/client.ts`); zaplacení řeší `syncComgateTransaction()` (ověří stav přes `/status`, páruje podle `refId`, pak `markOrderPaid()`) — volá ho webhook i stránka objednávky po návratu z brány; „Zaplatit znovu" = `lib/checkout/pay-again.ts`. V pokladně se Comgate rozbalí na volby karta / Apple Pay / Google Pay / online převod / zaplatit později podle `/methods` (`getComgateVariants()`, cache 10 min), vybraná varianta jde jako `method` do `/create` (whitelist `COMGATE_VARIANTS`); Apple Pay se nabízí ve všech prohlížečích (mimo Safari platba přes QR kód v iPhonu). Bez SMTP env se e-maily tiše přeskočí. Číslo objednávky `RPyyMMdd-XXXX`.
 - Doprava: `lib/shipping/` (Packeta = Zásilkovna, PPL) — tvorba zásilek a PDF štítky (`pdf-lib` slučuje hromadné štítky).
+  Ceny dopravy podle cílové země a hmotnosti košíku: `lib/shipping/price.ts` (`SHIP_COUNTRIES`, `shipping_method.country_prices|countries|heavy_*`,
+  `payment_method.countries`, doprava zdarma jen `FREE_SHIPPING_COUNTRIES`); u výdejního místa rozhoduje země pobočky (`pickup_point_country`).
+  Admin stránka `app/[locale]/admin/shipping` (přehled cen, mřížka země × cena, krabice `app_setting` `shipping.boxes`).
+  Balení: panel „Zabalit a odeslat" v detailu objednávky (`components/admin/package-panel.tsx`) — povinná hmotnost a rozměry,
+  kontrola podmínek služby `lib/shipping/package-rules.ts` (limity z ceníků Zásilkovny), `packAndShipAction`; hromadné odeslání jen zabalených.
 
 ### E-maily objednávek a historie
 - Odesílání: `lib/email/client.ts` (`sendMail`, podporuje přílohy; odesílatel „Reptiplus <MAIL_FROM>"). Šablony v `lib/email/templates.ts` (cs/en/de podle `order.locale`,

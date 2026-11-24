@@ -20,11 +20,15 @@ import { Link } from "@/i18n/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { updateOrderAction, refundOrderAction } from "@/lib/admin/actions";
 import {
-  createShipmentAction,
   resetShipmentAction,
   refreshPacketaStatusAction,
 } from "@/lib/admin/shipping-actions";
 import { carrierForOrder } from "@/lib/shipping";
+import { PackagePanel } from "@/components/admin/package-panel";
+import { getBoxes } from "@/lib/shipping/boxes";
+import { orderWeightInfo } from "@/lib/shipping/weight";
+import { packetaServiceFor, GENERIC_RULE } from "@/lib/shipping/package-rules";
+import { paidTierOf } from "@/lib/shipping/paid-tier";
 import { ToastForm } from "@/components/admin/toast";
 import { OrderItemsEditor } from "@/components/admin/order-items-editor";
 import { OrderEmailComposer } from "@/components/admin/order-email-composer";
@@ -210,6 +214,29 @@ export default async function OrderDetailPage({
     svc.from("order_event").select("*").eq("order_id", order.id).order("created_at", { ascending: false }),
     getShopContact(),
   ]);
+  // Panel „Zabalit a odeslat": služba a její podmínky, co zákazník zaplatil, krabice, odhad hmotnosti.
+  const packing =
+    carrier && !order.carrier_shipment_id
+      ? await (async () => {
+          const addr = (order.shipping_address ?? {}) as Record<string, string>;
+          const [boxes, weight, { data: method }] = await Promise.all([
+            getBoxes(),
+            orderWeightInfo(order.id),
+            svc
+              .from("shipping_method")
+              .select("price_czk, price_eur, heavy_from_kg, heavy_price_czk, heavy_price_eur, country_prices")
+              .eq("code", order.shipping_method ?? "")
+              .maybeSingle(),
+          ]);
+          const country = addr.pickup_point_id ? addr.pickup_point_country || addr.country : addr.country;
+          return {
+            rule: carrier === "zasilkovna" ? (packetaServiceFor(addr) ?? GENERIC_RULE) : GENERIC_RULE,
+            paidTier: paidTierOf(method, order.shipping ?? 0, order.currency === "EUR" ? "EUR" : "CZK", country),
+            boxes,
+            weight,
+          };
+        })()
+      : null;
   const customerLocale = orderLocale(order);
   const drafts = buildAllOrderMessageDrafts({
     number: order.number,
@@ -428,6 +455,13 @@ export default async function OrderDetailPage({
 
             {order.carrier_shipment_id ? (
               <div className="space-y-2.5">
+                {order.package_weight_kg && (
+                  <p className="text-xs text-gray-soft">
+                    Balík: {String(order.package_weight_kg).replace(".", ",")} kg
+                    {order.package_length_cm &&
+                      ` · ${order.package_length_cm} × ${order.package_width_cm} × ${order.package_height_cm} cm`}
+                  </p>
+                )}
                 {order.tracking_number && (
                   <p className="text-sm">
                     <span className="text-gray-soft">Sledovací číslo: </span>
@@ -470,13 +504,22 @@ export default async function OrderDetailPage({
                   </form>
                 </div>
               </div>
-            ) : carrier ? (
-              <form action={createShipmentAction}>
-                <input type="hidden" name="id" value={order.id} />
-                <button className="inline-flex items-center gap-1.5 rounded-lg bg-forest px-3 py-2 text-sm font-semibold text-white hover:bg-forest-light">
-                  <Truck className="size-4" /> Vytvořit zásilku u dopravce
-                </button>
-              </form>
+            ) : carrier && packing ? (
+              <PackagePanel
+                orderId={order.id}
+                carrierLabel={CARRIER_LABEL[carrier] ?? carrier}
+                rule={packing.rule}
+                paidTier={packing.paidTier}
+                boxes={packing.boxes}
+                estimateKg={packing.weight.kg}
+                missingWeights={packing.weight.missing}
+                initial={{
+                  weightKg: order.package_weight_kg,
+                  lengthCm: order.package_length_cm,
+                  widthCm: order.package_width_cm,
+                  heightCm: order.package_height_cm,
+                }}
+              />
             ) : (
               <p className="text-xs text-gray-soft">
                 Tento způsob dopravy nemá API napojení (jen Zásilkovna a PPL).

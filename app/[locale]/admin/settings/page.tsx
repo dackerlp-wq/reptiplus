@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { SHIP_COUNTRIES } from "@/lib/shipping/price";
 import { AdminTabs } from "@/components/admin/admin-tabs";
+import { Link } from "@/i18n/navigation";
 import { LangFields } from "@/components/admin/lang-fields";
 import { Hint } from "@/components/admin/hint";
 import { ToastForm } from "@/components/admin/toast";
@@ -18,13 +19,10 @@ import {
   saveZasilkovnaAction,
   saveAiAction,
   saveAnalyticsAction,
-  saveShippingMethodAction,
-  deleteShippingMethodAction,
   savePaymentMethodAction,
   deletePaymentMethodAction,
   saveLegalAction,
   saveAboutAction,
-  saveShippingSettingsAction,
   saveStockSettingsAction,
   saveNewsletterSettingsAction,
   saveShippingContentAction,
@@ -42,17 +40,14 @@ const minor = (v: number | null | undefined) => (v == null ? "" : String(v / 100
 
 export default async function AdminSettingsPage() {
   const svc = createServiceClient();
-  const [{ data: settings }, { data: shipping }, { data: payments }] =
-    await Promise.all([
-      svc.from("app_setting").select("key,value"),
-      svc.from("shipping_method").select("*").order("sort_order"),
-      svc.from("payment_method").select("*").order("sort_order"),
-    ]);
+  const [{ data: settings }, { data: payments }] = await Promise.all([
+    svc.from("app_setting").select("key,value"),
+    svc.from("payment_method").select("*").order("sort_order"),
+  ]);
 
   const get = (k: string): Record<string, unknown> =>
     (settings?.find((s) => s.key === k)?.value as Record<string, unknown>) ?? {};
   const general = get("shop.general");
-  const shippingSettings = get("shipping.settings") as { freeFromCzk?: number | null; freeFromEur?: number | null };
   const newsletterSettings = get("newsletter.settings") as { discountCzk?: number; minOrderCzk?: number; validDays?: number };
   const comgate = get("integrations.comgate");
   const ppl = get("integrations.ppl");
@@ -507,26 +502,15 @@ export default async function AdminSettingsPage() {
 
         {/* ── Doprava ────────────────────────────────────────────── */}
         <div className="space-y-4">
-          <ToastForm action={saveShippingSettingsAction} className={`${card} space-y-4`}>
-            <div>
-              <h2 className="font-display text-lg font-semibold">Doprava zdarma od částky</h2>
-              <p className="text-sm text-gray-soft">
-                Při mezisoučtu zboží od této částky je doprava v pokladně zdarma (všechny metody).
-                V košíku se zobrazí lišta „do dopravy zdarma zbývá…“. Prázdné = vypnuto.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-1.5">
-                <span className={legend}>Od částky (Kč)</span>
-                <input name="freeFromCzk" type="number" min={0} step={1} defaultValue={minor(shippingSettings.freeFromCzk)} placeholder="např. 2000" className={input} />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className={legend}>Od částky (€)</span>
-                <input name="freeFromEur" type="number" min={0} step={0.01} defaultValue={minor(shippingSettings.freeFromEur)} placeholder="např. 80" className={input} />
-              </label>
-            </div>
-            <button className={saveBtn}>Uložit</button>
-          </ToastForm>
+          <div className={`${card} space-y-2`}>
+            <h2 className="font-display text-lg font-semibold">Ceny a způsoby dopravy</h2>
+            <p className="text-sm text-gray-soft">
+              Způsoby dopravy, ceny podle země a hmotnosti, doprava zdarma a krabice pro balení jsou v samostatné sekci.
+            </p>
+            <Link href="/admin/shipping" className="inline-flex rounded-lg bg-forest px-4 py-2 text-sm font-semibold text-white hover:bg-forest-light">
+              Otevřít Dopravu
+            </Link>
+          </div>
           <ToastForm action={saveShippingContentAction} className={`${card} space-y-4`}>
             <div>
               <h2 className="font-display text-lg font-semibold">Stránka „Doprava a platba“</h2>
@@ -538,18 +522,6 @@ export default async function AdminSettingsPage() {
             <LangFields fields={[{ name: "content", label: "Doplňující text", type: "rich", values: shippingContent }]} />
             <button className={saveBtn}>Uložit text</button>
           </ToastForm>
-          <Hint>
-            Způsoby dopravy nabízené v pokladně. Cenu zadáváš v Kč i €; pro
-            zákazníka se zobrazí podle jeho jazyka. Neaktivní metody se v
-            pokladně nenabízejí.
-          </Hint>
-          {(shipping ?? []).map((m) => (
-            <ShippingCard key={m.id} m={m} />
-          ))}
-          <div className={card}>
-            <p className="mb-3 font-display font-semibold">Přidat dopravu</p>
-            <ShippingCard />
-          </div>
         </div>
 
         {/* ── Platby ─────────────────────────────────────────────── */}
@@ -716,96 +688,6 @@ function CountryChecks({ value }: { value?: string[] | null }) {
         </label>
       ))}
     </fieldset>
-  );
-}
-
-function ShippingCard({ m }: { m?: any }) {
-  return (
-    <MethodShell id={m?.id} deleteAction={deleteShippingMethodAction}>
-      <ToastForm action={saveShippingMethodAction} className="space-y-3">
-        {m && <input type="hidden" name="id" value={m.id} />}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1.5">
-            <span className={legend}>Kód</span>
-            <input name="code" required defaultValue={m?.code ?? ""} className={input} />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className={legend}>Dopravce</span>
-            <select name="carrier" defaultValue={m?.carrier ?? "other"} className={input}>
-              <option value="ppl">PPL</option>
-              <option value="zasilkovna">Zásilkovna</option>
-              <option value="balikovna">Balíkovna</option>
-              <option value="personal">Osobní odběr</option>
-              <option value="other">Jiné</option>
-            </select>
-          </label>
-        </div>
-        <LangFields compact fields={[{ name: "name", label: "Název", values: m?.name_i18n }]} />
-        <div className="grid items-end gap-3 sm:grid-cols-3">
-          <label className="flex flex-col gap-1.5">
-            <span className={legend}>Cena Kč</span>
-            <input name="price_czk" inputMode="decimal" defaultValue={minor(m?.price_czk)} className={input} />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className={legend}>Cena €</span>
-            <input name="price_eur" inputMode="decimal" defaultValue={minor(m?.price_eur)} className={input} />
-          </label>
-          <label className="flex items-center gap-2 pb-2 text-sm">
-            <input type="checkbox" name="is_active" defaultChecked={m?.is_active ?? true} className="size-4 accent-forest" />
-            Aktivní
-          </label>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="flex flex-col gap-1.5">
-            <span className={legend}>Těžký košík nad (kg)</span>
-            <input name="heavy_from_kg" inputMode="decimal" placeholder="např. 5" defaultValue={m?.heavy_from_kg ?? ""} className={input} />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className={legend}>Cena nad limit Kč</span>
-            <input name="heavy_price_czk" inputMode="decimal" defaultValue={minor(m?.heavy_price_czk)} className={input} />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className={legend}>Cena nad limit €</span>
-            <input name="heavy_price_eur" inputMode="decimal" defaultValue={minor(m?.heavy_price_eur)} className={input} />
-          </label>
-        </div>
-        {SHIP_COUNTRIES.filter((c) => c !== "CZ").map((c) => {
-          const cp = (m?.country_prices?.[c] ?? {}) as Record<string, number | null>;
-          return (
-            <fieldset key={c} className="space-y-2 rounded-lg border border-cream-dark p-3">
-              <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-gray-soft">
-                Cena pro {COUNTRY_NAME[c] ?? c} (prázdné = stejná jako výše)
-              </legend>
-              <div className="grid gap-3 sm:grid-cols-4">
-                {(
-                  [
-                    ["price_czk", "Kč"],
-                    ["price_eur", "€"],
-                    ["heavy_price_czk", "Nad limit Kč"],
-                    ["heavy_price_eur", "Nad limit €"],
-                  ] as const
-                ).map(([k, l]) => (
-                  <label key={k} className="flex flex-col gap-1.5">
-                    <span className={legend}>{l}</span>
-                    <input name={`cp_${c}_${k}`} inputMode="decimal" defaultValue={minor(cp[k])} className={input} />
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          );
-        })}
-        <p className="text-xs text-gray-soft">
-          Cena pro zemi platí podle země výdejního místa, u doručení domů podle dodací adresy.
-          Nepovinné. Hmotnost košíku se počítá z hmotnosti produktů (karta produktu → Nákup); produkty bez hmotnosti se nepočítají.
-        </p>
-        <CountryChecks value={m?.countries} />
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="pickup_point" defaultChecked={m?.pickup_point ?? false} className="size-4 accent-forest" />
-          Výdejní místo (spustí Zásilkovna widget v pokladně)
-        </label>
-        <button className={saveBtn}>{m ? "Uložit" : "Přidat"}</button>
-      </ToastForm>
-    </MethodShell>
   );
 }
 

@@ -959,6 +959,11 @@ export type Database = {
           locale: string
           note: string | null
           number: string
+          package_height_cm: number | null
+          package_length_cm: number | null
+          package_weight_kg: number | null
+          package_width_cm: number | null
+          packed_at: string | null
           payment_fee: number
           payment_method: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
@@ -993,6 +998,11 @@ export type Database = {
           locale?: string
           note?: string | null
           number: string
+          package_height_cm?: number | null
+          package_length_cm?: number | null
+          package_weight_kg?: number | null
+          package_width_cm?: number | null
+          packed_at?: string | null
           payment_fee?: number
           payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
@@ -1027,6 +1037,11 @@ export type Database = {
           locale?: string
           note?: string | null
           number?: string
+          package_height_cm?: number | null
+          package_length_cm?: number | null
+          package_weight_kg?: number | null
+          package_width_cm?: number | null
+          packed_at?: string | null
           payment_fee?: number
           payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]

@@ -30,6 +30,11 @@ type OrderRow = {
   payment_method: string | null;
   shipping_address: Record<string, string> | null;
   locale?: string | null;
+  /** Zadané při balení — mají přednost před odhadem. */
+  package_weight_kg?: number | null;
+  package_length_cm?: number | null;
+  package_width_cm?: number | null;
+  package_height_cm?: number | null;
 };
 
 /** Zjistí dopravce objednávky (z její shipping_method → shipping_method.carrier). */
@@ -84,7 +89,15 @@ async function buildInput(order: OrderRow): Promise<ShipmentInput> {
       carrierPickupPoint: a.pickup_carrier_point ?? undefined,
       pickupCountry: a.pickup_point_id ? (a.pickup_point_country ?? undefined) : undefined,
     },
-    weightKg: await orderWeightKg(order.id),
+    weightKg: order.package_weight_kg ? Number(order.package_weight_kg) : await orderWeightKg(order.id),
+    sizeCm:
+      order.package_length_cm && order.package_width_cm && order.package_height_cm
+        ? {
+            length: Number(order.package_length_cm),
+            width: Number(order.package_width_cm),
+            height: Number(order.package_height_cm),
+          }
+        : undefined,
     codMinor,
     valueMinor: order.total,
     currency: order.currency,

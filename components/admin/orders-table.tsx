@@ -179,7 +179,7 @@ function InlineSelect({
   );
 }
 
-/** Hromadné podání zásilek u dopravce (přeskočí bez API / s existující zásilkou). */
+/** Hromadné podání zásilek u dopravce (jen zabalené objednávky; přeskočí bez API / s existující zásilkou). */
 function BulkShipmentButton({
   ids,
   onDone,
@@ -200,7 +200,7 @@ function BulkShipmentButton({
             const r = await bulkCreateShipmentsAction(fd);
             const parts = [`vytvořeno ${r.created}`];
             if (r.failed) parts.push(`selhalo ${r.failed}`);
-            if (r.skipped) parts.push(`přeskočeno ${r.skipped}`);
+            if (r.skipped) parts.push(`přeskočeno ${r.skipped} (nezabalené nebo bez dopravce — důvod v detailu)`);
             if (r.failed > 0)
               toast.error(`Zásilky: ${parts.join(", ")}`);
             else toast.success(`Zásilky: ${parts.join(", ")}`);
@@ -210,6 +210,7 @@ function BulkShipmentButton({
           }
         })
       }
+      title="Odešle jen zabalené objednávky (zadaná hmotnost a rozměry), které splní podmínky dopravce."
       className="inline-flex items-center gap-1.5 rounded-lg border border-cream-dark bg-white px-3 py-1.5 text-sm font-medium text-charcoal transition-colors hover:border-forest hover:text-forest disabled:opacity-50"
     >
       {pending ? (

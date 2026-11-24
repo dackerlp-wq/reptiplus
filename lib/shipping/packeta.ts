@@ -216,7 +216,16 @@ export async function createPacketaShipment(
           `<zip>${esc((r.zip ?? "").replace(/\s+/g, ""))}</zip>`,
         ].join(""),
     // Rozměry: povinné u některých dopravců (InPost, Poczta Polska), ostatním nevadí.
-    `<size><length>${cfg.size.length}</length><width>${cfg.size.width}</width><height>${cfg.size.height}</height></size>`,
+    (() => {
+      const mm = input.sizeCm
+        ? {
+            length: Math.round(input.sizeCm.length * 10),
+            width: Math.round(input.sizeCm.width * 10),
+            height: Math.round(input.sizeCm.height * 10),
+          }
+        : cfg.size;
+      return `<size><length>${mm.length}</length><width>${mm.width}</width><height>${mm.height}</height></size>`;
+    })(),
   ]
     .filter(Boolean)
     .join("");

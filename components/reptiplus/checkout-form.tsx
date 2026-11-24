@@ -69,7 +69,7 @@ export type SavedAddress = {
 type AddressDefaults = Partial<Record<"full_name" | "street" | "city" | "postal_code" | "country" | "phone", string | null>>;
 
 /** `id` = ID pobočky Zásilkovny, u výdejního místa externího dopravce ID dopravce + `carrierPointId`. */
-type PickupPoint = { id: string; name: string; address: string; carrierPointId?: string; country?: string };
+type PickupPoint = { id: string; name: string; address: string; carrierPointId?: string; country?: string; group?: string };
 
 /**
  * Výdejní místa, která máme v ceníku Zásilkovny (a ceny pro jejich země):
@@ -104,6 +104,8 @@ type PacketaPoint = {
   zip?: string;
   /** Země pobočky, malými písmeny („cz", „sk"). */
   country?: string;
+  /** „zbox" u Z-BOXu, prázdné u běžné pobočky. */
+  group?: string;
   formatedValue?: string;
 };
 
@@ -234,6 +236,7 @@ export function CheckoutForm({
               address,
               carrierPointId: external ? String(point.carrierPickupPointId) : undefined,
               country: point.country ? String(point.country).toUpperCase() : undefined,
+              group: point.group ? String(point.group) : undefined,
             });
           }
         },
@@ -470,6 +473,7 @@ export function CheckoutForm({
             <>
               <input type="hidden" name="pickup_point_id" value={pickupPoint.id} />
               <input type="hidden" name="pickup_point_name" value={pickupPoint.name} />
+              {pickupPoint.group && <input type="hidden" name="pickup_point_group" value={pickupPoint.group} />}
               {pickupPoint.country && (
                 <input type="hidden" name="pickup_point_country" value={pickupPoint.country} />
               )}

@@ -21,6 +21,7 @@ import {
   X,
   Warehouse,
   BarChart3,
+  Truck,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ const GROUPS: Group[] = [
   ],
   [
     { href: "/admin/orders", label: "Objednávky", icon: ShoppingBag, badgeTone: "amber" },
+    { href: "/admin/shipping", label: "Doprava", icon: Truck },
     { href: "/admin/invoices", label: "Faktury", icon: FileText },
     { href: "/admin/claims", label: "Reklamace a vrácení", icon: PackageX, badgeTone: "amber" },
     { href: "/admin/inquiries", label: "Poptávky LEDX", icon: Lightbulb, badgeTone: "amber" },
