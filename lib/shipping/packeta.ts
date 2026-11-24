@@ -26,7 +26,16 @@ type PacketaConfig = {
   eshopId: string;
   /** ID dopravce pro doručení na adresu v ČR (výchozí 106). Pro PUDO se nepoužije. */
   homeCarrierId: string;
+  /** Výchozí rozměry balíku v mm (InPost, Poczta Polska je vyžadují). */
+  size: { length: number; width: number; height: number };
 };
+
+/** „30x20x15" (cm) → rozměry v mm; neplatné → 30 × 20 × 15 cm. */
+export function parsePackageSize(v: string | undefined): { length: number; width: number; height: number } {
+  const n = (v ?? "").split(/[x×*; ]+/i).map((x) => parseFloat(x.replace(",", "."))).filter((x) => x > 0);
+  const [l, w, h] = n.length === 3 ? n : [30, 20, 15];
+  return { length: Math.round(l * 10), width: Math.round(w * 10), height: Math.round(h * 10) };
+}
 
 /**
  * Dopravce pro doručení na adresu podle cílové země — ty, které má Reptiplus v ceníku
@@ -68,6 +77,7 @@ async function getConfig(): Promise<PacketaConfig | null> {
       apiPassword,
       eshopId: v.eshopId || process.env.PACKETA_ESHOP_ID || "",
       homeCarrierId: v.homeCarrierId || process.env.PACKETA_HOME_CARRIER_ID || "",
+      size: parsePackageSize(v.packageSize),
     };
   } catch {
     return null;
@@ -205,6 +215,8 @@ export async function createPacketaShipment(
           `<city>${esc(clip(r.city))}</city>`,
           `<zip>${esc((r.zip ?? "").replace(/\s+/g, ""))}</zip>`,
         ].join(""),
+    // Rozměry: povinné u některých dopravců (InPost, Poczta Polska), ostatním nevadí.
+    `<size><length>${cfg.size.length}</length><width>${cfg.size.width}</width><height>${cfg.size.height}</height></size>`,
   ]
     .filter(Boolean)
     .join("");

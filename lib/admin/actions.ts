@@ -1562,6 +1562,7 @@ export async function saveZasilkovnaAction(fd: FormData) {
     apiPassword,
     eshopId: str(fd, "eshopId"),
     homeCarrierId: str(fd, "homeCarrierId"),
+    packageSize: str(fd, "packageSize"),
   });
 }
 export async function saveAiAction(fd: FormData) {

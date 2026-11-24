@@ -352,6 +352,13 @@ export default async function AdminSettingsPage() {
                 (ČR 106, SK 131). Vyplň jen, pokud ti Zásilkovna přidělila jiného dopravce.
               </span>
             </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Výchozí rozměry balíku (cm)</span>
+              <input name="packageSize" defaultValue={String(zas.packageSize ?? "")} placeholder="30x20x15" className={input} />
+              <span className="text-xs text-gray-soft">
+                Délka × šířka × výška. Posílá se se zásilkou — InPost boxy a Polská pošta je vyžadují. Prázdné = 30 × 20 × 15 cm.
+              </span>
+            </label>
             <button className={saveBtn}>Uložit Zásilkovnu</button>
           </ToastForm>
 

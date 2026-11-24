@@ -10,7 +10,7 @@ vi.mock("@/lib/supabase/service", () => ({
   }),
 }));
 
-import { getPacketaStatus, packetaFault, cleanPhone, splitStreet, homeCarrierFor, packetaCurrencyFor, convertAmount } from "@/lib/shipping/packeta";
+import { getPacketaStatus, packetaFault, cleanPhone, splitStreet, homeCarrierFor, packetaCurrencyFor, convertAmount, parsePackageSize } from "@/lib/shipping/packeta";
 import { packetaStatusLabel } from "@/lib/shipping/packeta-sync";
 
 vi.mock("@/lib/orders/notify", () => ({ sendOrderStatusEmail: vi.fn() }));
@@ -84,5 +84,11 @@ describe("Zásilkovna — stav zásilky", () => {
     expect(convertAmount(250, "CZK", "EUR", 25)).toBe(10);
     expect(convertAmount(10, "EUR", "CZK", 25)).toBe(250);
     expect(convertAmount(10, "EUR", "EUR", 25)).toBe(10);
+  });
+
+  it("výchozí rozměry balíku v mm", () => {
+    expect(parsePackageSize("40x30x20")).toEqual({ length: 400, width: 300, height: 200 });
+    expect(parsePackageSize("40 × 30,5 × 20")).toEqual({ length: 400, width: 305, height: 200 });
+    expect(parsePackageSize("")).toEqual({ length: 300, width: 200, height: 150 });
   });
 });

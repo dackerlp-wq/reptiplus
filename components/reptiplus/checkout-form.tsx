@@ -73,7 +73,8 @@ type PickupPoint = { id: string; name: string; address: string; carrierPointId?:
 
 /**
  * Výdejní místa, která máme v ceníku Zásilkovny (a ceny pro jejich země):
- * Z-Pointy a Z-BOXy v CZ, Z-Pointy v SK a PL, v Německu výdejní místa Hermes (dopravce 6828).
+ * Z-Pointy a Z-BOXy v CZ, Z-Pointy v SK (a PL, pokud je Zásilkovna v účtu zpřístupní),
+ * v Německu Hermes (6828), v Polsku Poczta Polska (14052) a InPost Paczkomaty (3060).
  * Bez seznamu by widget ukázal vše povolené v účtu, i dopravce, se kterými nepočítáme.
  */
 const PACKETA_VENDORS = [
@@ -82,6 +83,8 @@ const PACKETA_VENDORS = [
   { country: "sk" },
   { country: "pl" },
   { carrierId: "6828" },
+  { carrierId: "14052" },
+  { carrierId: "3060" },
 ];
 
 /** URL Packeta widgetu v6 (výdejní místa Zásilkovny). */
