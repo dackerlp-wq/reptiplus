@@ -107,6 +107,10 @@ export async function saveProductAction(formData: FormData) {
     compare_at_czk: money(formData, "compare_at_czk"),
     compare_at_eur: money(formData, "compare_at_eur"),
     purchase_price_czk: money(formData, "purchase_price_czk"),
+    weight_kg: (() => {
+      const n = parseFloat(str(formData, "weight_kg").replace(",", "."));
+      return Number.isFinite(n) && n >= 0 ? n : null;
+    })(),
     brand_id: str(formData, "brand_id") || null,
     category_id: str(formData, "category_id") || null,
     sku: str(formData, "sku") || null,
@@ -1769,6 +1773,12 @@ export async function saveShippingMethodAction(fd: FormData) {
     carrier: (str(fd, "carrier") || "other") as never,
     price_czk: money(fd, "price_czk") ?? 0,
     price_eur: money(fd, "price_eur"),
+    heavy_from_kg: (() => {
+      const n = parseFloat(str(fd, "heavy_from_kg").replace(",", "."));
+      return Number.isFinite(n) && n > 0 ? n : null;
+    })(),
+    heavy_price_czk: money(fd, "heavy_price_czk"),
+    heavy_price_eur: money(fd, "heavy_price_eur"),
     is_active: fd.get("is_active") === "on",
     pickup_point: fd.get("pickup_point") === "on",
     sort_order: parseInt(str(fd, "sort_order") || "0", 10),

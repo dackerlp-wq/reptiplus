@@ -5,6 +5,8 @@ import type { Locale } from "@/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
 import { getCart } from "@/lib/cart/cart";
 import { getShippingMethods, getPaymentMethods } from "@/lib/queries";
+import { itemsWeightKg } from "@/lib/shipping/weight";
+import { shippingPriceFor } from "@/lib/shipping/price";
 import { freeShippingThreshold, getPacketaApiKey, getShippingSettings } from "@/lib/settings";
 import { localeCurrency, pickI18n } from "@/lib/i18n";
 import { CheckoutForm, type PaymentOption } from "@/components/reptiplus/checkout-form";
@@ -57,10 +59,12 @@ export default async function CheckoutPage({
   // Doprava zdarma od částky (nastavení obchodu) — platí pro mezisoučet zboží.
   const freeShippingFrom = freeShippingThreshold(shippingSettings, currency);
   const freeShipping = freeShippingFrom != null && cart.subtotal >= freeShippingFrom;
+  // Cena dopravy podle hmotnosti košíku (těžké zásilky dražší) — stejný výpočet jako v createOrderAction.
+  const weightKg = await itemsWeightKg(cart.lines.map((l) => ({ productId: l.productId, qty: l.qty })));
   const shippingOptions = shipping.map((m) => ({
     code: m.code,
     name: pickI18n(m.name_i18n, locale),
-    fee: freeShipping ? 0 : ((currency === "CZK" ? m.price_czk : m.price_eur) ?? 0),
+    fee: freeShipping ? 0 : shippingPriceFor(m, weightKg, currency),
     pickup: m.pickup_point,
   }));
   // Comgate se rozbalí na jednotlivé volby (karta, Apple Pay, Google Pay, banka, později)

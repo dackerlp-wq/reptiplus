@@ -1,5 +1,7 @@
 "use server";
 
+import { itemsWeightKg } from "@/lib/shipping/weight";
+import { shippingPriceFor } from "@/lib/shipping/price";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
@@ -150,22 +152,21 @@ export async function createOrderAction(
   const cartId = await getCartId(false);
 
   // 3) Doprava + platba z DB (nikdy z klienta)
-  const priceCol = currency === "CZK" ? "price_czk" : "price_eur";
   const feeCol = currency === "CZK" ? "fee_czk" : "fee_eur";
 
   const { data: shipRow } = await svc
     .from("shipping_method")
-    .select(`code, pickup_point, ${priceCol}`)
+    .select("code, pickup_point, price_czk, price_eur, heavy_from_kg, heavy_price_czk, heavy_price_eur")
     .eq("code", shippingCode)
     .eq("is_active", true)
     .maybeSingle();
   if (!shipRow) return { error: "SHIPPING" };
   // Doprava zdarma od částky (nastavení obchodu) — počítá se z mezisoučtu zboží.
   const freeFrom = freeShippingThreshold(await getShippingSettings(), currency);
+  // Cena podle hmotnosti košíku (product.weight_kg) — stejně jako v pokladně.
+  const weightKg = await itemsWeightKg(cart.lines.map((l) => ({ productId: l.productId, qty: l.qty })));
   const shippingFee =
-    freeFrom != null && cart.subtotal >= freeFrom
-      ? 0
-      : ((shipRow as unknown as Record<string, number | null>)[priceCol] ?? 0);
+    freeFrom != null && cart.subtotal >= freeFrom ? 0 : shippingPriceFor(shipRow, weightKg, currency);
 
   // Výdejní místo (Zásilkovna) — povinné, pokud metoda vyžaduje pickup.
   const requiresPickup =

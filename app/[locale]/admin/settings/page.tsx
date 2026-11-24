@@ -730,6 +730,23 @@ function ShippingCard({ m }: { m?: any }) {
             Aktivní
           </label>
         </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="flex flex-col gap-1.5">
+            <span className={legend}>Těžký košík nad (kg)</span>
+            <input name="heavy_from_kg" inputMode="decimal" placeholder="např. 5" defaultValue={m?.heavy_from_kg ?? ""} className={input} />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className={legend}>Cena nad limit Kč</span>
+            <input name="heavy_price_czk" inputMode="decimal" defaultValue={minor(m?.heavy_price_czk)} className={input} />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className={legend}>Cena nad limit €</span>
+            <input name="heavy_price_eur" inputMode="decimal" defaultValue={minor(m?.heavy_price_eur)} className={input} />
+          </label>
+        </div>
+        <p className="text-xs text-gray-soft">
+          Nepovinné. Hmotnost košíku se počítá z hmotnosti produktů (karta produktu → Nákup); produkty bez hmotnosti se nepočítají.
+        </p>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="pickup_point" defaultChecked={m?.pickup_point ?? false} className="size-4 accent-forest" />
           Výdejní místo (spustí Zásilkovna widget v pokladně)

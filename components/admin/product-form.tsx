@@ -38,6 +38,7 @@ type ProductRow = {
   compare_at_czk: number | null;
   compare_at_eur: number | null;
   purchase_price_czk?: number | null;
+  weight_kg?: number | null;
   stock_qty: number;
   supplier_stock?: boolean;
   low_stock_threshold?: number | null;
@@ -260,6 +261,17 @@ export function ProductForm({
               vatPayer={vatPayer}
               hasVariants={variants.length > 0}
             />
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-soft">Hmotnost kg (vč. obalu)</span>
+              <input
+                name="weight_kg"
+                inputMode="decimal"
+                placeholder="např. 0,8"
+                defaultValue={product?.weight_kg ?? ""}
+                className={input}
+              />
+              <span className="text-xs text-gray-soft">Pro cenu dopravy a hmotnost zásilky. Prázdné = nepočítá se.</span>
+            </label>
             {product && (
               <Link href={`/admin/stock/${product.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-forest hover:underline">
                 <Warehouse className="size-4" /> Sklad a pohyby produktu

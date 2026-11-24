@@ -1237,6 +1237,7 @@ export type Database = {
           supplier_stock: boolean
           updated_at: string
           vat_rate: number
+          weight_kg: number | null
         }
         Insert: {
           brand_id?: string | null
@@ -1267,6 +1268,7 @@ export type Database = {
           supplier_stock?: boolean
           updated_at?: string
           vat_rate?: number
+          weight_kg?: number | null
         }
         Update: {
           brand_id?: string | null
@@ -1297,6 +1299,7 @@ export type Database = {
           supplier_stock?: boolean
           updated_at?: string
           vat_rate?: number
+          weight_kg?: number | null
         }
         Relationships: [
           {
@@ -1562,6 +1565,9 @@ export type Database = {
           carrier: Database["public"]["Enums"]["carrier"]
           code: string
           created_at: string
+          heavy_from_kg: number | null
+          heavy_price_czk: number | null
+          heavy_price_eur: number | null
           id: string
           is_active: boolean
           name_i18n: Json
@@ -1574,6 +1580,9 @@ export type Database = {
           carrier?: Database["public"]["Enums"]["carrier"]
           code: string
           created_at?: string
+          heavy_from_kg?: number | null
+          heavy_price_czk?: number | null
+          heavy_price_eur?: number | null
           id?: string
           is_active?: boolean
           name_i18n?: Json
@@ -1586,6 +1595,9 @@ export type Database = {
           carrier?: Database["public"]["Enums"]["carrier"]
           code?: string
           created_at?: string
+          heavy_from_kg?: number | null
+          heavy_price_czk?: number | null
+          heavy_price_eur?: number | null
           id?: string
           is_active?: boolean
           name_i18n?: Json

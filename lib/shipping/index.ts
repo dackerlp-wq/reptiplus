@@ -9,6 +9,7 @@ import {
 } from "@/lib/shipping/types";
 import { createPacketaShipment, getPacketaLabel } from "@/lib/shipping/packeta";
 import { createPplShipment, getPplLabel } from "@/lib/shipping/ppl";
+import { itemsWeightKg } from "@/lib/shipping/weight";
 
 export type { CarrierCode } from "@/lib/shipping/types";
 
@@ -20,6 +21,7 @@ export function toCarrierCode(carrier: string | null | undefined): CarrierCode |
 }
 
 type OrderRow = {
+  id?: string;
   number: string;
   email: string | null;
   total: number;
@@ -42,6 +44,14 @@ export async function carrierForOrder(
     .eq("code", shippingMethodCode)
     .maybeSingle();
   return toCarrierCode(data?.carrier);
+}
+
+/** Hmotnost zásilky z položek objednávky; bez zadaných hmotností 1 kg (dopravce chce > 0). */
+async function orderWeightKg(orderId: string | undefined): Promise<number> {
+  if (!orderId) return 1;
+  const { data } = await createServiceClient().from("order_item").select("product_id, qty").eq("order_id", orderId);
+  const kg = await itemsWeightKg((data ?? []).map((i) => ({ productId: i.product_id, qty: i.qty })));
+  return kg > 0 ? Math.max(0.1, kg) : 1;
 }
 
 /** Sestaví vstup pro dopravce z objednávky (adresa, dobírka, hodnota). */
@@ -73,7 +83,7 @@ async function buildInput(order: OrderRow): Promise<ShipmentInput> {
       pickupPointId: a.pickup_point_id ?? undefined,
       carrierPickupPoint: a.pickup_carrier_point ?? undefined,
     },
-    weightKg: 1,
+    weightKg: await orderWeightKg(order.id),
     codMinor,
     valueMinor: order.total,
     currency: order.currency,
