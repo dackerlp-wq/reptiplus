@@ -26,8 +26,8 @@ import {
 import { carrierForOrder } from "@/lib/shipping";
 import { PackagePanel } from "@/components/admin/package-panel";
 import { getBoxes } from "@/lib/shipping/boxes";
-import { orderWeightInfo } from "@/lib/shipping/weight";
-import { packetaServiceFor, GENERIC_RULE } from "@/lib/shipping/package-rules";
+import { itemsDims, orderWeightInfo } from "@/lib/shipping/weight";
+import { packetaServiceFor, GENERIC_RULE, suggestBox } from "@/lib/shipping/package-rules";
 import { paidTierOf } from "@/lib/shipping/paid-tier";
 import { ToastForm } from "@/components/admin/toast";
 import { OrderItemsEditor } from "@/components/admin/order-items-editor";
@@ -219,9 +219,14 @@ export default async function OrderDetailPage({
     carrier && !order.carrier_shipment_id
       ? await (async () => {
           const addr = (order.shipping_address ?? {}) as Record<string, string>;
-          const [boxes, weight, { data: method }] = await Promise.all([
+          const items = ((order.order_item ?? []) as { product_id: string | null; qty: number }[]).map((i) => ({
+            productId: i.product_id,
+            qty: i.qty,
+          }));
+          const [boxes, weight, dims, { data: method }] = await Promise.all([
             getBoxes(),
             orderWeightInfo(order.id),
+            itemsDims(items),
             svc
               .from("shipping_method")
               .select("price_czk, price_eur, heavy_from_kg, heavy_price_czk, heavy_price_eur, country_prices")
@@ -234,6 +239,10 @@ export default async function OrderDetailPage({
             paidTier: paidTierOf(method, order.shipping ?? 0, order.currency === "EUR" ? "EUR" : "CZK", country),
             boxes,
             weight,
+            suggestedBox: suggestBox(dims, boxes)?.name ?? null,
+            largestItem: dims.length
+              ? (dims.reduce((a, b) => (b[0] * b[1] * b[2] > a[0] * a[1] * a[2] ? b : a)) as [number, number, number])
+              : null,
           };
         })()
       : null;
@@ -513,6 +522,8 @@ export default async function OrderDetailPage({
                 boxes={packing.boxes}
                 estimateKg={packing.weight.kg}
                 missingWeights={packing.weight.missing}
+                suggestedBox={packing.suggestedBox}
+                largestItem={packing.largestItem}
                 initial={{
                   weightKg: order.package_weight_kg,
                   lengthCm: order.package_length_cm,

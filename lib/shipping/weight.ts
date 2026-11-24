@@ -29,3 +29,21 @@ export async function orderWeightInfo(orderId: string): Promise<{ kg: number; mi
   }
   return { kg: Math.round(kg * 1000) / 1000, missing };
 }
+
+/** Rozměry kusů zboží (cm) z produktů — každý kus zvlášť (max. 50 kusů), produkty bez rozměrů vynechá. */
+export async function itemsDims(items: { productId: string | null; qty: number }[]): Promise<[number, number, number][]> {
+  const ids = [...new Set(items.map((i) => i.productId).filter((x): x is string => Boolean(x)))];
+  if (ids.length === 0) return [];
+  const { data } = await createServiceClient().from("product").select("id, length_cm, width_cm, height_cm").in("id", ids);
+  const d = new Map(
+    (data ?? [])
+      .filter((p) => p.length_cm && p.width_cm && p.height_cm)
+      .map((p) => [p.id, [Number(p.length_cm), Number(p.width_cm), Number(p.height_cm)] as [number, number, number]]),
+  );
+  const out: [number, number, number][] = [];
+  for (const i of items) {
+    const dims = i.productId ? d.get(i.productId) : undefined;
+    if (dims) for (let k = 0; k < Math.min(i.qty, 50 - out.length); k++) out.push(dims);
+  }
+  return out;
+}

@@ -83,6 +83,8 @@ Všechny tabulky mají RLS zapnuté. Typy z DB: `types/database.ts` (generované
   Admin stránka `app/[locale]/admin/shipping` (přehled cen, mřížka země × cena, krabice `app_setting` `shipping.boxes`).
   Balení: panel „Zabalit a odeslat" v detailu objednávky (`components/admin/package-panel.tsx`) — povinná hmotnost a rozměry,
   kontrola podmínek služby `lib/shipping/package-rules.ts` (limity z ceníků Zásilkovny), `packAndShipAction`; hromadné odeslání jen zabalených.
+  Rozměry produktu `product.length_cm|width_cm|height_cm` (+ `weight_kg`): parametry na stránce produktu, návrh krabice v panelu balení (`suggestBox`),
+  pokladna skryje Z-BOX / InPost box, když se zboží nevejde (`itemsFitBox`, `LOCKERS`; server vrací chybu `LOCKER`).
 
 ### E-maily objednávek a historie
 - Odesílání: `lib/email/client.ts` (`sendMail`, podporuje přílohy; odesílatel „Reptiplus <MAIL_FROM>"). Šablony v `lib/email/templates.ts` (cs/en/de podle `order.locale`,

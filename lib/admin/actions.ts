@@ -118,6 +118,13 @@ export async function saveProductAction(formData: FormData) {
       const n = parseFloat(str(formData, "weight_kg").replace(",", "."));
       return Number.isFinite(n) && n >= 0 ? n : null;
     })(),
+    ...(() => {
+      const cm = (k: string) => {
+        const n = parseFloat(str(formData, k).replace(",", "."));
+        return Number.isFinite(n) && n > 0 ? Math.round(n * 10) / 10 : null;
+      };
+      return { length_cm: cm("length_cm"), width_cm: cm("width_cm"), height_cm: cm("height_cm") };
+    })(),
     brand_id: str(formData, "brand_id") || null,
     category_id: str(formData, "category_id") || null,
     sku: str(formData, "sku") || null,

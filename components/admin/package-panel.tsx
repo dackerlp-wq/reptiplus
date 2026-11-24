@@ -52,6 +52,8 @@ export function PackagePanel({
   estimateKg,
   missingWeights,
   initial,
+  suggestedBox = null,
+  largestItem = null,
 }: {
   orderId: string;
   carrierLabel: string;
@@ -64,11 +66,17 @@ export function PackagePanel({
   missingWeights: number;
   /** Dřív zadané balení (např. po chybě dopravce). */
   initial: { weightKg: number | null; lengthCm: number | null; widthCm: number | null; heightCm: number | null };
+  /** Nejmenší uložená krabice, do které se zboží vejde (podle rozměrů produktů). */
+  suggestedBox?: string | null;
+  /** Největší kus zboží (cm), pokud mají produkty rozměry. */
+  largestItem?: [number, number, number] | null;
 }) {
-  const [box, setBox] = useState("");
-  const [l, setL] = useState(show(initial.lengthCm));
-  const [w, setW] = useState(show(initial.widthCm));
-  const [h, setH] = useState(show(initial.heightCm));
+  // Bez dřív zadaného balení se předvybere navržená krabice (rozměry z ní, hmotnost se zadává vždy).
+  const preset = initial.lengthCm ? undefined : boxes.find((b) => b.name === suggestedBox);
+  const [box, setBox] = useState(preset?.name ?? "");
+  const [l, setL] = useState(show(initial.lengthCm ?? preset?.lengthCm));
+  const [w, setW] = useState(show(initial.widthCm ?? preset?.widthCm));
+  const [h, setH] = useState(show(initial.heightCm ?? preset?.heightCm));
   const [kg, setKg] = useState(show(initial.weightKg));
 
   const selectedBox = boxes.find((b) => b.name === box);
@@ -108,6 +116,12 @@ export function PackagePanel({
             </option>
           ))}
         </select>
+        {(suggestedBox || largestItem) && (
+          <span className="text-xs text-gray-soft">
+            {largestItem && `Největší kus zboží ${largestItem.map((n) => String(n).replace(".", ",")).join(" × ")} cm. `}
+            {suggestedBox ? `Navržená krabice: ${suggestedBox}.` : largestItem ? "Žádná uložená krabice nestačí — zadej vlastní rozměry." : ""}
+          </span>
+        )}
       </label>
 
       <div className="grid grid-cols-3 gap-2">

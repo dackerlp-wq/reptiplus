@@ -39,6 +39,9 @@ type ProductRow = {
   compare_at_eur: number | null;
   purchase_price_czk?: number | null;
   weight_kg?: number | null;
+  length_cm?: number | null;
+  width_cm?: number | null;
+  height_cm?: number | null;
   stock_qty: number;
   supplier_stock?: boolean;
   low_stock_threshold?: number | null;
@@ -272,6 +275,23 @@ export function ProductForm({
               />
               <span className="text-xs text-gray-soft">Pro cenu dopravy a hmotnost zásilky. Prázdné = nepočítá se.</span>
             </label>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-soft">Rozměry cm (D × Š × V, vč. obalu)</span>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    ["length_cm", "délka", product?.length_cm],
+                    ["width_cm", "šířka", product?.width_cm],
+                    ["height_cm", "výška", product?.height_cm],
+                  ] as const
+                ).map(([name, ph, v]) => (
+                  <input key={name} name={name} inputMode="decimal" placeholder={ph} defaultValue={v ?? ""} className={input} />
+                ))}
+              </div>
+              <span className="text-xs text-gray-soft">
+                Zobrazí se u produktu, pomůžou vybrat krabici při balení a v pokladně skryjí Z-BOX / InPost box, když se zboží nevejde.
+              </span>
+            </div>
             {product && (
               <Link href={`/admin/stock/${product.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-forest hover:underline">
                 <Warehouse className="size-4" /> Sklad a pohyby produktu

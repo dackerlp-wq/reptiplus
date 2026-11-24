@@ -64,6 +64,8 @@
     "newsletterInvalid": "Der Link ist ungültig oder wurde bereits verwendet."
   },
   "Product": {
+    "dimensions": "Maße (L × B × H)",
+    "weight": "Gewicht",
     "addToCart": "In den Warenkorb",
     "chooseVariant": "Variante wählen",
     "priceFrom": "ab",
@@ -203,6 +205,7 @@
       "STOCK": "Ein Artikel ist nicht mehr in der gewünschten Menge verfügbar.",
       "DISCOUNT": "Der Rabattcode ist nicht mehr gültig, bitte entfernen Sie ihn.",
       "PICKUP": "Bitte wählen Sie eine Abholstelle.",
+      "LOCKER": "Die Ware passt nicht in das gewählte Paketfach (Z-BOX / InPost) — bitte wählen Sie eine normale Abholstelle.",
       "SERVER": "Die Bestellung konnte nicht abgeschlossen werden. Bitte erneut versuchen.",
       "ACCOUNT_PASSWORD": "Geben Sie ein Passwort (mind. 6 Zeichen) ein oder deaktivieren Sie die Kontoerstellung.",
       "ACCOUNT_EXISTS": "Für diese E-Mail existiert bereits ein Konto. Melden Sie sich an oder deaktivieren Sie die Kontoerstellung.",

@@ -156,6 +156,7 @@ export function CheckoutForm({
   shippingOptions,
   paymentOptions,
   freeShippingFrom = null,
+  lockerFit = { zbox: true, inpost: true },
   defaultEmail,
   packetaApiKey,
   loggedIn = false,
@@ -167,6 +168,8 @@ export function CheckoutForm({
   paymentOptions: PaymentOption[];
   /** Limit dopravy zdarma v minor units (null = vypnuto); ceny dopravy už jsou přepočtené ze serveru. */
   freeShippingFrom?: number | null;
+  /** Vejde se košík do Z-BOXu / InPost schránky (podle rozměrů produktů)? Jinak se v mapě nenabídnou. */
+  lockerFit?: { zbox: boolean; inpost: boolean };
   defaultEmail: string;
   packetaApiKey: string;
   loggedIn?: boolean;
@@ -240,7 +243,13 @@ export function CheckoutForm({
             });
           }
         },
-        { language: locale, vendors: PACKETA_VENDORS, appIdentity: "reptiplus" },
+        {
+          language: locale,
+          vendors: PACKETA_VENDORS.filter(
+            (v) => !(("group" in v && v.group === "zbox" && !lockerFit.zbox) || ("carrierId" in v && v.carrierId === "3060" && !lockerFit.inpost)),
+          ),
+          appIdentity: "reptiplus",
+        },
       );
     } catch {
       /* skript se nenačetl — tlačítko zůstane k dispozici pro další pokus */

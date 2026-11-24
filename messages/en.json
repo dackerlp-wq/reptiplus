@@ -64,6 +64,8 @@
     "newsletterInvalid": "The link is invalid or has already been used."
   },
   "Product": {
+    "dimensions": "Dimensions (L × W × H)",
+    "weight": "Weight",
     "addToCart": "Add to cart",
     "chooseVariant": "Choose variant",
     "priceFrom": "from",
@@ -203,6 +205,7 @@
       "STOCK": "Some item is no longer in stock in the requested quantity.",
       "DISCOUNT": "The discount code is no longer valid, please remove it.",
       "PICKUP": "Please select a pickup point.",
+      "LOCKER": "Your items will not fit into the selected locker (Z-BOX / InPost) — please choose a regular pickup point.",
       "SERVER": "We couldn't complete the order. Please try again.",
       "ACCOUNT_PASSWORD": "Enter an account password (at least 6 characters) or untick account creation.",
       "ACCOUNT_EXISTS": "An account with this e-mail already exists. Sign in or untick account creation.",

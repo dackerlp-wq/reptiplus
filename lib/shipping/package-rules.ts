@@ -137,3 +137,37 @@ export function checkPackage(
 
   return { errors, warnings };
 }
+
+/** Rozměry jednoho kusu zboží v cm. */
+export type ItemDims = [number, number, number];
+
+/** Vejde se kus do schránky (libovolně natočený)? */
+export function fitsInside(item: ItemDims, box: readonly [number, number, number]): boolean {
+  const a = desc([...item]);
+  const b = desc([...box]);
+  return a[0] <= b[0] && a[1] <= b[1] && a[2] <= b[2];
+}
+
+/**
+ * Vejde se zboží do schránky? Každý kus se musí vejít sám a součet objemů nesmí přesáhnout
+ * 90 % schránky (rezerva na balení). Kusy bez rozměrů se nepočítají — nevíme o nich.
+ */
+export function itemsFitBox(items: ItemDims[], box: readonly [number, number, number]): boolean {
+  if (items.length === 0) return true;
+  if (!items.every((i) => fitsInside(i, box))) return false;
+  const vol = items.reduce((s, [l, w, h]) => s + l * w * h, 0);
+  return vol <= 0.9 * box[0] * box[1] * box[2];
+}
+
+/** Schránky výdejních míst, kam se zboží nemusí vejít (pro pokladnu). */
+export const LOCKERS = { zbox: RULES["CZ-ZBOX"].box!, inpost: RULES["PL-INPOST"].box! } as const;
+
+/** Nejmenší krabice (podle objemu), do které se zboží vejde; null = žádná nebo neznámé rozměry. */
+export function suggestBox<B extends { name: string; lengthCm: number; widthCm: number; heightCm: number }>(
+  items: ItemDims[],
+  boxes: B[],
+): B | null {
+  if (items.length === 0) return null;
+  const sorted = [...boxes].sort((x, y) => x.lengthCm * x.widthCm * x.heightCm - y.lengthCm * y.widthCm * y.heightCm);
+  return sorted.find((b) => itemsFitBox(items, [b.lengthCm, b.widthCm, b.heightCm])) ?? null;
+}

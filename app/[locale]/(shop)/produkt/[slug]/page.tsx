@@ -148,6 +148,16 @@ export default async function ProductPage({
     }
   }
 
+  // Rozměry a hmotnost z karty produktu jako poslední parametry.
+  const num = (n: number) => new Intl.NumberFormat(locale).format(Number(n));
+  if (product.length_cm && product.width_cm && product.height_cm)
+    attrGroups.push({
+      key: "_dimensions",
+      label: t("dimensions"),
+      value: `${num(product.length_cm)} × ${num(product.width_cm)} × ${num(product.height_cm)} cm`,
+    });
+  if (product.weight_kg) attrGroups.push({ key: "_weight", label: t("weight"), value: `${num(product.weight_kg)} kg` });
+
   const isCzk = localeCurrency[locale] === "CZK";
   const buyVariants = product.variants.map((v) => ({
     id: v.id,

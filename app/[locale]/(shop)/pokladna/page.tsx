@@ -5,7 +5,8 @@ import type { Locale } from "@/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
 import { getCart } from "@/lib/cart/cart";
 import { getShippingMethods, getPaymentMethods } from "@/lib/queries";
-import { itemsWeightKg } from "@/lib/shipping/weight";
+import { itemsDims, itemsWeightKg } from "@/lib/shipping/weight";
+import { itemsFitBox, LOCKERS } from "@/lib/shipping/package-rules";
 import { shippingPriceFor, shippingPricesByCountry } from "@/lib/shipping/price";
 import { freeShippingThreshold, getPacketaApiKey, getShippingSettings } from "@/lib/settings";
 import { localeCurrency, pickI18n } from "@/lib/i18n";
@@ -60,7 +61,10 @@ export default async function CheckoutPage({
   const freeShippingFrom = freeShippingThreshold(shippingSettings, currency);
   const freeShipping = freeShippingFrom != null && cart.subtotal >= freeShippingFrom;
   // Cena dopravy podle hmotnosti košíku (těžké zásilky dražší) — stejný výpočet jako v createOrderAction.
-  const weightKg = await itemsWeightKg(cart.lines.map((l) => ({ productId: l.productId, qty: l.qty })));
+  const cartItems = cart.lines.map((l) => ({ productId: l.productId, qty: l.qty }));
+  const [weightKg, dims] = await Promise.all([itemsWeightKg(cartItems), itemsDims(cartItems)]);
+  // Vejde se zboží do Z-BOXu / InPost schránky? Když ne, pokladna je v mapě nenabídne.
+  const lockerFit = { zbox: itemsFitBox(dims, LOCKERS.zbox), inpost: itemsFitBox(dims, LOCKERS.inpost) };
   const shippingOptions = shipping.map((m) => ({
     code: m.code,
     name: pickI18n(m.name_i18n, locale),
@@ -111,6 +115,7 @@ export default async function CheckoutPage({
         shippingOptions={shippingOptions}
         paymentOptions={paymentOptions}
         freeShippingFrom={freeShippingFrom}
+        lockerFit={lockerFit}
         defaultEmail={user?.email ?? ""}
         packetaApiKey={packetaApiKey}
         loggedIn={Boolean(user)}

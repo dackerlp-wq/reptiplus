@@ -1,6 +1,7 @@
 "use server";
 
-import { itemsWeightKg } from "@/lib/shipping/weight";
+import { itemsDims, itemsWeightKg } from "@/lib/shipping/weight";
+import { itemsFitBox, LOCKERS } from "@/lib/shipping/package-rules";
 import { availableIn, FREE_SHIPPING_COUNTRIES, isShipCountry, shippingPriceFor } from "@/lib/shipping/price";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -175,6 +176,15 @@ export async function createOrderAction(
   const pickupCountry = s(fd, "pickup_point_country").toUpperCase();
   const destCountry = requiresPickup ? pickupCountry || String(ship.country ?? "CZ") : String(ship.country ?? "CZ");
   if (!isShipCountry(destCountry) || !availableIn(shipRow, destCountry)) return { error: "SHIPPING" };
+  // Z-BOX / InPost schránka: zboží se do ní musí vejít (rozměry produktů) — pokladna je v tom případě nenabízí.
+  if (requiresPickup) {
+    const isZbox = s(fd, "pickup_point_group") === "zbox";
+    const isInpost = Boolean(s(fd, "pickup_carrier_point")) && pickupId === "3060";
+    if (isZbox || isInpost) {
+      const dims = await itemsDims(cart.lines.map((l) => ({ productId: l.productId, qty: l.qty })));
+      if (!itemsFitBox(dims, isZbox ? LOCKERS.zbox : LOCKERS.inpost)) return { error: "LOCKER" };
+    }
+  }
   const shippingFee =
     freeFrom != null && cart.subtotal >= freeFrom && FREE_SHIPPING_COUNTRIES.includes(destCountry)
       ? 0

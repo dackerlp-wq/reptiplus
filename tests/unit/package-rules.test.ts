@@ -49,3 +49,26 @@ describe("kontrola balíku", () => {
     expect(checkPackage(pp, pkg(7, 40, 30, 30), "heavy").warnings).toEqual([]);
   });
 });
+
+describe("rozměry zboží: schránky a návrh krabice", () => {
+  it("kus se vejde v libovolném natočení, objem s rezervou 90 %", async () => {
+    const { fitsInside, itemsFitBox, LOCKERS } = await import("@/lib/shipping/package-rules");
+    expect(fitsInside([35, 60, 40], LOCKERS.zbox)).toBe(true);
+    expect(fitsInside([61, 20, 10], LOCKERS.zbox)).toBe(false);
+    expect(itemsFitBox([], LOCKERS.zbox)).toBe(true);
+    expect(itemsFitBox([[60, 43, 35]], LOCKERS.zbox)).toBe(false); // plný objem > 90 %
+    expect(itemsFitBox([[30, 20, 10], [30, 20, 10]], LOCKERS.zbox)).toBe(true);
+  });
+  it("navrhne nejmenší krabici, do které se zboží vejde", async () => {
+    const { suggestBox } = await import("@/lib/shipping/package-rules");
+    const boxes = [
+      { name: "Velká", lengthCm: 60, widthCm: 40, heightCm: 30 },
+      { name: "Malá", lengthCm: 30, widthCm: 20, heightCm: 15 },
+      { name: "Střední", lengthCm: 40, widthCm: 30, heightCm: 25 },
+    ];
+    expect(suggestBox([[25, 15, 10]], boxes)?.name).toBe("Malá");
+    expect(suggestBox([[35, 25, 10]], boxes)?.name).toBe("Střední");
+    expect(suggestBox([[80, 10, 10]], boxes)).toBeNull();
+    expect(suggestBox([], boxes)).toBeNull();
+  });
+});

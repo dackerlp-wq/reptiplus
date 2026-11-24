@@ -64,6 +64,8 @@
     "newsletterInvalid": "Odkaz je neplatný nebo už byl použit."
   },
   "Product": {
+    "dimensions": "Rozměry (D × Š × V)",
+    "weight": "Hmotnost",
     "addToCart": "Do košíku",
     "chooseVariant": "Vybrat variantu",
     "priceFrom": "od",
@@ -203,6 +205,7 @@
       "STOCK": "Některá položka již není skladem v požadovaném množství.",
       "DISCOUNT": "Slevový kód už není platný, odeberte ho prosím.",
       "PICKUP": "Vyberte prosím výdejní místo.",
+      "LOCKER": "Zboží se do zvolené schránky (Z-BOX / InPost) nevejde — vyberte prosím běžné výdejní místo.",
       "SERVER": "Objednávku se nepodařilo dokončit. Zkuste to prosím znovu.",
       "ACCOUNT_PASSWORD": "Zadejte heslo k účtu (alespoň 6 znaků), nebo zrušte zaškrtnutí vytvoření účtu.",
       "ACCOUNT_EXISTS": "Na tento e-mail už účet existuje. Přihlaste se, nebo zrušte zaškrtnutí vytvoření účtu.",

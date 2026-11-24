@@ -1235,10 +1235,12 @@ export type Database = {
           description: string | null
           description_i18n: Json | null
           ean: string | null
+          height_cm: number | null
           id: string
           is_featured: boolean
           is_gift_voucher: boolean
           is_published: boolean
+          length_cm: number | null
           low_stock_notified_at: string | null
           low_stock_threshold: number | null
           name: string
@@ -1256,6 +1258,7 @@ export type Database = {
           updated_at: string
           vat_rate: number
           weight_kg: number | null
+          width_cm: number | null
         }
         Insert: {
           brand_id?: string | null
@@ -1266,10 +1269,12 @@ export type Database = {
           description?: string | null
           description_i18n?: Json | null
           ean?: string | null
+          height_cm?: number | null
           id?: string
           is_featured?: boolean
           is_gift_voucher?: boolean
           is_published?: boolean
+          length_cm?: number | null
           low_stock_notified_at?: string | null
           low_stock_threshold?: number | null
           name: string
@@ -1287,6 +1292,7 @@ export type Database = {
           updated_at?: string
           vat_rate?: number
           weight_kg?: number | null
+          width_cm?: number | null
         }
         Update: {
           brand_id?: string | null
@@ -1297,10 +1303,12 @@ export type Database = {
           description?: string | null
           description_i18n?: Json | null
           ean?: string | null
+          height_cm?: number | null
           id?: string
           is_featured?: boolean
           is_gift_voucher?: boolean
           is_published?: boolean
+          length_cm?: number | null
           low_stock_notified_at?: string | null
           low_stock_threshold?: number | null
           name?: string
@@ -1318,6 +1326,7 @@ export type Database = {
           updated_at?: string
           vat_rate?: number
           weight_kg?: number | null
+          width_cm?: number | null
         }
         Relationships: [
           {
