@@ -42,7 +42,7 @@ describe("kontrola balíku", () => {
   });
 
   it("velký lehký balík a těžký balík za lehkou cenu → upozornění", () => {
-    const big = checkPackage(pp, pkg(2, 75, 30, 20), "light");
+    const big = checkPackage(pp, pkg(2, 62, 30, 20), "light");
     expect(big.errors).toEqual([]);
     expect(big.warnings[0]).toContain("nejvyšší váhovou kategorii");
     expect(checkPackage(pp, pkg(7, 40, 30, 30), "light").warnings[0]).toContain("přes 5 kg");
@@ -71,4 +71,11 @@ describe("rozměry zboží: schránky a návrh krabice", () => {
     expect(suggestBox([[80, 10, 10]], boxes)).toBeNull();
     expect(suggestBox([], boxes)).toBeNull();
   });
+});
+
+it("standardní zásilka do 5 kg: strana do 60 cm projde bez upozornění", async () => {
+  const { checkPackage, packetaServiceFor } = await import("@/lib/shipping/package-rules");
+  const pp = packetaServiceFor({ country: "CZ", pickup_point_id: "1" })!;
+  expect(checkPackage(pp, { weightKg: 2, lengthCm: 60, widthCm: 35, heightCm: 25 }, "light").warnings).toEqual([]);
+  expect(checkPackage(pp, { weightKg: 2, lengthCm: 61, widthCm: 30, heightCm: 20 }, "light").warnings).toHaveLength(1);
 });

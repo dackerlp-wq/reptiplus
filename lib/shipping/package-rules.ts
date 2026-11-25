@@ -32,7 +32,11 @@ export type ServiceRule = {
 /** Minimální rozměry u všech služeb: 10 × 7 × 1 cm. */
 const MIN_DIMS: [number, number, number] = [10, 7, 1];
 
-const PP_STANDARD = { maxKg: 15, maxSide: 120, maxSum: 150, lightTier: { maxKg: 5, maxSide: 70, maxSum: 120 } };
+/**
+ * Z-Point / doručení domů: „standardní" do 5 kg jen do strany 60 cm a součtu 120 cm (individuální podmínky
+ * Zásilkovny pro Reptiplus, 25. 11. 2026); větší nebo těžší = „nadrozměrná" (do 15 kg, strana 120, součet 150).
+ */
+const PP_STANDARD = { maxKg: 15, maxSide: 120, maxSum: 150, lightTier: { maxKg: 5, maxSide: 60, maxSum: 120 } };
 const SMALL_70_120 = { maxKg: 15, maxSide: 70, maxSum: 120 };
 
 const RULES: Record<string, ServiceRule> = {
