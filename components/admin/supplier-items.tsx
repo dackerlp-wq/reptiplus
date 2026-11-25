@@ -69,10 +69,13 @@ export function SupplierItemsTable({
   rows,
   categories,
   vatPayer,
+  groupHref,
 }: {
   rows: SupplierRow[];
   categories: { id: string; label: string }[];
   vatPayer: boolean;
+  /** Odkaz na filtr jedné skupiny variant (`__G__` = ID skupiny). */
+  groupHref: string;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -82,19 +85,11 @@ export function SupplierItemsTable({
   const rule: PriceRule = mode === "markup" ? { mode: "markup", pct: parseFloat(markup.replace(",", ".")) || 0 } : { mode: "recommended" };
 
   const importable = useMemo(() => rows.filter((r) => !r.productId), [rows]);
-  // Varianty jedné skupiny se vybírají společně (import je stejně založí jako jeden produkt).
   const toggle = (row: SupplierRow) =>
     setSelected((s) => {
       const n = new Set(s);
-      const ids =
-        row.groupId && row.groupSize > 1
-          ? importable.filter((r) => r.groupId === row.groupId).map((r) => r.id)
-          : [row.id];
-      const on = !n.has(row.id);
-      for (const id of ids) {
-        if (on) n.add(id);
-        else n.delete(id);
-      }
+      if (n.has(row.id)) n.delete(row.id);
+      else n.add(row.id);
       return n;
     });
   const allOnPage = importable.length > 0 && importable.every((r) => selected.has(r.id));
@@ -180,10 +175,14 @@ export function SupplierItemsTable({
                       <div className="min-w-0">
                         <p className="font-medium text-ink">
                           {r.name}
-                          {r.groupSize > 1 && (
-                            <span className="ml-1.5 rounded bg-gold/20 px-1.5 py-0.5 align-middle text-[10px] font-semibold text-ink">
-                              varianta · skupina {r.groupSize}
-                            </span>
+                          {r.groupSize > 1 && r.groupId && (
+                            <Link
+                              href={groupHref.replace("__G__", encodeURIComponent(r.groupId))}
+                              title="Zobrazit všechny varianty této skupiny"
+                              className="ml-1.5 rounded bg-gold/20 px-1.5 py-0.5 align-middle text-[10px] font-semibold text-ink hover:bg-gold/40"
+                            >
+                              {r.groupSize} varianty →
+                            </Link>
                           )}
                         </p>
                         <p className="truncate text-xs text-gray-soft">
@@ -291,7 +290,7 @@ export function SupplierItemsTable({
         <label className="flex items-center gap-1.5 text-sm">
           <input type="checkbox" name="copy_images" defaultChecked className="size-4 accent-forest" /> stáhnout obrázky
         </label>
-        <label className="flex items-center gap-1.5 text-sm" title="Položky se stejným ITEMGROUP_ID se založí jako jeden produkt s variantami (i ty z dalších stránek).">
+        <label className="flex items-center gap-1.5 text-sm" title="Zaškrtnuté položky se stejnou skupinou se založí jako jeden produkt s variantami; další varianty skupiny se později přidají k témuž produktu.">
           <input type="checkbox" name="merge_variants" defaultChecked className="size-4 accent-forest" /> spojit varianty
         </label>
         <label className="flex items-center gap-1.5 text-sm">

@@ -40,7 +40,7 @@ export default async function SupplierFeedPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ q?: string; cat?: string; brand?: string; status?: string; page?: string; sort?: string }>;
+  searchParams: Promise<{ q?: string; cat?: string; brand?: string; status?: string; page?: string; sort?: string; group?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -60,6 +60,7 @@ export default async function SupplierFeedPage({
       .from("supplier_feed_item")
       .select("category_text, manufacturer, group_id, in_feed")
       .eq("feed_id", id)
+      .order("id") // stabilní stránkování (bez řazení se stránky po 1000 můžou překrývat)
       .range(from, from + 999);
     for (const r of data ?? []) {
       if (r.group_id && r.in_feed) groupSize.set(r.group_id, (groupSize.get(r.group_id) ?? 0) + 1);
@@ -82,7 +83,8 @@ export default async function SupplierFeedPage({
     if (status === "imported") q = q.not("product_id", "is", null);
     if (status === "changed") q = q.gte("wholesale_changed_at", new Date(Date.now() - 7 * 86400_000).toISOString());
     if (status === "gone") q = q.eq("in_feed", false);
-    return q.order("name").range(from, from + 999);
+    if (sp.group) q = q.eq("group_id", sp.group);
+    return q.order("name").order("id").range(from, from + 999);
   };
   type ItemRow = NonNullable<Awaited<ReturnType<typeof filtered>>["data"]>[number];
   const all: ItemRow[] = [];
@@ -156,7 +158,7 @@ export default async function SupplierFeedPage({
   const pages = Math.max(1, Math.ceil((count ?? 0) / PAGE));
   const qs = (patch: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
-    const merged = { q: sp.q, cat: sp.cat, brand: sp.brand, status, sort: sort === "name" ? undefined : sort, page: undefined as string | undefined, ...patch };
+    const merged = { q: sp.q, cat: sp.cat, brand: sp.brand, group: sp.group, status, sort: sort === "name" ? undefined : sort, page: undefined as string | undefined, ...patch };
     for (const [k, v] of Object.entries(merged)) if (v) p.set(k, v);
     return `?${p.toString()}`;
   };
@@ -223,8 +225,9 @@ export default async function SupplierFeedPage({
           ))}
         </select>
         <button className="rounded-lg bg-forest px-4 py-2 text-sm font-semibold text-white hover:bg-forest-light">Filtrovat</button>
-        {(sp.q || sp.cat || sp.brand) && (
-          <Link href={qs({ q: undefined, cat: undefined, brand: undefined })} className="px-2 py-2 text-sm text-gray-soft hover:text-forest">
+        {sp.group && <input type="hidden" name="group" value={sp.group} />}
+        {(sp.q || sp.cat || sp.brand || sp.group) && (
+          <Link href={qs({ q: undefined, cat: undefined, brand: undefined, group: undefined })} className="px-2 py-2 text-sm text-gray-soft hover:text-forest">
             Zrušit filtr
           </Link>
         )}
@@ -237,7 +240,12 @@ export default async function SupplierFeedPage({
         Produkty se zakládají jako koncept bez skladu, se stavem „skladem u dodavatele“; zkontroluj je a zveřejni.
       </p>
 
-      <SupplierItemsTable rows={rows} categories={catOptions} vatPayer={Boolean(shop?.dic)} />
+      {sp.group && (
+        <p className="rounded-lg bg-gold/15 px-3 py-2 text-sm text-ink">
+          Zobrazena jen skupina variant <strong>{sp.group}</strong>. Zaškrtni varianty, které chceš — naimportují se jako jeden produkt.
+        </p>
+      )}
+      <SupplierItemsTable rows={rows} categories={catOptions} vatPayer={Boolean(shop?.dic)} groupHref={qs({ group: "__G__", status: "all" })} />
 
       {pages > 1 && (
         <div className="flex items-center justify-center gap-2 text-sm">

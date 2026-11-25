@@ -130,8 +130,8 @@ const vatOf = (r: FeedRow) => ([0, 12, 21].includes(Number(r.vat_rate)) ? Number
 
 /**
  * Založí vybrané položky feedu jako produkty eshopu a napojí je (supplier_feed_item.product_id / variant_id).
- * Se `mergeVariants` se celá skupina ITEMGROUP_ID (i položky, které nebyly vybrané) založí jako jeden produkt
- * s variantami. Položka, jejíž EAN nebo SKU už v eshopu je, se jen napojí (žádný duplikát).
+ * Se `mergeVariants` se vybrané položky jedné skupiny ITEMGROUP_ID založí jako jeden produkt s variantami;
+ * později vybrané varianty téže skupiny se přidají k již založenému produktu. Položka, jejíž EAN nebo SKU už v eshopu je, se jen napojí (žádný duplikát).
  */
 export async function importFeedItems(itemRowIds: string[], opts: ImportOptions): Promise<ImportResult> {
   const svc = createServiceClient();
@@ -140,26 +140,28 @@ export async function importFeedItems(itemRowIds: string[], opts: ImportOptions)
   const { data: picked } = await svc.from("supplier_feed_item").select(cols).in("id", itemRowIds.slice(0, IMPORT_BATCH));
   let rows = ((picked ?? []) as unknown as (FeedRow & { feed_id: string })[]).filter((r) => !r.product_id);
 
-  // Celé skupiny variant (i nevybrané položky stejné skupiny).
-  const groups = new Map<string, FeedRow[]>();
+  // Skupiny variant: importují se jen vybrané položky; celá skupina ze feedu (i nevybrané a už naimportované)
+  // slouží k pojmenování a k nalezení produktu, ke kterému se varianty přidají.
+  type Group = { all: FeedRow[]; picked: FeedRow[] };
+  const groups = new Map<string, Group>();
   if (opts.mergeVariants) {
     const byFeed = new Map<string, Set<string>>();
     for (const r of rows) if (r.group_id) (byFeed.get(r.feed_id) ?? byFeed.set(r.feed_id, new Set()).get(r.feed_id)!).add(r.group_id);
     for (const [feedId, gids] of byFeed) {
-      const { data } = await svc
-        .from("supplier_feed_item")
-        .select(cols)
-        .eq("feed_id", feedId)
-        .in("group_id", [...gids])
-        .is("product_id", null)
-        .eq("in_feed", true);
-      for (const r of (data ?? []) as unknown as FeedRow[]) {
+      const { data } = await svc.from("supplier_feed_item").select(cols).eq("feed_id", feedId).in("group_id", [...gids]);
+      for (const r of (data ?? []) as unknown as (FeedRow & { feed_id: string })[]) {
         const key = `${feedId}:${r.group_id}`;
-        groups.set(key, [...(groups.get(key) ?? []), r]);
+        const g = groups.get(key) ?? { all: [], picked: [] };
+        g.all.push(r);
+        groups.set(key, g);
       }
     }
-    for (const [k, g] of groups) if (g.length < 2) groups.delete(k);
-    const grouped = new Set([...groups.values()].flat().map((r) => r.id));
+    for (const r of rows) {
+      const g = r.group_id ? groups.get(`${r.feed_id}:${r.group_id}`) : undefined;
+      if (g) g.picked.push(r);
+    }
+    for (const [k, g] of groups) if (g.all.length < 2) groups.delete(k);
+    const grouped = new Set([...groups.values()].flatMap((g) => g.picked.map((r) => r.id)));
     rows = rows.filter((r) => !grouped.has(r.id));
   }
 
@@ -212,77 +214,86 @@ export async function importFeedItems(itemRowIds: string[], opts: ImportOptions)
     result.created++;
   }
 
-  // ── Skupiny → produkt s variantami ──
-  for (const group of groups.values()) {
-    // Už je některá položka skupiny v eshopu (SKU varianty)? Pak skupinu nezakládat znovu.
-    const skus = group.map(skuOf);
-    const { data: existingVar } = await svc.from("product_variant").select("id, product_id, sku").in("sku", skus);
-    if (existingVar && existingVar.length > 0) {
-      for (const v of existingVar) {
-        const r = group.find((x) => skuOf(x) === v.sku);
-        if (!r) continue;
-        await svc.from("supplier_feed_item").update({ product_id: v.product_id, variant_id: v.id }).eq("id", r.id);
-        await svc.from("product_variant").update({ purchase_price_czk: purchasePrice(priced(r), vatPayer) }).eq("id", v.id);
-        result.linked++;
-      }
-      continue;
-    }
-
-    const sorted = [...group].sort(
+  // ── Skupiny → produkt s variantami (jen vybrané varianty) ──
+  for (const g of groups.values()) {
+    const sortedAll = [...g.all].sort(
       (a, b) => (Number(a.retail_czk) || 0) - (Number(b.retail_czk) || 0) || a.name.localeCompare(b.name, "cs"),
     );
-    const { base, variants: vNames } = splitVariantNames(sorted.map((r) => r.name));
-    const prices = sorted.map((r) => sellPrice(priced(r), opts.rule, "CZK"));
-    if (prices.some((p) => p == null)) {
-      result.errors.push(`${base}: některé variantě chybí cena ve feedu`);
-      continue;
-    }
-    const head = sorted.find((r) => r.description) ?? sorted[0];
-    const weights = sorted.map((r) => Number(r.weight_g) || 0);
-    const created = await insertProduct(head, base, {
-      price_czk: Math.min(...(prices as number[])),
-      price_eur: sellPrice(priced(sorted[0]), opts.rule, "EUR"),
-      purchase_price_czk: purchasePrice(priced(sorted[0]), vatPayer),
-      weight_kg: Math.max(...weights) > 0 ? Math.round(Math.max(...weights)) / 1000 : null,
-      sku: head.group_id && head.feed?.sku_prefix ? `${head.feed.sku_prefix}-${head.group_id}` : head.group_id,
-      ean: null,
-      brand_id: brandId(head.manufacturer),
-      category_id: opts.categoryId,
-      is_published: opts.publish,
-    });
-    if ("error" in created) {
-      result.errors.push(`${base}: ${created.error}`);
-      continue;
-    }
-    if (opts.copyImages && sorted[0].images?.length) await copyImages(created.id, sorted[0].images, base);
+    // Názvy z celé skupiny — produkt i varianty se jmenují stejně, ať se importují najednou nebo postupně.
+    const { base, variants: allNames } = splitVariantNames(sortedAll.map((r) => r.name));
+    const nameOf = new Map(sortedAll.map((r, k) => [r.id, allNames[k]]));
+    const orderOf = new Map(sortedAll.map((r, k) => [r.id, k]));
+    const picked = sortedAll.filter((r) => g.picked.some((p) => p.id === r.id));
 
-    for (let k = 0; k < sorted.length; k++) {
-      const r = sorted[k];
-      const image = opts.copyImages && r.images?.[0] ? await storeImage(created.id, r.images[0]) : null;
+    // Produkt, ke kterému už jsou napojené jiné varianty téže skupiny → přidat k němu.
+    let productId = g.all.find((r) => r.product_id && (r as FeedRow & { variant_id?: string | null }).variant_id)?.product_id ?? null;
+
+    const prices = picked.map((r) => sellPrice(priced(r), opts.rule, "CZK"));
+    if (prices.some((p) => p == null)) {
+      result.errors.push(`${base}: některé vybrané variantě chybí cena ve feedu`);
+      continue;
+    }
+
+    if (!productId) {
+      const head = picked.find((r) => r.description) ?? picked[0];
+      const weights = picked.map((r) => Number(r.weight_g) || 0);
+      const created = await insertProduct(head, base, {
+        price_czk: Math.min(...(prices as number[])),
+        price_eur: sellPrice(priced(picked[0]), opts.rule, "EUR"),
+        purchase_price_czk: purchasePrice(priced(picked[0]), vatPayer),
+        weight_kg: Math.max(...weights) > 0 ? Math.round(Math.max(...weights)) / 1000 : null,
+        sku: head.group_id && head.feed?.sku_prefix ? `${head.feed.sku_prefix}-${head.group_id}` : head.group_id,
+        ean: null,
+        brand_id: brandId(head.manufacturer),
+        category_id: opts.categoryId,
+        is_published: opts.publish,
+      });
+      if ("error" in created) {
+        result.errors.push(`${base}: ${created.error}`);
+        continue;
+      }
+      productId = created.id;
+      if (opts.copyImages && picked[0].images?.length) await copyImages(productId, picked[0].images, base);
+      result.created++;
+    }
+
+    for (let k = 0; k < picked.length; k++) {
+      const r = picked[k];
+      // Varianta se stejným SKU už existuje → jen napojit.
+      const { data: same } = await svc.from("product_variant").select("id, product_id").eq("sku", skuOf(r)).limit(1).maybeSingle();
+      if (same) {
+        await svc.from("supplier_feed_item").update({ product_id: same.product_id, variant_id: same.id }).eq("id", r.id);
+        result.linked++;
+        continue;
+      }
+      const image = opts.copyImages && r.images?.[0] ? await storeImage(productId, r.images[0]) : null;
       const { data: v, error } = await svc
         .from("product_variant")
         .insert({
-          product_id: created.id,
-          name: vNames[k],
-          name_i18n: { cs: vNames[k] },
+          product_id: productId,
+          name: nameOf.get(r.id) ?? r.name,
+          name_i18n: { cs: nameOf.get(r.id) ?? r.name },
           sku: skuOf(r),
           price_czk: prices[k],
           price_eur: sellPrice(priced(r), opts.rule, "EUR"),
           purchase_price_czk: purchasePrice(priced(r), vatPayer),
           stock_qty: 0,
           image_url: image,
-          sort_order: k,
+          sort_order: orderOf.get(r.id) ?? k,
         } as never)
         .select("id")
         .single();
       if (error || !v) {
-        result.errors.push(`${base} – ${vNames[k]}: ${error?.message ?? "varianta neuložena"}`);
+        result.errors.push(`${base} – ${nameOf.get(r.id)}: ${error?.message ?? "varianta neuložena"}`);
         continue;
       }
-      await svc.from("supplier_feed_item").update({ product_id: created.id, variant_id: v.id }).eq("id", r.id);
+      await svc.from("supplier_feed_item").update({ product_id: productId, variant_id: v.id }).eq("id", r.id);
       result.variants++;
     }
-    result.created++;
+    // Cena „od" produktu = nejlevnější varianta.
+    const { data: vars } = await svc.from("product_variant").select("price_czk").eq("product_id", productId);
+    const min = Math.min(...(vars ?? []).map((x) => x.price_czk ?? Infinity));
+    if (Number.isFinite(min)) await svc.from("product").update({ price_czk: min }).eq("id", productId);
   }
   return result;
 }
