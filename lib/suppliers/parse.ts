@@ -59,7 +59,7 @@ export function parseHeurekaFeed(xml: string): FeedItem[] {
   const out: FeedItem[] = [];
   for (const r of rows) {
     const itemId = text(r.ITEM_ID);
-    const name = text(first(r, ["PRODUCTNAME", "PRODUCT", "NAME_DISTRIBUTOR"]));
+    const name = text(first(r, ["PRODUCTNAME", "PRODUCT", "NAME_DISTRIBUTOR", "PRODUCTNAME_SK"]));
     if (!itemId || !name) continue;
     const vat = num(text(r.VAT)?.replace("%", ""));
     const priceVat = num(r.PRICE_VAT);

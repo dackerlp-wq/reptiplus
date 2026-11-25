@@ -93,3 +93,22 @@ describe("import: slug a popis", async () => {
     ).toBe("<p>Text odkaz</p><ul><li>bod</li></ul>");
   });
 });
+
+describe("varianty: název produktu a variant", async () => {
+  const { splitVariantNames } = await import("@/lib/suppliers/variants");
+  it("rozdělí podle společného začátku na hranici slova", () => {
+    expect(
+      splitVariantNames([
+        "Arcadia voděodolná provozní jednotka T5 54W,1 trubice",
+        "Arcadia voděodolná provozní jednotka T5 54W,2 trubice",
+      ]),
+    ).toEqual({ base: "Arcadia voděodolná provozní jednotka T5 54W", variants: ["1 trubice", "2 trubice"] });
+    expect(
+      splitVariantNames(["Arcadia voděodolná provozní jednotka T8 18W", "Arcadia voděodolná provozní jednotka T8 25-30W"]),
+    ).toEqual({ base: "Arcadia voděodolná provozní jednotka T8", variants: ["18W", "25-30W"] });
+    expect(splitVariantNames(["Krmivo 200g", "Krmivo 1kg"])).toEqual({ base: "Krmivo", variants: ["200g", "1kg"] });
+  });
+  it("bez rozumného společného začátku nechá celé názvy", () => {
+    expect(splitVariantNames(["Alfa", "Beta"])).toEqual({ base: "Alfa", variants: ["Alfa", "Beta"] });
+  });
+});

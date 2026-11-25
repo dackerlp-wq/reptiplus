@@ -3,6 +3,7 @@ import sanitizeHtml from "sanitize-html";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getShopContact } from "@/lib/settings";
 import { purchasePrice, sellPrice, type PriceRule } from "@/lib/suppliers/pricing";
+import { splitVariantNames } from "@/lib/suppliers/variants";
 
 const BUCKET = "products";
 /** Kolik položek naimportovat jedním kliknutím (kvůli limitu běhu serverové funkce). */
@@ -13,9 +14,11 @@ export type ImportOptions = {
   rule: PriceRule;
   publish: boolean;
   copyImages: boolean;
+  /** Položky se stejným ITEMGROUP_ID spojit do jednoho produktu s variantami. */
+  mergeVariants: boolean;
 };
 
-export type ImportResult = { created: number; linked: number; errors: string[] };
+export type ImportResult = { created: number; variants: number; linked: number; errors: string[] };
 
 /** „Granovit Arabská guma 200g" → „granovit-arabska-guma-200g". */
 export function slugify(s: string): string {
@@ -50,6 +53,26 @@ async function uniqueSlug(base: string): Promise<string> {
   for (let n = 2; ; n++) if (!taken.has(`${root}-${n}`)) return `${root}-${n}`;
 }
 
+/** Stáhne obrázek do úložiště; vrátí veřejnou URL, nebo null. */
+async function storeImage(productId: string, url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+    if (!res.ok) return null;
+    const type = res.headers.get("content-type") ?? "image/jpeg";
+    if (!type.startsWith("image/")) return null;
+    const buf = await res.arrayBuffer();
+    if (buf.byteLength > 8 * 1024 * 1024) return null;
+    const ext = type.includes("png") ? "png" : type.includes("webp") ? "webp" : "jpg";
+    const path = `${productId}/${crypto.randomUUID()}.${ext}`;
+    const svc = createServiceClient();
+    const { error } = await svc.storage.from(BUCKET).upload(path, buf, { contentType: type, upsert: false });
+    if (error) return null;
+    return svc.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  } catch {
+    return null;
+  }
+}
+
 async function copyImages(productId: string, urls: string[], alt: string): Promise<number> {
   const svc = createServiceClient();
   let sort = 0;
@@ -74,33 +97,81 @@ async function copyImages(productId: string, urls: string[], alt: string): Promi
   return sort;
 }
 
+type FeedRow = {
+  id: string;
+  item_id: string;
+  group_id: string | null;
+  name: string;
+  images: string[] | null;
+  vat_rate: number | null;
+  manufacturer: string | null;
+  ean: string | null;
+  weight_g: number | null;
+  short_description: string | null;
+  description: string | null;
+  wholesale_czk: number | null;
+  wholesale_eur: number | null;
+  retail_czk: number | null;
+  retail_eur: number | null;
+  in_feed: boolean;
+  product_id: string | null;
+  feed: { sku_prefix?: string } | null;
+};
+
+const priced = (r: FeedRow) => ({
+  vatRate: r.vat_rate,
+  wholesaleCzk: r.wholesale_czk != null ? Number(r.wholesale_czk) : null,
+  wholesaleEur: r.wholesale_eur != null ? Number(r.wholesale_eur) : null,
+  retailCzk: r.retail_czk != null ? Number(r.retail_czk) : null,
+  retailEur: r.retail_eur != null ? Number(r.retail_eur) : null,
+});
+const skuOf = (r: FeedRow) => (r.feed?.sku_prefix ? `${r.feed.sku_prefix}-${r.item_id}` : r.item_id);
+const vatOf = (r: FeedRow) => ([0, 12, 21].includes(Number(r.vat_rate)) ? Number(r.vat_rate) : 21);
+
 /**
- * Založí vybrané položky feedu jako produkty eshopu a napojí je (supplier_feed_item.product_id).
- * Položka, jejíž EAN nebo SKU už v eshopu je, se jen napojí na existující produkt (žádný duplikát).
+ * Založí vybrané položky feedu jako produkty eshopu a napojí je (supplier_feed_item.product_id / variant_id).
+ * Se `mergeVariants` se celá skupina ITEMGROUP_ID (i položky, které nebyly vybrané) založí jako jeden produkt
+ * s variantami. Položka, jejíž EAN nebo SKU už v eshopu je, se jen napojí (žádný duplikát).
  */
 export async function importFeedItems(itemRowIds: string[], opts: ImportOptions): Promise<ImportResult> {
   const svc = createServiceClient();
-  const result: ImportResult = { created: 0, linked: 0, errors: [] };
-  const { data: rows } = await svc
-    .from("supplier_feed_item")
-    .select("*, feed:feed_id(sku_prefix)")
-    .in("id", itemRowIds.slice(0, IMPORT_BATCH));
+  const result: ImportResult = { created: 0, variants: 0, linked: 0, errors: [] };
+  const cols = "*, feed:feed_id(sku_prefix)";
+  const { data: picked } = await svc.from("supplier_feed_item").select(cols).in("id", itemRowIds.slice(0, IMPORT_BATCH));
+  let rows = ((picked ?? []) as unknown as (FeedRow & { feed_id: string })[]).filter((r) => !r.product_id);
+
+  // Celé skupiny variant (i nevybrané položky stejné skupiny).
+  const groups = new Map<string, FeedRow[]>();
+  if (opts.mergeVariants) {
+    const byFeed = new Map<string, Set<string>>();
+    for (const r of rows) if (r.group_id) (byFeed.get(r.feed_id) ?? byFeed.set(r.feed_id, new Set()).get(r.feed_id)!).add(r.group_id);
+    for (const [feedId, gids] of byFeed) {
+      const { data } = await svc
+        .from("supplier_feed_item")
+        .select(cols)
+        .eq("feed_id", feedId)
+        .in("group_id", [...gids])
+        .is("product_id", null)
+        .eq("in_feed", true);
+      for (const r of (data ?? []) as unknown as FeedRow[]) {
+        const key = `${feedId}:${r.group_id}`;
+        groups.set(key, [...(groups.get(key) ?? []), r]);
+      }
+    }
+    for (const [k, g] of groups) if (g.length < 2) groups.delete(k);
+    const grouped = new Set([...groups.values()].flat().map((r) => r.id));
+    rows = rows.filter((r) => !grouped.has(r.id));
+  }
+
   const vatPayer = Boolean((await getShopContact()).dic);
   const { data: brands } = await svc.from("brand").select("id, name");
   const brandId = (name: string | null) =>
     name ? (brands ?? []).find((b) => b.name.trim().toLowerCase() === name.trim().toLowerCase())?.id ?? null : null;
 
-  for (const r of rows ?? []) {
-    if (r.product_id) continue;
-    const prefix = (r.feed as { sku_prefix?: string } | null)?.sku_prefix ?? "";
-    const sku = prefix ? `${prefix}-${r.item_id}` : r.item_id;
-    const item = {
-      vatRate: r.vat_rate,
-      wholesaleCzk: r.wholesale_czk,
-      wholesaleEur: r.wholesale_eur,
-      retailCzk: r.retail_czk,
-      retailEur: r.retail_eur,
-    };
+  // ── Jednotlivé položky ──
+  for (const r of rows) {
+    const sku = skuOf(r);
+    const item = priced(r);
 
     // Už existuje (stejný EAN nebo SKU)? → jen napojit.
     const match = await svc
@@ -121,42 +192,136 @@ export async function importFeedItems(itemRowIds: string[], opts: ImportOptions)
       result.errors.push(`${r.name}: chybí cena ve feedu`);
       continue;
     }
-    const description = cleanDescription(r.description);
-    const shortDescription = r.short_description ? sanitizeHtml(r.short_description, { allowedTags: [] }).trim() || null : null;
-    const vat = [0, 12, 21].includes(Number(r.vat_rate)) ? Number(r.vat_rate) : 21;
-
-    const { data: created, error } = await svc
-      .from("product")
-      .insert({
-        slug: await uniqueSlug(slugify(r.name)),
-        name: r.name,
-        name_i18n: { cs: r.name },
-        short_description: shortDescription,
-        short_description_i18n: shortDescription ? { cs: shortDescription } : {},
-        description,
-        description_i18n: description ? { cs: description } : {},
-        price_czk: priceCzk,
-        price_eur: sellPrice(item, opts.rule, "EUR"),
-        purchase_price_czk: purchasePrice(item, vatPayer),
-        vat_rate: vat,
-        weight_kg: r.weight_g ? Math.round(Number(r.weight_g)) / 1000 : null,
-        sku,
-        ean: r.ean,
-        brand_id: brandId(r.manufacturer),
-        category_id: opts.categoryId,
-        stock_qty: 0,
-        supplier_stock: r.in_feed,
-        is_published: opts.publish,
-      } as never)
-      .select("id")
-      .single();
-    if (error || !created) {
-      result.errors.push(`${r.name}: ${error?.message ?? "neuloženo"}`);
+    const created = await insertProduct(r, r.name, {
+      price_czk: priceCzk,
+      price_eur: sellPrice(item, opts.rule, "EUR"),
+      purchase_price_czk: purchasePrice(item, vatPayer),
+      weight_kg: r.weight_g ? Math.round(Number(r.weight_g)) / 1000 : null,
+      sku,
+      ean: r.ean,
+      brand_id: brandId(r.manufacturer),
+      category_id: opts.categoryId,
+      is_published: opts.publish,
+    });
+    if ("error" in created) {
+      result.errors.push(`${r.name}: ${created.error}`);
       continue;
     }
     await svc.from("supplier_feed_item").update({ product_id: created.id }).eq("id", r.id);
     if (opts.copyImages && r.images?.length) await copyImages(created.id, r.images, r.name);
     result.created++;
   }
+
+  // ── Skupiny → produkt s variantami ──
+  for (const group of groups.values()) {
+    // Už je některá položka skupiny v eshopu (SKU varianty)? Pak skupinu nezakládat znovu.
+    const skus = group.map(skuOf);
+    const { data: existingVar } = await svc.from("product_variant").select("id, product_id, sku").in("sku", skus);
+    if (existingVar && existingVar.length > 0) {
+      for (const v of existingVar) {
+        const r = group.find((x) => skuOf(x) === v.sku);
+        if (!r) continue;
+        await svc.from("supplier_feed_item").update({ product_id: v.product_id, variant_id: v.id }).eq("id", r.id);
+        await svc.from("product_variant").update({ purchase_price_czk: purchasePrice(priced(r), vatPayer) }).eq("id", v.id);
+        result.linked++;
+      }
+      continue;
+    }
+
+    const sorted = [...group].sort(
+      (a, b) => (Number(a.retail_czk) || 0) - (Number(b.retail_czk) || 0) || a.name.localeCompare(b.name, "cs"),
+    );
+    const { base, variants: vNames } = splitVariantNames(sorted.map((r) => r.name));
+    const prices = sorted.map((r) => sellPrice(priced(r), opts.rule, "CZK"));
+    if (prices.some((p) => p == null)) {
+      result.errors.push(`${base}: některé variantě chybí cena ve feedu`);
+      continue;
+    }
+    const head = sorted.find((r) => r.description) ?? sorted[0];
+    const weights = sorted.map((r) => Number(r.weight_g) || 0);
+    const created = await insertProduct(head, base, {
+      price_czk: Math.min(...(prices as number[])),
+      price_eur: sellPrice(priced(sorted[0]), opts.rule, "EUR"),
+      purchase_price_czk: purchasePrice(priced(sorted[0]), vatPayer),
+      weight_kg: Math.max(...weights) > 0 ? Math.round(Math.max(...weights)) / 1000 : null,
+      sku: head.group_id && head.feed?.sku_prefix ? `${head.feed.sku_prefix}-${head.group_id}` : head.group_id,
+      ean: null,
+      brand_id: brandId(head.manufacturer),
+      category_id: opts.categoryId,
+      is_published: opts.publish,
+    });
+    if ("error" in created) {
+      result.errors.push(`${base}: ${created.error}`);
+      continue;
+    }
+    if (opts.copyImages && sorted[0].images?.length) await copyImages(created.id, sorted[0].images, base);
+
+    for (let k = 0; k < sorted.length; k++) {
+      const r = sorted[k];
+      const image = opts.copyImages && r.images?.[0] ? await storeImage(created.id, r.images[0]) : null;
+      const { data: v, error } = await svc
+        .from("product_variant")
+        .insert({
+          product_id: created.id,
+          name: vNames[k],
+          name_i18n: { cs: vNames[k] },
+          sku: skuOf(r),
+          price_czk: prices[k],
+          price_eur: sellPrice(priced(r), opts.rule, "EUR"),
+          purchase_price_czk: purchasePrice(priced(r), vatPayer),
+          stock_qty: 0,
+          image_url: image,
+          sort_order: k,
+        } as never)
+        .select("id")
+        .single();
+      if (error || !v) {
+        result.errors.push(`${base} – ${vNames[k]}: ${error?.message ?? "varianta neuložena"}`);
+        continue;
+      }
+      await svc.from("supplier_feed_item").update({ product_id: created.id, variant_id: v.id }).eq("id", r.id);
+      result.variants++;
+    }
+    result.created++;
+  }
   return result;
+}
+
+/** Založí produkt z položky feedu (popisy, DPH, dostupnost u dodavatele, slug). */
+async function insertProduct(
+  r: FeedRow,
+  name: string,
+  fields: {
+    price_czk: number;
+    price_eur: number | null;
+    purchase_price_czk: number | null;
+    weight_kg: number | null;
+    sku: string | null;
+    ean: string | null;
+    brand_id: string | null;
+    category_id: string | null;
+    is_published: boolean;
+  },
+): Promise<{ id: string } | { error: string }> {
+  const description = cleanDescription(r.description);
+  const shortDescription = r.short_description ? sanitizeHtml(r.short_description, { allowedTags: [] }).trim() || null : null;
+  const { data, error } = await createServiceClient()
+    .from("product")
+    .insert({
+      slug: await uniqueSlug(slugify(name)),
+      name,
+      name_i18n: { cs: name },
+      short_description: shortDescription,
+      short_description_i18n: shortDescription ? { cs: shortDescription } : {},
+      description,
+      description_i18n: description ? { cs: description } : {},
+      vat_rate: vatOf(r),
+      stock_qty: 0,
+      supplier_stock: r.in_feed,
+      ...fields,
+    } as never)
+    .select("id")
+    .single();
+  if (error || !data) return { error: error?.message ?? "neuloženo" };
+  return { id: data.id };
 }

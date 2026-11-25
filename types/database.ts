@@ -1818,6 +1818,7 @@ export type Database = {
           retail_eur: number | null
           short_description: string | null
           url: string | null
+          variant_id: string | null
           vat_rate: number | null
           weight_g: number | null
           wholesale_changed_at: string | null
@@ -1845,6 +1846,7 @@ export type Database = {
           retail_eur?: number | null
           short_description?: string | null
           url?: string | null
+          variant_id?: string | null
           vat_rate?: number | null
           weight_g?: number | null
           wholesale_changed_at?: string | null
@@ -1872,6 +1874,7 @@ export type Database = {
           retail_eur?: number | null
           short_description?: string | null
           url?: string | null
+          variant_id?: string | null
           vat_rate?: number | null
           weight_g?: number | null
           wholesale_changed_at?: string | null

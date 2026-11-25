@@ -47,6 +47,7 @@ export async function importFeedItemsAction(fd: FormData): Promise<ImportResult>
     rule: str(fd, "rule") === "markup" ? { mode: "markup", pct: Number.isFinite(pct) ? pct : 0 } : { mode: "recommended" },
     publish: fd.get("publish") === "on",
     copyImages: fd.get("copy_images") === "on",
+    mergeVariants: fd.get("merge_variants") === "on",
   });
   revalidatePath("/", "layout");
   return res;

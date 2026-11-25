@@ -213,7 +213,8 @@ a `product.is_gift_voucher` v DB zůstávají (RPC `place_order` je dál umí, a
 - Dodavatelé (feedy Heureka XML): `supplier_feed` / `supplier_feed_item` (migrace `20261125_0001`), parser `lib/suppliers/parse.ts`
   (i pole Mergada `PRICE_WITHOUT_VAT_VELKOOBCHOD_*`, `LONG_DESCRIPTION_CZ`), načtení `lib/suppliers/sync.ts` (cron `/api/cron/supplier-feeds` denně,
   u napojených produktů aktualizuje `purchase_price_czk` a `supplier_stock`), import `lib/suppliers/import.ts` (cena doporučená / přirážka — `lib/suppliers/pricing.ts`,
-  popis přes `sanitize-html` bez odkazů a obrázků, obrázky do bucketu `products`, shoda EAN/SKU → jen napojí). Admin `app/[locale]/admin/products/suppliers` (+ `[id]` prohlížeč s filtry).
+  popis přes `sanitize-html` bez odkazů a obrázků, obrázky do bucketu `products`, shoda EAN/SKU → jen napojí; skupina `ITEMGROUP_ID` → produkt s variantami,
+  názvy `lib/suppliers/variants.ts`, napojení `supplier_feed_item.variant_id`, migrace `20261125_0002`). Admin `app/[locale]/admin/products/suppliers` (+ `[id]` prohlížeč s filtry).
 - CSV import skladu, cen a nákupních cen: `app/[locale]/admin/products/import` → `lib/admin/import-actions.ts` (náhled podle SKU produktu/varianty, pak zápis; prázdná buňka = beze změny;
   hlavička se normalizuje bez diakritiky, nákupní cena = `nakupni_cena` / `nakup` / `purchase_price_czk`).
 - Nákupní cena: produkt (`purchase_price_czk`) i varianta (migrace `20261123_0001`, prázdná = produktu); karta produktu ukazuje živý náhled marže (`marginOf()` v `lib/admin/margin.ts`,

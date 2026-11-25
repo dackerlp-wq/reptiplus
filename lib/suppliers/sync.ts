@@ -49,11 +49,14 @@ export async function syncSupplierFeed(feedId: string): Promise<SyncResult> {
   }
 
   // Stávající položky (kvůli změnám ceny a napojeným produktům).
-  const existing = new Map<string, { wholesale_czk: number | null; product_id: string | null; in_feed: boolean }>();
+  const existing = new Map<
+    string,
+    { wholesale_czk: number | null; product_id: string | null; variant_id: string | null; in_feed: boolean }
+  >();
   for (let from = 0; ; from += 1000) {
     const { data } = await svc
       .from("supplier_feed_item")
-      .select("item_id, wholesale_czk, product_id, in_feed")
+      .select("item_id, wholesale_czk, product_id, variant_id, in_feed")
       .eq("feed_id", feedId)
       .range(from, from + 999);
     for (const r of data ?? []) existing.set(r.item_id, r);
@@ -93,17 +96,26 @@ export async function syncSupplierFeed(feedId: string): Promise<SyncResult> {
   for (let k = 0; k < goneIds.length; k += 300)
     await svc.from("supplier_feed_item").update({ in_feed: false }).eq("feed_id", feedId).in("item_id", goneIds.slice(k, k + 300));
 
-  // Napojené produkty: nákupní cena + dostupnost u dodavatele.
+  // Napojené produkty a varianty: nákupní cena; produkt je „skladem u dodavatele", dokud je ve feedu
+  // aspoň jedna jeho položka (u produktu s variantami kterákoli varianta).
   const vatPayer = Boolean((await getShopContact()).dic);
   const byId = new Map(items.map((i) => [i.itemId, i]));
-  let products = 0;
+  const productInFeed = new Map<string, boolean>();
+  const productPrice = new Map<string, number | null>();
   for (const [itemId, r] of existing) {
     if (!r.product_id) continue;
     const i = byId.get(itemId);
-    const update = i
-      ? { purchase_price_czk: purchasePrice(i, vatPayer), supplier_stock: true }
-      : { supplier_stock: false };
-    const { error } = await svc.from("product").update(update).eq("id", r.product_id);
+    productInFeed.set(r.product_id, (productInFeed.get(r.product_id) ?? false) || Boolean(i));
+    if (!i) continue;
+    if (r.variant_id) await svc.from("product_variant").update({ purchase_price_czk: purchasePrice(i, vatPayer) }).eq("id", r.variant_id);
+    else productPrice.set(r.product_id, purchasePrice(i, vatPayer));
+  }
+  let products = 0;
+  for (const [productId, inFeed] of productInFeed) {
+    const update = productPrice.has(productId)
+      ? { supplier_stock: inFeed, purchase_price_czk: productPrice.get(productId) ?? null }
+      : { supplier_stock: inFeed };
+    const { error } = await svc.from("product").update(update).eq("id", productId);
     if (!error) products++;
   }
 

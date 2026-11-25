@@ -54,9 +54,15 @@ export default async function SupplierFeedPage({
 
   // Kategorie a výrobci feedu pro filtry (s počty).
   const facets = { cat: new Map<string, number>(), brand: new Map<string, number>() };
+  const groupSize = new Map<string, number>();
   for (let from = 0; ; from += 1000) {
-    const { data } = await svc.from("supplier_feed_item").select("category_text, manufacturer").eq("feed_id", id).range(from, from + 999);
+    const { data } = await svc
+      .from("supplier_feed_item")
+      .select("category_text, manufacturer, group_id, in_feed")
+      .eq("feed_id", id)
+      .range(from, from + 999);
     for (const r of data ?? []) {
+      if (r.group_id && r.in_feed) groupSize.set(r.group_id, (groupSize.get(r.group_id) ?? 0) + 1);
       if (r.category_text) facets.cat.set(r.category_text, (facets.cat.get(r.category_text) ?? 0) + 1);
       if (r.manufacturer) facets.brand.set(r.manufacturer, (facets.brand.get(r.manufacturer) ?? 0) + 1);
     }
@@ -133,6 +139,8 @@ export default async function SupplierFeedPage({
     inFeed: r.in_feed,
     productId: r.product_id,
     productName: (r.product as { name?: string } | null)?.name ?? null,
+    groupId: r.group_id,
+    groupSize: r.group_id ? (groupSize.get(r.group_id) ?? 1) : 1,
   }));
 
   const [categories, shop] = await Promise.all([getAllCategories(), getShopContact().catch(() => null)]);

@@ -27,6 +27,9 @@ export type SupplierRow = {
   inFeed: boolean;
   productId: string | null;
   productName: string | null;
+  /** ITEMGROUP_ID a počet položek skupiny ve feedu (>1 = varianty). */
+  groupId: string | null;
+  groupSize: number;
 };
 
 const kc = (minor: number | null) =>
@@ -79,11 +82,19 @@ export function SupplierItemsTable({
   const rule: PriceRule = mode === "markup" ? { mode: "markup", pct: parseFloat(markup.replace(",", ".")) || 0 } : { mode: "recommended" };
 
   const importable = useMemo(() => rows.filter((r) => !r.productId), [rows]);
-  const toggle = (id: string) =>
+  // Varianty jedné skupiny se vybírají společně (import je stejně založí jako jeden produkt).
+  const toggle = (row: SupplierRow) =>
     setSelected((s) => {
       const n = new Set(s);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
+      const ids =
+        row.groupId && row.groupSize > 1
+          ? importable.filter((r) => r.groupId === row.groupId).map((r) => r.id)
+          : [row.id];
+      const on = !n.has(row.id);
+      for (const id of ids) {
+        if (on) n.add(id);
+        else n.delete(id);
+      }
       return n;
     });
   const allOnPage = importable.length > 0 && importable.every((r) => selected.has(r.id));
@@ -153,7 +164,7 @@ export function SupplierItemsTable({
                       <input
                         type="checkbox"
                         checked={selected.has(r.id)}
-                        onChange={() => toggle(r.id)}
+                        onChange={() => toggle(r)}
                         className="size-4 accent-forest"
                         aria-label={`Vybrat ${r.name}`}
                       />
@@ -167,7 +178,14 @@ export function SupplierItemsTable({
                         <div className="size-11 shrink-0 rounded-md bg-cream" />
                       )}
                       <div className="min-w-0">
-                        <p className="font-medium text-ink">{r.name}</p>
+                        <p className="font-medium text-ink">
+                          {r.name}
+                          {r.groupSize > 1 && (
+                            <span className="ml-1.5 rounded bg-gold/20 px-1.5 py-0.5 align-middle text-[10px] font-semibold text-ink">
+                              varianta · skupina {r.groupSize}
+                            </span>
+                          )}
+                        </p>
                         <p className="truncate text-xs text-gray-soft">
                           {[r.manufacturer, r.category?.split(" | ").slice(-1)[0], `#${r.itemId}`, r.vatRate != null ? `DPH ${r.vatRate} %` : null]
                             .filter(Boolean)
@@ -228,7 +246,7 @@ export function SupplierItemsTable({
             fd.set("ids", [...selected].join(","));
             fd.set("rule", mode);
             const r = await importFeedItemsAction(fd);
-            const msg = `Založeno ${r.created} produktů${r.linked ? `, ${r.linked} napojeno na existující (stejný EAN/SKU)` : ""}.`;
+            const msg = `Založeno ${r.created} produktů${r.variants ? ` (z toho ${r.variants} variant)` : ""}${r.linked ? `, ${r.linked} napojeno na existující (stejný EAN/SKU)` : ""}.`;
             if (r.errors.length) toast.error(`${msg} Chyby: ${r.errors.slice(0, 3).join("; ")}`);
             else toast.success(msg);
             setSelected(new Set());
@@ -272,6 +290,9 @@ export function SupplierItemsTable({
         </label>
         <label className="flex items-center gap-1.5 text-sm">
           <input type="checkbox" name="copy_images" defaultChecked className="size-4 accent-forest" /> stáhnout obrázky
+        </label>
+        <label className="flex items-center gap-1.5 text-sm" title="Položky se stejným ITEMGROUP_ID se založí jako jeden produkt s variantami (i ty z dalších stránek).">
+          <input type="checkbox" name="merge_variants" defaultChecked className="size-4 accent-forest" /> spojit varianty
         </label>
         <label className="flex items-center gap-1.5 text-sm">
           <input type="checkbox" name="publish" className="size-4 accent-forest" /> hned zveřejnit
