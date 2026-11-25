@@ -113,19 +113,39 @@ export function SupplierItemsTable({
                 />
               </th>
               <th className="py-2 pr-3 font-semibold">Položka</th>
-              <th className="px-2 py-2 text-right font-semibold">Nákup</th>
-              <th className="px-2 py-2 text-right font-semibold">Doporučená</th>
-              <th className="px-2 py-2 text-right font-semibold">Prodejní</th>
-              <th className="px-2 py-2 text-right font-semibold">Marže</th>
+              <th className="px-2 py-2 text-right font-semibold">
+                Nákup
+                <span className="block font-normal">bez DPH / s DPH</span>
+              </th>
+              <th className="px-2 py-2 text-right font-semibold">
+                DMC
+                <span className="block font-normal">s DPH</span>
+              </th>
+              <th className="px-2 py-2 text-right font-semibold">
+                Marže
+                <span className="block font-normal">při DMC</span>
+              </th>
+              <th className="px-2 py-2 text-right font-semibold">
+                Prodejní
+                <span className="block font-normal">s DPH</span>
+              </th>
+              <th className="px-2 py-2 text-right font-semibold">
+                Marže
+                <span className="block font-normal">při prodejní</span>
+              </th>
               <th className="px-3 py-2 font-semibold">Stav</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => {
               const buy = purchasePrice(r, vatPayer);
+              const buyNet = r.wholesaleCzk != null ? Math.round(r.wholesaleCzk * 100) : null;
+              const buyGross = purchasePrice(r, false);
               const sell = sellPrice(r, rule, "CZK");
               const rec = sellPrice(r, { mode: "recommended" }, "CZK");
               const m = marginPct(sell, buy, r.vatRate, vatPayer);
+              const mDmc =
+                r.wholesaleCzk != null && r.retailCzk ? Math.round((1 - r.wholesaleCzk / r.retailCzk) * 1000) / 10 : null;
               return (
                 <tr key={r.id} className={`border-b border-cream last:border-0 ${r.inFeed ? "" : "opacity-60"}`}>
                   <td className="px-3 py-2">
@@ -161,8 +181,14 @@ export function SupplierItemsTable({
                       </div>
                     </div>
                   </td>
-                  <td className="whitespace-nowrap px-2 text-right font-mono text-xs tabular-nums">{kc(buy)}</td>
-                  <td className="whitespace-nowrap px-2 text-right font-mono text-xs tabular-nums text-gray-soft">{kc(rec)}</td>
+                  <td className="whitespace-nowrap px-2 text-right font-mono text-xs tabular-nums">
+                    {kc(buyNet)}
+                    <span className="block text-gray-soft">{kc(buyGross)}</span>
+                  </td>
+                  <td className="whitespace-nowrap px-2 text-right font-mono text-xs tabular-nums">{kc(rec)}</td>
+                  <td className={`whitespace-nowrap px-2 text-right font-mono text-xs tabular-nums ${mDmc != null && mDmc < 15 ? "text-error" : ""}`}>
+                    {mDmc == null ? "—" : `${String(mDmc).replace(".", ",")} %`}
+                  </td>
                   <td className="whitespace-nowrap px-2 text-right font-mono text-xs font-semibold tabular-nums">{kc(sell)}</td>
                   <td className={`whitespace-nowrap px-2 text-right font-mono text-xs tabular-nums ${m != null && m < 15 ? "text-error" : ""}`}>
                     {m == null ? "—" : `${String(m).replace(".", ",")} %`}
@@ -187,7 +213,7 @@ export function SupplierItemsTable({
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-gray-soft">
+                <td colSpan={8} className="px-3 py-8 text-center text-gray-soft">
                   Nic neodpovídá filtru.
                 </td>
               </tr>
@@ -212,11 +238,11 @@ export function SupplierItemsTable({
         className="sticky bottom-3 z-10 flex flex-wrap items-end gap-3 rounded-xl border border-forest/30 bg-white p-4 shadow-lg"
       >
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-semibold uppercase tracking-wide text-gray-soft">Prodejní cena</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-gray-soft">Prodejní cena (s DPH)</span>
           <div className="flex items-center gap-2 text-sm">
             <label className="flex items-center gap-1.5">
               <input type="radio" checked={mode === "recommended"} onChange={() => setMode("recommended")} className="accent-forest" />
-              doporučená dodavatelem
+              DMC (doporučená dodavatelem)
             </label>
             <label className="flex items-center gap-1.5">
               <input type="radio" checked={mode === "markup"} onChange={() => setMode("markup")} className="accent-forest" />

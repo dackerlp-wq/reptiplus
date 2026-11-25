@@ -19,6 +19,19 @@ const STATUSES = {
   gone: "Zmizelé z feedu",
 } as const;
 type Status = keyof typeof STATUSES;
+const SORTS = {
+  name: "Název A–Z",
+  margin_desc: "Marže při DMC — nejvyšší",
+  margin_asc: "Marže při DMC — nejnižší",
+  dmc_desc: "DMC — nejdražší",
+  dmc_asc: "DMC — nejlevnější",
+  buy_asc: "Nákup — nejlevnější",
+} as const;
+type Sort = keyof typeof SORTS;
+
+/** Marže při doporučené ceně (DMC) v % — u plátce i neplátce = 1 − velkoobchod / DMC (DPH se vykrátí). */
+const dmcMargin = (wholesale: number | null, retail: number | null) =>
+  wholesale != null && retail ? Math.round((1 - Number(wholesale) / Number(retail)) * 1000) / 10 : null;
 
 const input = "rounded-lg border border-cream-dark bg-white px-3 py-2 text-sm outline-none focus:border-forest";
 
@@ -27,12 +40,13 @@ export default async function SupplierFeedPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ q?: string; cat?: string; brand?: string; status?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; cat?: string; brand?: string; status?: string; page?: string; sort?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
   const status: Status = sp.status && sp.status in STATUSES ? (sp.status as Status) : "new";
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
+  const sort: Sort = sp.sort && sp.sort in SORTS ? (sp.sort as Sort) : "name";
   const svc = createServiceClient();
 
   const { data: feed } = await svc.from("supplier_feed").select("*").eq("id", id).maybeSingle();
@@ -49,25 +63,59 @@ export default async function SupplierFeedPage({
     if (!data || data.length < 1000) break;
   }
 
-  let q = svc
-    .from("supplier_feed_item")
-    .select("*, product:product_id(name)", { count: "exact" })
-    .eq("feed_id", id);
-  if (sp.q) {
-    const term = sp.q.replace(/[%,()]/g, " ").trim();
-    q = q.or(`name.ilike.%${term}%,item_id.eq.${term},ean.eq.${term}`);
+  // Filtrované položky celé (feed má stovky až nízké tisíce řádků) — řazení podle marže/DMC se počítá tady.
+  const filtered = (from: number) => {
+    let q = svc.from("supplier_feed_item").select("*, product:product_id(name)").eq("feed_id", id);
+    if (sp.q) {
+      const term = sp.q.replace(/[%,()]/g, " ").trim();
+      q = q.or(`name.ilike.%${term}%,item_id.eq.${term},ean.eq.${term}`);
+    }
+    if (sp.cat) q = q.eq("category_text", sp.cat);
+    if (sp.brand) q = q.eq("manufacturer", sp.brand);
+    if (status === "new") q = q.is("product_id", null).eq("in_feed", true);
+    if (status === "imported") q = q.not("product_id", "is", null);
+    if (status === "changed") q = q.gte("wholesale_changed_at", new Date(Date.now() - 7 * 86400_000).toISOString());
+    if (status === "gone") q = q.eq("in_feed", false);
+    return q.order("name").range(from, from + 999);
+  };
+  type ItemRow = NonNullable<Awaited<ReturnType<typeof filtered>>["data"]>[number];
+  const all: ItemRow[] = [];
+  for (let from = 0; from < 20000; from += 1000) {
+    const { data } = await filtered(from);
+    all.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
   }
-  if (sp.cat) q = q.eq("category_text", sp.cat);
-  if (sp.brand) q = q.eq("manufacturer", sp.brand);
-  if (status === "new") q = q.is("product_id", null).eq("in_feed", true);
-  if (status === "imported") q = q.not("product_id", "is", null);
-  if (status === "changed")
-    q = q.gte("wholesale_changed_at", new Date(Date.now() - 7 * 86400_000).toISOString());
-  if (status === "gone") q = q.eq("in_feed", false);
-  const { data: items, count } = await q.order("name").range((page - 1) * PAGE, page * PAGE - 1);
+  const num = (v: unknown) => (v == null ? null : Number(v));
+  const key = (r: ItemRow) => {
+    switch (sort) {
+      case "margin_desc":
+      case "margin_asc":
+        return dmcMargin(num(r.wholesale_czk), num(r.retail_czk));
+      case "dmc_desc":
+      case "dmc_asc":
+        return num(r.retail_czk);
+      case "buy_asc":
+        return num(r.wholesale_czk);
+      default:
+        return null;
+    }
+  };
+  if (sort !== "name") {
+    const dir = sort.endsWith("_desc") ? -1 : 1;
+    all.sort((x, y) => {
+      const a = key(x);
+      const b = key(y);
+      if (a == null && b == null) return 0;
+      if (a == null) return 1; // bez ceny vždy na konec
+      if (b == null) return -1;
+      return (a - b) * dir;
+    });
+  }
+  const count = all.length;
+  const items = all.slice((page - 1) * PAGE, page * PAGE);
 
   const weekAgo = Date.now() - 7 * 86400_000;
-  const rows: SupplierRow[] = (items ?? []).map((r) => ({
+  const rows: SupplierRow[] = items.map((r) => ({
     id: r.id,
     itemId: r.item_id,
     name: r.name,
@@ -100,7 +148,7 @@ export default async function SupplierFeedPage({
   const pages = Math.max(1, Math.ceil((count ?? 0) / PAGE));
   const qs = (patch: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
-    const merged = { q: sp.q, cat: sp.cat, brand: sp.brand, status, page: undefined as string | undefined, ...patch };
+    const merged = { q: sp.q, cat: sp.cat, brand: sp.brand, status, sort: sort === "name" ? undefined : sort, page: undefined as string | undefined, ...patch };
     for (const [k, v] of Object.entries(merged)) if (v) p.set(k, v);
     return `?${p.toString()}`;
   };
@@ -159,6 +207,13 @@ export default async function SupplierFeedPage({
               </option>
             ))}
         </select>
+        <select name="sort" defaultValue={sort} className={input}>
+          {(Object.keys(SORTS) as Sort[]).map((k) => (
+            <option key={k} value={k}>
+              Řadit: {SORTS[k]}
+            </option>
+          ))}
+        </select>
         <button className="rounded-lg bg-forest px-4 py-2 text-sm font-semibold text-white hover:bg-forest-light">Filtrovat</button>
         {(sp.q || sp.cat || sp.brand) && (
           <Link href={qs({ q: undefined, cat: undefined, brand: undefined })} className="px-2 py-2 text-sm text-gray-soft hover:text-forest">
@@ -169,9 +224,9 @@ export default async function SupplierFeedPage({
       </form>
 
       <p className="text-xs text-gray-soft">
-        Nákup = velkoobchodní cena dodavatele {shop?.dic ? "bez DPH" : "vč. DPH (jste neplátce, DPH je náklad)"}. Doporučená = výchozí
-        cena dodavatele vč. DPH. Prodejní = podle pravidla dole. Produkty se zakládají jako koncept bez skladu, se stavem „skladem u
-        dodavatele“; zkontroluj je a zveřejni.
+        Nákup = velkoobchodní cena dodavatele. DMC = doporučená maloobchodní cena dodavatele. Marže při DMC = kolik zbude při prodeji za DMC.
+        Prodejní cena podle pravidla dole, vždy s DPH. Marže se počítá {shop?.dic ? "z cen bez DPH (plátce DPH)" : "z cen s DPH (neplátce — DPH z nákupu je náklad)"}.
+        Produkty se zakládají jako koncept bez skladu, se stavem „skladem u dodavatele“; zkontroluj je a zveřejni.
       </p>
 
       <SupplierItemsTable rows={rows} categories={catOptions} vatPayer={Boolean(shop?.dic)} />
