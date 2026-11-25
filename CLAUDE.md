@@ -14,7 +14,7 @@ Infrastruktura:
   Domény `reptiplus.cz` / `.eu` / `.shop`. Crony ve `vercel.json` (všechny chráněné `CRON_SECRET`): `/api/cron/cleanup-carts` (mazání starých hostovských košíků),
   `/api/cron/cancel-unpaid` (storno nezaplacených karetních objednávek po 24 h, RPC `cancel_unpaid_order` vrací sklad, e-mail zákazníkovi),
   `/api/cron/abandoned-carts` (připomínka opuštěného košíku přihlášeným po 24–72 h, jednou na košík — `cart.reminder_sent_at`, jazyk z poslední objednávky),
-  `/api/cron/packeta-status` (stav odeslaných zásilek Zásilkovny přes `packetStatus` → `order.tracking_status`, doručené → `delivered` + e-mail, vrácené/zrušené → e-mail obchodu; logika `lib/shipping/packeta-sync.ts`, ručně tlačítko „Aktualizovat stav“ v detailu objednávky).
+  `/api/cron/supplier-feeds` (denní načtení feedů dodavatelů), `/api/cron/packeta-status` (stav odeslaných zásilek Zásilkovny přes `packetStatus` → `order.tracking_status`, doručené → `delivered` + e-mail, vrácené/zrušené → e-mail obchodu; logika `lib/shipping/packeta-sync.ts`, ručně tlačítko „Aktualizovat stav“ v detailu objednávky).
 - Supabase: projekt „Reptiplus“ `duaihkobtgfzprufqjmh` (eu-west-1, Postgres 17). Storage bucket `products` pro obrázky.
 
 ## Příkazy
@@ -210,6 +210,10 @@ a `product.is_gift_voucher` v DB zůstávají (RPC `place_order` je dál umí, a
   (`in | low | supplier | out`, strop množství v košíku) počítá `lib/availability.ts`; text `Product.supplierStock`; feedy: Heureka/Zboží `DELIVERY_DATE` 5, Google `backorder`.
 - `product.low_stock_threshold` (null = nehlídat): `checkLowStock(productIds)` v `lib/stock-alerts/low-stock.ts` po objednávce, editaci položek, uložení produktu,
   inline změně skladu a CSV importu → jeden e-mail obchodu (`low_stock_notified_at`, reset po naskladnění nad limit). `effectiveStock()` = součet variant, jinak sklad produktu.
+- Dodavatelé (feedy Heureka XML): `supplier_feed` / `supplier_feed_item` (migrace `20261125_0001`), parser `lib/suppliers/parse.ts`
+  (i pole Mergada `PRICE_WITHOUT_VAT_VELKOOBCHOD_*`, `LONG_DESCRIPTION_CZ`), načtení `lib/suppliers/sync.ts` (cron `/api/cron/supplier-feeds` denně,
+  u napojených produktů aktualizuje `purchase_price_czk` a `supplier_stock`), import `lib/suppliers/import.ts` (cena doporučená / přirážka — `lib/suppliers/pricing.ts`,
+  popis přes `sanitize-html` bez odkazů a obrázků, obrázky do bucketu `products`, shoda EAN/SKU → jen napojí). Admin `app/[locale]/admin/products/suppliers` (+ `[id]` prohlížeč s filtry).
 - CSV import skladu, cen a nákupních cen: `app/[locale]/admin/products/import` → `lib/admin/import-actions.ts` (náhled podle SKU produktu/varianty, pak zápis; prázdná buňka = beze změny;
   hlavička se normalizuje bez diakritiky, nákupní cena = `nakupni_cena` / `nakup` / `purchase_price_czk`).
 - Nákupní cena: produkt (`purchase_price_czk`) i varianta (migrace `20261123_0001`, prázdná = produktu); karta produktu ukazuje živý náhled marže (`marginOf()` v `lib/admin/margin.ts`,

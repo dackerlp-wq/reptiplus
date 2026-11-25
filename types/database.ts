@@ -1760,6 +1760,126 @@ export type Database = {
           },
         ]
       }
+      supplier_feed: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          item_count: number
+          last_error: string | null
+          last_fetched_at: string | null
+          name: string
+          sku_prefix: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          item_count?: number
+          last_error?: string | null
+          last_fetched_at?: string | null
+          name: string
+          sku_prefix?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          item_count?: number
+          last_error?: string | null
+          last_fetched_at?: string | null
+          name?: string
+          sku_prefix?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      supplier_feed_item: {
+        Row: {
+          category_text: string | null
+          delivery_days: number | null
+          description: string | null
+          ean: string | null
+          feed_id: string
+          first_seen_at: string
+          group_id: string | null
+          id: string
+          images: string[]
+          in_feed: boolean
+          item_id: string
+          last_seen_at: string
+          manufacturer: string | null
+          name: string
+          prev_wholesale_czk: number | null
+          product_id: string | null
+          retail_czk: number | null
+          retail_eur: number | null
+          short_description: string | null
+          url: string | null
+          vat_rate: number | null
+          weight_g: number | null
+          wholesale_changed_at: string | null
+          wholesale_czk: number | null
+          wholesale_eur: number | null
+        }
+        Insert: {
+          category_text?: string | null
+          delivery_days?: number | null
+          description?: string | null
+          ean?: string | null
+          feed_id: string
+          first_seen_at?: string
+          group_id?: string | null
+          id?: string
+          images?: string[]
+          in_feed?: boolean
+          item_id: string
+          last_seen_at?: string
+          manufacturer?: string | null
+          name: string
+          prev_wholesale_czk?: number | null
+          product_id?: string | null
+          retail_czk?: number | null
+          retail_eur?: number | null
+          short_description?: string | null
+          url?: string | null
+          vat_rate?: number | null
+          weight_g?: number | null
+          wholesale_changed_at?: string | null
+          wholesale_czk?: number | null
+          wholesale_eur?: number | null
+        }
+        Update: {
+          category_text?: string | null
+          delivery_days?: number | null
+          description?: string | null
+          ean?: string | null
+          feed_id?: string
+          first_seen_at?: string
+          group_id?: string | null
+          id?: string
+          images?: string[]
+          in_feed?: boolean
+          item_id?: string
+          last_seen_at?: string
+          manufacturer?: string | null
+          name?: string
+          prev_wholesale_czk?: number | null
+          product_id?: string | null
+          retail_czk?: number | null
+          retail_eur?: number | null
+          short_description?: string | null
+          url?: string | null
+          vat_rate?: number | null
+          weight_g?: number | null
+          wholesale_changed_at?: string | null
+          wholesale_czk?: number | null
+          wholesale_eur?: number | null
+        }
+        Relationships: []
+      }
       wishlist_item: {
         Row: {
           added_at: string
