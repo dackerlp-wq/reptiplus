@@ -1511,6 +1511,9 @@ export async function saveGeneralAction(fd: FormData) {
     bankAccount: str(fd, "bankAccount"),
     iban: str(fd, "iban"),
     bic: str(fd, "bic"),
+    bankAccountEur: str(fd, "bankAccountEur"),
+    ibanEur: str(fd, "ibanEur"),
+    bicEur: str(fd, "bicEur"),
     openingHours: str(fd, "openingHours").slice(0, 500),
   });
 }

@@ -1,6 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getContentI18n, getShopContact, type ShopContact } from "@/lib/settings";
+import { bankFor } from "@/lib/bank";
 import { getCnbEurRate } from "@/lib/exchange-rate";
 import { pickI18n } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
@@ -69,7 +70,8 @@ function safeLocale(v: string | null | undefined): Locale {
   return v === "en" || v === "de" ? v : "cs";
 }
 
-function sellerParty(shop: ShopContact): InvoiceParty {
+function sellerParty(shop: ShopContact, currency?: string | null): InvoiceParty {
+  const bank = bankFor(shop, currency);
   return {
     name: shop.name,
     street: shop.address,
@@ -78,9 +80,9 @@ function sellerParty(shop: ShopContact): InvoiceParty {
     email: shop.email,
     phone: shop.phone,
     registration: shop.registration,
-    bankAccount: shop.bankAccount,
-    iban: shop.iban,
-    bic: shop.bic,
+    bankAccount: bank.account,
+    iban: bank.iban,
+    bic: bank.bic,
   };
 }
 
@@ -250,7 +252,7 @@ export async function issueInvoiceForOrder(
     vat_breakdown: (vatPayer ? totals.breakdown : []) as unknown as Json,
     exchange_rate: exchangeRate,
     vat_total_czk: vatTotalCzk,
-    seller: sellerParty(shop) as unknown as Json,
+    seller: sellerParty(shop, order.currency) as unknown as Json,
     buyer: buyerParty(order) as unknown as Json,
     items: totals.lines as unknown as Json,
     payment_method: methods.payment || order.payment_method,

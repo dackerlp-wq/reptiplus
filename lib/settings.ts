@@ -14,6 +14,10 @@ export type ShopContact = {
   bankAccount: string;
   iban: string;
   bic: string;
+  /** Účet pro platby v EUR (cizoměnový); prázdný = platby v EUR jdou na korunový účet výše. */
+  bankAccountEur: string;
+  ibanEur: string;
+  bicEur: string;
   /** Otevírací doba / provozní doba (víceřádkový text, stránka Kontakt). */
   openingHours: string;
 };
@@ -38,9 +42,13 @@ export async function getShopContact(): Promise<ShopContact> {
     bankAccount: v.bankAccount ?? "",
     iban: v.iban ?? "",
     bic: v.bic ?? "",
+    bankAccountEur: v.bankAccountEur ?? "",
+    ibanEur: v.ibanEur ?? "",
+    bicEur: v.bicEur ?? "",
     openingHours: v.openingHours ?? "",
   };
 }
+
 
 export type LegalKey = "legal.terms" | "legal.privacy" | "legal.claims";
 

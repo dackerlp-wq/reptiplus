@@ -130,8 +130,8 @@ export default async function AdminSettingsPage() {
           </div>
 
           <p className="text-sm text-gray-soft">
-            Bankovní spojení — doplní se do e-mailu „Potvrzení objednání“ u
-            poptávek LEDX (platba převodem).
+            Bankovní spojení — pro platbu převodem: potvrzení objednávky, faktury a e-mail
+            „Potvrzení objednání“ u poptávek LEDX.
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
             <label className="flex flex-col gap-1.5">
@@ -145,6 +145,24 @@ export default async function AdminSettingsPage() {
             <label className="flex flex-col gap-1.5">
               <span className={legend}>BIC / SWIFT</span>
               <input name="bic" defaultValue={String(general.bic ?? "")} placeholder="KOMBCZPP" className={input} />
+            </label>
+          </div>
+          <p className="text-sm text-gray-soft">
+            Účet pro platby v eurech (cizoměnový) — použije se u objednávek a faktur v EUR. Prázdné = i platby v EUR
+            jdou na korunový účet výše.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>Číslo účtu (EUR)</span>
+              <input name="bankAccountEur" defaultValue={String(general.bankAccountEur ?? "")} className={input} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>IBAN (EUR)</span>
+              <input name="ibanEur" defaultValue={String(general.ibanEur ?? "")} className={input} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={legend}>BIC / SWIFT (EUR)</span>
+              <input name="bicEur" defaultValue={String(general.bicEur ?? "")} className={input} />
             </label>
           </div>
 

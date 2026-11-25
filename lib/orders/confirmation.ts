@@ -8,6 +8,7 @@ import {
   type OrderEmailData,
 } from "@/lib/email/templates";
 import { getShopContact } from "@/lib/settings";
+import { bankFor } from "@/lib/bank";
 import { logOrderEvent } from "@/lib/orders/events";
 import { currentSiteUrl, methodLabel, orderLocale } from "@/lib/orders/notify";
 import { variableSymbolForOrder } from "@/lib/orders/vs";
@@ -44,9 +45,9 @@ export async function buildOrderEmailData(orderId: string): Promise<OrderEmailDa
     note: order.note,
     bank: shop
       ? {
-          account: shop.bankAccount || undefined,
-          iban: shop.iban || undefined,
-          bic: shop.bic || undefined,
+          account: bankFor(shop, order.currency).account || undefined,
+          iban: bankFor(shop, order.currency).iban || undefined,
+          bic: bankFor(shop, order.currency).bic || undefined,
           variableSymbol: variableSymbolForOrder(order.number),
         }
       : null,

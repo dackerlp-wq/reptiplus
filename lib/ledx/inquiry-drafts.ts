@@ -1,6 +1,7 @@
 import "server-only";
 import type { Locale } from "@/i18n/routing";
 import type { ShopContact } from "@/lib/settings";
+import { bankFor } from "@/lib/bank";
 import {
   EMAIL_KINDS,
   formatQuote,
@@ -260,11 +261,12 @@ export function buildInquiryDraft(
       };
     case "order_confirmed": {
       const amount = inq.quote_amount !== null ? formatQuote(inq.quote_amount, inq.quote_currency) : c.fill;
+      const bank = bankFor(shop, inq.quote_currency);
       const pay = [
         `${c.order.payment}:`,
-        shop.bankAccount ? `– ${c.order.account}: ${shop.bankAccount}` : null,
-        shop.iban ? `– ${c.order.iban}: ${shop.iban}` : null,
-        shop.bic ? `– ${c.order.bic}: ${shop.bic}` : null,
+        bank.account ? `– ${c.order.account}: ${bank.account}` : null,
+        bank.iban ? `– ${c.order.iban}: ${bank.iban}` : null,
+        bank.bic ? `– ${c.order.bic}: ${bank.bic}` : null,
         `– ${c.order.amount}: ${amount}`,
         `– ${c.order.vs}: ${inq.quote_number ?? c.fill}`,
       ]
